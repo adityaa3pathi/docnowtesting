@@ -9,11 +9,29 @@ import { normalizeGender } from '../utils/helpers';
 const router = Router();
 const healthians = HealthiansAdapter.getInstance();
 
-// Initialize Razorpay
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID!,
-    key_secret: process.env.RAZORPAY_KEY_SECRET!
-});
+// Initialize Razorpay Lazily or Safely
+let razorpay: Razorpay;
+
+try {
+    if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+        razorpay = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET
+        });
+    } else {
+        console.warn('[Razorpay] Warning: RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is missing. Payment routes will fail.');
+    }
+} catch (err) {
+    console.error('[Razorpay] Initialization failed:', err);
+}
+
+// Helper to get instance or throw
+const getRazorpay = () => {
+    if (!razorpay) {
+        throw new Error('Razorpay is not initialized. Check server environment variables.');
+    }
+    return razorpay;
+};
 
 // ============================================
 // POST /api/payments/initiate
@@ -92,7 +110,7 @@ router.post('/initiate', authMiddleware, async (req: AuthRequest, res: Response)
         });
 
         // 7. Create Razorpay order with booking binding
-        const order = await razorpay.orders.create({
+        const order = await getRazorpay().orders.create({
             amount: totalAmount * 100,  // Razorpay expects paise
             currency: 'INR',
             receipt: booking.id,  // Binding booking to order
@@ -169,7 +187,7 @@ router.post('/verify', authMiddleware, async (req: AuthRequest, res: Response) =
         }
 
         // 5. Re-fetch order from Razorpay to verify amount (defense in depth)
-        const rzpOrder = await razorpay.orders.fetch(razorpay_order_id);
+        const rzpOrder = await getRazorpay().orders.fetch(razorpay_order_id);
 
         if (rzpOrder.amount !== booking.totalAmount * 100) {
             console.error('[Payments] SECURITY: Amount mismatch', {
