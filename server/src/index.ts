@@ -51,6 +51,21 @@ app.get('/', (req, res) => {
     res.send('DOCNOW API is running');
 });
 
+// TEMP: Debug endpoint for IP whitelisting
+app.get('/debug/ip', async (req, res) => {
+    try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        res.json({
+            outboundIp: data.ip,
+            nodeEnv: process.env.NODE_ENV,
+            headers: req.headers
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // export const prisma = new PrismaClient();
 
 app.listen(PORT, () => {
