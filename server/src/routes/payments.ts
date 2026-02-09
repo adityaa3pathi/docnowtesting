@@ -358,9 +358,21 @@ async function createHealthiansBooking(booking: any, userId: string) {
     console.log('[Payments] Creating Healthians booking:', JSON.stringify(bookingPayload, null, 2));
 
     const response = await healthians.createBooking(bookingPayload);
+    console.log('[Payments] Healthians Booking Response:', JSON.stringify(response, null, 2));
 
     if (!response.status) {
         throw new Error(response.message || 'Healthians booking failed');
+    }
+
+    const partnerBookingId = response.booking_id || response.data?.booking_id;
+
+    if (!partnerBookingId) {
+        throw new Error('Healthians booking successful but booking_id missing in response');
+    }
+
+    // Normalize response to always have booking_id at top level
+    if (!response.booking_id && partnerBookingId) {
+        response.booking_id = partnerBookingId;
     }
 
     // Create booking items in database
@@ -404,8 +416,16 @@ export const webhookHandler = async (req: Request, res: Response) => {
     }
 
     const payload = JSON.parse(req.body.toString());
-    const eventId = payload.event_id;
+    console.log('[Webhook] Full Payload:', JSON.stringify(payload, null, 2));
+
+    // Prioritize header for event ID, fall back to payload
+    const eventId = (req.headers['x-razorpay-event-id'] as string) || payload.event_id || payload.id;
     const event = payload.event;
+
+    if (!eventId) {
+        console.error('[Webhook] Error: x-razorpay-event-id header missing in headers and payload');
+        return res.status(400).json({ error: 'event_id missing' });
+    }
 
     console.log('[Webhook] Received:', event, eventId);
 
