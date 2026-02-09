@@ -24,6 +24,7 @@ export class HealthiansAdapter {
             baseURL: `${HEALTHIANS_BASE_URL}/${PARTNER_NAME}`,
             headers: {
                 'Content-Type': 'application/json',
+                'User-Agent': 'DOCNOW-Server/1.0'
             },
         });
 
@@ -68,15 +69,17 @@ export class HealthiansAdapter {
             }
 
             const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+            console.log(`[Healthians] Authenticating with ${HEALTHIANS_BASE_URL}/${PARTNER_NAME}/getAccessToken`);
 
             const response = await axios.get<AccessTokenResponse>(`${HEALTHIANS_BASE_URL}/${PARTNER_NAME}/getAccessToken`, {
                 headers: {
-                    Authorization: authHeader
+                    Authorization: authHeader,
+                    'User-Agent': 'DOCNOW-Server/1.0',
+                    'Accept': 'application/json'
                 }
             });
 
             console.log('Healthians Auth Response Status:', response.status);
-            console.log('Healthians Auth Response Data:', response.data);
 
             if (response.data.access_token) {
                 this.accessToken = response.data.access_token;
@@ -85,8 +88,11 @@ export class HealthiansAdapter {
             } else {
                 throw new Error('Failed to retrieve access token');
             }
-        } catch (error) {
-            console.error('Healthians Auth Error:', error);
+        } catch (error: any) {
+            console.error('Healthians Auth Error:', error.response?.status, error.response?.statusText);
+            if (error.response?.status === 403) {
+                console.error('NOTE: 403 Forbidden likely means IP address is not whitelisted by Healthians or WAF blocking.');
+            }
             throw error;
         }
     }
