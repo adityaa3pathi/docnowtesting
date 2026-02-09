@@ -1,0 +1,12 @@
+# Design and Documentation
+Super Admin Panel Design/
+reference-design/
+healthians_api_doc.md
+healthians_webhook_doc.md
+parameters/
+
+# Standard ignores (Project-wide)
+.DS_Store
+.vscode/
+.idea/
+*.log
