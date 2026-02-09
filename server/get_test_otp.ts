@@ -1,0 +1,1 @@
+import { PrismaClient } from '@prisma/client'; const prisma = new PrismaClient(); prisma.oTP.findFirst({ where: { identifier: '8888888888' }, orderBy: { createdAt: 'desc' } }).then(otp => console.log('OTP:', otp?.code)).finally(() => prisma.$disconnect());
