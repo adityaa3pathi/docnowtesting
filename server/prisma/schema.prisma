@@ -1,0 +1,291 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum Role {
+  USER
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum LedgerType {
+  CREDIT
+  DEBIT
+}
+
+enum RewardType {
+  REFEREE_SIGNUP
+  REFERRER_ORDER
+}
+
+enum RewardStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+enum PaymentStatus {
+  INITIATED       // Order created, awaiting payment
+  AUTHORIZED      // Payment verified, partner booking pending
+  CONFIRMED       // Partner booking success
+  PARTNER_FAILED  // Payment OK, partner API failed
+  FAILED          // Payment failed
+}
+
+// ============================================
+// USER MODEL (Updated)
+// ============================================
+
+model User {
+  id            String     @id @default(uuid())
+  name          String?
+  email         String?    @unique
+  mobile        String     @unique
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  isVerified    Boolean    @default(false)
+  gender        String?
+  age           Int?
+  password      String?
+  
+  // New fields for Admin & Referral
+  role          Role       @default(USER)
+  status        UserStatus @default(ACTIVE)
+  referralCode  String?    @unique
+  referredById  String?
+  
+  // Relations
+  addresses     Address[]
+  bookings      Booking[]
+  patients      Patient[]
+  cart          Cart?
+  wallet        Wallet?
+  referredBy    User?      @relation("Referrals", fields: [referredById], references: [id])
+  referrals     User[]     @relation("Referrals")
+  referralRewardsEarned ReferralReward[] @relation("ReferrerRewards")
+  auditLogs     AdminAuditLog[]
+}
+
+model OTP {
+  id         String   @id @default(uuid())
+  identifier String   @unique
+  code       String
+  expiresAt  DateTime
+  attempts   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Patient {
+  id           String        @id @default(uuid())
+  userId       String
+  name         String
+  relation     String
+  age          Int
+  gender       String
+  bookingItems BookingItem[]
+  cartItems    CartItem[]
+  user         User          @relation(fields: [userId], references: [id])
+}
+
+model Address {
+  id       String    @id @default(uuid())
+  userId   String
+  line1    String
+  city     String
+  pincode  String
+  lat      String?
+  long     String?
+  user     User      @relation(fields: [userId], references: [id])
+  bookings Booking[]
+}
+
+model Booking {
+  id                String        @id @default(uuid())
+  userId            String
+  partnerBookingId  String?
+  status            String
+  slotDate          String
+  slotTime          String
+  totalAmount       Float
+  paymentStatus     PaymentStatus @default(INITIATED)
+  razorpayOrderId   String?       @unique
+  razorpayPaymentId String?       @unique
+  paidAt            DateTime?
+  partnerError      String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  addressId         String?
+  address           Address?      @relation(fields: [addressId], references: [id])
+  user              User          @relation(fields: [userId], references: [id])
+  items             BookingItem[]
+  reports           Report[]
+  rescheduledToId   String?       @unique
+}
+
+model BookingItem {
+  id        String  @id @default(uuid())
+  bookingId String
+  patientId String
+  testCode  String
+  testName  String
+  price     Float
+  status    String?
+  booking   Booking @relation(fields: [bookingId], references: [id])
+  patient   Patient @relation(fields: [patientId], references: [id])
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  bookingId   String
+  reportUrl   String
+  generatedAt DateTime @default(now())
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+}
+
+model CallbackRequest {
+  id        String   @id @default(uuid())
+  name      String
+  mobile    String
+  city      String
+  status    String   @default("PENDING")
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  testCode  String
+  testName  String
+  price     Float
+  mrp       Float?
+  patientId String?
+  createdAt DateTime @default(now())
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  patient   Patient? @relation(fields: [patientId], references: [id])
+}
+
+// ============================================
+// WALLET SYSTEM
+// ============================================
+
+model Wallet {
+  id        String         @id @default(uuid())
+  userId    String         @unique
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  user      User           @relation(fields: [userId], references: [id])
+  ledger    WalletLedger[]
+}
+
+model WalletLedger {
+  id            String     @id @default(uuid())
+  walletId      String
+  type          LedgerType
+  amount        Float      // Actual signed amount (+/-)
+  balanceAfter  Float      // Running balance after this transaction
+  description   String
+  referenceType String?    // REFERRAL | TOPUP | REFUND | ORDER | ADMIN
+  referenceId   String?    // ID of related entity
+  createdAt     DateTime   @default(now())
+  createdById   String?    // Admin userId for adjustments
+  ipAddress     String?
+  
+  wallet        Wallet     @relation(fields: [walletId], references: [id])
+  
+  @@index([walletId, createdAt])
+  @@index([referenceType, referenceId])
+}
+
+// ============================================
+// REFERRAL SYSTEM
+// ============================================
+
+model ReferralReward {
+  id              String       @id @default(uuid())
+  referrerId      String
+  refereeId       String
+  rewardType      RewardType
+  amount          Float
+  status          RewardStatus @default(PENDING)
+  triggerEvent    String       // SIGNUP | FIRST_ORDER_COMPLETE
+  triggerEntityId String?      // bookingId for order completion
+  processedAt     DateTime?
+  createdAt       DateTime     @default(now())
+  
+  referrer        User         @relation("ReferrerRewards", fields: [referrerId], references: [id])
+  
+  @@unique([referrerId, refereeId, rewardType])
+  @@index([refereeId, rewardType])
+}
+
+// ============================================
+// SYSTEM CONFIGURATION
+// ============================================
+
+model SystemConfig {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+  updatedBy String?  // Admin userId who last updated
+}
+
+// ============================================
+// ADMIN AUDIT LOG
+// ============================================
+
+model AdminAuditLog {
+  id            String   @id @default(uuid())
+  adminId       String
+  adminName     String
+  action        String   // WALLET_CREDIT | WALLET_DEBIT | CONFIG_UPDATE | USER_BLOCK etc.
+  entity        String   // User | Wallet | Config | Order
+  targetId      String?
+  oldValue      Json?
+  newValue      Json?
+  ipAddress     String?
+  isDestructive Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  
+  admin         User     @relation(fields: [adminId], references: [id])
+  
+  @@index([adminId, createdAt])
+  @@index([entity, targetId])
+}
+
+// ============================================
+// PAYMENT WEBHOOK DEDUPLICATION
+// ============================================
+
+model WebhookEvent {
+  eventId   String   @id  // Razorpay event ID - unique by design
+  processed Boolean  @default(true)
+  createdAt DateTime @default(now())
+  
+  @@index([createdAt])
+}
