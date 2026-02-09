@@ -1,11 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
 import { generateChecksum } from '../utils/security';
-import dotenv from 'dotenv';
 
-dotenv.config();
 
 const HEALTHIANS_BASE_URL = process.env.HEALTHIANS_BASE_URL || 'https://t25crm.healthians.co.in/api';
-const PARTNER_NAME = process.env.HEALTHIANS_PARTNER_NAME || 'docnow';
+const PARTNER_NAME = process.env.HEALTHIANS_PARTNER_NAME || 'docnow1';
 
 interface AccessTokenResponse {
     access_token: string;
