@@ -1,8 +1,11 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
+
 import { PrismaClient } from '@prisma/client';
 import locationRoutes from './routes/location';
 import catalogRoutes from './routes/catalog';
@@ -18,7 +21,8 @@ import bookingRoutes from './routes/bookings';
 import adminRoutes from './routes/admin';
 import paymentRoutes, { webhookHandler } from './routes/payments';
 
-dotenv.config();
+
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
