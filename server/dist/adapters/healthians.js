@@ -5,10 +5,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MOCK_PRODUCTS = exports.HealthiansAdapter = void 0;
 const axios_1 = __importDefault(require("axios"));
+const security_1 = require("../utils/security");
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const HEALTHIANS_BASE_URL = process.env.HEALTHIANS_BASE_URL || 'https://t25crm.healthians.co.in/api';
-const PARTNER_NAME = 'healthians'; // TODO: Confirm if this is needed or if it is part of the URL
+const PARTNER_NAME = process.env.HEALTHIANS_PARTNER_NAME || 'docnow';
 class HealthiansAdapter {
     constructor() {
         this.accessToken = null;
@@ -119,6 +120,152 @@ class HealthiansAdapter {
         }
         catch (error) {
             console.error('getActiveZipcodes Error:', error);
+            throw error;
+        }
+    }
+    /**
+     * Get available slots by location.
+     */
+    async getSlotsByLocation(params) {
+        try {
+            const response = await this.client.post('/getSlotsByLocation', {
+                lat: params.lat,
+                long: params.long,
+                zipcode: params.zipcode,
+                zone_id: params.zone_id,
+                slot_date: params.slot_date,
+                amount: params.amount,
+                package: params.package,
+                get_ppmc_slots: params.get_ppmc_slots || 0,
+                has_female_patient: params.has_female_patient || 0,
+            });
+            return response.data;
+        }
+        catch (error) {
+            console.error('getSlotsByLocation Error:', error);
+            throw error;
+        }
+    }
+    /**
+     * Freeze a slot.
+     */
+    /**
+     * Freeze a slot.
+     */
+    async freezeSlot(slotId, vendorBillingUserId) {
+        try {
+            const response = await this.client.post('/freezeSlot_v1', {
+                slot_id: slotId,
+                vendor_billing_user_id: vendorBillingUserId
+            });
+            return response.data;
+        }
+        catch (error) {
+            console.error('freezeSlot Error:', error);
+            throw error;
+        }
+    }
+    /**
+     * Create Booking V3
+     */
+    async createBooking(bookingData) {
+        try {
+            let config = {};
+            const secretKey = process.env.HEALTHIANS_BOOKING_SECRET_KEY;
+            if (secretKey) {
+                // Generate checkSum of the stringified payload
+                const dataString = JSON.stringify(bookingData);
+                const checkSum = (0, security_1.generateChecksum)(dataString, secretKey);
+                console.log('Generating X-Checksum for data string:', dataString);
+                console.log('Generated X-Checksum:', checkSum);
+                config = {
+                    headers: {
+                        'X-Checksum': checkSum
+                    }
+                };
+            }
+            else {
+                console.warn('HEALTHIANS_BOOKING_SECRET_KEY not set. Sending booking without X-Checksum header.');
+            }
+            const response = await this.client.post('/createBooking_v3', bookingData, config);
+            return response.data;
+        }
+        catch (error) {
+            console.error('createBooking Error:', error.message);
+            if (error.response) {
+                console.error('Healthians Error Response Data:', JSON.stringify(error.response.data, null, 2));
+                console.error('Healthians Error Status:', error.response.status);
+            }
+            throw error;
+        }
+    }
+    /**
+     * Get Booking Status
+     */
+    async getBookingStatus(bookingId) {
+        try {
+            const response = await this.client.post('/getBookingStatus', {
+                booking_id: bookingId
+            });
+            return response.data;
+        }
+        catch (error) {
+            console.error('getBookingStatus Error:', error);
+            throw error;
+        }
+    }
+    /**
+     * Cancel Booking
+     */
+    async cancelBooking(params) {
+        try {
+            const response = await this.client.post('/cancelBooking', params);
+            return response.data;
+        }
+        catch (error) {
+            console.error('cancelBooking Error:', error);
+            throw error;
+        }
+    }
+    /**
+     * Get Phlebo Mask Number
+     */
+    async getPhleboMaskNumber(bookingId) {
+        try {
+            const response = await this.client.post('/getPhleboMaskNumber', {
+                booking_id: bookingId
+            });
+            return response.data;
+        }
+        catch (error) {
+            console.error('getPhleboMaskNumber Error:', error);
+            throw error;
+        }
+    }
+    /**
+     * Reschedule Booking
+     */
+    async rescheduleBooking(params) {
+        try {
+            const secretKey = process.env.HEALTHIANS_BOOKING_SECRET_KEY;
+            let config = {};
+            if (secretKey) {
+                const dataString = JSON.stringify(params);
+                const checkSum = (0, security_1.generateChecksum)(dataString, secretKey);
+                config = {
+                    headers: {
+                        'X-Checksum': checkSum
+                    }
+                };
+            }
+            const response = await this.client.post('/rescheduleBookingByCustomer_v1', params, config);
+            return response.data;
+        }
+        catch (error) {
+            console.error('rescheduleBooking Error:', error.message);
+            if (error.response) {
+                console.error('Healthians rescheduleBooking Error Response Data:', JSON.stringify(error.response.data, null, 2));
+            }
             throw error;
         }
     }

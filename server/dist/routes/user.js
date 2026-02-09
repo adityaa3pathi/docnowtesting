@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const index_1 = require("../index");
+const db_1 = require("../db");
 const router = (0, express_1.Router)();
 // --- USER ---
 // Login/Register (Mock for now, should replace with real OTP flow)
@@ -10,13 +10,13 @@ router.post('/login', async (req, res) => {
     if (!mobile)
         return res.status(400).json({ error: 'Mobile is required' });
     try {
-        let user = await index_1.prisma.user.findUnique({ where: { mobile } });
+        let user = await db_1.prisma.user.findUnique({ where: { mobile } });
         if (!user) {
-            user = await index_1.prisma.user.create({
+            user = await db_1.prisma.user.create({
                 data: { mobile, name, email },
             });
             // Create "Self" Patient automatically
-            await index_1.prisma.patient.create({
+            await db_1.prisma.patient.create({
                 data: {
                     userId: user.id,
                     name: name || 'User',
@@ -37,7 +37,7 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const { name, email } = req.body;
     try {
-        const user = await index_1.prisma.user.update({
+        const user = await db_1.prisma.user.update({
             where: { id },
             data: { name, email },
         });
@@ -52,7 +52,7 @@ router.put('/:id', async (req, res) => {
 router.get('/:userId/patients', async (req, res) => {
     const { userId } = req.params;
     try {
-        const patients = await index_1.prisma.patient.findMany({
+        const patients = await db_1.prisma.patient.findMany({
             where: { userId },
         });
         res.json(patients);
@@ -66,7 +66,7 @@ router.post('/:userId/patients', async (req, res) => {
     const { userId } = req.params;
     const { name, relation, age, gender } = req.body;
     try {
-        const patient = await index_1.prisma.patient.create({
+        const patient = await db_1.prisma.patient.create({
             data: {
                 userId,
                 name,
@@ -86,7 +86,7 @@ router.put('/patients/:patientId', async (req, res) => {
     const { patientId } = req.params;
     const { name, relation, age, gender } = req.body;
     try {
-        const patient = await index_1.prisma.patient.update({
+        const patient = await db_1.prisma.patient.update({
             where: { id: patientId },
             data: { name, relation, age: parseInt(age), gender },
         });
@@ -100,7 +100,7 @@ router.put('/patients/:patientId', async (req, res) => {
 router.delete('/patients/:patientId', async (req, res) => {
     const { patientId } = req.params;
     try {
-        await index_1.prisma.patient.delete({ where: { id: patientId } });
+        await db_1.prisma.patient.delete({ where: { id: patientId } });
         res.json({ success: true });
     }
     catch (error) {
