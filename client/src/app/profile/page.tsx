@@ -1,7 +1,8 @@
 "use client";
 
 import { Header } from '@/components/Header';
-import { User, Users, FileText, Calendar, Loader2, Shield } from 'lucide-react';
+import { WalletTab } from '@/components/profile/WalletTab';
+import { User, Users, FileText, Calendar, Loader2, Shield, Wallet } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,7 +13,7 @@ import { BookingsTab } from '@/components/profile/BookingsTab';
 import { ReportsTab } from '@/components/profile/ReportsTab';
 import Link from 'next/link';
 
-type Tab = 'profile' | 'family' | 'bookings' | 'reports';
+type Tab = 'profile' | 'family' | 'bookings' | 'reports' | 'wallet';
 
 export default function ProfilePage() {
     const { isAuthenticated, isInitialized, user } = useAuth();
@@ -62,6 +63,12 @@ export default function ProfilePage() {
                                     onClick={() => setActiveTab('bookings')}
                                 />
                                 <NavButton
+                                    icon={<Wallet className="w-4 h-4" />}
+                                    label="Wallet"
+                                    active={activeTab === 'wallet'}
+                                    onClick={() => setActiveTab('wallet')}
+                                />
+                                <NavButton
                                     icon={<FileText className="w-4 h-4" />}
                                     label="Reports"
                                     active={activeTab === 'reports'}
@@ -90,6 +97,7 @@ export default function ProfilePage() {
                             {activeTab === 'profile' && <ProfileTab />}
                             {activeTab === 'family' && <FamilyTab />}
                             {activeTab === 'bookings' && <BookingsTab />}
+                            {activeTab === 'wallet' && <WalletTab />}
                             {activeTab === 'reports' && <ReportsTab />}
                         </div>
                     </div>
