@@ -336,68 +336,71 @@ router.post('/verify', authMiddleware, async (req: AuthRequest, res: Response) =
             return res.status(404).json({ error: 'Booking not found' });
         }
 
-        // 2. Idempotency: Already confirmed or authorized
-        if (booking.paymentStatus === 'CONFIRMED' || booking.paymentStatus === 'AUTHORIZED') {
+        // 2. Idempotency: Only return early if truly CONFIRMED (partner booking done, cart cleared)
+        if (booking.paymentStatus === 'CONFIRMED') {
             return res.json({ status: 'confirmed', message: 'Payment already verified' });
         }
 
-        // 3. Replay prevention: Payment ID already used
-        if (booking.razorpayPaymentId) {
-            return res.status(400).json({ error: 'Payment already processed for this booking' });
-        }
+        // 3. If AUTHORIZED (webhook arrived first), skip signature/amount checks
+        //    but proceed to create partner booking + clear cart
+        const alreadyAuthorized = booking.paymentStatus === 'AUTHORIZED';
 
-        // 4. Verify signature (CRITICAL SECURITY CHECK)
-        const expectedSignature = crypto
-            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
-            .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-            .digest('hex');
-
-        if (expectedSignature !== razorpay_signature) {
-            console.error('[Payments] SECURITY: Signature mismatch for booking:', bookingId);
-            await prisma.booking.update({
-                where: { id: bookingId },
-                data: { paymentStatus: 'FAILED' }
-            });
-            // Trigger rollback for promo/wallet on signature failure
-            await rollbackInitiatedBooking(booking);
-            return res.status(400).json({ error: 'Payment verification failed' });
-        }
-
-        // 5. Re-fetch order from Razorpay to verify amount (defense in depth)
-        const rzpOrder = await getRazorpay().orders.fetch(razorpay_order_id);
-
-        // 6. Verify Amount (Critical)
-        const paidAmount = rzpOrder.amount_paid ? Number(rzpOrder.amount_paid) / 100 : Number(rzpOrder.amount) / 100;
-        // Check if paid amount matches finalAmount within margin (Razorpay amount is integer paise)
-        // booking.finalAmount is float.
-        if (Math.abs(paidAmount - booking.finalAmount) > 1) { // Allow for minor floating point discrepancies
-            console.error(`[Payments] Amount mismatch: Paid ${paidAmount}, Expected ${booking.finalAmount}`);
-            // This might be a hack attempt or currency issue
-            await prisma.booking.update({
-                where: { id: bookingId },
-                data: { paymentStatus: 'FAILED' }
-            });
-            await rollbackInitiatedBooking(booking);
-            return res.status(400).json({ error: 'Amount mismatch' });
-        }
-
-        // Notes check: Razorpay sometimes returns notes inconsistently.
-        // Log mismatch but don't fail the payment — signature check above is the real security gate.
-        if (rzpOrder.notes?.bookingId && rzpOrder.notes.bookingId !== bookingId) {
-            console.warn('[Payments] WARN: Booking ID mismatch in order notes. Expected:', bookingId, 'Got:', rzpOrder.notes.bookingId);
-        }
-
-        // 7. Mark as AUTHORIZED (payment is secured)
-        await prisma.booking.update({
-            where: { id: bookingId },
-            data: {
-                paymentStatus: 'AUTHORIZED',
-                razorpayPaymentId: razorpay_payment_id,
-                paidAt: new Date()
+        if (!alreadyAuthorized) {
+            // 4. Replay prevention: Payment ID already used
+            if (booking.razorpayPaymentId) {
+                return res.status(400).json({ error: 'Payment already processed for this booking' });
             }
-        });
 
-        console.log('[Payments] Payment AUTHORIZED for booking:', bookingId);
+            // 5. Verify signature (CRITICAL SECURITY CHECK)
+            const expectedSignature = crypto
+                .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+                .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+                .digest('hex');
+
+            if (expectedSignature !== razorpay_signature) {
+                console.error('[Payments] SECURITY: Signature mismatch for booking:', bookingId);
+                await prisma.booking.update({
+                    where: { id: bookingId },
+                    data: { paymentStatus: 'FAILED' }
+                });
+                await rollbackInitiatedBooking(booking);
+                return res.status(400).json({ error: 'Payment verification failed' });
+            }
+
+            // 6. Re-fetch order from Razorpay to verify amount (defense in depth)
+            const rzpOrder = await getRazorpay().orders.fetch(razorpay_order_id);
+
+            // 7. Verify Amount (Critical)
+            const paidAmount = rzpOrder.amount_paid ? Number(rzpOrder.amount_paid) / 100 : Number(rzpOrder.amount) / 100;
+            if (Math.abs(paidAmount - booking.finalAmount) > 1) {
+                console.error(`[Payments] Amount mismatch: Paid ${paidAmount}, Expected ${booking.finalAmount}`);
+                await prisma.booking.update({
+                    where: { id: bookingId },
+                    data: { paymentStatus: 'FAILED' }
+                });
+                await rollbackInitiatedBooking(booking);
+                return res.status(400).json({ error: 'Amount mismatch' });
+            }
+
+            // Notes check: warn only
+            if (rzpOrder.notes?.bookingId && rzpOrder.notes.bookingId !== bookingId) {
+                console.warn('[Payments] WARN: Booking ID mismatch in order notes. Expected:', bookingId, 'Got:', rzpOrder.notes.bookingId);
+            }
+
+            // 8. Mark as AUTHORIZED (payment is secured)
+            await prisma.booking.update({
+                where: { id: bookingId },
+                data: {
+                    paymentStatus: 'AUTHORIZED',
+                    razorpayPaymentId: razorpay_payment_id,
+                    paidAt: new Date()
+                }
+            });
+
+            console.log('[Payments] Payment AUTHORIZED for booking:', bookingId);
+        } else {
+            console.log('[Payments] Booking already AUTHORIZED (webhook arrived first), proceeding to partner booking:', bookingId);
+        }
 
         // 7. Try to create partner booking
         try {
