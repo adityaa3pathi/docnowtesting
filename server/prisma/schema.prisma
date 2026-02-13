@@ -40,9 +40,11 @@ enum RewardStatus {
 enum PaymentStatus {
   INITIATED       // Order created, awaiting payment
   AUTHORIZED      // Payment verified, partner booking pending
-  CONFIRMED       // Partner booking success
+  PAID            // Payment successful but maybe not yet booked with partner?
+  CONFIRMED       // Partner booking success & Payment success
   PARTNER_FAILED  // Payment OK, partner API failed
   FAILED          // Payment failed
+  CANCELLED       // User cancelled or system rollback
 }
 
 // ============================================
@@ -77,6 +79,7 @@ model User {
   referrals     User[]     @relation("Referrals")
   referralRewardsEarned ReferralReward[] @relation("ReferrerRewards")
   auditLogs     AdminAuditLog[]
+  promoRedemptions PromoRedemption[]
 }
 
 model OTP {
@@ -134,6 +137,15 @@ model Booking {
   items             BookingItem[]
   reports           Report[]
   rescheduledToId   String?       @unique
+
+  // Price Breakdown (New)
+  discountAmount    Float         @default(0) // Promo Discount
+  walletAmount      Float         @default(0) // Wallet Used
+  finalAmount       Float         @default(0) // Payable Amount
+  
+  promoCodeId       String?
+  promoCode         PromoCode?    @relation(fields: [promoCodeId], references: [id])
+  redemption        PromoRedemption?
 }
 
 model BookingItem {
@@ -200,6 +212,7 @@ model Wallet {
   updatedAt DateTime       @updatedAt
   user      User           @relation(fields: [userId], references: [id])
   ledger    WalletLedger[]
+  balance   Float          @default(0) // Cached balance for atomic updates
 }
 
 model WalletLedger {
@@ -288,4 +301,49 @@ model WebhookEvent {
   createdAt DateTime @default(now())
   
   @@index([createdAt])
+}
+
+// ============================================
+// PROMO CODE SYSTEM
+// ============================================
+
+model PromoCode {
+  id              String   @id @default(uuid())
+  code            String   @unique // Case-insensitive storage (uppercase)
+  description     String?
+  discountType    DiscountType
+  discountValue   Float
+  maxDiscount     Float?   // Cap for percentage discount
+  minOrderValue   Float    @default(0)
+  
+  maxRedemptions  Int?     // Global limit (null = unlimited)
+  redeemedCount   Int      @default(0) // Atomic counter
+  
+  startsAt        DateTime @default(now())
+  expiresAt       DateTime?
+  isActive        Boolean  @default(true)
+  
+  redemptions     PromoRedemption[]
+  bookings        Booking[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model PromoRedemption {
+  id          String    @id @default(uuid())
+  userId      String
+  promoCodeId String
+  bookingId   String?   @unique // Optional if redemption happens before booking creation, but usually locked to booking
+  redeemedAt  DateTime  @default(now())
+  
+  user        User      @relation(fields: [userId], references: [id])
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id])
+  booking     Booking?  @relation(fields: [bookingId], references: [id])
+  
+  @@index([userId, promoCodeId])
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FLAT
 }

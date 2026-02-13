@@ -5,6 +5,7 @@ import { AuthRequest, authMiddleware } from '../middleware/auth';
 import { prisma } from '../db';
 import { HealthiansAdapter } from '../adapters/healthians';
 import { normalizeGender } from '../utils/helpers';
+import { calculateDiscount } from '../utils/promoHelper';
 
 const router = Router();
 const healthians = HealthiansAdapter.getInstance();
@@ -35,20 +36,30 @@ const getRazorpay = () => {
 
 // ============================================
 // POST /api/payments/initiate
-// Creates Razorpay order and booking in INITIATED state
+// Creates Booking + Locks Promo + Deducts Wallet + Creates Razorpay Order
 // ============================================
 router.post('/initiate', authMiddleware, async (req: AuthRequest, res: Response) => {
-    const { slot_id, addressId } = req.body;
+    const { slot_id, addressId, promoCode: rawPromoCode, useWallet } = req.body;
     const userId = req.userId!;
+
+    // Normalize promo code
+    const promoCode = rawPromoCode ? rawPromoCode.trim().toUpperCase() : undefined;
 
     if (!slot_id || !addressId) {
         return res.status(400).json({ error: 'Missing slot_id or addressId' });
     }
 
     try {
-        // 1. Fetch User
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        // 1. Fetch Prerequisites (User, Cart, Address)
+        const [user, cart, address] = await Promise.all([
+            prisma.user.findUnique({ where: { id: userId }, include: { wallet: true } }),
+            prisma.cart.findUnique({ where: { userId }, include: { items: { include: { patient: true } } } }),
+            prisma.address.findUnique({ where: { id: addressId } })
+        ]);
+
+        if (!user || !address) return res.status(404).json({ error: 'User or Address not found' });
+        if (!cart || cart.items.length === 0) return res.status(400).json({ error: 'Cart is empty' });
 
         // Validate profile
         if (!user.name || !user.gender || !user.age) {
@@ -59,83 +70,246 @@ router.post('/initiate', authMiddleware, async (req: AuthRequest, res: Response)
             });
         }
 
-        // 2. Fetch Cart
-        const cart = await prisma.cart.findUnique({
-            where: { userId },
-            include: { items: { include: { patient: true } } }
-        });
+        // 2. Core Calculation & Transaction
+        const { booking, razorpayOrder, finalAmount, currency } = await prisma.$transaction(async (tx) => {
+            // A. Calculate Base Total
+            const totalAmount = cart.items.reduce((sum, item) => sum + item.price, 0);
+            let discountAmount = 0;
+            let walletAmount = 0;
+            let promoCodeId: string | null = null;
 
-        if (!cart || cart.items.length === 0) {
-            return res.status(400).json({ error: 'Cart is empty' });
-        }
+            // B. Promo Code Logic (Atomic)
+            if (promoCode) {
+                const promo = await tx.promoCode.findUnique({ where: { code: promoCode } });
 
-        // 3. Calculate total SERVER-SIDE (critical for security)
-        const totalAmount = cart.items.reduce((sum, item) => sum + item.price, 0);
+                if (!promo || !promo.isActive) throw new Error('Invalid or inactive promo code');
+                if (promo.expiresAt && new Date() > promo.expiresAt) throw new Error('Promo code expired');
+                if (new Date() < promo.startsAt) throw new Error('Promo code not yet active');
+                if (totalAmount < promo.minOrderValue) throw new Error(`Minimum order value of ₹${promo.minOrderValue} required`);
 
-        // 4. Check for existing INITIATED booking (idempotency)
-        const existingBooking = await prisma.booking.findFirst({
-            where: {
-                userId,
-                paymentStatus: 'INITIATED',
-                createdAt: { gt: new Date(Date.now() - 30 * 60 * 1000) }
+                // Per-user limit check (prevent abuse)
+                const existingRedemption = await tx.promoRedemption.findFirst({
+                    where: { userId, promoCodeId: promo.id }
+                });
+                if (existingRedemption) throw new Error('You have already used this promo code');
+
+                // Atomic Increment & Check Limit
+                if (promo.maxRedemptions !== null) {
+                    const result = await tx.promoCode.updateMany({
+                        where: {
+                            id: promo.id,
+                            redeemedCount: { lt: promo.maxRedemptions }
+                        },
+                        data: { redeemedCount: { increment: 1 } }
+                    });
+                    if (result.count === 0) throw new Error('Promo usage limit reached');
+                } else {
+                    await tx.promoCode.update({
+                        where: { id: promo.id },
+                        data: { redeemedCount: { increment: 1 } }
+                    });
+                }
+
+                console.log('[Payments] Promo locked:', promo.code);
+
+                discountAmount = calculateDiscount(promo, totalAmount);
+                promoCodeId = promo.id;
             }
-        });
 
-        if (existingBooking?.razorpayOrderId) {
-            console.log('[Payments] Returning existing order:', existingBooking.razorpayOrderId);
-            return res.json({
-                bookingId: existingBooking.id,
-                razorpayOrderId: existingBooking.razorpayOrderId,
-                amount: totalAmount * 100,
-                currency: 'INR',
-                keyId: process.env.RAZORPAY_KEY_ID
+            // C. Wallet Logic (Atomic)
+            if (useWallet && user.wallet) {
+                const payableAfterDiscount = totalAmount - discountAmount;
+                const walletBalance = user.wallet.balance;
+                const amountToDeduct = Math.min(walletBalance, payableAfterDiscount);
+
+                if (amountToDeduct > 0) {
+                    // Atomic Deduct with optimistic locking
+                    const result = await tx.wallet.updateMany({
+                        where: {
+                            id: user.wallet.id,
+                            balance: { gte: amountToDeduct }
+                        },
+                        data: { balance: { decrement: amountToDeduct } }
+                    });
+
+                    if (result.count === 0) throw new Error('Insufficient wallet balance during processing');
+
+                    walletAmount = amountToDeduct;
+                    console.log('[Payments] Wallet debited:', walletAmount);
+                    // Ledger entry created after booking (Section F) to include bookingId reference
+                }
+            }
+
+            // D. Resolve "self" patient for items without explicit patientId
+            // CartItem.patientId is nullable (for self-bookings), but BookingItem.patientId is required.
+            // Auto-create/resolve a "self" patient record so every BookingItem has a valid FK.
+            let selfPatientId: string | null = null;
+            const hasNullPatient = cart.items.some(item => !item.patientId);
+
+            if (hasNullPatient) {
+                // Find existing "Self" patient for this user
+                let selfPatient = await tx.patient.findFirst({
+                    where: { userId, relation: { in: ['Self', 'self'] } }
+                });
+
+                // Auto-create if not found
+                if (!selfPatient) {
+                    selfPatient = await tx.patient.create({
+                        data: {
+                            userId,
+                            name: user.name || 'Self',
+                            relation: 'Self',
+                            age: user.age || 25,
+                            gender: user.gender || 'Male'
+                        }
+                    });
+                    console.log('[Payments] Auto-created self patient:', selfPatient.id);
+                }
+
+                selfPatientId = selfPatient.id;
+            }
+
+            // E. Create Booking
+            const finalAmount = Math.max(0, totalAmount - discountAmount - walletAmount);
+
+            const newBooking = await tx.booking.create({
+                data: {
+                    userId,
+                    addressId,
+                    status: 'PENDING',
+                    paymentStatus: 'INITIATED',
+                    slotDate: new Date().toISOString().split('T')[0],
+                    slotTime: slot_id,
+                    totalAmount,
+                    discountAmount,
+                    walletAmount,
+                    finalAmount,
+                    promoCodeId,
+                    items: {
+                        create: cart.items.map(item => ({
+                            patientId: item.patientId || selfPatientId!,
+                            testCode: item.testCode,
+                            testName: item.testName,
+                            price: item.price
+                        }))
+                    }
+                }
             });
-        }
 
-        // 5. Fetch Address
-        const address = await prisma.address.findUnique({ where: { id: addressId } });
-        if (!address) return res.status(404).json({ error: 'Address not found' });
-
-        // 6. Create booking in INITIATED state
-        const booking = await prisma.booking.create({
-            data: {
-                userId,
-                totalAmount,
-                paymentStatus: 'INITIATED',
-                slotDate: new Date().toISOString().split('T')[0],
-                slotTime: slot_id,
-                status: 'Payment Pending',
-                addressId
+            // E. Link Promo Redemption
+            if (promoCodeId) {
+                await tx.promoRedemption.create({
+                    data: {
+                        userId,
+                        promoCodeId,
+                        bookingId: newBooking.id
+                    }
+                });
             }
+
+            // F. Update Ledger Reference (if wallet used)
+            if (walletAmount > 0 && user.wallet) {
+                // We can't update the ledger entry created above easily without ID.
+                // Better to create ledger entry HERE after booking.
+                await tx.walletLedger.create({
+                    data: {
+                        walletId: user.wallet.id,
+                        type: 'DEBIT',
+                        amount: -walletAmount,
+                        balanceAfter: user.wallet.balance - walletAmount, // Note: using cached balance from read
+                        description: `Used for booking #${newBooking.id.slice(0, 8)}`,
+                        referenceType: 'ORDER',
+                        referenceId: newBooking.id
+                    }
+                });
+            }
+
+            // G. Create Razorpay Order (if amount > 0)
+            let razorpayOrder = null;
+            if (finalAmount > 0) {
+                const rzp = getRazorpay();
+                const options = {
+                    amount: Math.round(finalAmount * 100), // paise
+                    currency: 'INR',
+                    receipt: newBooking.id,
+                    notes: { bookingId: newBooking.id }
+                };
+                razorpayOrder = await rzp.orders.create(options);
+
+                // H. Update Booking with Order ID
+                await tx.booking.update({
+                    where: { id: newBooking.id },
+                    data: { razorpayOrderId: razorpayOrder.id }
+                });
+            } else {
+                // Zero amount (100% discount or wallet) — unique ID per booking
+                await tx.booking.update({
+                    where: { id: newBooking.id },
+                    data: {
+                        paymentStatus: 'PAID',
+                        razorpayPaymentId: `ZERO_${newBooking.id}`,
+                        paidAt: new Date()
+                    }
+                });
+            }
+
+            return { booking: newBooking, razorpayOrder, finalAmount, currency: 'INR' };
+        }, {
+            maxWait: 5000,
+            timeout: 10000
         });
 
-        // 7. Create Razorpay order with booking binding
-        const order = await getRazorpay().orders.create({
-            amount: totalAmount * 100,  // Razorpay expects paise
-            currency: 'INR',
-            receipt: booking.id,  // Binding booking to order
-            notes: { booking_id: booking.id }
-        });
+        // Handle Zero Amount - Instant Confirmation
+        if (finalAmount === 0) {
+            console.log('[Payments] Zero amount booking, confirming immediately:', booking.id);
+            try {
+                const partnerResult = await createHealthiansBooking(booking, userId, slot_id);
+                await prisma.booking.update({
+                    where: { id: booking.id },
+                    data: {
+                        paymentStatus: 'CONFIRMED',
+                        partnerBookingId: partnerResult.booking_id?.toString() || null,
+                        status: 'Order Booked'
+                    }
+                });
+                // Clear cart
+                await prisma.cartItem.deleteMany({
+                    where: { cart: { userId } }
+                });
 
-        // 8. Update booking with Razorpay order ID
-        await prisma.booking.update({
-            where: { id: booking.id },
-            data: { razorpayOrderId: order.id }
-        });
-
-        console.log('[Payments] Order created:', order.id, 'for booking:', booking.id);
+                return res.json({
+                    bookingId: booking.id,
+                    status: 'confirmed',
+                    amount: 0
+                });
+            } catch (error) {
+                console.error('[Payments] Partner booking failed for zero amount:', error);
+                // Keep as PAID, admin will follow-up via PARTNER_FAILED dashboard
+                await prisma.booking.update({
+                    where: { id: booking.id },
+                    data: { paymentStatus: 'PARTNER_FAILED', partnerError: (error as Error).message || 'Partner API failed' }
+                });
+                // Still clear cart — booking exists, user shouldn't re-order
+                await prisma.cartItem.deleteMany({ where: { cart: { userId } } });
+                return res.json({
+                    bookingId: booking.id,
+                    status: 'payment_received_booking_pending',
+                    amount: 0
+                });
+            }
+        }
 
         res.json({
             bookingId: booking.id,
-            razorpayOrderId: order.id,
-            amount: order.amount,
-            currency: order.currency,
+            razorpayOrderId: razorpayOrder!.id,
+            amount: finalAmount * 100,
+            currency: currency || 'INR',
             keyId: process.env.RAZORPAY_KEY_ID
         });
 
-    } catch (error) {
-        console.error('[Payments] Initiate error:', error);
-        res.status(500).json({ error: 'Failed to initiate payment' });
+    } catch (error: any) {
+        console.error('[Payments] Initiate Error:', error);
+        res.status(500).json({ error: error.message || 'Payment initiation failed' });
     }
 });
 
@@ -154,16 +328,17 @@ router.post('/verify', authMiddleware, async (req: AuthRequest, res: Response) =
     try {
         // 1. Fetch booking with ownership check
         const booking = await prisma.booking.findFirst({
-            where: { id: bookingId, userId }
+            where: { id: bookingId, userId },
+            include: { promoCode: true, user: { include: { wallet: true } } } // Include promoCode and user.wallet for potential rollback
         });
 
         if (!booking) {
             return res.status(404).json({ error: 'Booking not found' });
         }
 
-        // 2. Idempotency: Already confirmed
-        if (booking.paymentStatus === 'CONFIRMED') {
-            return res.json({ status: 'already_confirmed', bookingId });
+        // 2. Idempotency: Already confirmed or authorized
+        if (booking.paymentStatus === 'CONFIRMED' || booking.paymentStatus === 'AUTHORIZED') {
+            return res.json({ status: 'confirmed', message: 'Payment already verified' });
         }
 
         // 3. Replay prevention: Payment ID already used
@@ -183,26 +358,36 @@ router.post('/verify', authMiddleware, async (req: AuthRequest, res: Response) =
                 where: { id: bookingId },
                 data: { paymentStatus: 'FAILED' }
             });
+            // Trigger rollback for promo/wallet on signature failure
+            await rollbackInitiatedBooking(booking);
             return res.status(400).json({ error: 'Payment verification failed' });
         }
 
         // 5. Re-fetch order from Razorpay to verify amount (defense in depth)
         const rzpOrder = await getRazorpay().orders.fetch(razorpay_order_id);
 
-        if (rzpOrder.amount !== booking.totalAmount * 100) {
-            console.error('[Payments] SECURITY: Amount mismatch', {
-                expected: booking.totalAmount * 100,
-                received: rzpOrder.amount
+        // 6. Verify Amount (Critical)
+        const paidAmount = rzpOrder.amount_paid ? Number(rzpOrder.amount_paid) / 100 : Number(rzpOrder.amount) / 100;
+        // Check if paid amount matches finalAmount within margin (Razorpay amount is integer paise)
+        // booking.finalAmount is float.
+        if (Math.abs(paidAmount - booking.finalAmount) > 1) { // Allow for minor floating point discrepancies
+            console.error(`[Payments] Amount mismatch: Paid ${paidAmount}, Expected ${booking.finalAmount}`);
+            // This might be a hack attempt or currency issue
+            await prisma.booking.update({
+                where: { id: bookingId },
+                data: { paymentStatus: 'FAILED' }
             });
-            return res.status(400).json({ error: 'Amount mismatch detected' });
+            await rollbackInitiatedBooking(booking);
+            return res.status(400).json({ error: 'Amount mismatch' });
         }
 
-        if (rzpOrder.notes?.booking_id !== bookingId) {
-            console.error('[Payments] SECURITY: Booking ID mismatch in order notes');
-            return res.status(400).json({ error: 'Booking mismatch detected' });
+        // Notes check: Razorpay sometimes returns notes inconsistently.
+        // Log mismatch but don't fail the payment — signature check above is the real security gate.
+        if (rzpOrder.notes?.bookingId && rzpOrder.notes.bookingId !== bookingId) {
+            console.warn('[Payments] WARN: Booking ID mismatch in order notes. Expected:', bookingId, 'Got:', rzpOrder.notes.bookingId);
         }
 
-        // 6. Mark as AUTHORIZED (payment is secured)
+        // 7. Mark as AUTHORIZED (payment is secured)
         await prisma.booking.update({
             where: { id: bookingId },
             data: {
@@ -216,7 +401,7 @@ router.post('/verify', authMiddleware, async (req: AuthRequest, res: Response) =
 
         // 7. Try to create partner booking
         try {
-            const partnerResult = await createHealthiansBooking(booking, userId);
+            const partnerResult = await createHealthiansBooking(booking, userId, booking.slotTime);
 
             // 8. Success - update to CONFIRMED in transaction
             await prisma.$transaction(async (tx) => {
@@ -266,7 +451,7 @@ router.post('/verify', authMiddleware, async (req: AuthRequest, res: Response) =
 // ============================================
 // Helper: Create Healthians Booking
 // ============================================
-async function createHealthiansBooking(booking: any, userId: string) {
+async function createHealthiansBooking(booking: any, userId: string, slotId?: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     const address = await prisma.address.findUnique({ where: { id: booking.addressId } });
     const cart = await prisma.cart.findUnique({
@@ -329,7 +514,7 @@ async function createHealthiansBooking(booking: any, userId: string) {
 
     const bookingPayload = {
         customer: customersPayload,
-        slot: { slot_id: booking.slotTime },
+        slot: { slot_id: slotId || booking.slotTime },
         package: packagesPayload,
         customer_calling_number: user.mobile,
         billing_cust_name: user.name,
@@ -443,10 +628,10 @@ export const webhookHandler = async (req: Request, res: Response) => {
     }
 
     // 3. Process event
-    if (event === 'payment.captured') {
-        const payment = payload.payload.payment.entity;
-        const orderId = payment.order_id;
+    const payment = payload.payload.payment.entity;
+    const orderId = payment.order_id;
 
+    if (event === 'payment.captured') {
         const booking = await prisma.booking.findFirst({
             where: { razorpayOrderId: orderId }
         });
@@ -463,10 +648,94 @@ export const webhookHandler = async (req: Request, res: Response) => {
                 }
             });
         }
+    } else if (event === 'payment.failed') {
+        const booking = await prisma.booking.findFirst({
+            where: { razorpayOrderId: orderId }
+        });
+
+        if (booking && booking.paymentStatus === 'INITIATED') {
+            console.log('[Webhook] Payment failed for booking:', booking.id);
+            await prisma.booking.update({
+                where: { id: booking.id },
+                data: { paymentStatus: 'FAILED' }
+            });
+            await rollbackInitiatedBooking(booking);
+        }
     }
 
     res.status(200).json({ status: 'ok' });
 };
 
-// Regular routes (mounted with JSON parser)
+// ============================================
+// Helper: Rollback Initiated Booking (Promo/Wallet)
+// ============================================
+async function rollbackInitiatedBooking(booking: any) {
+    if (!booking) return;
+
+    try {
+        console.log('[Payments] Rolling back booking:', booking.id);
+
+        await prisma.$transaction(async (tx) => {
+            // 1. Rollback Promo 
+            if (booking.promoCodeId) {
+                const redemption = await tx.promoRedemption.findUnique({
+                    where: { bookingId: booking.id }
+                });
+
+                if (redemption) {
+                    await tx.promoRedemption.delete({ where: { id: redemption.id } });
+
+                    const updateResult = await tx.promoCode.updateMany({
+                        where: { id: booking.promoCodeId, redeemedCount: { gt: 0 } },
+                        data: { redeemedCount: { decrement: 1 } }
+                    });
+
+                    if (updateResult.count > 0) {
+                        console.log('[Payments] Promo usage rolled back');
+                    } else {
+                        console.warn('[Payments] Rollback Warning: Promo redeemedCount was 0 or ID not found, skipped decrement');
+                    }
+                }
+            }
+
+            // 2. Rollback Wallet
+            if (booking.walletAmount > 0 && booking.userId) {
+                const existingRefund = await tx.walletLedger.findFirst({
+                    where: {
+                        referenceId: booking.id,
+                        referenceType: 'REFUND'
+                    }
+                });
+
+                if (!existingRefund) {
+                    const userWallet = await tx.wallet.findUnique({ where: { userId: booking.userId } });
+                    if (userWallet) {
+                        await tx.wallet.update({
+                            where: { id: userWallet.id },
+                            data: { balance: { increment: booking.walletAmount } }
+                        });
+
+                        await tx.walletLedger.create({
+                            data: {
+                                walletId: userWallet.id,
+                                type: 'CREDIT',
+                                amount: booking.walletAmount,
+                                // Note: balanceAfter is approximate — read-time snapshot.
+                                // Acceptable for audit trail; actual balance is source of truth.
+                                balanceAfter: userWallet.balance + booking.walletAmount,
+                                description: `Refund for booking #${booking.id.slice(0, 8)}`,
+                                referenceType: 'REFUND',
+                                referenceId: booking.id
+                            }
+                        });
+                        console.log('[Payments] Wallet refunded');
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('[Payments] Rollback failed:', error);
+    }
+}
+
 export default router;

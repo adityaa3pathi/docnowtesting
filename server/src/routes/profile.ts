@@ -18,7 +18,12 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
                 isVerified: true,
                 gender: true,
                 age: true,
-                createdAt: true
+                createdAt: true,
+                wallet: {
+                    select: {
+                        balance: true
+                    }
+                }
             }
         });
 
@@ -86,6 +91,29 @@ router.put('/', authMiddleware, async (req: AuthRequest, res: Response) => {
             res.status(404).json({ error: 'User not found. Please log in again.' });
             return;
         }
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// GET /api/profile/wallet - Get user wallet balance + recent transactions
+router.get('/wallet', authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        const wallet = await prisma.wallet.findUnique({
+            where: { userId: req.userId },
+            include: {
+                ledger: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 20
+                }
+            }
+        });
+
+        res.json({
+            balance: wallet?.balance ?? 0,
+            transactions: wallet?.ledger ?? []
+        });
+    } catch (error) {
+        console.error('Get Wallet Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
