@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { Header } from '@/components/Header';
 import { Search, Filter, Loader2, ShoppingCart, Info, Check, Tag, X } from 'lucide-react';
 import api from '@/lib/api';
@@ -31,7 +31,23 @@ interface Category {
     description?: string | null;
 }
 
+// Wrapper with Suspense to fix Vercel static prerendering
 export default function SearchPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gray-50">
+                <Header />
+                <div className="flex justify-center items-center py-20">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+            </div>
+        }>
+            <SearchPageContent />
+        </Suspense>
+    );
+}
+
+function SearchPageContent() {
     const { selectedPincode, isInitialized } = useLocation();
     const searchParams = useSearchParams();
 
@@ -336,8 +352,8 @@ function ProductCard({ product }: { product: Product }) {
                             onClick={handleAddToCart}
                             disabled={adding}
                             className={`p-3 rounded-xl transition-all shadow-lg text-white hover:scale-105 active:scale-95 shadow-primary/20 ${isInCart
-                                    ? 'bg-slate-900 hover:bg-slate-800'
-                                    : 'bg-primary hover:bg-primary/90'
+                                ? 'bg-slate-900 hover:bg-slate-800'
+                                : 'bg-primary hover:bg-primary/90'
                                 }`}
                         >
                             {adding ? (
