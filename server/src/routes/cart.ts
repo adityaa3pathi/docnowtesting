@@ -95,15 +95,9 @@ router.post('/items', authMiddleware, async (req: AuthRequest, res: Response) =>
             cart = await prisma.cart.create({ data: { userId: req.userId! } });
         }
 
-        // 4. Check duplicate
-        const existingItem = await prisma.cartItem.findFirst({
-            where: { cartId: cart.id, testCode }
-        });
-
-        if (existingItem) {
-            res.status(409).json({ error: 'Item already in cart' });
-            return;
-        }
+        // 4. Allow duplicate items (for multi-patient booking)
+        // We do NOT check for existing item.
+        // Each add call creates a new row, allowing user to assign different patients later.
 
         // 5. Create cart item with server-side data
         const cartItem = await prisma.cartItem.create({
