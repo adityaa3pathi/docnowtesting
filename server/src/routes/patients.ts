@@ -1,9 +1,19 @@
 import express, { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { z } from 'zod';
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+const ALLOWED_RELATIONS = ['Spouse', 'Child', 'Parent', 'Grand parent', 'Sibling', 'Friend', 'Native', 'Neighbour', 'Colleague', 'Others'] as const;
+
+const patientSchema = z.object({
+    name: z.string().min(1, 'Name is required'),
+    relation: z.enum(ALLOWED_RELATIONS, { message: `Relation must be one of: ${ALLOWED_RELATIONS.join(', ')}` }),
+    age: z.number().int().min(5, 'Family member must be at least 5 years old').max(150, 'Invalid age'),
+    gender: z.enum(['Male', 'Female', 'Other'], { message: 'Gender must be Male, Female, or Other' }),
+});
 
 // GET /api/profile/patients - Get all family members
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
@@ -23,52 +33,24 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 // POST /api/profile/patients - Add new family member
 router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-        const { name, relation, age, gender } = req.body;
-
-        // Validate required fields
-        if (!name || !relation || !age || !gender) {
-            res.status(400).json({ error: 'All fields (name, relation, age, gender) are required' });
-            return;
-        }
-
-        // Validate age
-        if (typeof age !== 'number' || age < 0 || age > 150) {
-            res.status(400).json({ error: 'Invalid age' });
-            return;
-        }
-
-        // Validate gender
-        if (!['Male', 'Female', 'Other'].includes(gender)) {
-            res.status(400).json({ error: 'Gender must be Male, Female, or Other' });
-            return;
-        }
-
-        // Validate relation
-        const allowedRelations = ['Spouse', 'Child', 'Parent', 'Grand parent', 'Sibling', 'friend', 'Native', 'Neighbour', 'Colleague', 'Others'];
-        if (!allowedRelations.includes(relation)) {
-            res.status(400).json({ error: `Relation must be one of: ${allowedRelations.join(', ')}` });
-            return;
-        }
+        const data = patientSchema.parse(req.body);
 
         const patient = await prisma.patient.create({
             data: {
                 userId: req.userId!,
-                name,
-                relation,
-                age,
-                gender
+                ...data
             }
         });
-
-        // ... (rest of create logic) ...
-
-
 
         res.status(201).json({
             message: 'Family member added successfully',
             patient
         });
     } catch (error) {
+        if (error instanceof z.ZodError) {
+            res.status(400).json({ error: error.issues[0].message });
+            return;
+        }
         console.error('Create Patient Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
@@ -95,31 +77,7 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
             return;
         }
 
-        // Build update data
-        const updateData: any = {};
-        if (name) updateData.name = name;
-        if (relation) {
-            const allowedRelations = ['Spouse', 'Child', 'Parent', 'Grand parent', 'Sibling', 'friend', 'Native', 'Neighbour', 'Colleague', 'Others'];
-            if (!allowedRelations.includes(relation)) {
-                res.status(400).json({ error: `Relation must be one of: ${allowedRelations.join(', ')}` });
-                return;
-            }
-            updateData.relation = relation;
-        }
-        if (age !== undefined) {
-            if (typeof age !== 'number' || age < 0 || age > 150) {
-                res.status(400).json({ error: 'Invalid age' });
-                return;
-            }
-            updateData.age = age;
-        }
-        if (gender) {
-            if (!['Male', 'Female', 'Other'].includes(gender)) {
-                res.status(400).json({ error: 'Gender must be Male, Female, or Other' });
-                return;
-            }
-            updateData.gender = gender;
-        }
+        const updateData = patientSchema.parse(req.body);
 
         const updatedPatient = await prisma.patient.update({
             where: { id },
@@ -131,6 +89,10 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
             patient: updatedPatient
         });
     } catch (error) {
+        if (error instanceof z.ZodError) {
+            res.status(400).json({ error: error.issues[0].message });
+            return;
+        }
         console.error('Update Patient Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }

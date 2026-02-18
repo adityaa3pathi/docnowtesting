@@ -13,6 +13,7 @@ datasource db {
 
 enum Role {
   USER
+  MANAGER
   SUPER_ADMIN
 }
 
@@ -40,11 +41,13 @@ enum RewardStatus {
 enum PaymentStatus {
   INITIATED       // Order created, awaiting payment
   AUTHORIZED      // Payment verified, partner booking pending
-  PAID            // Payment successful but maybe not yet booked with partner?
-  CONFIRMED       // Partner booking success & Payment success
+  PAID            // Zero-amount: fully covered by wallet/promo
+  CONFIRMED       // Partner booking success & payment success
   PARTNER_FAILED  // Payment OK, partner API failed
-  FAILED          // Payment failed
+  FAILED          // Payment failed or signature invalid
   CANCELLED       // User cancelled or system rollback
+  EXPIRED         // Abandoned: no payment within TTL
+  REFUNDED        // Max partner retries exhausted, money returned
 }
 
 // ============================================
@@ -132,20 +135,27 @@ model Booking {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   addressId         String?
+  billingName       String?           // Optional billing name for invoice
+  billingGender     String?           // Gender of billing person (for Healthians)
+  idempotencyKey    String?       @unique  // Prevent double-initiate
   address           Address?      @relation(fields: [addressId], references: [id])
   user              User          @relation(fields: [userId], references: [id])
   items             BookingItem[]
   reports           Report[]
   rescheduledToId   String?       @unique
+  partnerRetry      PartnerRetry?
 
-  // Price Breakdown (New)
-  discountAmount    Float         @default(0) // Promo Discount
-  walletAmount      Float         @default(0) // Wallet Used
-  finalAmount       Float         @default(0) // Payable Amount
+  // Price Breakdown
+  discountAmount    Float         @default(0)
+  walletAmount      Float         @default(0)
+  finalAmount       Float         @default(0)
   
   promoCodeId       String?
   promoCode         PromoCode?    @relation(fields: [promoCodeId], references: [id])
   redemption        PromoRedemption?
+
+  @@index([paymentStatus, updatedAt])     // Reconciler queries
+  @@index([userId, paymentStatus])        // Active booking check
 }
 
 model BookingItem {
@@ -231,7 +241,7 @@ model WalletLedger {
   wallet        Wallet     @relation(fields: [walletId], references: [id])
   
   @@index([walletId, createdAt])
-  @@index([referenceType, referenceId])
+  @@unique([referenceType, referenceId]) // Prevent double-refund at DB level
 }
 
 // ============================================
@@ -317,6 +327,7 @@ model PromoCode {
   minOrderValue   Float    @default(0)
   
   maxRedemptions  Int?     // Global limit (null = unlimited)
+  maxPerUser      Int      @default(1) // Per-user limit (how many times each user can redeem)
   redeemedCount   Int      @default(0) // Atomic counter
   
   startsAt        DateTime @default(now())
@@ -346,4 +357,87 @@ model PromoRedemption {
 enum DiscountType {
   PERCENTAGE
   FLAT
+}
+
+// ============================================
+// PARTNER RETRY QUEUE (Dead-letter pattern)
+// ============================================
+
+model PartnerRetry {
+  id          String   @id @default(uuid())
+  bookingId   String   @unique
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(3)
+  lastError   String?
+  nextRetryAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+
+  @@index([nextRetryAt, attempts])
+}
+
+// ============================================
+// INTERNAL CATALOG (Manager-controlled)
+// ============================================
+
+enum CatalogItemType {
+  TEST
+  PACKAGE
+  PROFILE
+}
+
+model CatalogItem {
+  id               String             @id @default(uuid())
+  partnerCode      String             @unique   // Healthians deal_id — canonical key
+  name             String
+  type             CatalogItemType    @default(TEST)
+  
+  // Pricing: manager-set
+  partnerPrice     Float              // Healthians base price (reference only)
+  displayPrice     Float              // Manager price shown to users
+  discountedPrice  Float?             // Optional sale price
+  
+  // Metadata
+  description      String?
+  parameters       String?            // e.g. "Includes 60+ parameters"
+  sampleType       String?            // e.g. "Blood"
+  reportTime       String?            // e.g. "24-48 hours"
+  partnerData      Json?              // Raw Healthians response for reference
+  
+  isEnabled        Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  
+  categories       CatalogItemCategory[]
+  
+  @@index([isEnabled])
+  @@index([type, isEnabled])
+}
+
+model Category {
+  id          String              @id @default(uuid())
+  name        String              @unique
+  slug        String              @unique
+  description String?
+  sortOrder   Int                 @default(0)
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  
+  items       CatalogItemCategory[]
+  
+  @@index([isActive, sortOrder])
+}
+
+model CatalogItemCategory {
+  id            String      @id @default(uuid())
+  catalogItemId String
+  categoryId    String
+  sortOrder     Int         @default(0)
+  
+  catalogItem   CatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+  category      Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  @@unique([catalogItemId, categoryId])
+  @@index([categoryId, sortOrder])
 }

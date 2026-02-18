@@ -1,11 +1,9 @@
 import express, { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
-
+import { prisma } from '../db';
 const router = express.Router();
-const prisma = new PrismaClient();
 
-// GET /api/cart - Get user's cart with all items
+// GET /api/cart - Get user's cart with all items + availability status
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         let cart = await prisma.cart.findUnique({
@@ -14,11 +12,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
                 items: {
                     include: {
                         patient: {
-                            select: {
-                                id: true,
-                                name: true,
-                                relation: true
-                            }
+                            select: { id: true, name: true, relation: true }
                         }
                     },
                     orderBy: { createdAt: 'desc' }
@@ -26,7 +20,6 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
             }
         });
 
-        // Create cart if doesn't exist
         if (!cart) {
             cart = await prisma.cart.create({
                 data: { userId: req.userId! },
@@ -34,11 +27,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
                     items: {
                         include: {
                             patient: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    relation: true
-                                }
+                                select: { id: true, name: true, relation: true }
                             }
                         }
                     }
@@ -46,7 +35,24 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
             });
         }
 
-        res.status(200).json(cart);
+        // Annotate each item with current catalog availability
+        const testCodes = cart.items.map(i => i.testCode);
+        const catalogItems = await prisma.catalogItem.findMany({
+            where: { partnerCode: { in: testCodes } },
+            select: { partnerCode: true, isEnabled: true, displayPrice: true, discountedPrice: true, name: true }
+        });
+        const catalogMap = new Map(catalogItems.map(c => [c.partnerCode, c]));
+
+        const annotatedItems = cart.items.map(item => {
+            const catalogEntry = catalogMap.get(item.testCode);
+            return {
+                ...item,
+                isAvailable: catalogEntry?.isEnabled ?? false,
+                currentPrice: catalogEntry ? (catalogEntry.discountedPrice ?? catalogEntry.displayPrice) : item.price
+            };
+        });
+
+        res.status(200).json({ ...cart, items: annotatedItems });
     } catch (error) {
         console.error('Get Cart Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -54,33 +60,44 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 });
 
 // POST /api/cart/items - Add item to cart
+// Security: validates against internal catalog, enforces server-side price
 router.post('/items', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-        const { testCode, testName, price, mrp, patientId } = req.body;
+        const { testCode, patientId } = req.body;
 
-        // Validate required fields
-        if (!testCode || !testName || price === undefined) {
-            res.status(400).json({ error: 'testCode, testName, and price are required' });
+        if (!testCode) {
+            res.status(400).json({ error: 'testCode is required' });
             return;
         }
 
-        // Get or create cart
-        let cart = await prisma.cart.findUnique({
-            where: { userId: req.userId }
+        // 1. Validate against internal catalog
+        const catalogItem = await prisma.catalogItem.findUnique({
+            where: { partnerCode: testCode }
         });
 
-        if (!cart) {
-            cart = await prisma.cart.create({
-                data: { userId: req.userId! }
-            });
+        if (!catalogItem) {
+            res.status(404).json({ error: 'Product not found in catalog' });
+            return;
         }
 
-        // Check if item already exists in cart
+        if (!catalogItem.isEnabled) {
+            res.status(400).json({ error: 'This product is currently unavailable', code: 'ITEM_DISABLED' });
+            return;
+        }
+
+        // 2. Use server-side price (ignore client-sent price)
+        const serverPrice = catalogItem.discountedPrice ?? catalogItem.displayPrice;
+        const serverMrp = catalogItem.discountedPrice ? catalogItem.displayPrice : null;
+
+        // 3. Get or create cart
+        let cart = await prisma.cart.findUnique({ where: { userId: req.userId } });
+        if (!cart) {
+            cart = await prisma.cart.create({ data: { userId: req.userId! } });
+        }
+
+        // 4. Check duplicate
         const existingItem = await prisma.cartItem.findFirst({
-            where: {
-                cartId: cart.id,
-                testCode: testCode
-            }
+            where: { cartId: cart.id, testCode }
         });
 
         if (existingItem) {
@@ -88,24 +105,18 @@ router.post('/items', authMiddleware, async (req: AuthRequest, res: Response) =>
             return;
         }
 
-        // Add item to cart
+        // 5. Create cart item with server-side data
         const cartItem = await prisma.cartItem.create({
             data: {
                 cartId: cart.id,
                 testCode,
-                testName,
-                price: parseFloat(price.toString()),
-                mrp: mrp ? parseFloat(mrp.toString()) : null,
+                testName: catalogItem.name,
+                price: serverPrice,
+                mrp: serverMrp,
                 patientId: patientId || null
             },
             include: {
-                patient: {
-                    select: {
-                        id: true,
-                        name: true,
-                        relation: true
-                    }
-                }
+                patient: { select: { id: true, name: true, relation: true } }
             }
         });
 

@@ -1,6 +1,6 @@
 // Admin Controllers — Barrel Export
 export { getDashboardStats, getRevenueTrend, getHighValueOrders } from './stats';
-export { listUsers, getUserDetails, updateUserStatus } from './users';
+export { listUsers, getUserDetails, updateUserStatus, updateUserRole } from './users';
 export { getConfigs, updateConfig } from './config';
 export { adjustWallet, getWalletLedger } from './wallets';
 export { getReferralStats } from './referrals';

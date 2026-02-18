@@ -20,6 +20,7 @@ import slotRoutes from './routes/slots';
 import bookingRoutes from './routes/bookings';
 import adminRoutes from './routes/admin';
 import paymentRoutes, { webhookHandler } from './routes/payments';
+import managerRoutes from './routes/manager';
 
 
 
@@ -49,6 +50,7 @@ app.use('/api/slots', slotRoutes);
 console.log('Mounting /api/bookings. bookingRoutes type:', typeof bookingRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/manager', managerRoutes);
 app.use('/api/payments', paymentRoutes);
 
 app.get('/', (req, res) => {
@@ -72,6 +74,9 @@ app.get('/debug/ip', async (req, res) => {
 
 // export const prisma = new PrismaClient();
 
+import { startReconciler } from './workers/reconciler';
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    startReconciler();
 });

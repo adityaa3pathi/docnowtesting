@@ -42,29 +42,18 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 // PUT /api/profile - Update user profile
 router.put('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-        const { name, email, gender, age } = req.body;
+        const { gender, age } = req.body;
 
         // Validate at least one field is provided
-        if (!name && !email && !gender && !age) {
+        if (!gender && !age) {
             res.status(400).json({ error: 'At least one field to update is required' });
             return;
         }
 
+        // Note: name and email are immutable after registration
         const updateData: any = {};
-        if (name) updateData.name = name;
         if (gender) updateData.gender = gender;
         if (age) updateData.age = parseInt(age);
-        if (email) {
-            // Check if email is already taken by another user
-            const existingUser = await prisma.user.findUnique({
-                where: { email }
-            });
-            if (existingUser && existingUser.id !== req.userId) {
-                res.status(409).json({ error: 'Email already in use' });
-                return;
-            }
-            updateData.email = email;
-        }
 
         const updatedUser = await prisma.user.update({
             where: { id: req.userId },

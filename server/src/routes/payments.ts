@@ -2,10 +2,12 @@ import { Router, Response, Request } from 'express';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { AuthRequest, authMiddleware } from '../middleware/auth';
+import { rateLimiter } from '../middleware/rateLimiter';
 import { prisma } from '../db';
 import { HealthiansAdapter } from '../adapters/healthians';
 import { normalizeGender } from '../utils/helpers';
 import { calculateDiscount } from '../utils/promoHelper';
+import { assertTransition } from '../utils/paymentStateMachine';
 
 const router = Router();
 const healthians = HealthiansAdapter.getInstance();
@@ -38,8 +40,9 @@ const getRazorpay = () => {
 // POST /api/payments/initiate
 // Creates Booking + Locks Promo + Deducts Wallet + Creates Razorpay Order
 // ============================================
-router.post('/initiate', authMiddleware, async (req: AuthRequest, res: Response) => {
-    const { slot_id, addressId, promoCode: rawPromoCode, useWallet } = req.body;
+router.post('/initiate', authMiddleware, rateLimiter(1, 10, 'initiate'), async (req: AuthRequest, res: Response) => {
+    const { slot_id, slotLabel, slotDate: clientSlotDate, addressId, promoCode: rawPromoCode, useWallet, billingPatientId } = req.body;
+    const idempotencyKey = (req.headers['x-idempotency-key'] as string) || req.body.idempotencyKey;
     const userId = req.userId!;
 
     // Normalize promo code
@@ -51,15 +54,31 @@ router.post('/initiate', authMiddleware, async (req: AuthRequest, res: Response)
 
     try {
 
-        // 1. Fetch Prerequisites (User, Cart, Address)
-        const [user, cart, address] = await Promise.all([
+        // 0. Idempotency: Return existing booking if key matches
+        if (idempotencyKey) {
+            const existing = await prisma.booking.findUnique({
+                where: { idempotencyKey }
+            });
+            if (existing && ['INITIATED', 'AUTHORIZED', 'CONFIRMED', 'PAID'].includes(existing.paymentStatus)) {
+                console.log('[Payments] Idempotent hit — returning existing booking:', existing.id);
+                return res.json({
+                    bookingId: existing.id,
+                    razorpayOrderId: existing.razorpayOrderId,
+                    amount: existing.finalAmount * 100,
+                    currency: 'INR',
+                    keyId: process.env.RAZORPAY_KEY_ID,
+                    idempotent: true
+                });
+            }
+        }
+
+        // 1. Fetch Prerequisites (User, Address — NOT cart, cart moves into tx)
+        const [user, address] = await Promise.all([
             prisma.user.findUnique({ where: { id: userId }, include: { wallet: true } }),
-            prisma.cart.findUnique({ where: { userId }, include: { items: { include: { patient: true } } } }),
             prisma.address.findUnique({ where: { id: addressId } })
         ]);
 
         if (!user || !address) return res.status(404).json({ error: 'User or Address not found' });
-        if (!cart || cart.items.length === 0) return res.status(400).json({ error: 'Cart is empty' });
 
         // Validate profile
         if (!user.name || !user.gender || !user.age) {
@@ -70,9 +89,32 @@ router.post('/initiate', authMiddleware, async (req: AuthRequest, res: Response)
             });
         }
 
-        // 2. Core Calculation & Transaction
-        const { booking, razorpayOrder, finalAmount, currency } = await prisma.$transaction(async (tx) => {
-            // A. Calculate Base Total
+        // 2. Core Calculation & Transaction (NO network calls inside tx)
+        //    Cart is now read INSIDE the transaction for price consistency
+        const { booking, finalAmount } = await prisma.$transaction(async (tx) => {
+            // A. Read cart inside tx — prevents TOCTOU (prices changing between read and booking)
+            const cart = await tx.cart.findUnique({
+                where: { userId },
+                include: { items: { include: { patient: true } } }
+            });
+            if (!cart || cart.items.length === 0) throw new Error('Cart is empty');
+
+            // A2. Checkout guard: validate all cart items against internal catalog
+            const testCodes = cart.items.map(i => i.testCode);
+            const catalogItems = await tx.catalogItem.findMany({
+                where: { partnerCode: { in: testCodes } },
+                select: { partnerCode: true, isEnabled: true, name: true }
+            });
+            const catalogMap = new Map(catalogItems.map(c => [c.partnerCode, c]));
+            const disabledItems = cart.items.filter(item => {
+                const cat = catalogMap.get(item.testCode);
+                return !cat || !cat.isEnabled;
+            });
+            if (disabledItems.length > 0) {
+                throw new Error(`DISABLED_ITEMS:${JSON.stringify(disabledItems.map(i => ({ testCode: i.testCode, testName: i.testName })))}`);
+            }
+
+            // B. Calculate Base Total
             const totalAmount = cart.items.reduce((sum, item) => sum + item.price, 0);
             let discountAmount = 0;
             let walletAmount = 0;
@@ -169,22 +211,36 @@ router.post('/initiate', authMiddleware, async (req: AuthRequest, res: Response)
                 selfPatientId = selfPatient.id;
             }
 
-            // E. Create Booking
+            // E. Resolve billing name if a patient was selected
+            let billingName: string | null = null;
+            let billingGender: string | null = null;
+            if (billingPatientId) {
+                const billingPatient = await tx.patient.findUnique({ where: { id: billingPatientId } });
+                if (billingPatient && billingPatient.userId === userId) {
+                    billingName = billingPatient.name;
+                    billingGender = billingPatient.gender;
+                }
+            }
+
+            // F. Create Booking
             const finalAmount = Math.max(0, totalAmount - discountAmount - walletAmount);
 
             const newBooking = await tx.booking.create({
                 data: {
                     userId,
                     addressId,
+                    billingName,
+                    billingGender,
                     status: 'PENDING',
                     paymentStatus: 'INITIATED',
-                    slotDate: new Date().toISOString().split('T')[0],
-                    slotTime: slot_id,
+                    slotDate: clientSlotDate || new Date().toISOString().split('T')[0],
+                    slotTime: slotLabel || slot_id,
                     totalAmount,
                     discountAmount,
                     walletAmount,
                     finalAmount,
                     promoCodeId,
+                    idempotencyKey: idempotencyKey || undefined,
                     items: {
                         create: cart.items.map(item => ({
                             patientId: item.patientId || selfPatientId!,
@@ -207,16 +263,17 @@ router.post('/initiate', authMiddleware, async (req: AuthRequest, res: Response)
                 });
             }
 
-            // F. Update Ledger Reference (if wallet used)
+            // F. Wallet Ledger Entry (with accurate post-decrement balance)
             if (walletAmount > 0 && user.wallet) {
-                // We can't update the ledger entry created above easily without ID.
-                // Better to create ledger entry HERE after booking.
+                // Read actual post-decrement balance (not stale cached value)
+                const updatedWallet = await tx.wallet.findUnique({ where: { id: user.wallet.id } });
+
                 await tx.walletLedger.create({
                     data: {
                         walletId: user.wallet.id,
                         type: 'DEBIT',
                         amount: -walletAmount,
-                        balanceAfter: user.wallet.balance - walletAmount, // Note: using cached balance from read
+                        balanceAfter: updatedWallet!.balance, // Accurate post-decrement
                         description: `Used for booking #${newBooking.id.slice(0, 8)}`,
                         referenceType: 'ORDER',
                         referenceId: newBooking.id
@@ -224,25 +281,8 @@ router.post('/initiate', authMiddleware, async (req: AuthRequest, res: Response)
                 });
             }
 
-            // G. Create Razorpay Order (if amount > 0)
-            let razorpayOrder = null;
-            if (finalAmount > 0) {
-                const rzp = getRazorpay();
-                const options = {
-                    amount: Math.round(finalAmount * 100), // paise
-                    currency: 'INR',
-                    receipt: newBooking.id,
-                    notes: { bookingId: newBooking.id }
-                };
-                razorpayOrder = await rzp.orders.create(options);
-
-                // H. Update Booking with Order ID
-                await tx.booking.update({
-                    where: { id: newBooking.id },
-                    data: { razorpayOrderId: razorpayOrder.id }
-                });
-            } else {
-                // Zero amount (100% discount or wallet) — unique ID per booking
+            // G. Zero-amount path (100% discount or wallet covers everything)
+            if (finalAmount === 0) {
                 await tx.booking.update({
                     where: { id: newBooking.id },
                     data: {
@@ -253,17 +293,59 @@ router.post('/initiate', authMiddleware, async (req: AuthRequest, res: Response)
                 });
             }
 
-            return { booking: newBooking, razorpayOrder, finalAmount, currency: 'INR' };
+            return { booking: newBooking, finalAmount, currency: 'INR' };
         }, {
             maxWait: 5000,
             timeout: 10000
         });
+
+        // ═══════════════════════════════════════════════════════
+        // OUTSIDE TRANSACTION: Network calls are safe here
+        // Razorpay order creation must NOT be inside the DB tx,
+        // otherwise a slow Razorpay response holds DB connections
+        // and can cause connection pool starvation under load.
+        // ═══════════════════════════════════════════════════════
+        if (finalAmount > 0) {
+            let razorpayOrder;
+            try {
+                razorpayOrder = await getRazorpay().orders.create({
+                    amount: Math.round(finalAmount * 100),
+                    currency: 'INR',
+                    receipt: booking.id,
+                    notes: { bookingId: booking.id }
+                });
+
+                await prisma.booking.update({
+                    where: { id: booking.id },
+                    data: { razorpayOrderId: razorpayOrder.id }
+                });
+            } catch (rzpError: any) {
+                // Razorpay failed — rollback wallet + promo, mark FAILED
+                console.error('[Payments] Razorpay order creation failed:', rzpError.message);
+                assertTransition('INITIATED' as any, 'FAILED' as any);
+                await prisma.booking.update({
+                    where: { id: booking.id },
+                    data: { paymentStatus: 'FAILED' }
+                });
+                await rollbackInitiatedBooking(booking);
+                return res.status(500).json({ error: 'Payment gateway error. Please try again.' });
+            }
+
+            return res.json({
+                bookingId: booking.id,
+                razorpayOrderId: razorpayOrder.id,
+                amount: finalAmount * 100,
+                currency: 'INR',
+                keyId: process.env.RAZORPAY_KEY_ID
+            });
+        }
 
         // Handle Zero Amount - Instant Confirmation
         if (finalAmount === 0) {
             console.log('[Payments] Zero amount booking, confirming immediately:', booking.id);
             try {
                 const partnerResult = await createHealthiansBooking(booking, userId, slot_id);
+                assertTransition('PAID' as any, 'CONFIRMED' as any);
                 await prisma.booking.update({
                     where: { id: booking.id },
                     data: {
@@ -284,10 +366,16 @@ router.post('/initiate', authMiddleware, async (req: AuthRequest, res: Response)
                 });
             } catch (error) {
                 console.error('[Payments] Partner booking failed for zero amount:', error);
-                // Keep as PAID, admin will follow-up via PARTNER_FAILED dashboard
+                assertTransition('PAID' as any, 'PARTNER_FAILED' as any);
                 await prisma.booking.update({
                     where: { id: booking.id },
                     data: { paymentStatus: 'PARTNER_FAILED', partnerError: (error as Error).message || 'Partner API failed' }
+                });
+                // Enqueue for retry
+                await prisma.partnerRetry.upsert({
+                    where: { bookingId: booking.id },
+                    create: { bookingId: booking.id, nextRetryAt: new Date(Date.now() + 60_000), lastError: (error as Error).message },
+                    update: {}
                 });
                 // Still clear cart — booking exists, user shouldn't re-order
                 await prisma.cartItem.deleteMany({ where: { cart: { userId } } });
@@ -299,16 +387,22 @@ router.post('/initiate', authMiddleware, async (req: AuthRequest, res: Response)
             }
         }
 
-        res.json({
-            bookingId: booking.id,
-            razorpayOrderId: razorpayOrder!.id,
-            amount: finalAmount * 100,
-            currency: currency || 'INR',
-            keyId: process.env.RAZORPAY_KEY_ID
-        });
+        // Should not reach here
+        return res.status(500).json({ error: 'Unexpected flow' });
 
     } catch (error: any) {
         console.error('[Payments] Initiate Error:', error);
+
+        // Checkout guard: return clear error for disabled items
+        if (error.message?.startsWith('DISABLED_ITEMS:')) {
+            const disabledItems = JSON.parse(error.message.replace('DISABLED_ITEMS:', ''));
+            return res.status(400).json({
+                error: 'Cart contains unavailable items. Please remove them before checkout.',
+                code: 'DISABLED_ITEMS',
+                disabledItems
+            });
+        }
+
         res.status(500).json({ error: error.message || 'Payment initiation failed' });
     }
 });
@@ -359,6 +453,7 @@ router.post('/verify', authMiddleware, async (req: AuthRequest, res: Response) =
 
             if (expectedSignature !== razorpay_signature) {
                 console.error('[Payments] SECURITY: Signature mismatch for booking:', bookingId);
+                assertTransition(booking.paymentStatus, 'FAILED');
                 await prisma.booking.update({
                     where: { id: bookingId },
                     data: { paymentStatus: 'FAILED' }
@@ -374,6 +469,7 @@ router.post('/verify', authMiddleware, async (req: AuthRequest, res: Response) =
             const paidAmount = rzpOrder.amount_paid ? Number(rzpOrder.amount_paid) / 100 : Number(rzpOrder.amount) / 100;
             if (Math.abs(paidAmount - booking.finalAmount) > 1) {
                 console.error(`[Payments] Amount mismatch: Paid ${paidAmount}, Expected ${booking.finalAmount}`);
+                assertTransition(booking.paymentStatus, 'FAILED');
                 await prisma.booking.update({
                     where: { id: bookingId },
                     data: { paymentStatus: 'FAILED' }
@@ -388,6 +484,7 @@ router.post('/verify', authMiddleware, async (req: AuthRequest, res: Response) =
             }
 
             // 8. Mark as AUTHORIZED (payment is secured)
+            assertTransition(booking.paymentStatus, 'AUTHORIZED');
             await prisma.booking.update({
                 where: { id: bookingId },
                 data: {
@@ -407,6 +504,8 @@ router.post('/verify', authMiddleware, async (req: AuthRequest, res: Response) =
             const partnerResult = await createHealthiansBooking(booking, userId, booking.slotTime);
 
             // 8. Success - update to CONFIRMED in transaction
+            const currentStatus = alreadyAuthorized ? 'AUTHORIZED' : 'AUTHORIZED';
+            assertTransition(currentStatus as any, 'CONFIRMED');
             await prisma.$transaction(async (tx) => {
                 await tx.booking.update({
                     where: { id: bookingId },
@@ -427,15 +526,23 @@ router.post('/verify', authMiddleware, async (req: AuthRequest, res: Response) =
             return res.json({ status: 'confirmed', bookingId });
 
         } catch (partnerError: any) {
-            // 9. Partner failed - payment is secure, booking needs follow-up
+            // 9. Partner failed - payment is secure, enqueue for retry
             console.error('[Payments] Partner booking failed:', partnerError.message);
 
+            assertTransition('AUTHORIZED' as any, 'PARTNER_FAILED');
             await prisma.booking.update({
                 where: { id: bookingId },
                 data: {
                     paymentStatus: 'PARTNER_FAILED',
                     partnerError: partnerError.message || 'Healthians API failed'
                 }
+            });
+
+            // Enqueue for automatic retry (exponential backoff)
+            await prisma.partnerRetry.upsert({
+                where: { bookingId },
+                create: { bookingId, nextRetryAt: new Date(Date.now() + 60_000), lastError: partnerError.message },
+                update: {}
             });
 
             return res.status(200).json({
@@ -454,7 +561,7 @@ router.post('/verify', authMiddleware, async (req: AuthRequest, res: Response) =
 // ============================================
 // Helper: Create Healthians Booking
 // ============================================
-async function createHealthiansBooking(booking: any, userId: string, slotId?: string) {
+export async function createHealthiansBooking(booking: any, userId: string, slotId?: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     const address = await prisma.address.findUnique({ where: { id: booking.addressId } });
     const cart = await prisma.cart.findUnique({
@@ -520,10 +627,10 @@ async function createHealthiansBooking(booking: any, userId: string, slotId?: st
         slot: { slot_id: slotId || booking.slotTime },
         package: packagesPayload,
         customer_calling_number: user.mobile,
-        billing_cust_name: user.name,
+        billing_cust_name: booking.billingName || user.name,
         gender: normalizeGender(user.gender),
         mobile: user.mobile,
-        billing_gender: normalizeGender(user.gender),
+        billing_gender: normalizeGender(booking.billingGender || user.gender),
         billing_mobile: user.mobile,
         email: user.email || '',
         billing_email: user.email || '',
@@ -641,7 +748,7 @@ export const webhookHandler = async (req: Request, res: Response) => {
 
         if (booking && booking.paymentStatus === 'INITIATED') {
             console.log('[Webhook] Processing payment for booking:', booking.id);
-            // Mark as AUTHORIZED - partner booking will need manual follow-up
+            assertTransition(booking.paymentStatus, 'AUTHORIZED');
             await prisma.booking.update({
                 where: { id: booking.id },
                 data: {
@@ -650,6 +757,39 @@ export const webhookHandler = async (req: Request, res: Response) => {
                     paidAt: new Date()
                 }
             });
+
+            // Step 10: Schedule delayed partner booking fallback
+            // If /verify doesn't handle it within 60s, we trigger partner booking here.
+            // This is faster than waiting for the reconciler's 5-min cycle.
+            const bookingIdForDelay = booking.id;
+            const userIdForDelay = booking.userId;
+            setTimeout(async () => {
+                try {
+                    const freshBooking = await prisma.booking.findUnique({ where: { id: bookingIdForDelay } });
+                    if (freshBooking && freshBooking.paymentStatus === 'AUTHORIZED' && !freshBooking.partnerBookingId) {
+                        console.log('[Webhook] /verify did not complete, triggering partner booking for:', bookingIdForDelay);
+
+                        const partnerResult = await createHealthiansBooking(freshBooking, userIdForDelay, freshBooking.slotTime);
+
+                        assertTransition('AUTHORIZED' as any, 'CONFIRMED');
+                        await prisma.$transaction(async (tx) => {
+                            await tx.booking.update({
+                                where: { id: bookingIdForDelay },
+                                data: {
+                                    paymentStatus: 'CONFIRMED',
+                                    partnerBookingId: partnerResult.booking_id?.toString() || null,
+                                    status: 'Order Booked'
+                                }
+                            });
+                            await tx.cartItem.deleteMany({ where: { cart: { userId: userIdForDelay } } });
+                        });
+                        console.log('[Webhook] Delayed partner booking SUCCESS:', bookingIdForDelay);
+                    }
+                } catch (delayErr: any) {
+                    console.error('[Webhook] Delayed partner booking failed:', delayErr.message);
+                    // The reconciler cron will pick this up on the next cycle
+                }
+            }, 60_000);
         }
     } else if (event === 'payment.failed') {
         const booking = await prisma.booking.findFirst({
@@ -658,6 +798,7 @@ export const webhookHandler = async (req: Request, res: Response) => {
 
         if (booking && booking.paymentStatus === 'INITIATED') {
             console.log('[Webhook] Payment failed for booking:', booking.id);
+            assertTransition(booking.paymentStatus, 'FAILED');
             await prisma.booking.update({
                 where: { id: booking.id },
                 data: { paymentStatus: 'FAILED' }
@@ -672,7 +813,7 @@ export const webhookHandler = async (req: Request, res: Response) => {
 // ============================================
 // Helper: Rollback Initiated Booking (Promo/Wallet)
 // ============================================
-async function rollbackInitiatedBooking(booking: any) {
+export async function rollbackInitiatedBooking(booking: any) {
     if (!booking) return;
 
     try {
