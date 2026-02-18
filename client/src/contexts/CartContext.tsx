@@ -88,11 +88,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
             return true;
         } catch (error: any) {
             console.error('Error adding to cart:', error);
-            if (error.response?.status === 409) {
-                alert('This item is already in your cart');
-            } else {
-                alert('Failed to add item to cart');
-            }
+            // Even if duplicate wasn't an error, we now allow it.
+            // If API returns success, we are good.
+            alert('Failed to add item to cart');
             return false;
         }
     };
