@@ -16,6 +16,7 @@ export default function NewPromoPage() {
         maxDiscount: '',
         minOrderValue: '',
         maxRedemptions: '',
+        maxPerUser: '1',
         startsAt: new Date().toISOString().split('T')[0],
         expiresAt: '',
         isActive: true
@@ -178,6 +179,20 @@ export default function NewPromoPage() {
                                 className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192]"
                                 min="0"
                             />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Max Uses Per User</label>
+                            <input
+                                type="number"
+                                name="maxPerUser"
+                                value={formData.maxPerUser}
+                                onChange={handleChange}
+                                placeholder="1"
+                                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192]"
+                                min="1"
+                            />
+                            <p className="text-xs text-gray-400 mt-1">How many times each user can use this code</p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">

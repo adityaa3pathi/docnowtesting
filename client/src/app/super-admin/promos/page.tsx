@@ -14,6 +14,7 @@ interface PromoCode {
     isActive: boolean;
     redeemedCount: number;
     maxRedemptions?: number;
+    maxPerUser: number;
     expiresAt?: string;
 }
 
@@ -111,6 +112,7 @@ export default function PromosPage() {
                                     <th className="px-6 py-4">Code</th>
                                     <th className="px-6 py-4">Discount</th>
                                     <th className="px-6 py-4">Redeemed</th>
+                                    <th className="px-6 py-4">Per User</th>
                                     <th className="px-6 py-4">Expiry</th>
                                     <th className="px-6 py-4">Status</th>
                                     <th className="px-6 py-4 text-right">Action</th>
@@ -134,6 +136,11 @@ export default function PromosPage() {
                                         <td className="px-6 py-4 text-sm text-gray-600">
                                             <span className="font-medium text-gray-900">{promo.redeemedCount}</span>
                                             {promo.maxRedemptions && <span className="text-gray-400"> / {promo.maxRedemptions}</span>}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium text-xs">
+                                                {promo.maxPerUser}x
+                                            </span>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600">
                                             {promo.expiresAt ? new Date(promo.expiresAt).toLocaleDateString() : 'Never'}

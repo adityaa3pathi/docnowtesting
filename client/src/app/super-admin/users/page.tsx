@@ -12,6 +12,8 @@ import {
     ChevronLeft,
     ChevronRight,
     RefreshCw,
+    Shield,
+    ShieldOff,
 } from 'lucide-react';
 
 interface User {
@@ -19,6 +21,7 @@ interface User {
     name: string | null;
     email: string | null;
     mobile: string;
+    role: 'USER' | 'MANAGER' | 'SUPER_ADMIN';
     status: 'ACTIVE' | 'BLOCKED';
     referralCode: string | null;
     totalOrders: number;
@@ -40,6 +43,7 @@ export default function UsersPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<'All' | 'ACTIVE' | 'BLOCKED'>('All');
+    const [filterRole, setFilterRole] = useState<'All' | 'USER' | 'MANAGER'>('All');
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
     // Wallet modal state
@@ -60,6 +64,7 @@ export default function UsersPage() {
 
             if (searchTerm) params.append('search', searchTerm);
             if (filterStatus !== 'All') params.append('status', filterStatus);
+            if (filterRole !== 'All') params.append('role', filterRole);
 
             const res = await fetch(`/api/admin/users?${params}`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -75,7 +80,7 @@ export default function UsersPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.limit, searchTerm, filterStatus]);
+    }, [pagination.page, pagination.limit, searchTerm, filterStatus, filterRole]);
 
     useEffect(() => {
         fetchUsers();
@@ -116,6 +121,43 @@ export default function UsersPage() {
         } catch (error) {
             console.error('Error updating user status:', error);
             alert('Failed to update user status');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleRoleChange = async (user: User) => {
+        const newRole = user.role === 'MANAGER' ? 'USER' : 'MANAGER';
+        const action = newRole === 'MANAGER' ? 'promote to Manager' : 'demote to User';
+        const confirmMsg = `Are you sure you want to ${action} for ${user.name || user.mobile}?`;
+
+        if (!confirm(confirmMsg)) return;
+
+        setActionLoading(user.id);
+        try {
+            const token = localStorage.getItem('docnow_auth_token');
+            const res = await fetch(`/api/admin/users/${user.id}/role`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ role: newRole }),
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to update role');
+            }
+
+            const result = await res.json();
+            alert(result.message);
+
+            // Update local state
+            setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u));
+        } catch (error: any) {
+            console.error('Error updating user role:', error);
+            alert(error.message || 'Failed to update user role');
         } finally {
             setActionLoading(null);
         }
@@ -240,6 +282,23 @@ export default function UsersPage() {
                             </button>
                         ))}
                     </div>
+                    <div className="flex gap-2">
+                        {(['All', 'USER', 'MANAGER'] as const).map((role) => (
+                            <button
+                                key={role}
+                                onClick={() => {
+                                    setFilterRole(role);
+                                    setPagination(prev => ({ ...prev, page: 1 }));
+                                }}
+                                className={`px-4 py-2 rounded-lg transition-colors ${filterRole === role
+                                    ? 'bg-purple-600 text-white'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                            >
+                                {role === 'All' ? 'All Roles' : role === 'MANAGER' ? '🛡️ Managers' : '👤 Users'}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -263,6 +322,7 @@ export default function UsersPage() {
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Orders</th>
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Wallet</th>
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Referral</th>
@@ -281,6 +341,17 @@ export default function UsersPage() {
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-700">{user.mobile}</td>
                                             <td className="px-6 py-4 text-sm text-gray-700">{user.email || 'N/A'}</td>
+                                            <td className="px-6 py-4">
+                                                <span
+                                                    className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${user.role === 'MANAGER'
+                                                            ? 'bg-purple-100 text-purple-700'
+                                                            : 'bg-gray-100 text-gray-600'
+                                                        }`}
+                                                >
+                                                    {user.role === 'MANAGER' && <Shield size={12} />}
+                                                    {user.role === 'MANAGER' ? 'Manager' : 'User'}
+                                                </span>
+                                            </td>
                                             <td className="px-6 py-4 text-sm text-gray-700">{user.totalOrders}</td>
                                             <td className="px-6 py-4">
                                                 <span className="font-medium text-gray-900">₹{user.walletBalance.toLocaleString('en-IN')}</span>
@@ -313,6 +384,21 @@ export default function UsersPage() {
                                                         title="Adjust Wallet"
                                                     >
                                                         <Wallet size={18} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleRoleChange(user)}
+                                                        disabled={actionLoading === user.id}
+                                                        className={`p-2 rounded-lg transition-colors ${user.role === 'MANAGER'
+                                                                ? 'text-purple-500 hover:text-orange-600 hover:bg-orange-50'
+                                                                : 'text-gray-500 hover:text-purple-600 hover:bg-purple-50'
+                                                            }`}
+                                                        title={user.role === 'MANAGER' ? 'Demote to User' : 'Promote to Manager'}
+                                                    >
+                                                        {user.role === 'MANAGER' ? (
+                                                            <ShieldOff size={18} />
+                                                        ) : (
+                                                            <Shield size={18} />
+                                                        )}
                                                     </button>
                                                     <button
                                                         onClick={() => handleBlockUnblock(user)}
