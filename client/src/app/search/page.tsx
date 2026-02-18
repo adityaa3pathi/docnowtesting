@@ -166,8 +166,8 @@ export default function SearchPage() {
                         <button
                             onClick={() => setSelectedCategory('')}
                             className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold border-2 transition-all duration-200 ${!selectedCategory
-                                    ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
-                                    : 'bg-white text-gray-600 border-gray-200 hover:border-primary/40 hover:bg-primary/5'
+                                ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-primary/40 hover:bg-primary/5'
                                 }`}
                         >
                             All
@@ -182,8 +182,8 @@ export default function SearchPage() {
                                     key={cat.id}
                                     onClick={() => handleCategorySelect(cat.slug)}
                                     className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold border-2 transition-all duration-200 whitespace-nowrap ${selectedCategory === cat.slug
-                                            ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
-                                            : 'bg-white text-gray-600 border-gray-200 hover:border-primary/40 hover:bg-primary/5'
+                                        ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
+                                        : 'bg-white text-gray-600 border-gray-200 hover:border-primary/40 hover:bg-primary/5'
                                         }`}
                                 >
                                     {cat.name}
@@ -325,22 +325,31 @@ function ProductCard({ product }: { product: Product }) {
                         )}
                         <div className="text-2xl font-black text-foreground">₹{offerPrice}</div>
                     </div>
-                    <button
-                        onClick={handleAddToCart}
-                        disabled={adding || isInCart}
-                        className={`p-3 rounded-xl transition-all shadow-lg ${isInCart
-                            ? 'bg-green-500 text-white cursor-not-allowed'
-                            : 'bg-primary hover:bg-primary/90 text-white hover:scale-105 active:scale-95 shadow-primary/20'
-                            }`}
-                    >
-                        {adding ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : isInCart ? (
-                            <Check className="w-5 h-5" />
-                        ) : (
-                            <ShoppingCart className="w-5 h-5" />
+                    <div className="flex items-center gap-3">
+                        {isInCart && (
+                            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-bold uppercase tracking-wider border border-green-200">
+                                <Check className="w-3.5 h-3.5" />
+                                {cart?.items.filter(i => i.testCode === product.partnerCode).length} Added
+                            </div>
                         )}
-                    </button>
+                        <button
+                            onClick={handleAddToCart}
+                            disabled={adding}
+                            className={`p-3 rounded-xl transition-all shadow-lg text-white hover:scale-105 active:scale-95 shadow-primary/20 ${isInCart
+                                    ? 'bg-slate-900 hover:bg-slate-800'
+                                    : 'bg-primary hover:bg-primary/90'
+                                }`}
+                        >
+                            {adding ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <ShoppingCart className="w-5 h-5" />
+                                    {isInCart && <span className="text-sm font-bold">+1</span>}
+                                </div>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
