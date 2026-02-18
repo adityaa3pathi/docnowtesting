@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { ShoppingCart, User, Menu, X, MapPin, Search, Navigation, Loader2 } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, MapPin, Search, Navigation, Loader2, Shield } from 'lucide-react';
 import { Button, Input } from './ui';
 import { useState } from 'react';
 import {
@@ -314,6 +314,25 @@ export function Header() {
                                 <DropdownMenuItem>
                                     <ShoppingCart className="w-4 h-4 mr-2" /> My Bookings
                                 </DropdownMenuItem>
+                                {(user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN') && (
+                                    <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/manager" className="flex items-center gap-2 w-full cursor-pointer">
+                                                <Shield className="w-4 h-4 text-teal-600" />
+                                                <span className="font-medium text-teal-700">Manager Dashboard</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                                {user?.role === 'SUPER_ADMIN' && (
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/super-admin" className="flex items-center gap-2 w-full cursor-pointer">
+                                            <Shield className="w-4 h-4 text-purple-600" />
+                                            <span className="font-medium text-purple-700">Admin Panel</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                     className="text-destructive focus:bg-destructive/5 focus:text-destructive"

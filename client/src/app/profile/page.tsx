@@ -31,6 +31,7 @@ export default function ProfilePage() {
     }
 
     const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+    const isManager = user?.role === 'MANAGER';
 
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
@@ -76,16 +77,25 @@ export default function ProfilePage() {
                                 />
                             </nav>
 
-                            {/* Super Admin Panel Link */}
-                            {isSuperAdmin && (
-                                <div className="p-2 pt-0 border-t border-gray-100 mt-2">
+                            {/* Manager / Admin Panel Links */}
+                            {(isManager || isSuperAdmin) && (
+                                <div className="p-2 pt-0 border-t border-gray-100 mt-2 space-y-2">
                                     <Link
-                                        href="/super-admin"
-                                        className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
+                                        href="/manager"
+                                        className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors bg-gradient-to-r from-teal-600 to-emerald-600 text-white hover:from-teal-700 hover:to-emerald-700"
                                     >
                                         <Shield className="w-4 h-4" />
-                                        Admin Panel
+                                        Manager Dashboard
                                     </Link>
+                                    {isSuperAdmin && (
+                                        <Link
+                                            href="/super-admin"
+                                            className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
+                                        >
+                                            <Shield className="w-4 h-4" />
+                                            Admin Panel
+                                        </Link>
+                                    )}
                                 </div>
                             )}
                         </div>
