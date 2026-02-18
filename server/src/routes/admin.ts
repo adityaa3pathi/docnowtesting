@@ -3,7 +3,7 @@ import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { requireSuperAdmin } from '../middleware/adminAuth';
 import {
     getDashboardStats, getRevenueTrend, getHighValueOrders,
-    listUsers, getUserDetails, updateUserStatus,
+    listUsers, getUserDetails, updateUserStatus, updateUserRole,
     getConfigs, updateConfig,
     adjustWallet, getWalletLedger,
     getReferralStats,
@@ -38,6 +38,7 @@ router.get('/stats/high-value', ...admin, getHighValueOrders);
 router.get('/users', ...admin, listUsers);
 router.get('/users/:id', ...admin, getUserDetails);
 router.put('/users/:id/status', ...admin, updateUserStatus);
+router.put('/users/:id/role', ...admin, updateUserRole);
 
 // ── System Config ──────────────────────────────────────
 router.get('/config', ...admin, getConfigs);

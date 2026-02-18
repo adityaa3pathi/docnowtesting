@@ -35,7 +35,7 @@ export async function createPromo(req: AuthRequest, res: Response) {
     try {
         const {
             code, description, discountType, discountValue,
-            maxDiscount, minOrderValue, maxRedemptions,
+            maxDiscount, minOrderValue, maxRedemptions, maxPerUser,
             startsAt, expiresAt
         } = req.body;
 
@@ -57,6 +57,7 @@ export async function createPromo(req: AuthRequest, res: Response) {
                 maxDiscount: maxDiscount ? parseFloat(maxDiscount) : null,
                 minOrderValue: minOrderValue ? parseFloat(minOrderValue) : 0,
                 maxRedemptions: maxRedemptions ? parseInt(maxRedemptions) : null,
+                maxPerUser: maxPerUser ? parseInt(maxPerUser) : 1,
                 startsAt: startsAt ? new Date(startsAt) : new Date(),
                 expiresAt: expiresAt ? new Date(expiresAt) : null,
                 isActive: true
@@ -88,13 +89,14 @@ export async function createPromo(req: AuthRequest, res: Response) {
 export async function updatePromo(req: AuthRequest, res: Response) {
     try {
         const id = req.params.id as string;
-        const { isActive, expiresAt } = req.body;
+        const { isActive, expiresAt, maxPerUser } = req.body;
 
         const promo = await prisma.promoCode.update({
             where: { id },
             data: {
                 isActive: isActive !== undefined ? isActive : undefined,
-                expiresAt: expiresAt ? new Date(expiresAt) : undefined
+                expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+                maxPerUser: maxPerUser !== undefined ? parseInt(maxPerUser) : undefined
             }
         });
 

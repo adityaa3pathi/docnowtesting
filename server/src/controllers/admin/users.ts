@@ -13,7 +13,15 @@ export async function listUsers(req: AuthRequest, res: Response) {
         const search = (req.query.search as string) || '';
         const statusFilter = req.query.status as string;
 
-        const where: any = { role: 'USER' };
+        const roleFilter = req.query.role as string;
+        const where: any = {};
+
+        // Filter by role: default to USER+MANAGER, or specific role if provided
+        if (roleFilter && ['USER', 'MANAGER'].includes(roleFilter)) {
+            where.role = roleFilter;
+        } else {
+            where.role = { in: ['USER', 'MANAGER'] };
+        }
 
         if (search) {
             where.OR = [
@@ -49,6 +57,7 @@ export async function listUsers(req: AuthRequest, res: Response) {
             name: u.name,
             email: u.email,
             mobile: u.mobile,
+            role: u.role,
             status: u.status,
             referralCode: u.referralCode,
             totalOrders: u._count.bookings,
@@ -83,7 +92,14 @@ export async function getUserDetails(req: AuthRequest, res: Response) {
                 },
                 bookings: {
                     orderBy: { createdAt: 'desc' },
-                    take: 10
+                    take: 50,
+                    include: {
+                        items: {
+                            include: { patient: true }
+                        },
+                        reports: true,
+                        address: true
+                    }
                 },
                 referredBy: true,
                 _count: { select: { referrals: true } }
@@ -100,6 +116,7 @@ export async function getUserDetails(req: AuthRequest, res: Response) {
                 name: user.name,
                 email: user.email,
                 mobile: user.mobile,
+                role: user.role,
                 status: user.status,
                 referralCode: user.referralCode,
                 createdAt: user.createdAt
@@ -164,5 +181,68 @@ export async function updateUserStatus(req: AuthRequest, res: Response) {
     } catch (error) {
         console.error('[Admin] Error updating user status:', error);
         res.status(500).json({ error: 'Failed to update user status' });
+    }
+}
+
+/**
+ * PUT /api/admin/users/:id/role — Promote/Demote user role (SUPER_ADMIN only)
+ * Body: { role: 'USER' | 'MANAGER' }
+ */
+export async function updateUserRole(req: AuthRequest, res: Response) {
+    try {
+        const userId = req.params.id as string;
+        const { role } = req.body;
+
+        // Only allow setting USER or MANAGER (can't create SUPER_ADMINs via API)
+        if (!['USER', 'MANAGER'].includes(role)) {
+            return res.status(400).json({ error: 'Invalid role. Must be USER or MANAGER' });
+        }
+
+        // Prevent self-demotion
+        if (userId === req.adminId) {
+            return res.status(400).json({ error: 'Cannot change your own role' });
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Can't modify other SUPER_ADMINs
+        if (user.role === 'SUPER_ADMIN') {
+            return res.status(403).json({ error: 'Cannot modify a SUPER_ADMIN role' });
+        }
+
+        const oldRole = user.role;
+        const clientIP = getClientIP(req);
+
+        await prisma.$transaction([
+            prisma.user.update({
+                where: { id: userId },
+                data: { role }
+            }),
+            prisma.adminAuditLog.create({
+                data: {
+                    adminId: req.adminId!,
+                    adminName: req.adminName || 'Admin',
+                    action: role === 'MANAGER' ? 'USER_PROMOTED_MANAGER' : 'USER_DEMOTED_FROM_MANAGER',
+                    entity: 'User',
+                    targetId: userId,
+                    oldValue: { role: oldRole },
+                    newValue: { role },
+                    ipAddress: clientIP,
+                    isDestructive: role === 'USER'
+                }
+            })
+        ]);
+
+        res.json({
+            success: true,
+            message: `User role updated to ${role}`,
+            user: { id: userId, name: user.name, mobile: user.mobile, role }
+        });
+    } catch (error) {
+        console.error('[Admin] Error updating user role:', error);
+        res.status(500).json({ error: 'Failed to update user role' });
     }
 }
