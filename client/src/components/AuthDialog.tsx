@@ -8,7 +8,7 @@ import {
     DialogTitle
 } from '@/components/ui/dialog';
 import { Button, Input } from '@/components/ui'; // Imports from components/ui.tsx
-import { Loader2, ArrowLeft, ShieldCheck, Mail, Smartphone, Lock, User as UserIcon, Calendar } from 'lucide-react';
+import { Loader2, ArrowLeft, ShieldCheck, Mail, Smartphone, Lock, User as UserIcon, Calendar, Gift, KeyRound, RefreshCw, CheckCircle2 } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -44,15 +44,17 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
         password: '',
         confirmPassword: '',
         email: '',
-        name: ''
+        name: '',
+        referralCode: ''
     });
     const [signupOtp, setSignupOtp] = useState('');
 
     // Forgot Password Data
-    const [forgotStep, setForgotStep] = useState<'MOBILE' | 'RESET'>('MOBILE');
+    const [forgotStep, setForgotStep] = useState<'MOBILE' | 'RESET' | 'SUCCESS'>('MOBILE');
     const [forgotMobile, setForgotMobile] = useState('');
     const [forgotOtp, setForgotOtp] = useState('');
     const [newPassword, setNewPassword] = useState('');
+    const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
     // Timers
     const [resendTimer, setResendTimer] = useState(0);
@@ -181,27 +183,43 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                 setForgotStep('RESET');
                 setResendTimer(60);
                 setLoading(false);
-            } catch (err) {
+            } catch (err: any) {
                 handleError(err);
             }
         } else {
+            // Validate passwords match
+            if (newPassword !== confirmNewPassword) {
+                setError("Passwords do not match");
+                setLoading(false);
+                return;
+            }
+            if (newPassword.length < 6) {
+                setError("Password must be at least 6 characters");
+                setLoading(false);
+                return;
+            }
             try {
                 await api.post('/auth/forgot-password/verify-reset', {
                     mobile: forgotMobile,
                     code: forgotOtp,
                     newPassword
                 });
-                // Success - go back to login
                 setLoading(false);
-                setView('LOGIN');
-                setLoginMethod('PASSWORD');
-                setLoginMobile(forgotMobile);
-                setError(null);
-                // Maybe show a success toast here
-                alert("Password reset successfully. Please login.");
-            } catch (err) {
+                setForgotStep('SUCCESS');
+            } catch (err: any) {
                 handleError(err);
             }
+        }
+    };
+
+    const handleResendForgotOtp = async () => {
+        if (resendTimer > 0) return;
+        setError(null);
+        try {
+            await api.post('/auth/forgot-password/send-otp', { mobile: forgotMobile });
+            setResendTimer(60);
+        } catch (err: any) {
+            handleError(err);
         }
     };
 
@@ -388,6 +406,18 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                             />
                         </div>
                     </div>
+
+                    {/* Referral Code (Optional) */}
+                    <div className="relative">
+                        <Gift className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                        <Input
+                            placeholder="Referral Code (Optional)"
+                            value={signupData.referralCode}
+                            onChange={(e) => setSignupData({ ...signupData, referralCode: e.target.value.toUpperCase() })}
+                            className="pl-10 uppercase tracking-wider"
+                            maxLength={12}
+                        />
+                    </div>
                 </>
             ) : (
                 <div className="space-y-4">
@@ -425,55 +455,145 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
         </form>
     );
 
-    const renderForgot = () => (
-        <form onSubmit={handleForgotSubmit} className="space-y-4">
-            {forgotStep === 'MOBILE' ? (
-                <div className="relative">
-                    <Smartphone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                    <Input
-                        placeholder="Enter your Mobile Number"
-                        value={forgotMobile}
-                        onChange={(e) => setForgotMobile(e.target.value)}
-                        className="pl-10"
-                        required
-                    />
+    const renderForgot = () => {
+        // Success state
+        if (forgotStep === 'SUCCESS') {
+            return (
+                <div className="text-center space-y-5 py-4">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mx-auto">
+                        <CheckCircle2 className="w-8 h-8 text-green-600" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-slate-900 mb-1">Password Reset Successful</h3>
+                        <p className="text-sm text-muted-foreground">
+                            Your password has been updated. You can now login with your new password.
+                        </p>
+                    </div>
+                    <Button
+                        className="w-full"
+                        onClick={() => {
+                            setView('LOGIN');
+                            setLoginMethod('PASSWORD');
+                            setLoginMobile(forgotMobile);
+                            setError(null);
+                            setForgotStep('MOBILE');
+                            setForgotOtp('');
+                            setNewPassword('');
+                            setConfirmNewPassword('');
+                        }}
+                    >
+                        Go to Login
+                    </Button>
                 </div>
-            ) : (
-                <>
-                    <Input
-                        placeholder="Enter OTP"
-                        value={forgotOtp}
-                        onChange={(e) => setForgotOtp(e.target.value)}
-                        className="text-center tracking-widest"
-                        maxLength={6}
-                        required
-                    />
-                    <Input
-                        type="password"
-                        placeholder="New Password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        required
-                    />
-                </>
-            )}
+            );
+        }
 
-            <Button type="submit" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {forgotStep === 'MOBILE' ? 'Send Reset Code' : 'Reset Password'}
-            </Button>
+        return (
+            <form onSubmit={handleForgotSubmit} className="space-y-4">
+                {forgotStep === 'MOBILE' ? (
+                    <>
+                        <p className="text-sm text-center text-muted-foreground mb-2">
+                            Enter your registered mobile number to receive a reset code
+                        </p>
+                        <div className="relative">
+                            <Smartphone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                placeholder="Mobile Number"
+                                value={forgotMobile}
+                                onChange={(e) => setForgotMobile(e.target.value)}
+                                className="pl-10"
+                                maxLength={10}
+                                required
+                            />
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <p className="text-sm text-center text-muted-foreground mb-2">
+                            Enter the 6-digit code sent to <b>{forgotMobile}</b>
+                        </p>
 
-            <div className="text-center mt-4">
-                <button
-                    type="button"
-                    onClick={() => { setView('LOGIN'); setError(null); }}
-                    className="flex items-center justify-center gap-1 mx-auto text-sm font-medium text-muted-foreground hover:text-primary"
-                >
-                    <ArrowLeft className="w-4 h-4" /> Back to Login
-                </button>
-            </div>
-        </form>
-    );
+                        {/* OTP Input */}
+                        <div className="relative">
+                            <KeyRound className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                placeholder="Enter 6-digit Code"
+                                value={forgotOtp}
+                                onChange={(e) => setForgotOtp(e.target.value)}
+                                maxLength={6}
+                                className="pl-10 text-center text-lg tracking-widest font-bold"
+                                required
+                            />
+                        </div>
+
+                        {/* Resend OTP */}
+                        <div className="flex justify-center">
+                            <button
+                                type="button"
+                                onClick={handleResendForgotOtp}
+                                disabled={resendTimer > 0}
+                                className={cn(
+                                    "flex items-center gap-1.5 text-xs font-semibold transition-colors",
+                                    resendTimer > 0
+                                        ? "text-muted-foreground cursor-not-allowed"
+                                        : "text-primary hover:underline"
+                                )}
+                            >
+                                <RefreshCw className="w-3.5 h-3.5" />
+                                {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend Code'}
+                            </button>
+                        </div>
+
+                        {/* New Password */}
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                type="password"
+                                placeholder="New Password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                className="pl-10"
+                                required
+                            />
+                        </div>
+
+                        {/* Confirm Password */}
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                type="password"
+                                placeholder="Confirm New Password"
+                                value={confirmNewPassword}
+                                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                className="pl-10"
+                                required
+                            />
+                        </div>
+
+                        {/* Password hint */}
+                        <p className="text-[11px] text-muted-foreground text-center">
+                            Min 6 characters with at least one letter and one number
+                        </p>
+                    </>
+                )}
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {forgotStep === 'MOBILE' ? 'Send Reset Code' : 'Reset Password'}
+                </Button>
+
+                <div className="text-center mt-4">
+                    <button
+                        type="button"
+                        onClick={() => { setView('LOGIN'); setError(null); setForgotStep('MOBILE'); }}
+                        className="flex items-center justify-center gap-1 mx-auto text-sm font-medium text-muted-foreground hover:text-primary"
+                    >
+                        <ArrowLeft className="w-4 h-4" /> Back to Login
+                    </button>
+                </div>
+            </form>
+        );
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
