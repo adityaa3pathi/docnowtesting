@@ -60,8 +60,8 @@ async function main() {
     // 2. Seed System Configurations
     // ========================================
     const configs = [
-        { key: 'REFERRAL_REWARD_X', value: '50', description: 'Referee signup bonus' },
-        { key: 'REFERRAL_REWARD_Y', value: '100', description: 'Referrer first order bonus' },
+        { key: 'REFERRAL_BONUS_REFEREE', value: '50', description: 'Referee signup bonus (₹ credited to new user)' },
+        { key: 'REFERRAL_BONUS_REFERRER', value: '100', description: 'Referrer first-order bonus (₹ credited when friend completes order)' },
     ];
 
     for (const config of configs) {

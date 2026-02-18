@@ -8,6 +8,7 @@ import { HealthiansAdapter } from '../adapters/healthians';
 import { normalizeGender } from '../utils/helpers';
 import { calculateDiscount } from '../utils/promoHelper';
 import { assertTransition } from '../utils/paymentStateMachine';
+import { tryAwardFirstOrderBonus } from '../utils/referralService';
 
 const router = Router();
 const healthians = HealthiansAdapter.getInstance();
@@ -249,7 +250,8 @@ router.post('/initiate', authMiddleware, rateLimiter(1, 10, 'initiate'), async (
                             price: item.price
                         }))
                     }
-                }
+                },
+                include: { items: { include: { patient: true } } }
             });
 
             // E. Link Promo Redemption
@@ -359,6 +361,11 @@ router.post('/initiate', authMiddleware, rateLimiter(1, 10, 'initiate'), async (
                     where: { cart: { userId } }
                 });
 
+                // Award referral bonus (non-blocking)
+                tryAwardFirstOrderBonus(userId, booking.id).catch(err =>
+                    console.error('[Payments] First-order referral bonus failed:', err.message)
+                );
+
                 return res.json({
                     bookingId: booking.id,
                     status: 'confirmed',
@@ -423,7 +430,11 @@ router.post('/verify', authMiddleware, async (req: AuthRequest, res: Response) =
         // 1. Fetch booking with ownership check
         const booking = await prisma.booking.findFirst({
             where: { id: bookingId, userId },
-            include: { promoCode: true, user: { include: { wallet: true } } } // Include promoCode and user.wallet for potential rollback
+            include: {
+                promoCode: true,
+                user: { include: { wallet: true } },
+                items: { include: { patient: true } } // Include items for partner booking
+            }
         });
 
         if (!booking) {
@@ -523,6 +534,12 @@ router.post('/verify', authMiddleware, async (req: AuthRequest, res: Response) =
             });
 
             console.log('[Payments] Booking CONFIRMED:', bookingId);
+
+            // Award referral bonus (non-blocking)
+            tryAwardFirstOrderBonus(userId, bookingId).catch(err =>
+                console.error('[Payments] First-order referral bonus failed:', err.message)
+            );
+
             return res.json({ status: 'confirmed', bookingId });
 
         } catch (partnerError: any) {
@@ -561,30 +578,43 @@ router.post('/verify', authMiddleware, async (req: AuthRequest, res: Response) =
 // ============================================
 // Helper: Create Healthians Booking
 // ============================================
+// ============================================
+// Helper: Create Healthians Booking
+// ============================================
 export async function createHealthiansBooking(booking: any, userId: string, slotId?: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     const address = await prisma.address.findUnique({ where: { id: booking.addressId } });
-    const cart = await prisma.cart.findUnique({
-        where: { userId },
-        include: { items: { include: { patient: true } } }
-    });
 
-    if (!user || !address || !cart) {
-        throw new Error('Missing required data for partner booking');
+    // Ensure we have booking items
+    let bookingItems = booking.items;
+    if (!bookingItems) {
+        // Fallback: fetch items if not passed in parent object
+        bookingItems = await prisma.bookingItem.findMany({
+            where: { bookingId: booking.id },
+            include: { patient: true }
+        });
     }
 
-    // Build patient groups
+    if (!user || !address || !bookingItems || bookingItems.length === 0) {
+        throw new Error('Missing required data for partner booking (User, Address, or Items)');
+    }
+
+    // Build patient groups from Immutable Booking Items
     const patientGroups = new Map<string, { patient: any, testCodes: string[], testNames: string[] }>();
 
-    for (const item of cart.items) {
-        const key = item.patientId || 'self';
-        const patientData = item.patient || {
-            id: user.id,
-            name: user.name,
-            relation: 'self',
-            age: user.age,
-            gender: user.gender
-        };
+    for (const item of bookingItems) {
+        const key = item.patientId;
+        // BookingItem might not have the full patient object if not included, so we might need to fetch if missing
+        // However, standard flow ensures we pass it. If 'patient' is missing on item, we likely need to fetch it.
+        // But for optimization, let's assume caller includes it, or we fetch it here.
+
+        // Robustness: If item.patient is missing, we must fetch it.
+        let patientData = item.patient;
+        if (!patientData) {
+            patientData = await prisma.patient.findUnique({ where: { id: item.patientId } });
+        }
+
+        if (!patientData) throw new Error(`Patient data not found for BookingItem ${item.id}`);
 
         if (!patientGroups.has(key)) {
             patientGroups.set(key, { patient: patientData, testCodes: [], testNames: [] });
@@ -670,18 +700,8 @@ export async function createHealthiansBooking(booking: any, userId: string, slot
         response.booking_id = partnerBookingId;
     }
 
-    // Create booking items in database
-    await prisma.bookingItem.createMany({
-        data: cart.items
-            .filter(item => item.patientId)
-            .map(item => ({
-                bookingId: booking.id,
-                testCode: item.testCode,
-                testName: item.testName,
-                price: item.price,
-                patientId: item.patientId!
-            }))
-    });
+    // NOTE: BookingItems are ALREADY created in the /initiate transaction.
+    // We do NOT re-create them here.
 
     return response;
 }
@@ -765,7 +785,10 @@ export const webhookHandler = async (req: Request, res: Response) => {
             const userIdForDelay = booking.userId;
             setTimeout(async () => {
                 try {
-                    const freshBooking = await prisma.booking.findUnique({ where: { id: bookingIdForDelay } });
+                    const freshBooking = await prisma.booking.findUnique({
+                        where: { id: bookingIdForDelay },
+                        include: { items: { include: { patient: true } } }
+                    });
                     if (freshBooking && freshBooking.paymentStatus === 'AUTHORIZED' && !freshBooking.partnerBookingId) {
                         console.log('[Webhook] /verify did not complete, triggering partner booking for:', bookingIdForDelay);
 
@@ -784,6 +807,11 @@ export const webhookHandler = async (req: Request, res: Response) => {
                             await tx.cartItem.deleteMany({ where: { cart: { userId: userIdForDelay } } });
                         });
                         console.log('[Webhook] Delayed partner booking SUCCESS:', bookingIdForDelay);
+
+                        // Award referral bonus (non-blocking)
+                        tryAwardFirstOrderBonus(userIdForDelay, bookingIdForDelay).catch(err =>
+                            console.error('[Webhook] First-order referral bonus failed:', err.message)
+                        );
                     }
                 } catch (delayErr: any) {
                     console.error('[Webhook] Delayed partner booking failed:', delayErr.message);
