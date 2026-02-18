@@ -1,14 +1,15 @@
 "use client";
 
 import { Header } from '@/components/Header';
-import { Trash2, Loader2, ShoppingBag, MapPin, Calendar, Ticket, Wallet, Check, X } from 'lucide-react';
+import { Trash2, Loader2, ShoppingBag, MapPin, Calendar, Ticket, Wallet, Check, X, FileText, ChevronDown, ChevronUp, Tag, Percent } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { ProfileCompletionDialog } from '@/components/profile/ProfileCompletionDialog'; // Add import
+import { ProfileCompletionDialog } from '@/components/profile/ProfileCompletionDialog';
 import { SlotSelector } from '@/components/cart/SlotSelector';
 import { AddressSelector } from '@/components/cart/AddressSelector';
+import { AddFamilyMemberDialog } from '@/components/profile/AddFamilyMemberDialog';
 
 
 interface Patient {
@@ -34,6 +35,17 @@ interface AppliedPromo {
     description?: string;
     discountType: string;
     discountValue: number;
+}
+
+interface AvailablePromo {
+    id: string;
+    code: string;
+    description: string | null;
+    discountType: 'PERCENTAGE' | 'FLAT';
+    discountValue: number;
+    maxDiscount: number | null;
+    minOrderValue: number;
+    expiresAt: string | null;
 }
 
 interface SlotItem {
@@ -69,6 +81,12 @@ export default function CartPage() {
     const [useWallet, setUseWallet] = useState(false);
     const [verifyingPromo, setVerifyingPromo] = useState(false);
     const [promoError, setPromoError] = useState('');
+    const [availablePromos, setAvailablePromos] = useState<AvailablePromo[]>([]);
+    const [showPromoList, setShowPromoList] = useState(false);
+    const [loadingPromos, setLoadingPromos] = useState(false);
+    const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
+    const [addMemberForItemId, setAddMemberForItemId] = useState<string | null>(null);
+    const [billingPatientId, setBillingPatientId] = useState<string>('self');
 
     // Generate next 7 days - MOVED TO SLOT SELECTOR, removed from here
 
@@ -76,6 +94,7 @@ export default function CartPage() {
         fetchPatients();
         fetchAddresses();
         fetchWalletBalance();
+        fetchAvailablePromos();
     }, []);
 
     const fetchWalletBalance = async () => {
@@ -84,6 +103,18 @@ export default function CartPage() {
             setWalletBalance(res.data.balance || 0);
         } catch (error) {
             console.error('Error fetching wallet:', error);
+        }
+    };
+
+    const fetchAvailablePromos = async () => {
+        setLoadingPromos(true);
+        try {
+            const res = await api.get('/promos/available');
+            setAvailablePromos(res.data);
+        } catch (error) {
+            console.error('Error fetching promos:', error);
+        } finally {
+            setLoadingPromos(false);
         }
     };
 
@@ -262,6 +293,7 @@ export default function CartPage() {
         setAppliedPromo(null);
         setPromoCode('');
         setPromoError('');
+        setShowPromoList(false);
     };
 
     // Calculations
@@ -298,9 +330,12 @@ export default function CartPage() {
             // 1. Initiate payment and create Razorpay order
             const initRes = await api.post('/payments/initiate', {
                 slot_id: slotId,
+                slotLabel: selectedTime,
+                slotDate: selectedDate,
                 addressId: selectedAddressId,
                 promoCode: appliedPromo?.code,
-                useWallet
+                useWallet,
+                billingPatientId: billingPatientId !== 'self' ? billingPatientId : undefined
             });
 
             const { bookingId, razorpayOrderId, amount, keyId, status } = initRes.data;
@@ -459,8 +494,16 @@ export default function CartPage() {
                                                     <label className="text-xs text-gray-500 font-medium mb-1 block">Assign to:</label>
                                                     <select
                                                         value={item.patientId || 'self'}
-                                                        onChange={(e) => updateCartItem(item.id, e.target.value === 'self' ? null : e.target.value)}
-                                                        className="text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 w-full max-w-[200px]"
+                                                        onChange={(e) => {
+                                                            if (e.target.value === '__add_new__') {
+                                                                setAddMemberForItemId(item.id);
+                                                                setAddMemberDialogOpen(true);
+                                                                e.target.value = item.patientId || 'self';
+                                                            } else {
+                                                                updateCartItem(item.id, e.target.value === 'self' ? null : e.target.value);
+                                                            }
+                                                        }}
+                                                        className="text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 w-full max-w-[220px]"
                                                     >
                                                         <option value="self">Self</option>
                                                         {patients.map((patient) => (
@@ -468,6 +511,7 @@ export default function CartPage() {
                                                                 {patient.name} ({patient.relation})
                                                             </option>
                                                         ))}
+                                                        <option value="__add_new__">➕ Add New Member</option>
                                                     </select>
                                                 </div>
 
@@ -527,26 +571,112 @@ export default function CartPage() {
                                     <Ticket className="w-5 h-5 text-gray-500" /> Offers & Benefits
                                 </h3>
 
-                                {/* Promo Input */}
+                                {/* Promo Input + Browser */}
                                 {!appliedPromo ? (
-                                    <div className="space-y-2">
+                                    <div className="space-y-3">
+                                        {/* Input + Apply */}
                                         <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                placeholder="Enter Promo Code"
-                                                value={promoCode}
-                                                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                                                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 text-sm font-medium uppercase placeholder:normal-case"
-                                            />
+                                            <div className="flex-1 relative">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Enter Promo Code"
+                                                    value={promoCode}
+                                                    onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoError(''); }}
+                                                    onFocus={() => setShowPromoList(true)}
+                                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192] text-sm font-medium uppercase placeholder:normal-case transition-all"
+                                                />
+                                            </div>
                                             <button
                                                 onClick={applyPromo}
                                                 disabled={!promoCode || verifyingPromo}
-                                                className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
+                                                className="px-5 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                                             >
                                                 {verifyingPromo ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
                                             </button>
                                         </div>
-                                        {promoError && <p className="text-xs text-red-500">{promoError}</p>}
+                                        {promoError && <p className="text-xs text-red-500 flex items-center gap-1"><X className="w-3 h-3" />{promoError}</p>}
+
+                                        {/* Toggle available promos */}
+                                        <button
+                                            onClick={() => setShowPromoList(!showPromoList)}
+                                            className="w-full flex items-center justify-between text-sm text-[#4b2192] font-medium py-1 hover:underline"
+                                        >
+                                            <span className="flex items-center gap-1.5">
+                                                <Tag className="w-3.5 h-3.5" />
+                                                {availablePromos.length > 0 ? `${availablePromos.length} coupon${availablePromos.length > 1 ? 's' : ''} available` : 'View coupons'}
+                                            </span>
+                                            {showPromoList ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                        </button>
+
+                                        {/* Available Promos List */}
+                                        {showPromoList && (
+                                            <div className="space-y-2 max-h-64 overflow-y-auto pr-1 scrollbar-thin">
+                                                {loadingPromos ? (
+                                                    <div className="flex items-center justify-center py-6">
+                                                        <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                                                    </div>
+                                                ) : availablePromos.length === 0 ? (
+                                                    <div className="text-center py-6 text-sm text-gray-400">
+                                                        No coupons available right now
+                                                    </div>
+                                                ) : (
+                                                    availablePromos.map((promo) => {
+                                                        const isEligible = total >= promo.minOrderValue;
+                                                        return (
+                                                            <button
+                                                                key={promo.id}
+                                                                onClick={() => {
+                                                                    setPromoCode(promo.code);
+                                                                    setPromoError('');
+                                                                    // Auto-apply
+                                                                    setShowPromoList(false);
+                                                                    setVerifyingPromo(true);
+                                                                    api.post('/promos/validate', { code: promo.code, cartAmount: total })
+                                                                        .then(res => { setAppliedPromo(res.data); })
+                                                                        .catch(err => { setAppliedPromo(null); setPromoError(err.response?.data?.error || 'Invalid promo code'); })
+                                                                        .finally(() => setVerifyingPromo(false));
+                                                                }}
+                                                                disabled={!isEligible}
+                                                                className={`w-full text-left p-3 rounded-lg border transition-all ${isEligible
+                                                                    ? 'border-gray-200 hover:border-[#4b2192] hover:bg-[#4b2192]/5 cursor-pointer'
+                                                                    : 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'
+                                                                    }`}
+                                                            >
+                                                                <div className="flex items-start justify-between gap-3">
+                                                                    <div className="flex-1 min-w-0">
+                                                                        {/* Code as a dashed coupon style */}
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            <span className="inline-flex items-center gap-1 text-xs font-bold text-[#4b2192] bg-[#4b2192]/10 px-2 py-0.5 rounded border border-dashed border-[#4b2192]/30 tracking-wider">
+                                                                                {promo.code}
+                                                                            </span>
+                                                                        </div>
+                                                                        {promo.description && (
+                                                                            <p className="text-xs text-gray-500 mt-1 line-clamp-1">{promo.description}</p>
+                                                                        )}
+                                                                        {promo.minOrderValue > 0 && (
+                                                                            <p className={`text-[10px] mt-1 ${isEligible ? 'text-gray-400' : 'text-orange-500 font-medium'}`}>
+                                                                                {isEligible ? `Min. order ₹${promo.minOrderValue}` : `Add ₹${promo.minOrderValue - total} more to unlock`}
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                    {/* Discount Badge */}
+                                                                    <div className="shrink-0 text-right">
+                                                                        <span className="inline-block text-xs font-bold text-green-700 bg-green-50 px-2 py-1 rounded">
+                                                                            {promo.discountType === 'PERCENTAGE'
+                                                                                ? `${promo.discountValue}% OFF`
+                                                                                : `FLAT ₹${promo.discountValue}`}
+                                                                        </span>
+                                                                        {promo.discountType === 'PERCENTAGE' && promo.maxDiscount && (
+                                                                            <p className="text-[10px] text-gray-400 mt-0.5">up to ₹{promo.maxDiscount}</p>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </button>
+                                                        );
+                                                    })
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="p-3 bg-green-50 border border-green-100 rounded-lg flex items-center justify-between">
@@ -559,7 +689,7 @@ export default function CartPage() {
                                                 <p className="text-xs text-green-600">You saved ₹{appliedPromo.discountAmount}</p>
                                             </div>
                                         </div>
-                                        <button onClick={removePromo} className="text-gray-400 hover:text-red-500">
+                                        <button onClick={removePromo} className="text-gray-400 hover:text-red-500 transition-colors">
                                             <X className="w-4 h-4" />
                                         </button>
                                     </div>
@@ -644,6 +774,25 @@ export default function CartPage() {
                                     </div>
                                 )}
 
+                                <div className="border-t border-gray-100 pt-4 mb-4">
+                                    <label className="text-xs text-gray-500 font-medium mb-1.5 flex items-center gap-1.5">
+                                        <FileText className="w-3.5 h-3.5" /> Invoice Name
+                                        <span className="text-gray-400 font-normal">(optional)</span>
+                                    </label>
+                                    <select
+                                        value={billingPatientId}
+                                        onChange={(e) => setBillingPatientId(e.target.value)}
+                                        className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2"
+                                    >
+                                        <option value="self">Self</option>
+                                        {patients.map((patient) => (
+                                            <option key={patient.id} value={patient.id}>
+                                                {patient.name} ({patient.relation})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
                                 <div className="border-t border-gray-100 pt-4 mb-6">
                                     <div className="flex justify-between text-lg font-bold">
                                         <span>Total</span>
@@ -697,6 +846,18 @@ export default function CartPage() {
                     handleCheckout();
                 }}
                 missingFields={missingProfileFields}
+            />
+
+            <AddFamilyMemberDialog
+                open={addMemberDialogOpen}
+                onOpenChange={setAddMemberDialogOpen}
+                onMemberAdded={(newPatient) => {
+                    setPatients(prev => [...prev, newPatient]);
+                    if (addMemberForItemId) {
+                        updateCartItem(addMemberForItemId, newPatient.id);
+                    }
+                    setAddMemberForItemId(null);
+                }}
             />
         </div>
     );

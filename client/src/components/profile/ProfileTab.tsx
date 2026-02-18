@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { MapPin, Edit2, Trash2, Loader2, Lock } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -30,7 +30,7 @@ export function ProfileTab() {
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [loading, setLoading] = useState(true);
     const [editMode, setEditMode] = useState(false);
-    const [formData, setFormData] = useState({ name: '', email: '', gender: '', age: '' });
+    const [formData, setFormData] = useState({ gender: '', age: '' });
     const [addressDialogOpen, setAddressDialogOpen] = useState(false);
     const [editingAddress, setEditingAddress] = useState<Address | null>(null);
     const [addressForm, setAddressForm] = useState({ line1: '', city: '', pincode: '' });
@@ -45,8 +45,6 @@ export function ProfileTab() {
             const res = await api.get('/profile');
             setProfile(res.data);
             setFormData({
-                name: res.data.name || '',
-                email: res.data.email || '',
                 gender: res.data.gender || 'Male',
                 age: res.data.age ? res.data.age.toString() : ''
             });
@@ -115,28 +113,50 @@ export function ProfileTab() {
 
             <div className="grid md:grid-cols-2 gap-6 mb-8">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                    <Input
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        disabled={!editMode}
-                        className={!editMode ? 'bg-gray-50' : ''}
-                    />
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1.5">
+                        Full Name
+                        <span className="inline-flex items-center gap-1 text-[10px] text-gray-400 font-normal bg-gray-100 px-1.5 py-0.5 rounded-full">
+                            <Lock className="w-2.5 h-2.5" /> Locked
+                        </span>
+                    </label>
+                    <div className="relative">
+                        <Input
+                            type="text"
+                            value={profile?.name || ''}
+                            disabled
+                            className="bg-gray-50 text-gray-600 cursor-not-allowed pr-8"
+                        />
+                        <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300" />
+                    </div>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
-                    <Input type="text" value={profile?.mobile || ''} className="bg-gray-50" disabled />
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1.5">
+                        Mobile Number
+                        <span className="inline-flex items-center gap-1 text-[10px] text-gray-400 font-normal bg-gray-100 px-1.5 py-0.5 rounded-full">
+                            <Lock className="w-2.5 h-2.5" /> Locked
+                        </span>
+                    </label>
+                    <div className="relative">
+                        <Input type="text" value={profile?.mobile || ''} className="bg-gray-50 text-gray-600 cursor-not-allowed pr-8" disabled />
+                        <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300" />
+                    </div>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email ID</label>
-                    <Input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        disabled={!editMode}
-                        className={!editMode ? 'bg-gray-50' : ''}
-                    />
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1.5">
+                        Email ID
+                        <span className="inline-flex items-center gap-1 text-[10px] text-gray-400 font-normal bg-gray-100 px-1.5 py-0.5 rounded-full">
+                            <Lock className="w-2.5 h-2.5" /> Locked
+                        </span>
+                    </label>
+                    <div className="relative">
+                        <Input
+                            type="email"
+                            value={profile?.email || ''}
+                            disabled
+                            className="bg-gray-50 text-gray-600 cursor-not-allowed pr-8"
+                        />
+                        <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300" />
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -175,8 +195,6 @@ export function ProfileTab() {
                     <Button variant="outline" onClick={() => {
                         setEditMode(false);
                         setFormData({
-                            name: profile?.name || '',
-                            email: profile?.email || '',
                             gender: profile?.gender || 'Male',
                             age: profile?.age ? profile.age.toString() : ''
                         });

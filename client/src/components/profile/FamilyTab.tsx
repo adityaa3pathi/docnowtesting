@@ -37,6 +37,10 @@ export function FamilyTab() {
     };
 
     const handleSubmit = async () => {
+        if (formData.age < 5) {
+            alert('Family member must be at least 5 years old');
+            return;
+        }
         try {
             if (editingPatient) {
                 await api.put(`/profile/patients/${editingPatient.id}`, formData);
@@ -122,7 +126,7 @@ export function FamilyTab() {
                                 <option value="Parent">Parent</option>
                                 <option value="Grand parent">Grand parent</option>
                                 <option value="Sibling">Sibling</option>
-                                <option value="friend">friend</option>
+                                <option value="Friend">Friend</option>
                                 <option value="Native">Native</option>
                                 <option value="Neighbour">Neighbour</option>
                                 <option value="Colleague">Colleague</option>
@@ -132,10 +136,10 @@ export function FamilyTab() {
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium mb-1">Age</label>
-                                <Input type="number" value={formData.age} onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) || 0 })} />
+                                <Input type="number" min={5} value={formData.age} onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) || 0 })} />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">Gender</label>
+                                <label className="block text-sm font-medium mb-1">Sex</label>
                                 <select
                                     className="w-full h-12 rounded-xl border border-border px-3 bg-white"
                                     value={formData.gender}

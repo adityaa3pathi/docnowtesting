@@ -1,6 +1,6 @@
 
 import { useMemo } from "react";
-import { Clock, Loader2, Calendar } from 'lucide-react';
+import { Clock, Loader2, Calendar, Lock, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SlotSelectorProps {
@@ -44,7 +44,7 @@ export function SlotSelector({
             </h3>
 
             <div className="space-y-6">
-                {/* Date selection - Always visible */}
+                {/* ── Date Picker ── */}
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                     {next7Days.map((dateStr) => {
                         const dateObj = new Date(dateStr);
@@ -71,70 +71,85 @@ export function SlotSelector({
                     })}
                 </div>
 
-                {/* Time selection */}
+                {/* ── Time Slot Grid ── */}
                 {selectedDate && (
                     <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                        <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                        <div className="flex items-center gap-2 mb-4">
                             <Clock className="w-4 h-4 text-primary" />
-                            Available Times
-                        </h4>
+                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-[0.15em]">
+                                Sample Time Slot
+                            </h4>
+                        </div>
 
                         {loading ? (
-                            <div className="text-center py-8">
+                            <div className="text-center py-10">
                                 <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
-                                <p className="text-xs text-gray-400">Fetching available items...</p>
+                                <p className="text-xs text-gray-400">Fetching available slots...</p>
                             </div>
                         ) : slots.length > 0 ? (
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                                    {slots.map((slot: any) => (
-                                        <button
-                                            key={slot.stm_id || slot.slot_time}
-                                            onClick={() => onTimeSelect(slot.slot_time)}
-                                            className={cn(
-                                                "py-2 px-3 rounded-lg text-sm font-medium border transition-all",
-                                                selectedTime === slot.slot_time
-                                                    ? "bg-primary border-primary text-white shadow-md shadow-primary/20"
-                                                    : "bg-white border-gray-100 hover:border-primary/50 text-gray-700 hover:bg-primary/5"
-                                            )}
-                                        >
-                                            {slot.slot_time}
-                                        </button>
-                                    ))}
+                            <div className="space-y-5">
+                                {/* Slot pills grid */}
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                                    {slots.map((slot: any) => {
+                                        const isSelected = selectedTime === slot.slot_time;
+                                        return (
+                                            <button
+                                                key={slot.stm_id || slot.slot_time}
+                                                onClick={() => onTimeSelect(slot.slot_time)}
+                                                className={cn(
+                                                    "relative px-3 py-2.5 rounded-lg text-[13px] font-semibold border-2 transition-all duration-200",
+                                                    isSelected
+                                                        ? "bg-primary/10 border-primary text-primary ring-2 ring-primary/20 shadow-sm"
+                                                        : "bg-gray-50 border-gray-200 text-slate-700 hover:border-primary/40 hover:bg-primary/5 active:scale-[0.97]"
+                                                )}
+                                            >
+                                                {slot.slot_time}
+                                                {isSelected && (
+                                                    <CheckCircle2 className="absolute top-1 right-1 w-3.5 h-3.5 text-primary" />
+                                                )}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
 
                                 {/* Lock Slot Button */}
-                                <div className="flex justify-end pt-2">
-                                    <button
-                                        onClick={onFreezeSlot}
-                                        disabled={!selectedTime || freezingSlot || isSlotLocked}
-                                        className={cn(
-                                            "px-6 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all",
-                                            isSlotLocked
-                                                ? "bg-green-600 text-white cursor-default"
-                                                : "bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        )}
-                                    >
-                                        {freezingSlot ? (
-                                            <>
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                                Locking Slot...
-                                            </>
-                                        ) : isSlotLocked ? (
-                                            <>
-                                                Slot Locked ✓
-                                            </>
-                                        ) : (
-                                            <>
-                                                Lock Slot
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
+                                {selectedTime && (
+                                    <div className="flex justify-end pt-1">
+                                        <button
+                                            onClick={onFreezeSlot}
+                                            disabled={!selectedTime || freezingSlot || isSlotLocked}
+                                            className={cn(
+                                                "px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all duration-200",
+                                                isSlotLocked
+                                                    ? "bg-green-600 text-white cursor-default shadow-md shadow-green-600/20"
+                                                    : "bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                                            )}
+                                        >
+                                            {freezingSlot ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    Locking Slot...
+                                                </>
+                                            ) : isSlotLocked ? (
+                                                <>
+                                                    <CheckCircle2 className="w-4 h-4" />
+                                                    Slot Locked
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Lock className="w-4 h-4" />
+                                                    Lock Slot
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         ) : (
-                            <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                            <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                <Clock className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                                 <p className="text-sm text-gray-500">No slots available for this date.</p>
+                                <p className="text-xs text-gray-400 mt-1">Try selecting a different date</p>
                             </div>
                         )}
                     </div>

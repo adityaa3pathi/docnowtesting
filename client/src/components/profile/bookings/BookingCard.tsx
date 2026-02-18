@@ -42,7 +42,10 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                 <div>
                     <div className="text-sm text-gray-500">Scheduled For</div>
                     <div className="font-medium text-slate-800">
-                        {new Date(booking.slotDate).toLocaleDateString()} at {booking.slotTime}
+                        {new Date(booking.slotDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {booking.slotTime && !/^\d+$/.test(booking.slotTime) && (
+                            <span className="text-gray-500 font-normal"> at {booking.slotTime}</span>
+                        )}
                     </div>
                 </div>
                 <div>
