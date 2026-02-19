@@ -40,26 +40,26 @@ export default function ProfilePage() {
             <div className="container mx-auto px-4 py-8">
                 <h1 className="text-3xl font-bold text-slate-900 mb-8">My Account</h1>
 
-                <div className="grid md:grid-cols-4 gap-8">
-                    {/* Sidebar Navigation */}
+                <div className="grid md:grid-cols-4 gap-6 md:gap-8">
+                    {/* Sidebar Navigation — horizontal tabs on mobile, vertical sidebar on desktop */}
                     <div className="md:col-span-1">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden sticky top-20">
-                            <nav className="p-2 space-y-1">
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden md:sticky md:top-20">
+                            <nav className="p-2 flex md:flex-col gap-1 overflow-x-auto md:overflow-x-visible scrollbar-hide">
                                 <NavButton
                                     icon={<User className="w-4 h-4" />}
-                                    label="Profile & Address"
+                                    label="Profile"
                                     active={activeTab === 'profile'}
                                     onClick={() => setActiveTab('profile')}
                                 />
                                 <NavButton
                                     icon={<Users className="w-4 h-4" />}
-                                    label="Family Members"
+                                    label="Family"
                                     active={activeTab === 'family'}
                                     onClick={() => setActiveTab('family')}
                                 />
                                 <NavButton
                                     icon={<Calendar className="w-4 h-4" />}
-                                    label="My Bookings"
+                                    label="Bookings"
                                     active={activeTab === 'bookings'}
                                     onClick={() => setActiveTab('bookings')}
                                 />
@@ -79,21 +79,21 @@ export default function ProfilePage() {
 
                             {/* Manager / Admin Panel Links */}
                             {(isManager || isSuperAdmin) && (
-                                <div className="p-2 pt-0 border-t border-gray-100 mt-2 space-y-2">
+                                <div className="p-2 pt-0 border-t border-gray-100 mt-1 md:mt-2 flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible scrollbar-hide">
                                     <Link
                                         href="/manager"
-                                        className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors bg-gradient-to-r from-teal-600 to-emerald-600 text-white hover:from-teal-700 hover:to-emerald-700"
+                                        className="flex items-center gap-2 md:gap-3 flex-shrink-0 md:w-full px-3 md:px-4 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium transition-colors bg-gradient-to-r from-teal-600 to-emerald-600 text-white hover:from-teal-700 hover:to-emerald-700 whitespace-nowrap"
                                     >
-                                        <Shield className="w-4 h-4" />
-                                        Manager Dashboard
+                                        <Shield className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                        Manager
                                     </Link>
                                     {isSuperAdmin && (
                                         <Link
                                             href="/super-admin"
-                                            className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
+                                            className="flex items-center gap-2 md:gap-3 flex-shrink-0 md:w-full px-3 md:px-4 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium transition-colors bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 whitespace-nowrap"
                                         >
-                                            <Shield className="w-4 h-4" />
-                                            Admin Panel
+                                            <Shield className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                            Admin
                                         </Link>
                                     )}
                                 </div>
@@ -122,7 +122,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
         <button
             onClick={onClick}
             className={cn(
-                "flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left",
+                "flex items-center gap-2 md:gap-3 flex-shrink-0 px-3 py-2 md:px-4 md:py-3 md:w-full rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap",
                 active ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-50"
             )}
         >

@@ -16,6 +16,8 @@ import {
     LogOut,
     Loader2,
     Ticket,
+    Menu,
+    X,
 } from 'lucide-react';
 
 // Navigation items matching the design
@@ -38,6 +40,7 @@ export default function SuperAdminLayout({
     const router = useRouter();
     const pathname = usePathname();
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [adminName, setAdminName] = useState<string>('Admin');
 
@@ -79,6 +82,11 @@ export default function SuperAdminLayout({
         checkAuth();
     }, [router]);
 
+    // Close mobile menu on route change
+    useEffect(() => {
+        setMobileMenuOpen(false);
+    }, [pathname]);
+
     const handleLogout = () => {
         localStorage.removeItem('docnow_auth_token');
         localStorage.removeItem('docnow_user');
@@ -102,84 +110,173 @@ export default function SuperAdminLayout({
         );
     }
 
-    return (
-        <div className="flex h-screen bg-[#F4F0FA]">
-            {/* Sidebar */}
-            <aside
-                className={`bg-[#4b2192] text-white transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-20' : 'w-64'
-                    }`}
-            >
-                {/* Logo Area */}
-                <div className="p-6 border-b border-white/10">
-                    <div className="flex items-center justify-between">
-                        {!sidebarCollapsed && (
-                            <div>
-                                <h1 className="text-xl font-semibold">DOCNOW</h1>
-                                <p className="text-xs text-white/70 mt-1">Super Admin</p>
-                            </div>
-                        )}
-                        <button
-                            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                            className="p-2 rounded-lg hover:bg-white/10 transition-colors ml-auto"
-                            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                        >
-                            {sidebarCollapsed ? (
-                                <ChevronRight size={20} />
-                            ) : (
-                                <ChevronLeft size={20} />
-                            )}
-                        </button>
+    const SidebarContent = ({ onItemClick }: { onItemClick?: () => void }) => (
+        <>
+            {/* Logo Area */}
+            <div className="p-6 border-b border-white/10">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-xl font-semibold">DOCNOW</h1>
+                        <p className="text-xs text-white/70 mt-1">Super Admin</p>
                     </div>
-                </div>
-
-                {/* Navigation */}
-                <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                    {navItems.map((item) => {
-                        const isActive = getActiveItem() === item.id;
-                        const Icon = item.icon;
-
-                        return (
-                            <Link
-                                key={item.id}
-                                href={item.href}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive
-                                    ? 'bg-white/20 text-white'
-                                    : 'text-white/70 hover:bg-white/10 hover:text-white'
-                                    }`}
-                            >
-                                <span className="flex-shrink-0">
-                                    <Icon size={20} />
-                                </span>
-                                {!sidebarCollapsed && (
-                                    <span className="text-sm">{item.label}</span>
-                                )}
-                            </Link>
-                        );
-                    })}
-                </nav>
-
-                {/* Admin Info & Logout */}
-                <div className="p-4 border-t border-white/10">
-                    {!sidebarCollapsed && (
-                        <div className="mb-3 px-4">
-                            <p className="text-sm font-medium">{adminName}</p>
-                            <p className="text-xs text-white/50">Super Admin</p>
-                        </div>
-                    )}
+                    {/* Close button for mobile, collapse toggle for desktop */}
                     <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                        onClick={() => {
+                            if (onItemClick) {
+                                onItemClick();
+                            } else {
+                                setSidebarCollapsed(!sidebarCollapsed);
+                            }
+                        }}
+                        className="p-2 rounded-lg hover:bg-white/10 transition-colors lg:block"
+                        aria-label={onItemClick ? 'Close menu' : sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                     >
-                        <LogOut size={20} />
-                        {!sidebarCollapsed && <span className="text-sm">Logout</span>}
+                        {onItemClick ? (
+                            <X size={20} />
+                        ) : sidebarCollapsed ? (
+                            <ChevronRight size={20} />
+                        ) : (
+                            <ChevronLeft size={20} />
+                        )}
                     </button>
                 </div>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+                {navItems.map((item) => {
+                    const isActive = getActiveItem() === item.id;
+                    const Icon = item.icon;
+
+                    return (
+                        <Link
+                            key={item.id}
+                            href={item.href}
+                            onClick={onItemClick}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive
+                                ? 'bg-white/20 text-white'
+                                : 'text-white/70 hover:bg-white/10 hover:text-white'
+                                }`}
+                        >
+                            <span className="flex-shrink-0">
+                                <Icon size={20} />
+                            </span>
+                            <span className="text-sm">{item.label}</span>
+                        </Link>
+                    );
+                })}
+            </nav>
+
+            {/* Admin Info & Logout */}
+            <div className="p-4 border-t border-white/10">
+                <div className="mb-3 px-4">
+                    <p className="text-sm font-medium">{adminName}</p>
+                    <p className="text-xs text-white/50">Super Admin</p>
+                </div>
+                <button
+                    onClick={() => {
+                        onItemClick?.();
+                        handleLogout();
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                    <LogOut size={20} />
+                    <span className="text-sm">Logout</span>
+                </button>
+            </div>
+        </>
+    );
+
+    return (
+        <div className="flex h-screen bg-[#F4F0FA]">
+            {/* Desktop Sidebar */}
+            <aside
+                className={`hidden lg:flex flex-col bg-[#4b2192] text-white transition-all duration-300 ${sidebarCollapsed ? 'w-20' : 'w-64'
+                    }`}
+            >
+                {/* Desktop: collapsed sidebar shows only icons */}
+                {sidebarCollapsed ? (
+                    <>
+                        <div className="p-4 border-b border-white/10 flex justify-center">
+                            <button
+                                onClick={() => setSidebarCollapsed(false)}
+                                className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                                aria-label="Expand sidebar"
+                            >
+                                <ChevronRight size={20} />
+                            </button>
+                        </div>
+                        <nav className="flex-1 p-2 space-y-2 overflow-y-auto">
+                            {navItems.map((item) => {
+                                const isActive = getActiveItem() === item.id;
+                                const Icon = item.icon;
+                                return (
+                                    <Link
+                                        key={item.id}
+                                        href={item.href}
+                                        className={`flex items-center justify-center p-3 rounded-lg transition-all ${isActive
+                                            ? 'bg-white/20 text-white'
+                                            : 'text-white/70 hover:bg-white/10 hover:text-white'
+                                            }`}
+                                        title={item.label}
+                                    >
+                                        <Icon size={20} />
+                                    </Link>
+                                );
+                            })}
+                        </nav>
+                        <div className="p-2 border-t border-white/10">
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center justify-center p-3 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                                title="Logout"
+                            >
+                                <LogOut size={20} />
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <SidebarContent />
+                )}
+            </aside>
+
+            {/* Mobile Overlay */}
+            {mobileMenuOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                    onClick={() => setMobileMenuOpen(false)}
+                />
+            )}
+
+            {/* Mobile Sidebar */}
+            <aside
+                className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#4b2192] text-white transform transition-transform duration-300 lg:hidden flex flex-col ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+                    }`}
+            >
+                <SidebarContent onItemClick={() => setMobileMenuOpen(false)} />
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-auto">
-                <div className="p-8">{children}</div>
-            </main>
+            <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Mobile Header */}
+                <header className="h-14 bg-white border-b border-gray-200 flex items-center px-4 gap-3 lg:hidden flex-shrink-0 shadow-sm">
+                    <button
+                        onClick={() => setMobileMenuOpen(true)}
+                        className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                        aria-label="Open navigation"
+                    >
+                        <Menu size={22} />
+                    </button>
+                    <h1 className="text-lg font-bold text-[#4b2192]">DOCNOW</h1>
+                    <span className="text-xs text-gray-400 font-medium">Admin</span>
+                </header>
+
+                {/* Page Content */}
+                <main className="flex-1 overflow-auto">
+                    <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+                </main>
+            </div>
         </div>
     );
 }
+

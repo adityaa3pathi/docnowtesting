@@ -151,8 +151,8 @@ export default function OrdersPage() {
                                     setPagination(prev => ({ ...prev, page: 1 }));
                                 }}
                                 className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${statusFilter === status
-                                        ? 'bg-[#4b2192] text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    ? 'bg-[#4b2192] text-white'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                             >
                                 {status}
@@ -251,8 +251,8 @@ export default function OrdersPage() {
                         </div>
 
                         {/* Pagination */}
-                        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
-                            <p className="text-sm text-gray-500">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t border-gray-100">
+                            <p className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
                                 Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
                                 {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} orders
                             </p>
@@ -295,10 +295,10 @@ export default function OrdersPage() {
                         </div>
 
                         <div className="p-6 space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="bg-gray-50 p-4 rounded-lg">
                                     <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Order ID</p>
-                                    <p className="font-mono font-medium text-lg">{selectedOrder.partnerBookingId || selectedOrder.id}</p>
+                                    <p className="font-mono font-medium text-base sm:text-lg break-all">{selectedOrder.partnerBookingId || selectedOrder.id}</p>
                                 </div>
                                 <div className="bg-gray-50 p-4 rounded-lg">
                                     <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Status</p>
@@ -308,7 +308,7 @@ export default function OrdersPage() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
                                 <div>
                                     <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-3">
                                         <User size={16} /> User Details
@@ -343,8 +343,8 @@ export default function OrdersPage() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                                <div className="flex items-center gap-6 text-sm text-gray-600">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-gray-100">
+                                <div className="flex items-center gap-4 sm:gap-6 text-sm text-gray-600">
                                     <div className="flex items-center gap-2">
                                         <Calendar size={16} />
                                         {formatDate(selectedOrder.slotDate)}
@@ -354,7 +354,7 @@ export default function OrdersPage() {
                                         {selectedOrder.slotTime}
                                     </div>
                                 </div>
-                                <div className="text-right">
+                                <div className="sm:text-right">
                                     <p className="text-sm text-gray-500">Total Amount</p>
                                     <p className="text-2xl font-bold text-[#4b2192]">₹{selectedOrder.amount.toLocaleString('en-IN')}</p>
                                 </div>

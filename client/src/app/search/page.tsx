@@ -343,7 +343,7 @@ function ProductCard({ product }: { product: Product }) {
                     </div>
                     <div className="flex items-center gap-3">
                         {isInCart && (
-                            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-bold uppercase tracking-wider border border-green-200">
+                            <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-green-50 text-green-700 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider border border-green-200">
                                 <Check className="w-3.5 h-3.5" />
                                 {cart?.items.filter(i => i.testCode === product.partnerCode).length} Added
                             </div>

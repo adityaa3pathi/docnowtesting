@@ -99,7 +99,7 @@ export default function Home() {
 
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary/80 text-white py-20">
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary/80 text-white py-12 md:py-20">
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
             <div className="text-center lg:text-left">
@@ -142,7 +142,7 @@ export default function Home() {
       </section>
 
       {/* Top Health Packages Grid */}
-      <section className="py-20 bg-white">
+      <section className="py-12 md:py-20 bg-white">
         <div className="container mx-auto px-4 max-w-7xl text-center">
           <div className="mb-16">
             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
@@ -186,7 +186,7 @@ export default function Home() {
       </section>
 
       {/* Available Individual Tests */}
-      <section className="py-20 bg-accent/30">
+      <section className="py-12 md:py-20 bg-accent/30">
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
@@ -232,7 +232,7 @@ export default function Home() {
       </section>
 
       {/* Why Choose Us */}
-      <section className="py-20 bg-white">
+      <section className="py-12 md:py-20 bg-white">
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">Why Choose Us?</h2>
@@ -252,7 +252,7 @@ export default function Home() {
       </section>
 
       {/* Callback Section */}
-      <section className="py-20 bg-white border-t border-border">
+      <section className="py-12 md:py-20 bg-white border-t border-border">
         <div className="container mx-auto px-4 max-w-3xl">
           <Card className="p-10 border-2 border-primary/10 shadow-xl text-center">
             <Phone className="w-12 h-12 text-primary mx-auto mb-6" />
