@@ -32,16 +32,16 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
     return (
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
             {/* Header */}
-            <div className="bg-gray-50 px-6 py-4 flex flex-wrap justify-between items-center gap-4 border-b border-gray-100">
+            <div className="bg-gray-50 px-4 sm:px-6 py-4 grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-between sm:items-center gap-3 sm:gap-4 border-b border-gray-100">
                 <div>
-                    <div className="text-sm text-gray-500">Booking ID</div>
-                    <div className="font-mono font-medium text-slate-800">
+                    <div className="text-xs sm:text-sm text-gray-500">Booking ID</div>
+                    <div className="font-mono font-medium text-slate-800 text-sm">
                         {booking.partnerBookingId || booking.id.slice(0, 8)}
                     </div>
                 </div>
                 <div>
-                    <div className="text-sm text-gray-500">Scheduled For</div>
-                    <div className="font-medium text-slate-800">
+                    <div className="text-xs sm:text-sm text-gray-500">Scheduled For</div>
+                    <div className="font-medium text-slate-800 text-sm">
                         {new Date(booking.slotDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                         {booking.slotTime && !/^\d+$/.test(booking.slotTime) && (
                             <span className="text-gray-500 font-normal"> at {booking.slotTime}</span>
@@ -49,10 +49,10 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                     </div>
                 </div>
                 <div>
-                    <div className="text-sm text-gray-500">Total Amount</div>
+                    <div className="text-xs sm:text-sm text-gray-500">Total Amount</div>
                     <div className="font-bold text-primary">₹{booking.totalAmount}</div>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${booking.status === 'Order Booked' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                <div className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide w-fit ${booking.status === 'Order Booked' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
                     }`}>
                     {booking.status}
                 </div>
@@ -71,21 +71,22 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                 </ul>
 
                 {/* Actions */}
-                <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-100">
+                <div className="flex flex-wrap gap-2 sm:gap-3 pt-4 border-t border-gray-100">
                     <Button
                         onClick={() => onTrack(booking.id)}
                         variant="primary"
                         disabled={booking.status === 'Rescheduled'}
-                        className="gap-2"
+                        className="gap-2 text-xs sm:text-sm"
                     >
-                        <MapPin className="w-4 h-4" />
-                        Track Status
+                        <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        Track
                     </Button>
 
                     <Button
                         variant="outline"
                         onClick={() => onReschedule(booking)}
                         disabled={!['Order Booked', 'Sample Collector Assigned'].includes(booking.status)}
+                        className="text-xs sm:text-sm"
                     >
                         Reschedule
                     </Button>
@@ -94,14 +95,14 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                         variant="outline"
                         onClick={() => onCancel(booking.id)}
                         disabled={booking.status === 'Cancelled' || booking.status === 'Rescheduled'}
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50 text-xs sm:text-sm"
                     >
-                        Cancel Booking
+                        Cancel
                     </Button>
 
                     {/* Phlebo Contact Action */}
                     {booking.status === 'Sample Collector Assigned' && (
-                        <div className="flex-1 flex justify-end">
+                        <div className="w-full sm:flex-1 sm:flex sm:justify-end mt-1 sm:mt-0">
                             {phleboData ? (
                                 <div className="bg-blue-50 p-2 px-4 rounded-lg border border-blue-100 flex items-center gap-4">
                                     <div>
