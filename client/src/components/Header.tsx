@@ -1,8 +1,8 @@
 "use client";
 import Link from 'next/link';
-import { ShoppingCart, User, Menu, X, MapPin, Search, Navigation, Loader2, Shield } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, MapPin, Search, Navigation, Loader2, Shield, Phone, LogOut } from 'lucide-react';
 import { Button, Input } from './ui';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -60,6 +60,28 @@ export function Header() {
 
     // Auth Dialog State
     const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+    // Mobile Drawer State
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    // Close mobile menu on route change (resize)
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth >= 768) setIsMobileMenuOpen(false);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Prevent body scroll when mobile menu is open
+    useEffect(() => {
+        if (isMobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => { document.body.style.overflow = ''; };
+    }, [isMobileMenuOpen]);
 
     const handleCallbackSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -350,6 +372,25 @@ export function Header() {
                     )}
                 </div>
 
+                {/* ─── Mobile: Cart + Hamburger ─── */}
+                <div className="flex md:hidden items-center gap-2">
+                    <Link href="/cart" className="p-2 text-muted-foreground hover:text-primary transition-colors relative">
+                        <ShoppingCart className="w-5 h-5" />
+                        {cartCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                                {cartCount}
+                            </span>
+                        )}
+                    </Link>
+                    <button
+                        className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                        onClick={() => setIsMobileMenuOpen(true)}
+                        aria-label="Open navigation menu"
+                    >
+                        <Menu className="h-6 w-6" />
+                    </button>
+                </div>
+
                 <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
 
                 <Dialog open={isCallbackOpen} onOpenChange={setIsCallbackOpen}>
@@ -389,8 +430,176 @@ export function Header() {
                         </form>
                     </DialogContent>
                 </Dialog>
+            </div>
 
-                <button className="md:hidden p-2 text-muted-foreground"><Menu className="h-6 w-6" /></button>
+            {/* ─── Mobile Navigation Drawer ─── */}
+            {/* Backdrop */}
+            <div
+                className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 md:hidden ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                    }`}
+                onClick={() => setIsMobileMenuOpen(false)}
+            />
+
+            {/* Drawer Panel */}
+            <div
+                className={`fixed top-0 left-0 h-full w-[280px] bg-white z-[70] shadow-2xl transform transition-transform duration-300 ease-out md:hidden flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+                    }`}
+            >
+                {/* Drawer Header */}
+                <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100 flex-shrink-0">
+                    <Link href="/" className="text-xl font-black tracking-tight text-primary" onClick={() => setIsMobileMenuOpen(false)}>
+                        DOC<span className="text-foreground">NOW</span>
+                    </Link>
+                    <button
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                        aria-label="Close menu"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+
+                {/* Drawer Body — scrollable */}
+                <div className="flex-1 overflow-y-auto">
+                    {/* User Info Section */}
+                    {isAuthenticated ? (
+                        <div className="px-5 py-4 bg-primary/5 border-b border-gray-100">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                    {user?.name?.[0]?.toUpperCase() || 'U'}
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-bold text-gray-900 truncate">{user?.name || 'User'}</p>
+                                    <p className="text-xs text-gray-500 truncate">{user?.mobile || user?.email}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="px-5 py-4 border-b border-gray-100">
+                            <Button
+                                className="w-full rounded-xl font-bold"
+                                onClick={() => {
+                                    setIsMobileMenuOpen(false);
+                                    setIsAuthOpen(true);
+                                }}
+                            >
+                                <User className="mr-2 h-4 w-4" />
+                                Sign In / Sign Up
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* Location Quick View */}
+                    <div className="px-5 py-3 border-b border-gray-100 space-y-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Your Location</p>
+                        <button
+                            onClick={() => {
+                                setIsMobileMenuOpen(false);
+                                setIsLocationDialogOpen(true);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-gray-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-left"
+                        >
+                            <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                            <div className="min-w-0">
+                                <p className="text-sm font-semibold text-gray-800 truncate">{selectedCity}</p>
+                                <p className="text-xs text-gray-500">{selectedPincode}</p>
+                            </div>
+                        </button>
+                    </div>
+
+                    {/* Navigation Links */}
+                    <div className="px-3 py-3 space-y-0.5">
+                        <Link
+                            href="/search"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-primary transition-all"
+                        >
+                            <Search className="w-4 h-4 text-gray-400" />
+                            Our Packages
+                        </Link>
+                        <Link
+                            href="/search"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-primary transition-all"
+                        >
+                            <Search className="w-4 h-4 text-gray-400" />
+                            Our Tests
+                        </Link>
+                        <Link
+                            href="/cart"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-primary transition-all"
+                        >
+                            <ShoppingCart className="w-4 h-4 text-gray-400" />
+                            Cart
+                            {cartCount > 0 && (
+                                <span className="ml-auto bg-primary text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center">
+                                    {cartCount}
+                                </span>
+                            )}
+                        </Link>
+                        <button
+                            onClick={() => {
+                                setIsMobileMenuOpen(false);
+                                setIsCallbackOpen(true);
+                            }}
+                            className="flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm font-semibold text-primary hover:bg-primary/5 transition-all"
+                        >
+                            <Phone className="w-4 h-4" />
+                            Get a Callback
+                        </button>
+                    </div>
+
+                    {/* Auth-only links */}
+                    {isAuthenticated && (
+                        <div className="px-3 py-2 border-t border-gray-100">
+                            <Link
+                                href="/profile"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-primary transition-all"
+                            >
+                                <User className="w-4 h-4 text-gray-400" />
+                                My Profile
+                            </Link>
+                            {(user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN') && (
+                                <Link
+                                    href="/manager"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-teal-700 hover:bg-teal-50 transition-all"
+                                >
+                                    <Shield className="w-4 h-4 text-teal-600" />
+                                    Manager Dashboard
+                                </Link>
+                            )}
+                            {user?.role === 'SUPER_ADMIN' && (
+                                <Link
+                                    href="/super-admin"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-purple-700 hover:bg-purple-50 transition-all"
+                                >
+                                    <Shield className="w-4 h-4 text-purple-600" />
+                                    Admin Panel
+                                </Link>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Drawer Footer */}
+                {isAuthenticated && (
+                    <div className="px-5 py-4 border-t border-gray-100 flex-shrink-0">
+                        <button
+                            onClick={() => {
+                                setIsMobileMenuOpen(false);
+                                logout();
+                            }}
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-all"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            Log Out
+                        </button>
+                    </div>
+                )}
             </div>
         </nav>
     );
