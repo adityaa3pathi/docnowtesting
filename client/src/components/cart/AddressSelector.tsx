@@ -2,6 +2,7 @@ import { MapPin, Plus } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 
 interface Address {
@@ -38,14 +39,14 @@ export function AddressSelector({
             setAddressDialogOpen(false);
             setAddressForm({ line1: '', city: '', pincode: '' });
         } catch (error: any) {
-            alert(error.response?.data?.error || 'Failed to add address');
+            toast.error(error.response?.data?.error || 'Failed to add address');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
             <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-primary" />
                 1. Sample Collection Address
@@ -71,14 +72,12 @@ export function AddressSelector({
                             </option>
                         ))}
                     </select>
-                    <Button
-                        variant="outline"
+                    <button
                         onClick={() => setAddressDialogOpen(true)}
-                        className="w-full gap-2 border-dashed"
-                        size="sm"
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-[13px] font-semibold border-2 border-dashed border-gray-200 text-slate-700 bg-gray-50 hover:bg-white hover:border-primary/40 active:scale-[0.97] transition-all duration-200"
                     >
                         <Plus className="w-4 h-4" /> Add New Address
-                    </Button>
+                    </button>
                 </div>
             )}
 

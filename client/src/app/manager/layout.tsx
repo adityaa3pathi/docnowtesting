@@ -16,6 +16,7 @@ import {
     Loader2,
     Activity,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/manager/dashboard' },
@@ -46,7 +47,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
 
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
-                    alert(`Manager access denied: ${err.error || 'Not authorized'}`);
+                    toast.error(`Manager access denied: ${err.error || 'Not authorized'}`);
                     router.push('/');
                     return;
                 }
@@ -109,8 +110,8 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                                     <Link
                                         href={item.href}
                                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive
-                                                ? 'bg-white/20 text-white shadow-lg'
-                                                : 'text-white/70 hover:bg-white/10 hover:text-white'
+                                            ? 'bg-white/20 text-white shadow-lg'
+                                            : 'text-white/70 hover:bg-white/10 hover:text-white'
                                             }`}
                                     >
                                         <Icon className="h-5 w-5 flex-shrink-0" />
@@ -179,8 +180,8 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                                         href={item.href}
                                         onClick={() => setMobileMenuOpen(false)}
                                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive
-                                                ? 'bg-white/20 text-white shadow-lg'
-                                                : 'text-white/70 hover:bg-white/10 hover:text-white'
+                                            ? 'bg-white/20 text-white shadow-lg'
+                                            : 'text-white/70 hover:bg-white/10 hover:text-white'
                                             }`}
                                     >
                                         <Icon className="h-5 w-5 flex-shrink-0" />

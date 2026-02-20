@@ -11,6 +11,7 @@ import {
     ChevronLeft,
     ChevronRight,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface CatalogItem {
     id: string;
@@ -78,12 +79,12 @@ export default function CatalogManagement() {
             });
             const data = await res.json();
             if (res.ok) {
-                alert(`✅ ${data.message}`);
+                toast.success(data.message);
                 fetchCatalog();
             } else {
-                alert(`❌ ${data.error || 'Sync failed'}`);
+                toast.error(data.error || 'Sync failed');
             }
-        } catch { alert('❌ Network error during sync'); }
+        } catch { toast.error('Network error during sync'); }
         setSyncing(false);
     };
 
@@ -248,8 +249,8 @@ export default function CatalogManagement() {
                                         </td>
                                         <td className="px-6 py-3">
                                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${item.isEnabled
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-gray-100 text-gray-600'
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-gray-100 text-gray-600'
                                                 }`}>
                                                 {item.isEnabled ? 'Enabled' : 'Disabled'}
                                             </span>

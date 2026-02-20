@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button, Input } from '@/components/ui';
@@ -25,10 +26,10 @@ export function CancelDialog({ bookingId, open, onOpenChange, onSuccess }: Cance
             setCancelReason('');
             onSuccess();
             onOpenChange(false);
-            alert('Booking cancelled successfully');
+            toast.success('Booking cancelled successfully');
         } catch (error: any) {
             console.error('Error cancelling booking:', error);
-            alert(error.response?.data?.error || 'Failed to cancel booking');
+            toast.error(error.response?.data?.error || 'Failed to cancel booking');
         } finally {
             setIsCancelling(false);
         }

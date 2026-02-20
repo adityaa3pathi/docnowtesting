@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { MapPin, Loader2, Navigation } from "lucide-react";
+import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useLocation } from "@/contexts/LocationContext";
@@ -63,7 +64,7 @@ export function LocationSelector({ onLocationVerified }: LocationSelectorProps) 
                 // In a real app, we would reverse geocode here to get the zipcode
                 // For this demo, we can just simulate or ask user to confirm
                 setLoading(false);
-                alert("Location detected! (Reverse Geocoding to be implemented)");
+                toast.success("Location detected! (Reverse Geocoding to be implemented)");
             },
             (err) => {
                 setLoading(false);

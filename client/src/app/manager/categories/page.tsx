@@ -10,6 +10,7 @@ import {
     X,
     Check,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface Category {
     id: string;
@@ -70,7 +71,7 @@ export default function CategoryManagement() {
     const generateSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
     const handleCreate = async () => {
-        if (!newName.trim()) { alert('Name is required'); return; }
+        if (!newName.trim()) { toast.error('Name is required'); return; }
         setCreating(true);
         try {
             const res = await fetch('/api/manager/categories', {
@@ -81,9 +82,9 @@ export default function CategoryManagement() {
                 setShowCreate(false); setNewName(''); setNewSlug(''); setNewDesc('');
                 fetchData();
             } else {
-                const err = await res.json(); alert(err.error || 'Failed');
+                const err = await res.json(); toast.error(err.error || 'Failed');
             }
-        } catch { alert('Network error'); }
+        } catch { toast.error('Network error'); }
         setCreating(false);
     };
 
@@ -96,7 +97,7 @@ export default function CategoryManagement() {
     };
 
     const handleAssign = async () => {
-        if (!assignCatId || selectedItems.length === 0) { alert('Select a category and at least one product'); return; }
+        if (!assignCatId || selectedItems.length === 0) { toast.error('Select a category and at least one product'); return; }
         setAssigning(true);
         try {
             const res = await fetch(`/api/manager/categories/${assignCatId}/items`, {
@@ -107,9 +108,9 @@ export default function CategoryManagement() {
                 setShowAssign(false); setAssignCatId(''); setSelectedItems([]);
                 fetchData();
             } else {
-                const err = await res.json(); alert(err.error || 'Failed');
+                const err = await res.json(); toast.error(err.error || 'Failed');
             }
-        } catch { alert('Network error'); }
+        } catch { toast.error('Network error'); }
         setAssigning(false);
     };
 

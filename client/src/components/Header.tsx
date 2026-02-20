@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ShoppingCart, User, Menu, X, MapPin, Search, Navigation, Loader2, Shield, Phone, LogOut } from 'lucide-react';
 import { Button, Input } from './ui';
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import {
     Dialog,
     DialogContent,
@@ -94,15 +95,15 @@ export function Header() {
             });
 
             if (response.ok) {
-                alert("Request submitted! Our health expert will call you shortly.");
+                toast.success("Request submitted! Our health expert will call you shortly.");
                 setCallbackForm({ name: '', mobile: '', city: 'Gurgaon' });
                 setIsCallbackOpen(false);
             } else {
-                alert("Failed to submit request. Please try again.");
+                toast.error("Failed to submit request. Please try again.");
             }
         } catch (error) {
             console.error("Callback error:", error);
-            alert("Something went wrong. Please try again.");
+            toast.error("Something went wrong. Please try again.");
         } finally {
             setIsSubmittingCallback(false);
         }
@@ -120,7 +121,7 @@ export function Header() {
 
     const detectUserLocation = () => {
         if (!navigator.geolocation) {
-            alert("Geolocation is not supported by your browser");
+            toast.error("Geolocation is not supported by your browser");
             return;
         }
 
@@ -177,7 +178,7 @@ export function Header() {
             updatePincode(pincodeInput);
             setIsPincodeDialogOpen(false);
         } else {
-            alert("Please enter a valid 6-digit Pincode");
+            toast.error("Please enter a valid 6-digit Pincode");
         }
     };
 

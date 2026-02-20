@@ -5,9 +5,10 @@ import { Header } from '@/components/Header';
 import { Search, Filter, Loader2, ShoppingCart, Info, Check, Tag, X } from 'lucide-react';
 import api from '@/lib/api';
 import { useLocation } from '@/contexts/LocationContext';
-import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
 import { useRouter, useSearchParams } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 interface Product {
     id: string;
@@ -298,7 +299,7 @@ function ProductCard({ product }: { product: Product }) {
 
     const handleAddToCart = async () => {
         if (!isAuthenticated) {
-            alert('Please login to add items to cart');
+            toast.error('Please login to add items to cart');
             return;
         }
 

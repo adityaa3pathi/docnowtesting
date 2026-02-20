@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { User, Mail, Phone, MapPin, Briefcase } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function SettingsPage() {
     const [formData, setFormData] = useState({
@@ -29,7 +30,7 @@ export default function SettingsPage() {
     }, []);
 
     const handleSave = () => {
-        alert('Profile updated successfully');
+        toast.success('Profile updated successfully');
     };
 
     const permissions = [

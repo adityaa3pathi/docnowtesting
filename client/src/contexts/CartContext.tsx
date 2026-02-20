@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { useAuth } from './AuthContext';
 
@@ -90,7 +91,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             console.error('Error adding to cart:', error);
             // Even if duplicate wasn't an error, we now allow it.
             // If API returns success, we are good.
-            alert('Failed to add item to cart');
+            toast.error('Failed to add item to cart');
             return false;
         }
     };
@@ -101,7 +102,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             await fetchCart();
         } catch (error) {
             console.error('Error removing from cart:', error);
-            alert('Failed to remove item from cart');
+            toast.error('Failed to remove item from cart');
         }
     };
 
@@ -111,7 +112,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             await fetchCart();
         } catch (error) {
             console.error('Error updating cart item:', error);
-            alert('Failed to update cart item');
+            toast.error('Failed to update cart item');
         }
     };
 
@@ -121,7 +122,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             await fetchCart();
         } catch (error) {
             console.error('Error clearing cart:', error);
-            alert('Failed to clear cart');
+            toast.error('Failed to clear cart');
         }
     };
 

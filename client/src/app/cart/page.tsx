@@ -1,11 +1,12 @@
 "use client";
 
 import { Header } from '@/components/Header';
-import { Trash2, Loader2, ShoppingBag, MapPin, Calendar, Ticket, Wallet, Check, X, FileText, ChevronDown, ChevronUp, Tag, Percent } from 'lucide-react';
+import { Loader2, ShoppingBag, MapPin, Calendar, Ticket, Wallet, Check, X, FileText, ChevronDown, ChevronUp, Tag, CreditCard, Plus, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import toast from 'react-hot-toast';
 import { ProfileCompletionDialog } from '@/components/profile/ProfileCompletionDialog';
 import { SlotSelector } from '@/components/cart/SlotSelector';
 import { AddressSelector } from '@/components/cart/AddressSelector';
@@ -232,7 +233,7 @@ export default function CartPage() {
 
         if (!slot) {
             console.error('Selected slot not found in current slots list');
-            alert('Error: Selected slot data is missing. Please refresh.');
+            toast.error('Error: Selected slot data is missing. Please refresh.');
             return;
         }
 
@@ -242,7 +243,7 @@ export default function CartPage() {
 
         if (!slotId) {
             console.error('Slot ID (stm_id) missing in slot object:', slot);
-            alert('Error: Invalid slot data.');
+            toast.error('Error: Invalid slot data.');
             return;
         }
 
@@ -255,12 +256,12 @@ export default function CartPage() {
             });
 
             console.log('Freeze Slot API Response:', res.data);
-            alert(`Slot Locked Successfully! Response: ${JSON.stringify(res.data)}`);
+            toast.success('Slot Locked Successfully!');
             setIsSlotLocked(true);
 
         } catch (error) {
             console.error('Error freezing slot:', error);
-            alert('Failed to lock this slot. Please try another one.');
+            toast.error('Failed to lock this slot. Please try another one.');
             setIsSlotLocked(false);
         } finally {
             setFreezingSlot(false);
@@ -305,13 +306,13 @@ export default function CartPage() {
     const handleCheckout = async () => {
         // Validate address selection
         if (!selectedAddressId) {
-            alert('Please select a collection address before checkout');
+            toast.error('Please select a collection address before checkout');
             return;
         }
 
         // Validate slot selection and lock
         if (!selectedDate || !selectedTime || !isSlotLocked) {
-            alert('Please select and lock a collection slot before checkout');
+            toast.error('Please select and lock a collection slot before checkout');
             return;
         }
 
@@ -320,7 +321,7 @@ export default function CartPage() {
         const slotId = slot?.stm_id;
 
         if (!slotId) {
-            alert('Invalid slot selected. Please refresh the page.');
+            toast.error('Invalid slot selected. Please refresh the page.');
             return;
         }
 
@@ -342,7 +343,7 @@ export default function CartPage() {
 
             // Check for instant confirmation (Zero Amount)
             if (status === 'confirmed' || amount === 0) {
-                alert('Order placed successfully!');
+                toast.success('Order placed successfully!');
                 await refreshCart();
                 router.push('/profile?tab=bookings');
                 return;
@@ -368,20 +369,20 @@ export default function CartPage() {
                         });
 
                         if (verifyRes.data.status === 'confirmed' || verifyRes.data.status === 'already_confirmed') {
-                            alert('Order placed successfully!');
+                            toast.success('Order placed successfully!');
                             await refreshCart();
                             router.push('/profile?tab=bookings');
                         } else if (verifyRes.data.status === 'payment_received_booking_pending') {
                             // Partner booking failed but payment is secure
-                            alert('Payment received! Your booking is being confirmed. You will receive an update shortly.');
+                            toast.success('Payment received! Your booking is being confirmed. You will receive an update shortly.');
                             await refreshCart();
                             router.push('/profile?tab=bookings');
                         } else {
-                            alert('Payment verification failed. Please contact support.');
+                            toast.error('Payment verification failed. Please contact support.');
                         }
                     } catch (verifyError: any) {
                         console.error('Payment verification error:', verifyError);
-                        alert('Payment verification failed. If amount was deducted, it will be refunded within 5-7 days.');
+                        toast.error('Payment verification failed. If amount was deducted, it will be refunded within 5-7 days.');
                     } finally {
                         setCreatingOrder(false);
                     }
@@ -418,7 +419,7 @@ export default function CartPage() {
                 return;
             }
 
-            alert(error.response?.data?.error || 'Failed to initiate payment. Please try again.');
+            toast.error(error.response?.data?.error || 'Failed to initiate payment. Please try again.');
         } finally {
             setCreatingOrder(false);
         }
@@ -457,7 +458,7 @@ export default function CartPage() {
     // const availableTimes = slots.find(s => s.slot_date === selectedDate)?.slot_time || []; // This line is no longer needed as slots is already string[]
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="w-full min-h-screen bg-gray-50 pb-32 md:pb-20 overflow-x-hidden">
             <Header />
 
             <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -479,15 +480,15 @@ export default function CartPage() {
                         {/* Cart Items & Options */}
                         <div className="md:col-span-2 space-y-6">
                             {/* Items List */}
-                            <div className="space-y-4">
+                            <div className="space-y-4 md:space-y-6">
                                 {cart.items.map((item) => (
                                     <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                                         <div className="flex items-start gap-4">
                                             <div className="w-16 h-16 bg-primary/10 rounded-lg flex-shrink-0 flex items-center justify-center">
                                                 <span className="text-2xl">🧪</span>
                                             </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-slate-900 mb-2 line-clamp-2">{item.testName}</h3>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="font-semibold text-slate-900 mb-2 line-clamp-2 break-words">{item.testName}</h3>
 
                                                 {/* Patient Assignment */}
                                                 <div className="mb-2">
@@ -802,7 +803,7 @@ export default function CartPage() {
 
                                 <button
                                     onClick={handleCheckout}
-                                    className="w-full bg-slate-900 text-white rounded-xl py-4 font-bold hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    className="hidden md:flex w-full bg-slate-900 text-white rounded-xl py-4 font-bold hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/10 disabled:opacity-50 disabled:cursor-not-allowed items-center justify-center gap-2"
                                     disabled={!selectedAddressId || !selectedDate || !selectedTime || freezingSlot || creatingOrder || !isSlotLocked}
                                 >
                                     {creatingOrder ? (
@@ -815,7 +816,7 @@ export default function CartPage() {
                                     )}
                                 </button>
 
-                                <div className="mt-4 space-y-1">
+                                <div className="mt-4 space-y-1 hidden md:block">
                                     {!selectedAddressId && (
                                         <p className="text-[10px] text-red-500 text-center flex items-center justify-center gap-1">
                                             • Address selection required

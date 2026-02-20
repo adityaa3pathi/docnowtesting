@@ -4,6 +4,7 @@ import { Calendar, Loader2 } from 'lucide-react';
 import api from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button, Input } from '@/components/ui';
+import toast from 'react-hot-toast';
 import { BookingHeader } from './types';
 
 interface RescheduleDialogProps {
@@ -87,7 +88,7 @@ export function RescheduleDialog({ booking, open, onOpenChange, onSuccess }: Res
         const endTime = selectedNewSlot.end_time || '';
 
         if (!slotId) {
-            alert('Error: Could not determine slot ID. Please try selecting a different slot.');
+            toast.error('Error: Could not determine slot ID. Please try selecting a different slot.');
             return;
         }
 
@@ -103,11 +104,11 @@ export function RescheduleDialog({ booking, open, onOpenChange, onSuccess }: Res
             if (res.data.success) {
                 onSuccess();
                 onOpenChange(false);
-                alert('Booking rescheduled successfully');
+                toast.success('Booking rescheduled successfully');
             }
         } catch (error: any) {
             console.error('Error rescheduling booking:', error);
-            alert(error.response?.data?.error || 'Failed to reschedule booking');
+            toast.error(error.response?.data?.error || 'Failed to reschedule booking');
         } finally {
             setIsRescheduling(false);
         }
