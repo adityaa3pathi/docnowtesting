@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { LocationProvider } from "@/contexts/LocationContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,6 +27,7 @@ export default function RootLayout({
           <CartProvider>
             <LocationProvider>
               {children}
+              <Toaster position="top-right" />
             </LocationProvider>
           </CartProvider>
         </AuthProvider>

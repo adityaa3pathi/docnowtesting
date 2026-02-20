@@ -2,6 +2,7 @@
 
 import { MapPin, Edit2, Trash2, Loader2, Lock } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button, Input } from '@/components/ui';
@@ -71,7 +72,7 @@ export function ProfileTab() {
             await fetchProfile();
             setEditMode(false);
         } catch (error: any) {
-            alert(error.response?.data?.error || 'Failed to update profile');
+            toast.error(error.response?.data?.error || 'Failed to update profile');
         } finally {
             setLoading(false);
         }
@@ -84,7 +85,7 @@ export function ProfileTab() {
             setAddressDialogOpen(false);
             setAddressForm({ line1: '', city: '', pincode: '' });
         } catch (error: any) {
-            alert(error.response?.data?.error || 'Failed to add address');
+            toast.error(error.response?.data?.error || 'Failed to add address');
         }
     };
 
@@ -94,7 +95,7 @@ export function ProfileTab() {
             await api.delete(`/profile/addresses/${id}`);
             await fetchAddresses();
         } catch (error: any) {
-            alert(error.response?.data?.error || 'Failed to delete address');
+            toast.error(error.response?.data?.error || 'Failed to delete address');
         }
     };
 

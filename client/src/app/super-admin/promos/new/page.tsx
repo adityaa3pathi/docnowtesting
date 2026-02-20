@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function NewPromoPage() {
     const router = useRouter();
@@ -47,14 +48,15 @@ export default function NewPromoPage() {
             });
 
             if (res.ok) {
+                toast.success('Promo created successfully');
                 router.push('/super-admin/promos');
             } else {
                 const data = await res.json();
-                alert(data.error || 'Failed to create promo');
+                toast.error(data.error || 'Failed to create promo');
             }
         } catch (error) {
             console.error('Failed to create promo:', error);
-            alert('Something went wrong. Please try again.');
+            toast.error('Something went wrong. Please try again.');
         } finally {
             setLoading(false);
         }

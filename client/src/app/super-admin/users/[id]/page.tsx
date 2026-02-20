@@ -24,6 +24,7 @@ import {
     MapPin,
     CreditCard,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface Patient {
     id: string;
@@ -177,9 +178,10 @@ export default function UserDetailPage() {
                 ...prev,
                 user: { ...prev.user, status: newStatus }
             } : null);
+            toast.success(`User ${newStatus.toLowerCase()} successfully`);
         } catch (err) {
             console.error('Error updating user status:', err);
-            alert('Failed to update user status');
+            toast.error('Failed to update user status');
         } finally {
             setActionLoading(false);
         }

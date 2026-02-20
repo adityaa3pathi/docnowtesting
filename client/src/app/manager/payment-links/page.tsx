@@ -10,6 +10,7 @@ import {
     X,
     AlertCircle,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 /**
  * Payment Links — UI Shell
@@ -55,11 +56,11 @@ export default function PaymentLinksPage() {
 
     const handleCopy = (link: string) => {
         navigator.clipboard.writeText(link);
-        alert('Link copied to clipboard');
+        toast.success('Link copied to clipboard');
     };
 
     const handleGenerate = () => {
-        if (!customerName || selectedProducts.length === 0) { alert('Fill customer and select products'); return; }
+        if (!customerName || selectedProducts.length === 0) { toast.error('Fill customer and select products'); return; }
         setGeneratedLink(`https://docnow.in/pay/PL-${Date.now()}`);
     };
 
@@ -129,8 +130,8 @@ export default function PaymentLinksPage() {
                                     <td className="px-6 py-3 font-semibold">₹{link.amount.toLocaleString()}</td>
                                     <td className="px-6 py-3">
                                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${link.status === 'Paid' ? 'bg-green-100 text-green-800'
-                                                : link.status === 'Pending' ? 'bg-orange-100 text-orange-800'
-                                                    : 'bg-red-100 text-red-800'
+                                            : link.status === 'Pending' ? 'bg-orange-100 text-orange-800'
+                                                : 'bg-red-100 text-red-800'
                                             }`}>
                                             {link.status}
                                         </span>

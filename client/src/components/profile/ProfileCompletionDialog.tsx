@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button, Input } from '@/components/ui';
 import { Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 
 interface ProfileCompletionDialogProps {
@@ -36,7 +37,7 @@ export function ProfileCompletionDialog({ isOpen, onClose, onSuccess, missingFie
             onClose();
         } catch (error) {
             console.error('Profile Update Error:', error);
-            alert('Failed to update profile. Please try again.');
+            toast.error('Failed to update profile. Please try again.');
         } finally {
             setLoading(false);
         }
