@@ -12,6 +12,7 @@ import {
     TrendingUp,
     UserPlus
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface ReferralStats {
     totalReferrals: number;
@@ -113,10 +114,10 @@ export default function ReferralsPage() {
                 })
             ]);
 
-            alert('Configuration saved successfully');
+            toast.success('Configuration saved successfully');
         } catch (error) {
             console.error('Error saving config:', error);
-            alert('Failed to save configuration');
+            toast.error('Failed to save configuration');
         } finally {
             setSaving(false);
         }
@@ -271,9 +272,9 @@ export default function ReferralsPage() {
                                             <tr key={user.id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4">
                                                     <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${index === 0 ? 'bg-yellow-100 text-yellow-700' :
-                                                            index === 1 ? 'bg-gray-100 text-gray-700' :
-                                                                index === 2 ? 'bg-orange-100 text-orange-700' :
-                                                                    'text-gray-500'
+                                                        index === 1 ? 'bg-gray-100 text-gray-700' :
+                                                            index === 2 ? 'bg-orange-100 text-orange-700' :
+                                                                'text-gray-500'
                                                         }`}>
                                                         {index + 1}
                                                     </span>
@@ -316,8 +317,8 @@ export default function ReferralsPage() {
                                             <p className="text-xs text-gray-500 mt-0.5">{formatDate(activity.date)}</p>
                                         </div>
                                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${activity.status === 'COMPLETED'
-                                                ? 'bg-green-100 text-green-700'
-                                                : 'bg-yellow-100 text-yellow-700'
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-yellow-100 text-yellow-700'
                                             }`}>
                                             {activity.status}
                                         </span>

@@ -4,6 +4,7 @@ import { Loader2, AlertCircle, CheckCircle2, Phone } from 'lucide-react';
 import api from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui';
+import toast from 'react-hot-toast';
 import { STATUS_MAP } from './types';
 
 interface TrackStatusDialogProps {
@@ -53,7 +54,7 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
             setPhleboData(res.data);
         } catch (error: any) {
             console.error('Error fetching phlebo contact:', error);
-            // alert(error.response?.data?.error || 'Phlebotomist contact not available yet.');
+            toast.error(error.response?.data?.error || 'Phlebotomist contact not available yet.');
         } finally {
             setPhleboLoading(false);
         }

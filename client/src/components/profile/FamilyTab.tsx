@@ -2,6 +2,7 @@
 
 import { Plus, Edit2, Trash2, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button, Input } from '@/components/ui';
@@ -38,7 +39,7 @@ export function FamilyTab() {
 
     const handleSubmit = async () => {
         if (formData.age < 5) {
-            alert('Family member must be at least 5 years old');
+            toast.error('Family member must be at least 5 years old');
             return;
         }
         try {
@@ -52,7 +53,7 @@ export function FamilyTab() {
             setEditingPatient(null);
             setFormData({ name: '', relation: '', age: 0, gender: 'Male' });
         } catch (error: any) {
-            alert(error.response?.data?.error || 'Failed to save family member');
+            toast.error(error.response?.data?.error || 'Failed to save family member');
         }
     };
 
@@ -62,7 +63,7 @@ export function FamilyTab() {
             await api.delete(`/profile/patients/${id}`);
             await fetchPatients();
         } catch (error: any) {
-            alert(error.response?.data?.error || 'Failed to delete family member');
+            toast.error(error.response?.data?.error || 'Failed to delete family member');
         }
     };
 

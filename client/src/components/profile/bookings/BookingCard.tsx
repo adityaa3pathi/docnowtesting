@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { MapPin, Loader2, Phone } from 'lucide-react';
 import { Button } from '@/components/ui';
+import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { BookingHeader, PhleboDetails } from './types';
 
@@ -23,7 +24,7 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
             setPhleboData(res.data);
         } catch (error: any) {
             console.error('Error fetching phlebo contact:', error);
-            // alert(error.response?.data?.error || 'Phlebotomist contact not available yet.');
+            toast.error(error.response?.data?.error || 'Phlebotomist contact not available yet.');
         } finally {
             setPhleboLoading(false);
         }

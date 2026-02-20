@@ -19,6 +19,7 @@ import {
     Menu,
     X,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // Navigation items matching the design
 const navItems = [
@@ -65,7 +66,7 @@ export default function SuperAdminLayout({
                 if (!res.ok) {
                     const errorData = await res.json().catch(() => ({}));
                     console.error('[Admin] Auth failed:', res.status, errorData);
-                    alert(`Admin access denied: ${errorData.error || 'Not authorized'}. Please login as SUPER_ADMIN.`);
+                    toast.error(`Admin access denied: ${errorData.error || 'Not authorized'}. Please login as SUPER_ADMIN.`);
                     router.push('/');
                     return;
                 }

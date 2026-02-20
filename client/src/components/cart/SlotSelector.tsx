@@ -37,7 +37,7 @@ export function SlotSelector({
     }, []);
 
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
             <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-primary" />
                 2. Select Date & Time
@@ -57,7 +57,7 @@ export function SlotSelector({
                                 key={dateStr}
                                 onClick={() => onDateSelect(dateStr)}
                                 className={cn(
-                                    "flex-shrink-0 flex flex-col items-center justify-center w-20 h-24 rounded-2xl border transition-all",
+                                    "flex-shrink-0 flex flex-col items-center justify-center w-16 h-20 md:w-20 md:h-24 rounded-2xl border transition-all",
                                     selectedDate === dateStr
                                         ? "bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105"
                                         : "bg-white border-gray-100 hover:border-primary/50 text-gray-700 hover:bg-primary/5"

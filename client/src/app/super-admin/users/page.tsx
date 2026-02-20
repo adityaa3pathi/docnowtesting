@@ -15,6 +15,7 @@ import {
     Shield,
     ShieldOff,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface User {
     id: string;
@@ -118,9 +119,10 @@ export default function UsersPage() {
 
             // Update local state
             setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: newStatus } : u));
+            toast.success(`User ${newStatus.toLowerCase()} successfully`);
         } catch (error) {
             console.error('Error updating user status:', error);
-            alert('Failed to update user status');
+            toast.error('Failed to update user status');
         } finally {
             setActionLoading(null);
         }
@@ -151,13 +153,13 @@ export default function UsersPage() {
             }
 
             const result = await res.json();
-            alert(result.message);
+            toast.success(result.message);
 
             // Update local state
             setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u));
         } catch (error: any) {
             console.error('Error updating user role:', error);
-            alert(error.message || 'Failed to update user role');
+            toast.error(error.message || 'Failed to update user role');
         } finally {
             setActionLoading(null);
         }
@@ -173,13 +175,13 @@ export default function UsersPage() {
 
     const handleWalletSubmit = async () => {
         if (!selectedUser || !walletAmount || !walletReason) {
-            alert('Please fill in all fields');
+            toast.error('Please fill in all fields');
             return;
         }
 
         const amount = parseFloat(walletAmount);
         if (isNaN(amount) || amount <= 0) {
-            alert('Please enter a valid amount');
+            toast.error('Please enter a valid amount');
             return;
         }
 
@@ -209,7 +211,7 @@ export default function UsersPage() {
             }
 
             const result = await res.json();
-            alert(`Wallet adjusted successfully. New balance: ₹${result.newBalance}`);
+            toast.success(`Wallet adjusted successfully. New balance: ₹${result.newBalance}`);
 
             // Update local state
             setUsers(prev => prev.map(u =>
@@ -221,7 +223,7 @@ export default function UsersPage() {
             setWalletReason('');
         } catch (error: any) {
             console.error('Error adjusting wallet:', error);
-            alert(error.message || 'Failed to adjust wallet');
+            toast.error(error.message || 'Failed to adjust wallet');
         } finally {
             setActionLoading(null);
         }
@@ -344,8 +346,8 @@ export default function UsersPage() {
                                             <td className="px-6 py-4">
                                                 <span
                                                     className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${user.role === 'MANAGER'
-                                                            ? 'bg-purple-100 text-purple-700'
-                                                            : 'bg-gray-100 text-gray-600'
+                                                        ? 'bg-purple-100 text-purple-700'
+                                                        : 'bg-gray-100 text-gray-600'
                                                         }`}
                                                 >
                                                     {user.role === 'MANAGER' && <Shield size={12} />}
@@ -389,8 +391,8 @@ export default function UsersPage() {
                                                         onClick={() => handleRoleChange(user)}
                                                         disabled={actionLoading === user.id}
                                                         className={`p-2 rounded-lg transition-colors ${user.role === 'MANAGER'
-                                                                ? 'text-purple-500 hover:text-orange-600 hover:bg-orange-50'
-                                                                : 'text-gray-500 hover:text-purple-600 hover:bg-purple-50'
+                                                            ? 'text-purple-500 hover:text-orange-600 hover:bg-orange-50'
+                                                            : 'text-gray-500 hover:text-purple-600 hover:bg-purple-50'
                                                             }`}
                                                         title={user.role === 'MANAGER' ? 'Demote to User' : 'Promote to Manager'}
                                                     >
