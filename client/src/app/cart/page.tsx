@@ -132,13 +132,13 @@ export default function CartPage() {
         <div className="w-full min-h-screen bg-gray-50 pb-32 md:pb-20 overflow-x-hidden">
             <Header />
 
-            <div className="container mx-auto px-4 py-8 max-w-4xl">
-                <h1 className="text-3xl font-bold text-slate-900 mb-8">Your Cart</h1>
+            <div className="container mx-auto px-3 sm:px-4 py-5 sm:py-8 max-w-4xl">
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-5 sm:mb-8">Your Cart</h1>
 
                 {(!cart || cart.items.length === 0) ? (
-                    <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-gray-100">
-                        <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                        <p className="text-gray-500 mb-4 text-lg font-medium">Your cart is empty</p>
+                    <div className="text-center py-14 sm:py-20 bg-white rounded-xl shadow-sm border border-gray-100">
+                        <ShoppingBag className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-300" />
+                        <p className="text-gray-500 mb-4 text-base sm:text-lg font-medium">Your cart is empty</p>
                         <button
                             onClick={() => router.push('/search')}
                             className="text-primary font-bold hover:underline"
@@ -147,9 +147,9 @@ export default function CartPage() {
                         </button>
                     </div>
                 ) : (
-                    <div className="grid md:grid-cols-3 gap-8">
-                        <div className="md:col-span-2 space-y-6">
-                            <div className="space-y-4 md:space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-8">
+                        <div className="md:col-span-2 space-y-4 sm:space-y-6">
+                            <div className="space-y-3 sm:space-y-4">
                                 {cart.items.map((item) => (
                                     <CartItemCard
                                         key={item.id}
