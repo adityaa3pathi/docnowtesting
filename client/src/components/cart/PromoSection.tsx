@@ -37,8 +37,8 @@ export function PromoSection({
     cartTotal
 }: PromoSectionProps) {
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-4">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 mt-4">
+            <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 flex items-center gap-2">
                 <Ticket className="w-5 h-5 text-gray-500" /> Offers & Benefits
             </h3>
 
@@ -54,13 +54,13 @@ export function PromoSection({
                                     setPromoCode(e.target.value.toUpperCase());
                                 }}
                                 onFocus={() => setShowPromoList(true)}
-                                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192] text-sm font-medium uppercase placeholder:normal-case transition-all"
+                                className="w-full px-3 sm:px-4 py-3 sm:py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192] text-sm font-medium uppercase placeholder:normal-case transition-all"
                             />
                         </div>
                         <button
                             onClick={applyPromo}
                             disabled={!promoCode || verifyingPromo}
-                            className="px-5 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                            className="px-4 sm:px-5 py-3 sm:py-2.5 bg-gray-900 text-white rounded-lg text-sm font-semibold hover:bg-gray-800 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex-shrink-0"
                         >
                             {verifyingPromo ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
                         </button>
@@ -107,8 +107,8 @@ export function PromoSection({
                                             }}
                                             disabled={!isEligible}
                                             className={`w-full text-left p-3 rounded-lg border transition-all ${isEligible
-                                                    ? 'border-gray-200 hover:border-[#4b2192] hover:bg-[#4b2192]/5 cursor-pointer'
-                                                    : 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'
+                                                ? 'border-gray-200 hover:border-[#4b2192] hover:bg-[#4b2192]/5 cursor-pointer'
+                                                : 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'
                                                 }`}
                                         >
                                             <div className="flex items-start justify-between gap-3">

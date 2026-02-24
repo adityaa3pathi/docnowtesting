@@ -39,10 +39,10 @@ export function OrderSummary({
     creatingOrder
 }: OrderSummaryProps) {
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 sticky top-24">
-            <h3 className="text-lg font-bold mb-4">Order Summary</h3>
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 md:sticky md:top-24">
+            <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4">Order Summary</h3>
 
-            <div className="space-y-2 mb-6 text-sm">
+            <div className="space-y-2 mb-4 sm:mb-6 text-sm">
                 <div className="flex justify-between">
                     <span className="text-gray-500">Items ({cartItemsCount})</span>
                     <span className="font-medium">₹{total}</span>
@@ -66,7 +66,7 @@ export function OrderSummary({
             </div>
 
             {selectedAddress && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg text-xs space-y-2 border border-gray-100">
+                <div className="mb-3 sm:mb-4 p-3 bg-gray-50 rounded-lg text-xs space-y-2 border border-gray-100">
                     <div className="flex items-start gap-2">
                         <MapPin className="w-3.5 h-3.5 text-primary mt-0.5" />
                         <div>
