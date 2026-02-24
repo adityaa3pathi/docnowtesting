@@ -18,6 +18,8 @@ import {
     Ticket,
     Menu,
     X,
+    Home,
+    Shield,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -168,8 +170,29 @@ export default function SuperAdminLayout({
                 })}
             </nav>
 
+            {/* Mode Switcher */}
+            <div className="px-4 pb-2 border-b border-white/10 mb-0">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">Switch Mode</p>
+                <Link
+                    href="/"
+                    onClick={onItemClick}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors text-sm"
+                >
+                    <Home size={18} />
+                    <span>Exit to Site</span>
+                </Link>
+                <Link
+                    href="/manager"
+                    onClick={onItemClick}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors text-sm"
+                >
+                    <Shield size={18} />
+                    <span>Manager Panel</span>
+                </Link>
+            </div>
+
             {/* Admin Info & Logout */}
-            <div className="p-4 border-t border-white/10">
+            <div className="p-4">
                 <div className="mb-3 px-4">
                     <p className="text-sm font-medium">{adminName}</p>
                     <p className="text-xs text-white/50">Super Admin</p>
@@ -226,7 +249,21 @@ export default function SuperAdminLayout({
                                 );
                             })}
                         </nav>
-                        <div className="p-2 border-t border-white/10">
+                        <div className="p-2 border-t border-white/10 space-y-1">
+                            <Link
+                                href="/"
+                                className="w-full flex items-center justify-center p-3 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                                title="Exit to Site"
+                            >
+                                <Home size={20} />
+                            </Link>
+                            <Link
+                                href="/manager"
+                                className="w-full flex items-center justify-center p-3 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                                title="Manager Panel"
+                            >
+                                <Shield size={20} />
+                            </Link>
                             <button
                                 onClick={handleLogout}
                                 className="w-full flex items-center justify-center p-3 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors"
