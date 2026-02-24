@@ -84,15 +84,15 @@ export function Footer() {
                         <ul className="space-y-4">
                             <li className="flex items-center text-sm font-medium text-muted-foreground">
                                 <Phone className="mr-3 h-4 w-4 text-primary" />
-                                +91 98765 43210
+                                +91 9469 089 089
                             </li>
                             <li className="flex items-center text-sm font-medium text-muted-foreground">
                                 <Mail className="mr-3 h-4 w-4 text-primary" />
-                                care@docnow.com
+                                harshagarwal@docnow.in
                             </li>
                             <li className="flex items-center text-sm font-medium text-muted-foreground">
                                 <MapPin className="mr-3 h-4 w-4 text-primary" />
-                                Hitech City, Hyderabad
+                                Shop No 21, Chandpole Bazar, Jaipur
                             </li>
                         </ul>
                     </div>
