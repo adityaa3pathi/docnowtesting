@@ -15,6 +15,9 @@ import {
     LogOut,
     Loader2,
     Activity,
+    Home,
+    Shield,
+    ArrowLeftRight,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -33,6 +36,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [managerName, setManagerName] = useState('Manager');
+    const [userRole, setUserRole] = useState<string>('');
 
     // Auth guard — check MANAGER or SUPER_ADMIN role
     useEffect(() => {
@@ -54,6 +58,14 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
 
                 const data = await res.json();
                 setManagerName(data.manager || 'Manager');
+                // Read role from localStorage for mode switching
+                try {
+                    const savedUser = localStorage.getItem('docnow_user');
+                    if (savedUser) {
+                        const parsed = JSON.parse(savedUser);
+                        setUserRole(parsed.role || '');
+                    }
+                } catch { /* ignore */ }
                 setIsLoading(false);
             } catch {
                 router.push('/');
@@ -128,8 +140,29 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                     </ul>
                 </nav>
 
+                {/* Mode Switcher */}
+                <div className="px-3 pb-2 border-b border-white/10 mb-0">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-3 mb-2">Switch Mode</p>
+                    <Link
+                        href="/"
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors text-sm"
+                    >
+                        <Home className="h-4 w-4" />
+                        <span>Exit to Site</span>
+                    </Link>
+                    {userRole === 'SUPER_ADMIN' && (
+                        <Link
+                            href="/super-admin"
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors text-sm"
+                        >
+                            <Shield className="h-4 w-4" />
+                            <span>Admin Panel</span>
+                        </Link>
+                    )}
+                </div>
+
                 {/* User Info + Logout */}
-                <div className="p-4 border-t border-white/10">
+                <div className="p-4">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center text-white text-sm font-medium">
                             {managerName.slice(0, 2).toUpperCase()}
@@ -195,6 +228,43 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                         })}
                     </ul>
                 </nav>
+
+                {/* Mobile Mode Switcher */}
+                <div className="px-3 py-3 border-t border-white/10">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-3 mb-2">Switch Mode</p>
+                    <Link
+                        href="/"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors text-sm"
+                    >
+                        <Home className="h-4 w-4" />
+                        <span>Exit to Site</span>
+                    </Link>
+                    {userRole === 'SUPER_ADMIN' && (
+                        <Link
+                            href="/super-admin"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors text-sm"
+                        >
+                            <Shield className="h-4 w-4" />
+                            <span>Admin Panel</span>
+                        </Link>
+                    )}
+                </div>
+
+                {/* Mobile Logout */}
+                <div className="px-3 pb-4">
+                    <button
+                        onClick={() => {
+                            setMobileMenuOpen(false);
+                            handleLogout();
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors text-sm"
+                    >
+                        <LogOut className="h-5 w-5" />
+                        <span>Logout</span>
+                    </button>
+                </div>
             </aside>
 
             {/* Main Content */}
