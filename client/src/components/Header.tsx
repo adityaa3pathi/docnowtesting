@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { ShoppingCart, User, Menu, X, MapPin, Search, Navigation, Loader2, Shield, Phone, LogOut } from 'lucide-react';
+import { ShoppingCart, User, Users, Menu, X, MapPin, Search, Navigation, Loader2, Shield, Phone, LogOut } from 'lucide-react';
 import { Button, Input } from './ui';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
@@ -202,6 +202,9 @@ export function Header() {
                         </Link>
                         <Link href="/search" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
                             Our Tests
+                        </Link>
+                        <Link href="/about" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
+                            About Us
                         </Link>
                         <button onClick={() => setIsCallbackOpen(true)} className="text-sm font-bold text-primary hover:text-primary/80 transition-colors animate-pulse">
                             Get a Callback
@@ -527,6 +530,14 @@ export function Header() {
                         >
                             <Search className="w-4 h-4 text-gray-400" />
                             Our Tests
+                        </Link>
+                        <Link
+                            href="/about"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-primary transition-all"
+                        >
+                            <Users className="w-4 h-4 text-gray-400" />
+                            About Us
                         </Link>
                         <Link
                             href="/cart"
