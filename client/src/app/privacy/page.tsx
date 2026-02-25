@@ -375,7 +375,7 @@ export default function PrivacyPolicyPage() {
                                         </p>
                                         <p className="flex items-center gap-3">
                                             <span className="text-primary shrink-0 text-base">📞</span>
-                                            <span className="font-semibold text-foreground">+91 9469 089 089</span>
+                                            <span className="font-semibold text-foreground">+91 9649 089 089</span>
                                         </p>
                                         <p className="flex items-start gap-3">
                                             <span className="text-primary shrink-0 text-base mt-0.5">🏢</span>
