@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { ShoppingCart, User, Users, Menu, X, MapPin, Search, Navigation, Loader2, Shield, Phone, LogOut } from 'lucide-react';
+import { ShoppingCart, User, Users, Menu, X, MapPin, Search, Navigation, Loader2, Shield, Phone, LogOut, Delete } from 'lucide-react';
 import { Button, Input } from './ui';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
@@ -289,9 +289,20 @@ export function Header() {
                                 <DialogHeader><DialogTitle className="text-2xl font-black text-center">Enter Pincode</DialogTitle></DialogHeader>
                                 <div className="space-y-6 mt-4">
                                     <div className="space-y-4">
-                                        <div className="flex-1 h-12 rounded-xl border-2 border-primary/20 bg-muted/30 flex items-center justify-center text-2xl font-bold tracking-widest text-primary">
-                                            {pincodeInput || "______"}
-                                        </div>
+                                        <input
+                                            type="tel"
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
+                                            maxLength={6}
+                                            value={pincodeInput}
+                                            onChange={(e) => {
+                                                const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                                setPincodeInput(val);
+                                            }}
+                                            placeholder="______"
+                                            className="flex-1 h-12 w-full rounded-xl border-2 border-primary/20 bg-muted/30 text-center text-2xl font-bold tracking-widest text-primary placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 transition-colors"
+                                            autoComplete="off"
+                                        />
                                         <Button
                                             variant="outline"
                                             className="w-full justify-center border-border text-muted-foreground hover:text-primary hover:border-primary/50 rounded-xl"
@@ -306,7 +317,7 @@ export function Header() {
                                         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                                             <button key={num} onClick={() => handleKeypadClick(num.toString())} className="h-14 rounded-xl bg-secondary/50 text-xl font-bold hover:bg-primary/10 hover:text-primary transition-all active:scale-95">{num}</button>
                                         ))}
-                                        <button onClick={handleBackspace} className="h-14 rounded-xl bg-secondary/50 text-xl font-bold hover:bg-destructive/10 hover:text-destructive transition-all active:scale-95 flex items-center justify-center">bs</button>
+                                        <button onClick={handleBackspace} className="h-14 rounded-xl bg-secondary/50 text-xl font-bold hover:bg-destructive/10 hover:text-destructive transition-all active:scale-95 flex items-center justify-center"><Delete className="w-6 h-6" /></button>
                                         <button onClick={() => handleKeypadClick('0')} className="h-14 rounded-xl bg-secondary/50 text-xl font-bold hover:bg-primary/10 hover:text-primary transition-all active:scale-95">0</button>
                                         <button onClick={handlePincodeSubmit} className="h-14 rounded-xl bg-primary text-primary-foreground text-xl font-bold hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center">OK</button>
                                     </div>
