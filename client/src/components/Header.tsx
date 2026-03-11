@@ -41,7 +41,7 @@ const otherCities = [
 ];
 
 export function Header() {
-    const { selectedCity, selectedPincode, updateCity, updatePincode } = useLocation();
+    const { selectedCity, selectedPincode, updateCity, updatePincode, isCheckingServiceability } = useLocation();
     const { user, isAuthenticated, logout } = useAuth();
     const { cartCount } = useCart();
 
@@ -157,7 +157,7 @@ export function Header() {
                     if (detectedCity) updateCity(`${detectedCity} (Detected)`);
                     if (detectedPincode) {
                         setPincodeInput(detectedPincode);
-                        updatePincode(detectedPincode);
+                        await updatePincode(detectedPincode);
                     }
                 } catch (error) {
                     console.error("Error detecting location:", error);
@@ -173,13 +173,13 @@ export function Header() {
         );
     };
 
-    const handlePincodeSubmit = () => {
-        if (pincodeInput.length === 6) {
-            updatePincode(pincodeInput);
-            setIsPincodeDialogOpen(false);
-        } else {
+    const handlePincodeSubmit = async () => {
+        if (pincodeInput.length !== 6) {
             toast.error("Please enter a valid 6-digit Pincode");
+            return;
         }
+        await updatePincode(pincodeInput);
+        setIsPincodeDialogOpen(false);
     };
 
     const handleKeypadClick = (num: string) => {
@@ -319,7 +319,7 @@ export function Header() {
                                         ))}
                                         <button onClick={handleBackspace} className="h-14 rounded-xl bg-secondary/50 text-xl font-bold hover:bg-destructive/10 hover:text-destructive transition-all active:scale-95 flex items-center justify-center"><Delete className="w-6 h-6" /></button>
                                         <button onClick={() => handleKeypadClick('0')} className="h-14 rounded-xl bg-secondary/50 text-xl font-bold hover:bg-primary/10 hover:text-primary transition-all active:scale-95">0</button>
-                                        <button onClick={handlePincodeSubmit} className="h-14 rounded-xl bg-primary text-primary-foreground text-xl font-bold hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center">OK</button>
+                                        <button onClick={handlePincodeSubmit} disabled={isCheckingServiceability} className="h-14 rounded-xl bg-primary text-primary-foreground text-xl font-bold hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center disabled:opacity-50">{isCheckingServiceability ? <Loader2 className="w-5 h-5 animate-spin" /> : 'OK'}</button>
                                     </div>
                                 </div>
                             </DialogContent>

@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MapPin, Loader2, Navigation } from "lucide-react";
 import toast from "react-hot-toast";
-import api from "@/lib/api";
-import { cn } from "@/lib/utils";
 import { useLocation } from "@/contexts/LocationContext";
 
 interface LocationSelectorProps {
@@ -12,44 +10,21 @@ interface LocationSelectorProps {
 }
 
 export function LocationSelector({ onLocationVerified }: LocationSelectorProps) {
-    const { updatePincode, updateCity } = useLocation();
+    const { updatePincode, isServiceable, isCheckingServiceability, selectedPincode } = useLocation();
     const [zipcode, setZipcode] = useState("");
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+    const [hasChecked, setHasChecked] = useState(false);
 
-    const checkServiceability = async (code: string) => {
-        setLoading(true);
-        setError(null);
-        try {
-            // Mock latitude/longitude for now as they are required by backend but maybe ignored or approximate
-            const response = await api.get('/location/serviceability', {
-                params: { lat: '28.5', long: '77.0', zipcode: code }
-            });
-
-            if (response.data.status === true) {
-                setStatus("success");
-                updatePincode(code); // This will trigger geocoding and city update
-                if (onLocationVerified) onLocationVerified(code);
-            } else {
-                setStatus("error");
-                setError("Services currently unavailable in this area.");
-            }
-        } catch (err) {
-            setStatus("error");
-            setError("Failed to verify location. Please try again.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleManualSubmit = (e: React.FormEvent) => {
+    const handleManualSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (zipcode.length === 6) {
-            checkServiceability(zipcode);
-        } else {
+        setError(null);
+        if (zipcode.length !== 6) {
             setError("Please enter a valid 6-digit pincode");
+            return;
         }
+        setHasChecked(true);
+        await updatePincode(zipcode);
+        if (onLocationVerified) onLocationVerified(zipcode);
     };
 
     const handleDetectLocation = () => {
@@ -58,36 +33,33 @@ export function LocationSelector({ onLocationVerified }: LocationSelectorProps) 
             return;
         }
 
-        setLoading(true);
         navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                // In a real app, we would reverse geocode here to get the zipcode
-                // For this demo, we can just simulate or ask user to confirm
-                setLoading(false);
+            async () => {
                 toast.success("Location detected! (Reverse Geocoding to be implemented)");
             },
-            (err) => {
-                setLoading(false);
+            () => {
                 setError("Unable to retrieve your location");
             }
         );
     };
 
+    const showCoveredState = hasChecked && !isCheckingServiceability && isServiceable === true;
+
     return (
         <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md mx-auto -mt-10 relative z-20 border border-gray-100">
             <h3 className="text-lg font-semibold mb-4 text-center">Check Service Availability</h3>
 
-            {status === 'success' ? (
+            {showCoveredState ? (
                 <div className="text-center py-4">
-                    <div className="text-green-600 font-bold text-xl mb-2">You're covered!</div>
-                    <p className="text-gray-500 mb-4">Services are available in {zipcode}</p>
+                    <div className="text-green-600 font-bold text-xl mb-2">You&apos;re covered!</div>
+                    <p className="text-gray-500 mb-4">Services are available in {zipcode || selectedPincode}</p>
                     <button
-                        onClick={() => window.location.href = `/search?zip=${zipcode}`}
+                        onClick={() => window.location.href = `/search?zip=${zipcode || selectedPincode}`}
                         className="w-full bg-blue-600 text-white rounded-lg py-3 font-medium hover:bg-blue-700 transition"
                     >
                         Browse Packages
                     </button>
-                    <button onClick={() => setStatus('idle')} className="text-sm text-gray-400 mt-4 underline">Change Location</button>
+                    <button onClick={() => setHasChecked(false)} className="text-sm text-gray-400 mt-4 underline">Change Location</button>
                 </div>
             ) : (
                 <>
@@ -104,10 +76,10 @@ export function LocationSelector({ onLocationVerified }: LocationSelectorProps) 
                         </div>
                         <button
                             type="submit"
-                            disabled={loading || zipcode.length !== 6}
+                            disabled={isCheckingServiceability || zipcode.length !== 6}
                             className="bg-slate-900 text-white px-6 rounded-lg font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Check"}
+                            {isCheckingServiceability ? <Loader2 className="w-4 h-4 animate-spin" /> : "Check"}
                         </button>
                     </form>
 
@@ -139,3 +111,4 @@ export function LocationSelector({ onLocationVerified }: LocationSelectorProps) 
         </div>
     );
 }
+
