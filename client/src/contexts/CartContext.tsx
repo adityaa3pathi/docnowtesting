@@ -63,8 +63,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
             setLoading(true);
             const response = await api.get('/cart');
             setCart(response.data);
-        } catch (error) {
-            console.error('Error fetching cart:', error);
+        } catch (error: any) {
+            // Network errors are silently ignored — cart stays null, page works normally
+            if (error?.isNetworkError) {
+                console.warn('[Cart] Server unreachable, using empty cart');
+            } else {
+                console.error('Error fetching cart:', error);
+            }
             setCart(null);
         } finally {
             setLoading(false);

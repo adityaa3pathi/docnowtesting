@@ -5,8 +5,19 @@ healthians_api_doc.md
 healthians_webhook_doc.md
 parameters/
 
+docs
+
+Manager Dashboard UI Design
+B2B API Integration doc.pdf
+test1.out
+test2.out
+test3.out
+to_be_implemented.md
+
+
 # Standard ignores (Project-wide)
 .DS_Store
 .vscode/
 .idea/
 *.log
+

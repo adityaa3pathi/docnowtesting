@@ -52,13 +52,18 @@ export function LocationProvider({ children }: { children: ReactNode }) {
         setSelectedPincode(pincode);
         localStorage.setItem('docnow_selected_pincode', pincode);
 
-        // Fetch geodata and automatic city detection
+        // Fetch geodata and automatic city detection — fail silently
         if (/^\d{6}$/.test(pincode)) {
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/location/geocode?pincode=${pincode}`);
+                const response = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/location/geocode?pincode=${pincode}`
+                );
+
+                if (!response.ok) return; // non-200 — silently skip
+
                 const data = await response.json();
 
-                if (data && data.lat && data.long) {
+                if (data?.lat && data?.long) {
                     setLatitude(data.lat);
                     setLongitude(data.long);
                     localStorage.setItem('docnow_lat', data.lat);
@@ -69,8 +74,9 @@ export function LocationProvider({ children }: { children: ReactNode }) {
                         localStorage.setItem('docnow_selected_city', data.city);
                     }
                 }
-            } catch (error) {
-                console.error('Failed to geocode pincode:', error);
+            } catch {
+                // Network unavailable — silently skip, page continues working
+                console.warn('[Location] Geocode unavailable, skipping auto-detection');
             }
         }
     };
@@ -81,9 +87,16 @@ export function LocationProvider({ children }: { children: ReactNode }) {
 
         try {
             // Step 1: Geocode the pincode to get real lat/long
-            const geocodeRes = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/location/geocode?pincode=${pincode}`
-            );
+            let geocodeRes: Response;
+            try {
+                geocodeRes = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/location/geocode?pincode=${pincode}`
+                );
+            } catch {
+                setServiceabilityStatus('error');
+                setServiceabilityError('Unable to reach the server. Please check your connection and try again.');
+                return false;
+            }
 
             if (!geocodeRes.ok) {
                 setServiceabilityStatus('error');
@@ -100,16 +113,22 @@ export function LocationProvider({ children }: { children: ReactNode }) {
             }
 
             // Step 2: Check serviceability using real coordinates
-            const response = await api.get('/location/serviceability', {
-                params: { lat: geo.lat, long: geo.long, zipcode: pincode }
-            });
+            let result: any;
+            try {
+                const response = await api.get('/location/serviceability', {
+                    params: { lat: geo.lat, long: geo.long, zipcode: pincode }
+                });
+                result = response.data;
+            } catch {
+                setServiceabilityStatus('error');
+                setServiceabilityError('Unable to verify serviceability. Please try again shortly.');
+                return false;
+            }
 
-            const result = response.data;
             const isServiceable = !!(result?.data?.zone_id);
 
             if (isServiceable) {
                 setServiceabilityStatus('success');
-                // Persist pincode + set lat/long/city from geocode data
                 setSelectedPincode(pincode);
                 localStorage.setItem('docnow_selected_pincode', pincode);
                 setLatitude(geo.lat);
@@ -127,8 +146,9 @@ export function LocationProvider({ children }: { children: ReactNode }) {
                 return false;
             }
         } catch {
+            // Catch-all — should not normally be reached
             setServiceabilityStatus('error');
-            setServiceabilityError('Failed to verify location. Please try again.');
+            setServiceabilityError('Something went wrong. Please try again.');
             return false;
         }
     };

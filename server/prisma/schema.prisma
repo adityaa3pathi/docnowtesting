@@ -108,21 +108,23 @@ model Patient {
 }
 
 model Address {
-  id       String    @id @default(uuid())
-  userId   String
-  line1    String
-  city     String
-  pincode  String
-  lat      String?
-  long     String?
-  user     User      @relation(fields: [userId], references: [id])
-  bookings Booking[]
+  id        String    @id @default(uuid())
+  userId    String
+  line1     String
+  city      String
+  pincode   String
+  lat       String?
+  long      String?
+  isDeleted Boolean   @default(false)
+  user      User      @relation(fields: [userId], references: [id])
+  bookings  Booking[]
 }
 
 model Booking {
   id                String        @id @default(uuid())
   userId            String
   partnerBookingId  String?
+  partnerStatus     String?           // Raw Healthians BS code (e.g. "BS008")
   status            String
   slotDate          String
   slotTime          String
@@ -134,16 +136,29 @@ model Booking {
   partnerError      String?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
-  addressId         String?
+  addressId         String
   billingName       String?           // Optional billing name for invoice
   billingGender     String?           // Gender of billing person (for Healthians)
   idempotencyKey    String?       @unique  // Prevent double-initiate
-  address           Address?      @relation(fields: [addressId], references: [id])
+  address           Address       @relation(fields: [addressId], references: [id])
+
+  // Address snapshot — immutable copy of address at booking time
+  addressLine       String?
+  addressCity       String?
+  addressPincode    String?
+  addressLat        String?
+  addressLong       String?
+
   user              User          @relation(fields: [userId], references: [id])
   items             BookingItem[]
   reports           Report[]
   rescheduledToId   String?       @unique
   partnerRetry      PartnerRetry?
+
+  // Phlebo tracking (from Healthians webhook)
+  phleboName        String?
+  phleboPhone       String?           // Masked number
+  phleboTrackingUrl String?
 
   // Price Breakdown
   discountAmount    Float         @default(0)
@@ -156,6 +171,7 @@ model Booking {
 
   @@index([paymentStatus, updatedAt])     // Reconciler queries
   @@index([userId, paymentStatus])        // Active booking check
+  @@index([partnerStatus])               // Webhook/reconciler/debug queries
 }
 
 model BookingItem {
@@ -171,11 +187,16 @@ model BookingItem {
 }
 
 model Report {
-  id          String   @id @default(uuid())
-  bookingId   String
-  reportUrl   String
-  generatedAt DateTime @default(now())
-  booking     Booking  @relation(fields: [bookingId], references: [id])
+  id           String    @id @default(uuid())
+  bookingId    String
+  reportUrl    String
+  storedUrl    String?                       // Our permanent copy after async fetch
+  isFullReport Boolean   @default(false)     // Healthians full_report flag
+  verifiedAt   DateTime?                     // From Healthians verified_at
+  generatedAt  DateTime  @default(now())
+  booking      Booking   @relation(fields: [bookingId], references: [id])
+
+  @@unique([bookingId, reportUrl])           // Report dedup
 }
 
 model CallbackRequest {
@@ -311,6 +332,25 @@ model WebhookEvent {
   createdAt DateTime @default(now())
   
   @@index([createdAt])
+}
+
+// ============================================
+// MULTI-SOURCE WEBHOOK DEDUPLICATION (v2)
+// ============================================
+
+model WebhookEventV2 {
+  id           String   @id @default(uuid())
+  payloadHash  String   @unique              // SHA-256 of raw body
+  source       String                        // "razorpay" | "healthians"
+  eventType    String?                       // e.g. "status_updated", "report_uploaded"
+  bookingId    String?                       // Partner booking ID for cross-ref
+  rawPayload   Json?                         // Full payload for replay/debugging
+  processed    Boolean  @default(false)      // false until business logic completes
+  createdAt    DateTime @default(now())
+
+  @@index([source, createdAt])
+  @@index([bookingId])
+  @@index([processed, createdAt])            // Dead-letter detection
 }
 
 // ============================================
