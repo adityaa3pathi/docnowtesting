@@ -26,7 +26,14 @@ export async function listBookings(req: AuthRequest, res: Response) {
             slotTime: b.slotTime,
             totalAmount: b.totalAmount,
             createdAt: b.createdAt,
-            items: b.items.map(i => i.testName)
+            items: b.items.map(i => i.testName),
+            address: b.addressLine ? {
+                line1: b.addressLine,
+                city: b.addressCity,
+                pincode: b.addressPincode,
+                lat: b.addressLat,
+                long: b.addressLong
+            } : null
         }));
 
         res.json(sanitizedBookings);

@@ -17,33 +17,21 @@ export async function getReschedulableSlots(req: AuthRequest, res: Response) {
 
         console.log(`[Slots] Request for booking: ${bookingId}, date: ${date}`);
 
-        // 1. Fetch Booking with Items
+        // 1. Fetch Booking with Items and Address
         const booking = await prisma.booking.findFirst({
             where: { id: bookingId, userId: userId },
-            include: { items: true }
+            include: { items: true, address: true }
         });
 
         if (!booking) {
             return res.status(404).json({ error: 'Booking not found' });
         }
 
-        // 2. Determine address (support legacy bookings via query param)
-        const addressIdParam = req.query.addressId as string | undefined;
-        let address = null;
-
-        if (addressIdParam) {
-            address = await prisma.address.findFirst({
-                where: { id: addressIdParam, userId }
-            });
-        }
+        // 2. Read address directly from the booking (no fallback needed)
+        const address = booking.address;
 
         if (!address) {
-            const userAddresses = await BookingService.getUserAddresses(userId);
-            return res.status(400).json({
-                error: 'No address associated with this booking',
-                code: 'ADDRESS_REQUIRED',
-                addresses: userAddresses
-            });
+            return res.status(400).json({ error: 'Booking address is missing. Please contact support.' });
         }
 
         console.log(`[Slots] Address found: ${address.pincode}`);

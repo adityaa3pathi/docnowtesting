@@ -19,8 +19,11 @@ import cartRoutes from './routes/cart';
 import slotRoutes from './routes/slots';
 import bookingRoutes from './routes/bookings';
 import adminRoutes from './routes/admin';
-import paymentRoutes, { webhookHandler } from './routes/payments';
+import paymentRoutes from './routes/payments';
+import { webhookHandler } from './controllers/payments';
+import { healthiansWebhookHandler } from './controllers/webhooks';
 import managerRoutes from './routes/manager';
+import promoRoutes from './routes/promos';
 
 
 
@@ -32,8 +35,9 @@ app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
 
-// CRITICAL: Webhook must be mounted BEFORE express.json() to get raw body
+// CRITICAL: Webhooks must be mounted BEFORE express.json() to get raw body
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), webhookHandler);
+app.post('/api/webhooks/healthians', express.raw({ type: '*/*' }), healthiansWebhookHandler);
 
 app.use(express.json());
 
@@ -52,6 +56,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/manager', managerRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/promos', promoRoutes);
 
 app.get('/', (req, res) => {
     res.send('DOCNOW API is running');

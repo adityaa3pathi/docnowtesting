@@ -35,6 +35,7 @@ export async function listOrders(req: AuthRequest, res: Response) {
             orderBy: { createdAt: 'desc' },
             include: {
                 user: { select: { id: true, name: true, mobile: true, email: true } },
+                address: { select: { id: true, line1: true, city: true, pincode: true } },
                 items: {
                     include: {
                         patient: { select: { name: true, gender: true, age: true } }
@@ -55,6 +56,7 @@ export async function listOrders(req: AuthRequest, res: Response) {
                 amount: order.totalAmount,
                 status: order.status,
                 user: order.user,
+                address: order.address,
                 patient: order.items[0]?.patient || null,
                 testNames: order.items.map(i => i.testName)
             })),

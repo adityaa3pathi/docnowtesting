@@ -197,8 +197,8 @@ export function Header() {
         <>
             <nav className="sticky top-0 z-50 border-b border-border bg-white/80 backdrop-blur-md shadow-sm">
                 <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-                    <Link href="/" className="text-2xl font-black tracking-tight text-primary">
-                        DOC<span className="text-foreground">NOW</span>
+                    <Link href="/" className="text-2xl font-bold text-[#241769]">
+                        DOCNOW
                     </Link>
 
                     <div className="hidden md:flex items-center gap-8 px-8">
@@ -469,8 +469,8 @@ export function Header() {
             >
                 {/* Drawer Header */}
                 <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100 flex-shrink-0">
-                    <Link href="/" className="text-xl font-black tracking-tight text-primary" onClick={() => setIsMobileMenuOpen(false)}>
-                        DOC<span className="text-foreground">NOW</span>
+                    <Link href="/" className="text-xl font-bold text-[#241769]" onClick={() => setIsMobileMenuOpen(false)}>
+                        DOCNOW
                     </Link>
                     <button
                         onClick={() => setIsMobileMenuOpen(false)}

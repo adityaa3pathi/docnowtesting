@@ -18,4 +18,23 @@ api.interceptors.request.use((config) => {
     return Promise.reject(error);
 });
 
+// Response interceptor — graceful handling of network errors
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (!error.response) {
+            // Network error (server unreachable, DNS fail, CORS, etc.)
+            console.warn('[API] Network error:', error.message || 'Server unreachable');
+            // Return a rejected promise with a clean error object
+            // so callers can handle it without Next.js showing the raw overlay
+            return Promise.reject({
+                message: 'Unable to reach the server. Please check your connection.',
+                isNetworkError: true,
+                originalError: error,
+            });
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;

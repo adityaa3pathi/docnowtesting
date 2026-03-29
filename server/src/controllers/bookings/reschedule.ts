@@ -111,6 +111,12 @@ export async function rescheduleBooking(req: AuthRequest, res: Response) {
                 const newBooking = await tx.booking.create({
                     data: {
                         userId: userId,
+                        addressId: booking.addressId,
+                        addressLine: booking.addressLine,
+                        addressCity: booking.addressCity,
+                        addressPincode: booking.addressPincode,
+                        addressLat: booking.addressLat,
+                        addressLong: booking.addressLong,
                         partnerBookingId: newPartnerBookingId.toString(),
                         status: 'Order Booked',
                         slotDate: slotDate,

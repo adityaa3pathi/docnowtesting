@@ -8,7 +8,8 @@
  */
 import cron from 'node-cron';
 import { prisma } from '../db';
-import { createHealthiansBooking, rollbackInitiatedBooking } from '../routes/payments';
+import { createHealthiansBooking } from '../services/partnerBooking';
+import { rollbackInitiatedBooking } from '../services/rollback';
 import { assertTransition, canTransition } from '../utils/paymentStateMachine';
 
 const INITIATED_TTL_MS = 30 * 60 * 1000;    // 30 minutes
