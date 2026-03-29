@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const addresses = await prisma.address.findMany({
-            where: { userId: req.userId },
+            where: { userId: req.userId, isDeleted: false },
             orderBy: { city: 'asc' }
         });
 
@@ -80,52 +80,63 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
         const { line1, city, pincode, lat, long } = req.body;
 
         // Check ownership
-        const address = await prisma.address.findUnique({
+        const existing = await prisma.address.findUnique({
             where: { id }
         });
 
-        if (!address) {
+        if (!existing || existing.isDeleted) {
             res.status(404).json({ error: 'Address not found' });
             return;
         }
 
-        if (address.userId !== req.userId) {
+        if (existing.userId !== req.userId) {
             res.status(403).json({ error: 'Unauthorized' });
             return;
         }
 
-        // Build update data
-        const updateData: any = {};
-        if (line1) updateData.line1 = line1;
-        if (city) updateData.city = city;
-        if (pincode) {
-            if (!/^\d{6}$/.test(pincode)) {
-                res.status(400).json({ error: 'Invalid pincode format' });
-                return;
-            }
-            updateData.pincode = pincode;
+        // Resolve final field values (merge existing with incoming)
+        const finalPincode = pincode || existing.pincode;
+        if (pincode && !/^\d{6}$/.test(pincode)) {
+            res.status(400).json({ error: 'Invalid pincode format' });
+            return;
+        }
 
-            // If pincode changed and no new coordinates provided, refresh them
-            if (pincode !== address.pincode && (!lat || !long)) {
-                const geodata = await getGeodataFromPincode(pincode);
-                if (geodata) {
-                    updateData.lat = geodata.lat;
-                    updateData.long = geodata.long;
-                    if (!city) updateData.city = geodata.city;
-                }
+        let finalLat = lat !== undefined ? lat : existing.lat;
+        let finalLong = long !== undefined ? long : existing.long;
+        let finalCity = city || existing.city;
+
+        // If pincode changed and no new coordinates provided, refresh geocoding
+        if (pincode && pincode !== existing.pincode && (!lat || !long)) {
+            const geodata = await getGeodataFromPincode(pincode);
+            if (geodata) {
+                finalLat = geodata.lat;
+                finalLong = geodata.long;
+                if (!city) finalCity = geodata.city;
             }
         }
-        if (lat !== undefined) updateData.lat = lat;
-        if (long !== undefined) updateData.long = long;
 
-        const updatedAddress = await prisma.address.update({
-            where: { id },
-            data: updateData
-        });
+        // Append-only: soft-delete the old address and create a new one.
+        // This preserves historical booking references to the old address row.
+        const [, newAddress] = await prisma.$transaction([
+            prisma.address.update({
+                where: { id },
+                data: { isDeleted: true }
+            }),
+            prisma.address.create({
+                data: {
+                    userId: req.userId!,
+                    line1: line1 || existing.line1,
+                    city: finalCity,
+                    pincode: finalPincode,
+                    lat: finalLat || null,
+                    long: finalLong || null
+                }
+            })
+        ]);
 
         res.status(200).json({
             message: 'Address updated successfully',
-            address: updatedAddress
+            address: newAddress
         });
     } catch (error) {
         console.error('Update Address Error:', error);
@@ -143,7 +154,7 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
             where: { id }
         });
 
-        if (!address) {
+        if (!address || address.isDeleted) {
             res.status(404).json({ error: 'Address not found' });
             return;
         }
@@ -153,8 +164,24 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
             return;
         }
 
-        await prisma.address.delete({
-            where: { id }
+        // Guard: prevent deleting last active address
+        const activeCount = await prisma.address.count({
+            where: { userId: req.userId, isDeleted: false }
+        });
+
+        if (activeCount <= 1) {
+            res.status(400).json({
+                error: 'Cannot delete your only address. Please add another address first.',
+                code: 'LAST_ADDRESS'
+            });
+            return;
+        }
+
+        // Soft-delete: mark as deleted instead of removing the row.
+        // Historical bookings referencing this address remain intact.
+        await prisma.address.update({
+            where: { id },
+            data: { isDeleted: true }
         });
 
         res.status(200).json({ message: 'Address removed successfully' });

@@ -170,6 +170,12 @@ export async function createBooking(req: AuthRequest, res: Response) {
             const newBooking = await prisma.booking.create({
                 data: {
                     userId: userId,
+                    addressId: addressId,
+                    addressLine: address.line1,
+                    addressCity: address.city,
+                    addressPincode: address.pincode,
+                    addressLat: address.lat,
+                    addressLong: address.long,
                     partnerBookingId: partnerBookingId ? partnerBookingId.toString() : null,
                     status: 'Order Booked',
                     slotDate: typeof slotDate === 'string' ? slotDate : JSON.stringify(slotDate),

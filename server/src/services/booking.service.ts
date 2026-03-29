@@ -72,7 +72,7 @@ export class BookingService {
      */
     static async getUserAddresses(userId: string) {
         return prisma.address.findMany({
-            where: { userId },
+            where: { userId, isDeleted: false },
             select: { id: true, line1: true, city: true, pincode: true, lat: true, long: true }
         });
     }
