@@ -53,7 +53,10 @@ export interface BookingItem {
 
 export interface BookingReport {
     id: string;
-    reportUrl: string;
+    isFullReport: boolean;
+    fetchStatus: string;
+    verifiedAt: string | null;
+    fileSize: number | null;
     generatedAt: string;
 }
 
@@ -76,6 +79,12 @@ export interface Order {
     slotTime: string | null;
     createdAt: string;
     partnerBookingId: string | null;
+    partnerStatus: string | null;
+    partnerError: string | null;
+    rescheduledToId: string | null;
+    phleboName: string | null;
+    phleboPhone: string | null;
+    phleboTrackingUrl: string | null;
     items: BookingItem[];
     reports: BookingReport[];
     address: OrderAddress | null;

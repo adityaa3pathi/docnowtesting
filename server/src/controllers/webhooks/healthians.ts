@@ -21,6 +21,7 @@ import {
     handleReportUploaded,
     handlePhleboEvent,
 } from '../../services/healthiansWebhook';
+import { ingestReport } from '../../services/reportIngestion';
 
 interface HealthiansWebhookPayload {
     type: 'status_updated' | 'report_uploaded' | 'phlebo_assigned' | 'phlebo_reassigned';
@@ -38,28 +39,24 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
     try {
         payload = JSON.parse(rawBody.toString('utf-8'));
     } catch {
-        console.error('[HealthiansWebhook] Malformed JSON received');
+        // Critical: Log exactly what they sent us if it fails to parse
+        console.error(`[HealthiansWebhook] Malformed JSON received. Raw body: \n---\n${rawBody.toString('utf-8')}\n---`);
         return res.status(400).json({ error: 'Invalid JSON' });
     }
 
-    // 3. Shared-secret validation (fail-closed)
-    if (!process.env.HEALTHIANS_WEBHOOK_SECRET) {
-        console.error('[HealthiansWebhook] HEALTHIANS_WEBHOOK_SECRET not configured. Rejecting all requests.');
-        return res.status(503).json({ error: 'Webhook endpoint not configured' });
-    }
+    // 3. (REMOVED) Strict Shared-secret validation.
+    // The webhook docs do not mention x-healthians-secret. 
+    // Logging IP and Payload hash for future IP whitelisting.
 
-    const secret = req.headers['x-healthians-secret'] as string | undefined;
-    if (secret !== process.env.HEALTHIANS_WEBHOOK_SECRET) {
-        console.warn(`[HealthiansWebhook] Invalid or missing secret. Hash: ${payloadHash.slice(0, 12)}...`);
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
+    const clientIp = req.ip || req.socket.remoteAddress;
     console.log(
-        `[HealthiansWebhook] Received: type=${payload.type} ` +
+        `[HealthiansWebhook] Received from IP: ${clientIp} | type=${payload.type} ` +
         `booking_id=${payload.booking_id} hash=${payloadHash.slice(0, 12)}...`
     );
 
     // 4. Process inside single transaction (dedup + business logic + mark processed)
+    let reportIdToIngest: string | null = null;
+
     try {
         await prisma.$transaction(async (tx) => {
             // Step A: Insert dedup row (processed=false)
@@ -100,7 +97,7 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
                     break;
 
                 case 'report_uploaded':
-                    await handleReportUploaded(tx, booking, payload.data);
+                    reportIdToIngest = await handleReportUploaded(tx, booking, payload.data);
                     break;
 
                 case 'phlebo_assigned':
@@ -118,6 +115,14 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
                 data: { processed: true },
             });
         });
+
+        // Step E: Trigger background report ingestion AFTER transaction commits
+        // This runs outside the transaction so download failures don't roll back persistence
+        if (reportIdToIngest) {
+            ingestReport(reportIdToIngest).catch((err) =>
+                console.error(`[ReportIngestion] Background ingest failed for report ${reportIdToIngest}:`, err)
+            );
+        }
 
         return res.status(200).json({ status: 'ok' });
     } catch (e: any) {
