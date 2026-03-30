@@ -199,50 +199,93 @@ async function updateBookingItemStatuses(
 
 /**
  * Handle report_uploaded webhook event.
- * Upserts a Report record with dedup on (bookingId, reportUrl).
+ * Upserts a Report record with dedup on (bookingId, vendorCustomerId, isFullReport, verifiedAt).
  *
- * IMPORTANT — S3 URL Expiry:
+ * IMPORTANT — Ingestion guard:
+ * - If a matching report already exists and is STORED, do NOT reset to PENDING
+ *   unless the sourceUrl has meaningfully changed (i.e. a new/corrected report).
+ * - Returns the report ID so the caller can trigger background ingestion.
+ *
+ * S3 URL Expiry:
  * The report_url is a signed S3 URL (X-Amz-Expires=3600 = 1 hour).
- * Confirmed from B2B API doc: getCustomerReport_v2 response shows
- * "https://s3healthians...?X-Amz-Expires=3600"
- *
- * Current strategy: Store URL immediately, serve to user within 1 hour.
- * Fallback: If URL expires, call getCustomerReport_v2 API to get a fresh signed URL.
- * Future: Add background job to fetch PDF and re-upload to our own storage.
+ * Ingestion should download the PDF immediately after this transaction.
+ * Fallback: call getCustomerReport_v2 API for a fresh signed URL.
  */
 export async function handleReportUploaded(
     tx: PrismaTransactionClient,
-    booking: { id: string },
+    booking: { id: string; items?: Array<{ patientId: string }> },
     data: ReportUploadedData
-): Promise<void> {
-    const verifiedAt = data.verified_at ? new Date(data.verified_at) : null;
+): Promise<string> {
+    const sourceUrl = data.report_url?.trim() || '';
+    let vendorCustomerId = data.vendor_customer_id?.trim() || '';
+    
+    // Fallback: If Healthians forgot to send vendor_customer_id but the booking 
+    // only has tests for ONE specific patient, we can safely infer it.
+    if (!vendorCustomerId && booking.items && booking.items.length > 0) {
+        const uniquePatientIds = [...new Set(booking.items.map(i => i.patientId))];
+        if (uniquePatientIds.length === 1) {
+            vendorCustomerId = uniquePatientIds[0] as string;
+            console.log(`[HealthiansWebhook] Inferred missing vendor_customer_id as ${vendorCustomerId}`);
+        } else {
+            console.warn(`[HealthiansWebhook] WARNING: Missing vendor_customer_id in report_uploaded, and booking ${booking.id} has multiple patients. Saving with blank ID.`);
+        }
+    }
+
     const isFullReport = data.full_report === 1;
+    const verifiedAt = data.verified_at ? new Date(data.verified_at) : null;
 
     console.log(
         `[HealthiansWebhook] report_uploaded: booking=${booking.id} ` +
+        `vendorCustomer=${vendorCustomerId || '(none)'} ` +
         `fullReport=${isFullReport} verifiedAt=${data.verified_at} ` +
         `(S3 URL expires in ~1 hour)`
     );
 
-    // Upsert with composite unique (bookingId, reportUrl)
-    await tx.report.upsert({
+    // Check if report already exists with this identity
+    const existing = await tx.report.findUnique({
         where: {
-            bookingId_reportUrl: {
+            bookingId_vendorCustomerId_isFullReport_verifiedAt: {
                 bookingId: booking.id,
-                reportUrl: data.report_url,
+                vendorCustomerId,
+                isFullReport,
+                verifiedAt: verifiedAt as Date,
             },
         },
-        create: {
+    });
+
+    if (existing) {
+        // Guard: don't reset STORED reports unless sourceUrl changed
+        if (existing.fetchStatus === 'STORED' && existing.sourceUrl === sourceUrl) {
+            console.log(
+                `[HealthiansWebhook] Report ${existing.id} already STORED with same URL. Skipping.`
+            );
+            return existing.id;
+        }
+
+        // Update with fresh sourceUrl, re-trigger ingestion only if needed
+        const report = await tx.report.update({
+            where: { id: existing.id },
+            data: {
+                sourceUrl,
+                ...(existing.fetchStatus !== 'STORED' && { fetchStatus: 'PENDING', fetchError: null }),
+            },
+        });
+        return report.id;
+    }
+
+    // Create new report row
+    const report = await tx.report.create({
+        data: {
             bookingId: booking.id,
-            reportUrl: data.report_url,
+            vendorCustomerId,
+            sourceUrl,
             isFullReport,
             verifiedAt,
-        },
-        update: {
-            isFullReport,
-            verifiedAt,
+            fetchStatus: 'PENDING',
         },
     });
+
+    return report.id;
 }
 
 /**

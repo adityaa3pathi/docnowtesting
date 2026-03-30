@@ -312,6 +312,31 @@ export class HealthiansAdapter {
             throw error;
         }
     }
+
+    /**
+     * Get Customer Report (v2)
+     * Fetches a fresh signed S3 URL for a customer's report.
+     * Used as fallback when the webhook-provided URL has expired.
+     *
+     * @param allow_partial_report - 1 to get partial reports, 0 for full only
+     */
+    public async getCustomerReport(params: {
+        booking_id: string;
+        vendor_billing_user_id: string;
+        vendor_customer_id: string;
+        allow_partial_report: number;
+    }) {
+        try {
+            const response = await this.client.post('/getCustomerReport_v2', params);
+            return response.data;
+        } catch (error: any) {
+            console.error('getCustomerReport Error:', error.message);
+            if (error.response) {
+                console.error('Healthians getCustomerReport Error Response:', JSON.stringify(error.response.data, null, 2));
+            }
+            throw error;
+        }
+    }
 }
 
 export const MOCK_PRODUCTS = [
