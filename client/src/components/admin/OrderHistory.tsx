@@ -135,8 +135,59 @@ export function OrderHistory({ orders, expandedOrders, onToggleExpand }: OrderHi
                                             )}
                                         </div>
 
+                                        {/* Webhook Tracking Block (UAT visibility) */}
+                                        {(order.phleboName || order.partnerStatus || order.partnerError) && (
+                                            <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-100 mt-2 space-y-3">
+                                                <h4 className="text-sm font-semibold text-blue-900 flex items-center gap-2">
+                                                    Webhook Sync Status
+                                                </h4>
+                                                
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                                    {/* Phlebo assignment from webhook */}
+                                                    {order.phleboName && (
+                                                        <div className="space-y-1">
+                                                            <span className="block text-xs text-blue-500 font-medium">Phlebotomist</span>
+                                                            <div className="text-gray-800 font-medium">{order.phleboName}</div>
+                                                            <div className="text-gray-600">{order.phleboPhone}</div>
+                                                            {order.phleboTrackingUrl && (
+                                                                <a href={order.phleboTrackingUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:text-blue-800 underline mt-1 inline-block">
+                                                                    Track Phlebo Location
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Partner status processing */}
+                                                    {(order.partnerStatus || order.partnerError || order.rescheduledToId) && (
+                                                        <div className="space-y-1">
+                                                            <span className="block text-xs text-blue-500 font-medium">Partner System State</span>
+                                                            
+                                                            {order.partnerStatus && (
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-gray-600">Raw DB Status:</span>
+                                                                    <span className="font-mono bg-white px-2 py-0.5 rounded border border-gray-200 text-xs">{order.partnerStatus}</span>
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {order.rescheduledToId && (
+                                                                <div className="text-amber-600 text-xs mt-1">
+                                                                    Rescheduled / Resampled to new ID: <span className="font-bold">{order.rescheduledToId}</span>
+                                                                </div>
+                                                            )}
+
+                                                            {order.partnerError && (
+                                                                <div className="text-red-600 text-xs mt-1">
+                                                                    <span className="font-semibold">Partner Rejection/Remark:</span> {order.partnerError}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {/* Test Items Table */}
-                                        <div>
+                                        <div className="mt-4">
                                             <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                                                 <TestTube size={14} className="text-purple-600" />
                                                 Tests & Patients
@@ -156,7 +207,12 @@ export function OrderHistory({ orders, expandedOrders, onToggleExpand }: OrderHi
                                                             <tr key={item.id} className="hover:bg-gray-50">
                                                                 <td className="px-4 py-3">
                                                                     <div className="font-medium text-gray-900">{item.testName}</div>
-                                                                    <div className="text-xs text-gray-400 font-mono">{item.testCode}</div>
+                                                                    <div className="text-xs text-gray-400 font-mono mb-1">{item.testCode}</div>
+                                                                    {item.status && (
+                                                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-700">
+                                                                            {item.status}
+                                                                        </span>
+                                                                    )}
                                                                 </td>
                                                                 <td className="px-4 py-3">
                                                                     <div className="flex items-center gap-2">
@@ -195,19 +251,34 @@ export function OrderHistory({ orders, expandedOrders, onToggleExpand }: OrderHi
                                                     {order.reports.map((report, idx) => (
                                                         <a
                                                             key={report.id}
-                                                            href={report.reportUrl}
+                                                            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/reports/${report.id}/download`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors"
+                                                            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                                                report.fetchStatus === 'STORED'
+                                                                    ? 'bg-blue-50 hover:bg-blue-100 text-blue-700'
+                                                                    : report.fetchStatus === 'FAILED'
+                                                                    ? 'bg-red-50 hover:bg-red-100 text-red-700'
+                                                                    : 'bg-amber-50 hover:bg-amber-100 text-amber-700'
+                                                            }`}
                                                         >
                                                             <FileText size={16} />
-                                                            Report {idx + 1}
-                                                            <ExternalLink size={14} />
+                                                            {report.isFullReport ? 'Full' : 'Partial'} Report {idx + 1}
+                                                            {report.fetchStatus === 'STORED' && <ExternalLink size={14} />}
+                                                            {report.fetchStatus === 'PENDING' && (
+                                                                <span className="text-xs opacity-70">⏳</span>
+                                                            )}
+                                                            {report.fetchStatus === 'FAILED' && (
+                                                                <span className="text-xs opacity-70">⚠️</span>
+                                                            )}
                                                         </a>
                                                     ))}
                                                 </div>
                                                 <p className="text-xs text-gray-400 mt-1">
-                                                    Generated on {formatDateTime(order.reports[0].generatedAt)}
+                                                    {order.reports[0].verifiedAt
+                                                        ? `Verified ${formatDateTime(order.reports[0].verifiedAt)}`
+                                                        : `Generated ${formatDateTime(order.reports[0].generatedAt)}`
+                                                    }
                                                 </p>
                                             </div>
                                         )}

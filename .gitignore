@@ -21,3 +21,5 @@ to_be_implemented.md
 .idea/
 *.log
 
+# Server Storage
+server/storage/

@@ -97,7 +97,16 @@ export async function getUserDetails(req: AuthRequest, res: Response) {
                         items: {
                             include: { patient: true }
                         },
-                        reports: true,
+                        reports: {
+                            select: {
+                                id: true,
+                                isFullReport: true,
+                                fetchStatus: true,
+                                verifiedAt: true,
+                                fileSize: true,
+                                generatedAt: true,
+                            },
+                        },
                         address: true
                     }
                 },

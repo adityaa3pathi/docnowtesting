@@ -13,7 +13,18 @@ export async function listBookings(req: AuthRequest, res: Response) {
             where: { userId },
             orderBy: { createdAt: 'desc' },
             include: {
-                items: true
+                items: true,
+                reports: {
+                    select: {
+                        id: true,
+                        isFullReport: true,
+                        fetchStatus: true,
+                        verifiedAt: true,
+                        fileSize: true,
+                        generatedAt: true,
+                    },
+                    orderBy: { generatedAt: 'desc' },
+                },
             }
         });
 
@@ -33,7 +44,15 @@ export async function listBookings(req: AuthRequest, res: Response) {
                 pincode: b.addressPincode,
                 lat: b.addressLat,
                 long: b.addressLong
-            } : null
+            } : null,
+            reports: b.reports.map(r => ({
+                id: r.id,
+                isFullReport: r.isFullReport,
+                fetchStatus: r.fetchStatus,
+                verifiedAt: r.verifiedAt,
+                fileSize: r.fileSize,
+                generatedAt: r.generatedAt,
+            })),
         }));
 
         res.json(sanitizedBookings);

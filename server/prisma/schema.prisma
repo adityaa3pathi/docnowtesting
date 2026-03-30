@@ -187,16 +187,21 @@ model BookingItem {
 }
 
 model Report {
-  id           String    @id @default(uuid())
-  bookingId    String
-  reportUrl    String
-  storedUrl    String?                       // Our permanent copy after async fetch
-  isFullReport Boolean   @default(false)     // Healthians full_report flag
-  verifiedAt   DateTime?                     // From Healthians verified_at
-  generatedAt  DateTime  @default(now())
-  booking      Booking   @relation(fields: [bookingId], references: [id])
+  id               String    @id @default(uuid())
+  bookingId        String
+  vendorCustomerId String    @default("")      // Healthians vendor_customer_id → maps to patient
+  sourceUrl        String                      // Original signed URL (expires, for debug/retry)
+  storageKey       String?                     // Canonical: "reports/{bookingId}/{id}.pdf"
+  fetchStatus      String    @default("PENDING") // PENDING | STORED | FAILED
+  fetchError       String?                     // Last error if download failed
+  fetchedAt        DateTime?                   // When we successfully stored the file
+  isFullReport     Boolean   @default(false)   // Healthians full_report flag
+  verifiedAt       DateTime?                   // From Healthians verified_at
+  fileSize         Int?                        // PDF file size in bytes
+  generatedAt      DateTime  @default(now())
+  booking          Booking   @relation(fields: [bookingId], references: [id])
 
-  @@unique([bookingId, reportUrl])           // Report dedup
+  @@unique([bookingId, vendorCustomerId, isFullReport, verifiedAt])
 }
 
 model CallbackRequest {
