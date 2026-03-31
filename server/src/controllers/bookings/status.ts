@@ -17,15 +17,7 @@ const statusRateLimit = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTAS
         prefix: 'ratelimit:status',
     }) : null;
 
-// Status code mapping
-const STATUS_CODE_TO_LABEL: Record<string, string> = {
-    'BS002': 'Order Booked',
-    'BS003': 'Sample Collection Scheduled',
-    'BS005': 'Sample Collector Assigned',
-    'BS006': 'Sample Collected',
-    'BS007': 'Report Generated',
-    'BS0018': 'Cancelled',
-};
+import { resolveHealthiansStatus } from '../../utils/healthiansStatusMap';
 
 /**
  * GET /api/bookings/:id/status - Track Booking Status
@@ -65,12 +57,13 @@ export async function getStatus(req: AuthRequest, res: Response) {
 
         // 5. Sync status to local DB
         const healthiansStatus = statusResponse?.data?.booking_status;
-        if (healthiansStatus && STATUS_CODE_TO_LABEL[healthiansStatus]) {
+        if (healthiansStatus) {
+            const mappedStatus = resolveHealthiansStatus(healthiansStatus);
             await prisma.booking.update({
                 where: { id: bookingId },
-                data: { status: STATUS_CODE_TO_LABEL[healthiansStatus] }
+                data: { status: mappedStatus.docnowStatus }
             });
-            console.log(`Synced booking ${bookingId} status to: ${STATUS_CODE_TO_LABEL[healthiansStatus]}`);
+            console.log(`Synced booking ${bookingId} status to: ${mappedStatus.docnowStatus}`);
         }
 
         // 6. Build patient details map
