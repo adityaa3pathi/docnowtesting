@@ -4,7 +4,7 @@ import { MapPin, Loader2, Phone } from 'lucide-react';
 import { Button } from '@/components/ui';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
-import { BookingHeader, PhleboDetails } from './types';
+import { BookingHeader, PhleboDetails, STATUS_MAP } from './types';
 
 interface BookingCardProps {
     booking: BookingHeader;
@@ -53,9 +53,8 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                     <div className="text-xs sm:text-sm text-gray-500">Total Amount</div>
                     <div className="font-bold text-primary">₹{booking.totalAmount}</div>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide w-fit ${booking.status === 'Order Booked' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                    }`}>
-                    {booking.status}
+                <div className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest w-fit ${STATUS_MAP[booking.status]?.color || 'bg-gray-100 text-gray-700'}`}>
+                    {STATUS_MAP[booking.status]?.label || booking.status}
                 </div>
             </div>
 
@@ -86,7 +85,7 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                     <Button
                         variant="outline"
                         onClick={() => onReschedule(booking)}
-                        disabled={!['Order Booked', 'Sample Collector Assigned'].includes(booking.status)}
+                        disabled={!['Order Booked', 'Sample Collector Assigned', 'Sample Collection Scheduled', 'Resample Required'].includes(booking.status)}
                         className="text-xs sm:text-sm"
                     >
                         Reschedule
@@ -95,7 +94,7 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                     <Button
                         variant="outline"
                         onClick={() => onCancel(booking.id)}
-                        disabled={booking.status === 'Cancelled' || booking.status === 'Rescheduled'}
+                        disabled={['Cancelled', 'Sample Collected', 'Sample Received at Lab', 'Report Generated', 'Completed', 'Rescheduled', 'Superseded'].includes(booking.status)}
                         className="text-red-500 hover:text-red-600 hover:bg-red-50 text-xs sm:text-sm"
                     >
                         Cancel
