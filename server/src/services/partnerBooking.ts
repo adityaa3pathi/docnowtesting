@@ -76,7 +76,7 @@ export async function createHealthiansBooking(booking: any, userId: string, slot
 
     const bookingPayload = {
         customer: customersPayload,
-        slot: { slot_id: slotId || booking.slotTime },
+        slot: { slot_id: booking.partnerSlotId || slotId || booking.slotTime },
         package: packagesPayload,
         customer_calling_number: user.mobile,
         billing_cust_name: booking.billingName || user.name,

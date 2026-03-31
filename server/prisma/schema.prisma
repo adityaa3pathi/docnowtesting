@@ -128,6 +128,7 @@ model Booking {
   status            String
   slotDate          String
   slotTime          String
+  partnerSlotId     String?       // Actual Healthians slot stm_id
   totalAmount       Float
   paymentStatus     PaymentStatus @default(INITIATED)
   razorpayOrderId   String?       @unique

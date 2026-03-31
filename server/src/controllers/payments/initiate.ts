@@ -202,6 +202,7 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
                     paymentStatus: 'INITIATED',
                     slotDate: clientSlotDate || new Date().toISOString().split('T')[0],
                     slotTime: slotLabel || slot_id,
+                    partnerSlotId: slot_id,
                     totalAmount,
                     discountAmount,
                     walletAmount,
