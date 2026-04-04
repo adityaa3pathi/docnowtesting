@@ -22,6 +22,7 @@ import {
     Shield,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Navigation items matching the design
 const navItems = [
@@ -42,6 +43,7 @@ export default function SuperAdminLayout({
 }) {
     const router = useRouter();
     const pathname = usePathname();
+    const { logout } = useAuth();
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -91,8 +93,7 @@ export default function SuperAdminLayout({
     }, [pathname]);
 
     const handleLogout = () => {
-        localStorage.removeItem('docnow_auth_token');
-        localStorage.removeItem('docnow_user');
+        logout();
         router.push('/');
     };
 

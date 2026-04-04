@@ -20,6 +20,7 @@ import {
     ArrowLeftRight,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/manager/dashboard' },
@@ -33,6 +34,7 @@ const navItems = [
 export default function ManagerLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
+    const { logout } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [managerName, setManagerName] = useState('Manager');
@@ -75,8 +77,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
     }, [router]);
 
     const handleLogout = () => {
-        localStorage.removeItem('docnow_auth_token');
-        localStorage.removeItem('docnow_user');
+        logout();
         router.push('/');
     };
 
