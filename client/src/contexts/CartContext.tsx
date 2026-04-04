@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { useAuth } from './AuthContext';
@@ -36,6 +36,7 @@ interface CartContextType {
     updateCartItem: (itemId: string, patientId: string | null) => Promise<void>;
     clearCart: () => Promise<void>;
     refreshCart: () => Promise<void>;
+    resetCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -51,7 +52,7 @@ export function useCart() {
 export function CartProvider({ children }: { children: ReactNode }) {
     const [cart, setCart] = useState<Cart | null>(null);
     const [loading, setLoading] = useState(false);
-    const { isAuthenticated, isInitialized } = useAuth();
+    const { isAuthenticated, isInitialized, onLogout } = useAuth();
 
     const fetchCart = async () => {
         if (!isAuthenticated) {
@@ -75,6 +76,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
             setLoading(false);
         }
     };
+
+    // Synchronous cart reset — clears all local cart state immediately,
+    // without waiting for any API call. Used during logout so the badge
+    // and cart page reflect the signed-out state in the same render cycle.
+    const resetCart = useCallback(() => {
+        setCart(null);
+        setLoading(false);
+    }, []);
+
+    // Register resetCart as the logout callback so AuthContext.logout()
+    // can clear cart state synchronously before any re-render.
+    useEffect(() => {
+        onLogout(resetCart);
+    }, [onLogout, resetCart]);
 
     useEffect(() => {
         if (isInitialized) {
@@ -146,7 +161,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
             removeFromCart,
             updateCartItem,
             clearCart,
-            refreshCart
+            refreshCart,
+            resetCart
         }}>
             {children}
         </CartContext.Provider>

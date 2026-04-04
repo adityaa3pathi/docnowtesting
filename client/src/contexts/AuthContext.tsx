@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 
 interface User {
     id: string;
@@ -18,6 +18,9 @@ interface AuthContextType {
     updateUser: (userData: Partial<User>) => void;
     isAuthenticated: boolean;
     isInitialized: boolean;
+    /** Register a callback that will be invoked synchronously during logout.
+     *  Used by CartContext to clear cart state in the same render cycle. */
+    onLogout: (cb: () => void) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,6 +29,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
+
+    // Stable ref for the logout callback — avoids re-renders when CartContext registers.
+    const logoutCallbackRef = useRef<(() => void) | null>(null);
+
+    const onLogout = useCallback((cb: () => void) => {
+        logoutCallbackRef.current = cb;
+    }, []);
 
     useEffect(() => {
         const savedToken = localStorage.getItem('docnow_auth_token');
@@ -54,6 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = () => {
+        // Invoke registered callbacks (e.g. cart reset) synchronously
+        // BEFORE clearing auth state, so all state updates are batched
+        // into a single render cycle by React 18+.
+        logoutCallbackRef.current?.();
         setToken(null);
         setUser(null);
         localStorage.removeItem('docnow_auth_token');
@@ -68,7 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             logout,
             updateUser,
             isAuthenticated: !!token,
-            isInitialized
+            isInitialized,
+            onLogout
         }}>
             {children}
         </AuthContext.Provider>
