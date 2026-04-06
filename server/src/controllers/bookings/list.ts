@@ -33,6 +33,7 @@ export async function listBookings(req: AuthRequest, res: Response) {
             id: b.id,
             partnerBookingId: b.partnerBookingId,
             status: b.status,
+            paymentStatus: b.paymentStatus,
             slotDate: b.slotDate,
             slotTime: b.slotTime,
             totalAmount: b.totalAmount,

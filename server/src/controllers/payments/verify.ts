@@ -2,10 +2,10 @@ import { Response } from 'express';
 import { AuthRequest } from '../../middleware/auth';
 import { prisma } from '../../db';
 import { getRazorpay } from '../../services/razorpay';
-import { createHealthiansBooking } from '../../services/partnerBooking';
 import { rollbackInitiatedBooking } from '../../services/rollback';
 import { assertTransition } from '../../utils/paymentStateMachine';
 import { tryAwardFirstOrderBonus } from '../../utils/referralService';
+import { finalizeBooking } from '../../services/bookingFinalization';
 import crypto from 'crypto';
 
 /**
@@ -103,54 +103,20 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
             console.log('[Payments] Booking already AUTHORIZED (webhook arrived first), proceeding to partner booking:', bookingId);
         }
 
-        // 9. Try to create partner booking
-        try {
-            const partnerResult = await createHealthiansBooking(booking, userId, booking.slotTime);
+        // 9. Finalize booking safely through lease mechanism
+        const result = await finalizeBooking(bookingId);
 
-            // Success - update to CONFIRMED in transaction
-            const currentStatus = alreadyAuthorized ? 'AUTHORIZED' : 'AUTHORIZED';
-            assertTransition(currentStatus as any, 'CONFIRMED');
-            await prisma.$transaction(async (tx) => {
-                await tx.booking.update({
-                    where: { id: bookingId },
-                    data: {
-                        paymentStatus: 'CONFIRMED',
-                        partnerBookingId: partnerResult.booking_id?.toString() || null,
-                        status: 'Order Booked'
-                    }
-                });
-
-                // Clear cart
-                await tx.cartItem.deleteMany({ where: { cart: { userId } } });
-            });
-
-            console.log('[Payments] Booking CONFIRMED:', bookingId);
+        if (result.status === 'success' || result.status === 'already_confirmed') {
+            // Clear cart
+            await prisma.cartItem.deleteMany({ where: { cart: { userId } } });
+            console.log('[Payments] Booking CONFIRMED via finish:', bookingId);
 
             tryAwardFirstOrderBonus(userId, bookingId).catch(err =>
                 console.error('[Payments] First-order referral bonus failed:', err.message)
             );
 
             return res.json({ status: 'confirmed', bookingId });
-
-        } catch (partnerError: any) {
-            // Partner failed - payment is secure, enqueue for retry
-            console.error('[Payments] Partner booking failed:', partnerError.message);
-
-            assertTransition('AUTHORIZED' as any, 'PARTNER_FAILED');
-            await prisma.booking.update({
-                where: { id: bookingId },
-                data: {
-                    paymentStatus: 'PARTNER_FAILED',
-                    partnerError: partnerError.message || 'Healthians API failed'
-                }
-            });
-
-            await prisma.partnerRetry.upsert({
-                where: { bookingId },
-                create: { bookingId, nextRetryAt: new Date(Date.now() + 60_000), lastError: partnerError.message },
-                update: {}
-            });
-
+        } else {
             return res.status(200).json({
                 status: 'payment_received_booking_pending',
                 bookingId,

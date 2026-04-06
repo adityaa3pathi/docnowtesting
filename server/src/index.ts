@@ -9,7 +9,6 @@ import morgan from 'morgan';
 import { PrismaClient } from '@prisma/client';
 import locationRoutes from './routes/location';
 import catalogRoutes from './routes/catalog';
-import userRoutes from './routes/user';
 import callbackRoutes from './routes/callback';
 import authRoutes from './routes/auth';
 import profileRoutes from './routes/profile';
@@ -44,7 +43,6 @@ app.use(express.json());
 
 app.use('/api/location', locationRoutes);
 app.use('/api/catalog', catalogRoutes);
-app.use('/api/users', userRoutes);
 app.use('/api/callback', callbackRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);

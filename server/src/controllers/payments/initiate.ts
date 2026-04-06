@@ -7,6 +7,8 @@ import { rollbackInitiatedBooking } from '../../services/rollback';
 import { calculateDiscount } from '../../utils/promoHelper';
 import { assertTransition } from '../../utils/paymentStateMachine';
 import { tryAwardFirstOrderBonus } from '../../utils/referralService';
+import { resolveOrCreateSelfPatient } from '../../utils/patientValidation';
+import { finalizeBooking } from '../../services/bookingFinalization';
 
 /**
  * POST /api/payments/initiate
@@ -153,23 +155,7 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
             const hasNullPatient = cart.items.some(item => !item.patientId);
 
             if (hasNullPatient) {
-                let selfPatient = await tx.patient.findFirst({
-                    where: { userId, relation: { in: ['Self', 'self'] } }
-                });
-
-                if (!selfPatient) {
-                    selfPatient = await tx.patient.create({
-                        data: {
-                            userId,
-                            name: user.name || 'Self',
-                            relation: 'Self',
-                            age: user.age || 25,
-                            gender: user.gender || 'Male'
-                        }
-                    });
-                    console.log('[Payments] Auto-created self patient:', selfPatient.id);
-                }
-
+                const selfPatient = await resolveOrCreateSelfPatient(userId, tx as any);
                 selfPatientId = selfPatient.id;
             }
 
@@ -299,38 +285,17 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
 
         // Handle Zero Amount - Instant Confirmation
         if (finalAmount === 0) {
-            console.log('[Payments] Zero amount booking, confirming immediately:', booking.id);
-            try {
-                const partnerResult = await createHealthiansBooking(booking, userId, slot_id);
-                assertTransition('PAID' as any, 'CONFIRMED' as any);
-                await prisma.booking.update({
-                    where: { id: booking.id },
-                    data: {
-                        paymentStatus: 'CONFIRMED',
-                        partnerBookingId: partnerResult.booking_id?.toString() || null,
-                        status: 'Order Booked'
-                    }
-                });
-                await prisma.cartItem.deleteMany({ where: { cart: { userId } } });
+            console.log('[Payments] Zero amount booking, confirming immediately via finalizeBooking:', booking.id);
+            const result = await finalizeBooking(booking.id);
 
+            await prisma.cartItem.deleteMany({ where: { cart: { userId } } });
+
+            if (result.status === 'success') {
                 tryAwardFirstOrderBonus(userId, booking.id).catch(err =>
                     console.error('[Payments] First-order referral bonus failed:', err.message)
                 );
-
                 return res.json({ bookingId: booking.id, status: 'confirmed', amount: 0 });
-            } catch (error) {
-                console.error('[Payments] Partner booking failed for zero amount:', error);
-                assertTransition('PAID' as any, 'PARTNER_FAILED' as any);
-                await prisma.booking.update({
-                    where: { id: booking.id },
-                    data: { paymentStatus: 'PARTNER_FAILED', partnerError: (error as Error).message || 'Partner API failed' }
-                });
-                await prisma.partnerRetry.upsert({
-                    where: { bookingId: booking.id },
-                    create: { bookingId: booking.id, nextRetryAt: new Date(Date.now() + 60_000), lastError: (error as Error).message },
-                    update: {}
-                });
-                await prisma.cartItem.deleteMany({ where: { cart: { userId } } });
+            } else {
                 return res.json({ bookingId: booking.id, status: 'payment_received_booking_pending', amount: 0 });
             }
         }

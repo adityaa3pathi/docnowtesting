@@ -6,14 +6,7 @@ import { z } from 'zod';
 const router = express.Router();
 const prisma = new PrismaClient();
 
-const ALLOWED_RELATIONS = ['Spouse', 'Child', 'Parent', 'Grand parent', 'Sibling', 'Friend', 'Native', 'Neighbour', 'Colleague', 'Others'] as const;
-
-const patientSchema = z.object({
-    name: z.string().min(1, 'Name is required'),
-    relation: z.enum(ALLOWED_RELATIONS, { message: `Relation must be one of: ${ALLOWED_RELATIONS.join(', ')}` }),
-    age: z.number().int().min(5, 'Family member must be at least 5 years old').max(150, 'Invalid age'),
-    gender: z.enum(['Male', 'Female', 'Other'], { message: 'Gender must be Male, Female, or Other' }),
-});
+import { patientSchema } from '../utils/patientValidation';
 
 // GET /api/profile/patients - Get all family members
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
@@ -116,6 +109,18 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
         if (patient.userId !== req.userId) {
             res.status(403).json({ error: 'Unauthorized' });
             return;
+        }
+
+        // Check for existing bookings
+        const bookingCount = await prisma.bookingItem.count({
+            where: { patientId: id }
+        });
+
+        if (bookingCount > 0) {
+            return res.status(409).json({
+                error: 'Cannot remove this family member because they have existing bookings. Contact support if you need help.',
+                code: 'HAS_BOOKINGS'
+            });
         }
 
         await prisma.patient.delete({
