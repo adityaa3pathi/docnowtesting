@@ -9,9 +9,10 @@ import { PaymentStatus } from '@prisma/client';
 
 const VALID_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {
     INITIATED: [PaymentStatus.AUTHORIZED, PaymentStatus.FAILED, PaymentStatus.EXPIRED, PaymentStatus.PAID],
-    AUTHORIZED: [PaymentStatus.CONFIRMED, PaymentStatus.PARTNER_FAILED],
-    PAID: [PaymentStatus.CONFIRMED, PaymentStatus.PARTNER_FAILED],
-    PARTNER_FAILED: [PaymentStatus.CONFIRMED, PaymentStatus.REFUNDED],
+    AUTHORIZED: [PaymentStatus.PROCESSING],
+    PAID: [PaymentStatus.PROCESSING],
+    PROCESSING: [PaymentStatus.CONFIRMED, PaymentStatus.PARTNER_FAILED],
+    PARTNER_FAILED: [PaymentStatus.PROCESSING, PaymentStatus.REFUNDED],
     CONFIRMED: [],     // terminal
     FAILED: [],     // terminal
     CANCELLED: [],     // terminal

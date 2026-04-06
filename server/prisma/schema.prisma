@@ -42,12 +42,29 @@ enum PaymentStatus {
   INITIATED       // Order created, awaiting payment
   AUTHORIZED      // Payment verified, partner booking pending
   PAID            // Zero-amount: fully covered by wallet/promo
+  PROCESSING      // Claimed by finalization service/reconciler
   CONFIRMED       // Partner booking success & payment success
   PARTNER_FAILED  // Payment OK, partner API failed
   FAILED          // Payment failed or signature invalid
   CANCELLED       // User cancelled or system rollback
   EXPIRED         // Abandoned: no payment within TTL
   REFUNDED        // Max partner retries exhausted, money returned
+}
+
+enum ManagerOrderStatus {
+  CREATED
+  SENT
+  PAYMENT_RECEIVED
+  PAYMENT_CONFIRMED
+  CONFIRMED
+  BOOKING_FAILED
+  REFUNDED
+}
+
+enum CollectionMode {
+  RAZORPAY_LINK
+  OFFLINE_CASH
+  OFFLINE_UPI
 }
 
 // ============================================
@@ -83,6 +100,9 @@ model User {
   referralRewardsEarned ReferralReward[] @relation("ReferrerRewards")
   auditLogs     AdminAuditLog[]
   promoRedemptions PromoRedemption[]
+  managerOrders           ManagerOrder[] @relation("ManagerOrders")
+  customerOrders          ManagerOrder[] @relation("CustomerOrders")
+  managerCreatedBookings  Booking[]      @relation("ManagerCreatedBookings")
 }
 
 model OTP {
@@ -142,6 +162,14 @@ model Booking {
   billingGender     String?           // Gender of billing person (for Healthians)
   idempotencyKey    String?       @unique  // Prevent double-initiate
   address           Address       @relation(fields: [addressId], references: [id])
+
+  createdByManagerId   String?       // Reference to manager who created this
+  managerOrder         ManagerOrder? // One-to-one relation
+  creatorUser          User?         @relation("ManagerCreatedBookings", fields: [createdByManagerId], references: [id])
+
+  // Leased atomic claim fields
+  processingAttemptId  String?       // UUID lease token — set during PROCESSING claim
+  processingStartedAt  DateTime?     // When PROCESSING was claimed — used for stale lease detection
 
   // Address snapshot — immutable copy of address at booking time
   addressLine       String?
@@ -486,4 +514,26 @@ model CatalogItemCategory {
   
   @@unique([catalogItemId, categoryId])
   @@index([categoryId, sortOrder])
+}
+model ManagerOrder {
+  id              String             @id @default(uuid())
+  bookingId       String             @unique
+  managerId       String
+  customerId      String
+  status          ManagerOrderStatus @default(CREATED)
+  collectionMode  CollectionMode?
+  totalAmount     Float
+  razorpayLinkId  String?
+  razorpayLinkUrl String?
+  confirmedAt     DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  booking         Booking            @relation(fields: [bookingId], references: [id])
+  manager         User               @relation("ManagerOrders", fields: [managerId], references: [id])
+  customer        User               @relation("CustomerOrders", fields: [customerId], references: [id])
+
+  @@index([managerId, status])
+  @@index([customerId])
 }
