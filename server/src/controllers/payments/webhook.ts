@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import Razorpay from 'razorpay';
 import { prisma } from '../../db';
-import { createHealthiansBooking } from '../../services/partnerBooking';
+import { finalizeBooking } from '../../services/bookingFinalization';
 import { rollbackInitiatedBooking } from '../../services/rollback';
 import { assertTransition } from '../../utils/paymentStateMachine';
 import { tryAwardFirstOrderBonus } from '../../utils/referralService';
@@ -84,31 +84,21 @@ export const webhookHandler = async (req: Request, res: Response) => {
             setTimeout(async () => {
                 try {
                     const freshBooking = await prisma.booking.findUnique({
-                        where: { id: bookingIdForDelay },
-                        include: { items: { include: { patient: true } } }
+                        where: { id: bookingIdForDelay }
                     });
                     if (freshBooking && freshBooking.paymentStatus === 'AUTHORIZED' && !freshBooking.partnerBookingId) {
                         console.log('[Webhook] /verify did not complete, triggering partner booking for:', bookingIdForDelay);
 
-                        const partnerResult = await createHealthiansBooking(freshBooking, userIdForDelay, freshBooking.slotTime);
+                        const result = await finalizeBooking(bookingIdForDelay);
+                        
+                        if (result.status === 'success' || result.status === 'already_confirmed') {
+                            await prisma.cartItem.deleteMany({ where: { cart: { userId: userIdForDelay } } });
+                            console.log('[Webhook] Delayed partner booking SUCCESS:', bookingIdForDelay);
 
-                        assertTransition('AUTHORIZED' as any, 'CONFIRMED');
-                        await prisma.$transaction(async (tx) => {
-                            await tx.booking.update({
-                                where: { id: bookingIdForDelay },
-                                data: {
-                                    paymentStatus: 'CONFIRMED',
-                                    partnerBookingId: partnerResult.booking_id?.toString() || null,
-                                    status: 'Order Booked'
-                                }
-                            });
-                            await tx.cartItem.deleteMany({ where: { cart: { userId: userIdForDelay } } });
-                        });
-                        console.log('[Webhook] Delayed partner booking SUCCESS:', bookingIdForDelay);
-
-                        tryAwardFirstOrderBonus(userIdForDelay, bookingIdForDelay).catch(err =>
-                            console.error('[Webhook] First-order referral bonus failed:', err.message)
-                        );
+                            tryAwardFirstOrderBonus(userIdForDelay, bookingIdForDelay).catch(err =>
+                                console.error('[Webhook] First-order referral bonus failed:', err.message)
+                            );
+                        }
                     }
                 } catch (delayErr: any) {
                     console.error('[Webhook] Delayed partner booking failed:', delayErr.message);
@@ -128,6 +118,29 @@ export const webhookHandler = async (req: Request, res: Response) => {
                 data: { paymentStatus: 'FAILED' }
             });
             await rollbackInitiatedBooking(booking);
+        }
+    } else if (event === 'payment_link.paid') {
+        const plink = payload.payload.payment_link?.entity;
+        const managerOrderId = plink?.notes?.managerOrderId;
+        const bookingId = plink?.notes?.bookingId;
+        const razorpayPaymentId = payload.payload.payment?.entity?.id;
+
+        if (managerOrderId && bookingId) {
+            console.log('[Webhook] Processing payment_link.paid for ManagerOrder:', managerOrderId);
+            
+            await prisma.managerOrder.updateMany({
+                where: { id: managerOrderId, status: 'SENT' },
+                data: { status: 'PAYMENT_RECEIVED' }
+            });
+
+            await prisma.booking.update({
+                where: { id: bookingId },
+                data: { 
+                    razorpayPaymentId: razorpayPaymentId,
+                    paidAt: new Date()
+                }
+            });
+            // Do NOT trigger partner booking here. Manager explicitly confirms it.
         }
     }
 

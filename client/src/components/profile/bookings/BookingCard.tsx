@@ -75,7 +75,7 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                     <Button
                         onClick={() => onTrack(booking.id)}
                         variant="primary"
-                        disabled={booking.status === 'Rescheduled'}
+                        disabled={booking.status === 'Rescheduled' || booking.status === 'Awaiting Payment'}
                         className="gap-2 text-xs sm:text-sm"
                     >
                         <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
