@@ -71,16 +71,96 @@ class LocalStorageProvider implements ReportStorageProvider {
     }
 }
 
+import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+
+// ─── S3 Storage Provider ────────────────────────────────────────────────────
+
+class S3StorageProvider implements ReportStorageProvider {
+    private client: S3Client;
+    private bucket: string;
+
+    constructor() {
+        if (!process.env.AWS_S3_BUCKET || !process.env.AWS_S3_REGION || !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+            throw new Error('Missing AWS S3 Environment Variables');
+        }
+
+        this.bucket = process.env.AWS_S3_BUCKET;
+        this.client = new S3Client({
+            region: process.env.AWS_S3_REGION,
+            credentials: {
+                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+            },
+        });
+        console.log(`[ReportStorage] Initialized S3 provider: s3://${this.bucket}`);
+    }
+
+    async upload(key: string, buffer: Buffer, contentType: string): Promise<void> {
+        const command = new PutObjectCommand({
+            Bucket: this.bucket,
+            Key: key,
+            Body: buffer,
+            ContentType: contentType,
+        });
+
+        await this.client.send(command);
+        console.log(`[ReportStorage] Stored in S3: s3://${this.bucket}/${key} (${buffer.length} bytes)`);
+    }
+
+    async read(key: string): Promise<Buffer> {
+        const command = new GetObjectCommand({
+            Bucket: this.bucket,
+            Key: key,
+        });
+
+        const response = await this.client.send(command);
+        const stream = response.Body as unknown as NodeJS.ReadableStream;
+        
+        return new Promise((resolve, reject) => {
+            const chunks: any[] = [];
+            stream.on('data', (chunk) => chunks.push(chunk));
+            stream.on('error', reject);
+            stream.on('end', () => resolve(Buffer.concat(chunks)));
+        });
+    }
+
+    async exists(key: string): Promise<boolean> {
+        const command = new HeadObjectCommand({
+            Bucket: this.bucket,
+            Key: key,
+        });
+
+        try {
+            await this.client.send(command);
+            return true;
+        } catch (error: any) {
+            if (error.name === 'NotFound') {
+                return false;
+            }
+            throw error;
+        }
+    }
+
+    async delete(key: string): Promise<void> {
+        const command = new DeleteObjectCommand({
+            Bucket: this.bucket,
+            Key: key,
+        });
+
+        await this.client.send(command);
+    }
+}
+
 // ─── Provider Factory ───────────────────────────────────────────────────────
 
 function createProvider(): ReportStorageProvider {
     const providerName = process.env.REPORT_STORAGE_PROVIDER || 'local';
 
     switch (providerName) {
+        case 's3':
+            return new S3StorageProvider();
         case 'local':
             return new LocalStorageProvider();
-        // Future: case 's3': return new S3Provider();
-        // Future: case 'r2': return new R2Provider();
         default:
             console.warn(`[ReportStorage] Unknown provider "${providerName}", falling back to local.`);
             return new LocalStorageProvider();
