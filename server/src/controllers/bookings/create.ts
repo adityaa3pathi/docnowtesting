@@ -154,6 +154,7 @@ export async function createBooking(req: AuthRequest, res: Response) {
             zone_id: zoneId,
             client_id: '',
             is_ppmc_booking: 0,
+            vendor_booking_id: 'legacy_booking', // Added to respect Healthians schema
             vendor_billing_user_id: user.id
         };
 
