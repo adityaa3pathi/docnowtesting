@@ -2,13 +2,15 @@ import { useState } from 'react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import { SlotItem, AppliedPromo } from '@/types/cart';
+import { SlotItem, AppliedPromo, Address } from '@/types/cart';
 
 interface CheckoutDeps {
     slots: SlotItem[];
     selectedTime: string;
     selectedDate: string;
     selectedAddressId: string;
+    selectedAddress: Address | undefined;
+    cartId: string | undefined;
     appliedPromo: AppliedPromo | null;
     useWallet: boolean;
     billingPatientId: string;
@@ -21,6 +23,8 @@ export function useCheckout({
     selectedTime,
     selectedDate,
     selectedAddressId,
+    selectedAddress,
+    cartId,
     appliedPromo,
     useWallet,
     billingPatientId,
@@ -31,6 +35,7 @@ export function useCheckout({
     const [creatingOrder, setCreatingOrder] = useState(false);
     const [profileDialogOpen, setProfileDialogOpen] = useState(false);
     const [missingProfileFields, setMissingProfileFields] = useState({});
+    const [availabilityErrors, setAvailabilityErrors] = useState<Array<{ testCode: string; testName: string }>>([]);
 
     const handleCheckout = async () => {
         if (!selectedAddressId) {
@@ -53,6 +58,37 @@ export function useCheckout({
 
         try {
             setCreatingOrder(true);
+
+            // ── Pre-checkout: validate test availability at location ────────
+            if (cartId && selectedAddress?.pincode) {
+                try {
+                    const validateRes = await api.post('/payments/validate', {
+                        cartId,
+                        zipcode: selectedAddress.pincode,
+                        lat: selectedAddress.lat,
+                        long: selectedAddress.long,
+                        date: selectedDate
+                    });
+
+                    if (!validateRes.data.valid && validateRes.data.unavailable?.length > 0) {
+                        setCreatingOrder(false);
+                        for (const item of validateRes.data.unavailable) {
+                            toast.error(
+                                `"${item.testName}" is not available at your location. Please remove it to proceed.`,
+                                { duration: 6000 }
+                            );
+                        }
+                        setAvailabilityErrors(validateRes.data.unavailable);
+                        return;
+                    }
+                    // All items valid — clear any previous errors
+                    setAvailabilityErrors([]);
+                } catch (validateErr: any) {
+                    // If validation itself errors (e.g. Healthians timeout), warn but don't block
+                    console.warn('[Checkout] Availability check failed, proceeding anyway:', validateErr?.message);
+                }
+            }
+            // ────────────────────────────────────────────────────────────────
 
             const initRes = await api.post('/payments/initiate', {
                 slot_id: slotId,
@@ -157,6 +193,7 @@ export function useCheckout({
         profileDialogOpen,
         setProfileDialogOpen,
         missingProfileFields,
+        availabilityErrors,
         handleCheckout
     };
 }

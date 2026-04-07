@@ -442,16 +442,78 @@ router.put('/users/:userId/patients/:id', ...mgr, async (req: AuthRequest, res: 
     }
 });
 
-// C. Address Fetch
+// ============================================
+// C. Address CRUD (for a customer, performed by manager)
+// ============================================
+
+import { z } from 'zod';
+
+const addressSchema = z.object({
+    line1:   z.string().min(3),
+    city:    z.string().min(1),
+    pincode: z.string().regex(/^\d{6}$/, 'Pincode must be 6 digits'),
+    lat:     z.string().optional(),
+    long:    z.string().optional(),
+});
+
+// List (exclude soft-deleted)
 router.get('/users/:userId/addresses', ...mgr, async (req: AuthRequest, res: Response) => {
     const userId = req.params.userId as string;
     try {
-        const addresses = await prisma.address.findMany({ where: { userId } });
+        const addresses = await prisma.address.findMany({
+            where: { userId, isDeleted: false }
+        });
         res.json(addresses);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
 });
+
+// Create
+router.post('/users/:userId/addresses', ...mgr, async (req: AuthRequest, res: Response) => {
+    const userId = req.params.userId as string;
+    try {
+        const validated = addressSchema.parse(req.body);
+        const address = await prisma.address.create({
+            data: { ...validated, userId }
+        });
+        res.status(201).json(address);
+    } catch (error: any) {
+        res.status(400).json({ error: error.errors || error.message });
+    }
+});
+
+// Update
+router.put('/users/:userId/addresses/:id', ...mgr, async (req: AuthRequest, res: Response) => {
+    const userId = req.params.userId as string;
+    const id = req.params.id as string;
+    try {
+        const validated = addressSchema.partial().parse(req.body);
+        const address = await prisma.address.update({
+            where: { id, userId },
+            data: validated
+        });
+        res.json(address);
+    } catch (error: any) {
+        res.status(400).json({ error: error.errors || error.message });
+    }
+});
+
+// Soft delete
+router.delete('/users/:userId/addresses/:id', ...mgr, async (req: AuthRequest, res: Response) => {
+    const userId = req.params.userId as string;
+    const id = req.params.id as string;
+    try {
+        await prisma.address.update({
+            where: { id, userId },
+            data: { isDeleted: true }
+        });
+        res.json({ message: 'Address deleted' });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
 
 // D. Slot Fetch
 router.post('/slots', ...mgr, async (req: AuthRequest, res: Response) => {

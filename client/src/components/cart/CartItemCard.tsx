@@ -1,8 +1,9 @@
-import { Trash2 } from 'lucide-react';
+import { Trash2, AlertTriangle } from 'lucide-react';
 import { Patient } from '@/types/cart';
 
 interface CartItem {
     id: string;
+    testCode: string;
     testName: string;
     price: number;
     mrp?: number | null;
@@ -15,6 +16,7 @@ interface CartItemCardProps {
     onRemove: (id: string) => void;
     onUpdatePatient: (itemId: string, patientId: string | null) => void;
     onAddNewMember: (itemId: string) => void;
+    isUnavailable?: boolean;
 }
 
 export function CartItemCard({
@@ -22,10 +24,22 @@ export function CartItemCard({
     patients,
     onRemove,
     onUpdatePatient,
-    onAddNewMember
+    onAddNewMember,
+    isUnavailable = false,
 }: CartItemCardProps) {
     return (
-        <div className="bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-gray-100">
+        <div className={`bg-white p-3 sm:p-4 rounded-xl shadow-sm border ${
+            isUnavailable ? 'border-orange-400 ring-1 ring-orange-300' : 'border-gray-100'
+        }`}>
+            {isUnavailable && (
+                <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 mb-3 text-sm text-orange-800">
+                    <AlertTriangle className="w-4 h-4 text-orange-500 shrink-0" />
+                    <span>
+                        <strong>{item.testName}</strong> is not available at your selected location.
+                        Please <button onClick={() => onRemove(item.id)} className="underline font-semibold hover:text-orange-900">remove it</button> to proceed.
+                    </span>
+                </div>
+            )}
             <div className="flex items-start gap-3 sm:gap-4">
                 <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-lg flex-shrink-0 flex items-center justify-center">
                     <span className="text-xl sm:text-2xl">🧪</span>
