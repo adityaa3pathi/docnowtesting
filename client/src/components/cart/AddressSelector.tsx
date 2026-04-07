@@ -18,7 +18,7 @@ interface AddressSelectorProps {
     addresses: Address[];
     selectedAddressId: string;
     onSelect: (id: string) => void;
-    onAddressAdded: () => void;
+    onAddressAdded: (newId?: string) => void;
 }
 
 export function AddressSelector({
@@ -34,8 +34,8 @@ export function AddressSelector({
     const handleAddAddress = async () => {
         try {
             setLoading(true);
-            await api.post('/profile/addresses', addressForm);
-            onAddressAdded(); // Refresh parent list
+            const res = await api.post('/profile/addresses', addressForm);
+            onAddressAdded(res.data.address.id); // Refresh parent list and auto-select
             setAddressDialogOpen(false);
             setAddressForm({ line1: '', city: '', pincode: '' });
         } catch (error: any) {

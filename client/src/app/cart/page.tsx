@@ -64,12 +64,15 @@ export default function CartPage() {
         profileDialogOpen,
         setProfileDialogOpen,
         missingProfileFields,
+        availabilityErrors,
         handleCheckout
     } = useCheckout({
         slots,
         selectedTime,
         selectedDate,
         selectedAddressId,
+        selectedAddress,
+        cartId: cart?.id,
         appliedPromo: promo.appliedPromo,
         useWallet: promo.useWallet,
         billingPatientId,
@@ -80,6 +83,13 @@ export default function CartPage() {
     useEffect(() => {
         fetchInitialData();
     }, []);
+
+    // Fallback: If addresses are available but no valid address is selected, default to the first one.
+    useEffect(() => {
+        if (addresses.length > 0 && (!selectedAddressId || !addresses.find(a => a.id === selectedAddressId))) {
+            setSelectedAddressId(addresses[0].id);
+        }
+    }, [addresses, selectedAddressId]);
 
     const fetchInitialData = async () => {
         setLoadingPatients(true);
@@ -157,6 +167,7 @@ export default function CartPage() {
                                         patients={patients}
                                         onRemove={removeFromCart}
                                         onUpdatePatient={updateCartItem}
+                                        isUnavailable={availabilityErrors.some(e => e.testCode === item.testCode)}
                                         onAddNewMember={(id) => {
                                             setAddMemberForItemId(id);
                                             setAddMemberDialogOpen(true);
@@ -172,7 +183,10 @@ export default function CartPage() {
                                     setSelectedAddressId(id);
                                     setIsSlotLocked(false);
                                 }}
-                                onAddressAdded={fetchAddresses}
+                                onAddressAdded={(newId) => {
+                                    fetchAddresses();
+                                    if (newId) setSelectedAddressId(newId);
+                                }}
                             />
 
                             {selectedAddressId && (
