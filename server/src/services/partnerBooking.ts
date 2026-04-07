@@ -97,8 +97,9 @@ export async function createHealthiansBooking(booking: any, userId: string, slot
         payment_option: 'prepaid',
         discounted_price: booking.totalAmount,
         zone_id: zoneId,
-        client_id: booking.id, // For idempotency/reconciliation
+        client_id: '',
         is_ppmc_booking: 0,
+        vendor_booking_id: booking.id, // For idempotency/reconciliation
         vendor_billing_user_id: user.id
     };
 
