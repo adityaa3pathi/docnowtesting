@@ -4,6 +4,7 @@ import { rateLimiter } from '../middleware/rateLimiter';
 import { initiatePayment, verifyPayment } from '../controllers/payments';
 import { prisma } from '../db';
 import { HealthiansAdapter } from '../adapters/healthians';
+import { BookingService } from '../services/booking.service';
 
 const router = Router();
 const healthians = HealthiansAdapter.getInstance();
@@ -38,6 +39,10 @@ router.post('/validate', authMiddleware, async (req: any, res: any) => {
         const bookable: string[] = [];
         const unavailable: Array<{ testCode: string; testName: string }> = [];
 
+        // Fetch zone_id once for the location
+        const zoneId = await BookingService.getZoneId(lat || '0', long || '0', zipcode);
+        console.log(`[Validate] Using zone_id: ${zoneId} for zipcode: ${zipcode}`);
+
         // Check all items. Call getSlotsByLocation per item to see if Healthians
         // would accept it.  Empty slots array = location/lab doesn't support this test.
         await Promise.allSettled(cart.items.map(async (item) => {
@@ -46,7 +51,7 @@ router.post('/validate', authMiddleware, async (req: any, res: any) => {
                     lat: lat || '0',
                     long: long || '0',
                     zipcode,
-                    zone_id: '',
+                    zone_id: zoneId || '',
                     slot_date: checkDate,
                     amount: item.price,
                     package: [{ deal_id: [item.testCode] }]
