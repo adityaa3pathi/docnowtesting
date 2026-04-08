@@ -1,11 +1,11 @@
 
 import { useState, useEffect } from 'react';
-import { Loader2, AlertCircle, CheckCircle2, Phone } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle2, Phone, Download, Clock, FileText } from 'lucide-react';
 import api from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui';
 import toast from 'react-hot-toast';
-import { STATUS_MAP } from './types';
+import { ReportSummary, getReportAction, getStatusDisplay } from './types';
 
 interface TrackStatusDialogProps {
     bookingId: string | null;
@@ -19,10 +19,13 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
     const [statusData, setStatusData] = useState<any>(null);
     const [phleboLoading, setPhleboLoading] = useState(false);
     const [phleboData, setPhleboData] = useState<any>(null);
+    const [reportsLoading, setReportsLoading] = useState(false);
+    const [reports, setReports] = useState<ReportSummary[]>([]);
 
     useEffect(() => {
         if (open && bookingId) {
             fetchStatus(bookingId);
+            fetchReports(bookingId);
             // Reset phlebo data on new booking
             setPhleboData(null);
         }
@@ -46,6 +49,19 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
         }
     };
 
+    const fetchReports = async (id: string) => {
+        setReportsLoading(true);
+        try {
+            const res = await api.get(`/reports/booking/${id}`);
+            setReports(res.data?.reports || []);
+        } catch (error: any) {
+            console.error('Error fetching reports:', error);
+            setReports([]);
+        } finally {
+            setReportsLoading(false);
+        }
+    };
+
     const handleFetchPhlebo = async () => {
         if (!bookingId) return;
         setPhleboLoading(true);
@@ -60,9 +76,11 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
         }
     };
 
-    const getStatusInfo = (code: string) => {
-        return STATUS_MAP[code] || { label: code, color: 'bg-gray-100 text-gray-700', step: 1 };
-    };
+    const statusInfo = getStatusDisplay(statusData?.data?.booking_status, reports);
+    const reportAction = getReportAction(reports);
+    const reportUrl = reportAction.kind === 'download' || reportAction.kind === 'retry'
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/reports/${reportAction.report.id}/download`
+        : null;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -91,9 +109,13 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
                                         <div className="flex justify-between items-start mb-6">
                                             <div>
                                                 <div className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Current Status</div>
-                                                <div className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${getStatusInfo(statusData.data?.booking_status).color}`}>
-                                                    {getStatusInfo(statusData.data?.booking_status).label}
+                                                <div className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${statusInfo.color}`}>
+                                                    {statusInfo.label}
                                                 </div>
+                                                <p className="mt-3 max-w-md text-sm text-slate-600">{statusInfo.message}</p>
+                                                {statusInfo.referenceCode && (
+                                                    <p className="mt-1 text-xs text-slate-500">Reference code: {statusInfo.referenceCode}</p>
+                                                )}
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Booking ID</div>
@@ -106,12 +128,12 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
                                             <div className="absolute top-4 left-0 w-full h-0.5 bg-slate-200 -z-10" />
                                             <div
                                                 className="absolute top-4 left-0 h-0.5 bg-primary transition-all duration-500 -z-10"
-                                                style={{ width: `${Math.max(0, (getStatusInfo(statusData.data?.booking_status).step - 1) * 25)}%` }}
+                                                style={{ width: `${Math.max(0, (statusInfo.step - 1) * 25)}%` }}
                                             />
                                             {[1, 2, 3, 4, 5].map((s) => (
-                                                <div key={s} className={`w-8 h-8 rounded-full flex items-center justify-center border-2 bg-white transition-colors ${s <= getStatusInfo(statusData.data?.booking_status).step ? 'border-primary text-primary' : 'border-slate-200 text-slate-300'
+                                                <div key={s} className={`w-8 h-8 rounded-full flex items-center justify-center border-2 bg-white transition-colors ${s <= statusInfo.step ? 'border-primary text-primary' : 'border-slate-200 text-slate-300'
                                                     }`}>
-                                                    {s < getStatusInfo(statusData.data?.booking_status).step ? <CheckCircle2 className="w-5 h-5" /> : <span className="text-xs font-bold">{s}</span>}
+                                                    {s < statusInfo.step ? <CheckCircle2 className="w-5 h-5" /> : <span className="text-xs font-bold">{s}</span>}
                                                 </div>
                                             ))}
                                         </div>
@@ -122,6 +144,42 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
                                             <span className="text-[10px] font-bold text-slate-400 uppercase">Collected</span>
                                             <span className="text-[10px] font-bold text-slate-400 uppercase">Report</span>
                                         </div>
+                                    </div>
+
+                                    <div className="rounded-xl border border-slate-100 bg-white p-4">
+                                        <div className="mb-3 flex items-center gap-2">
+                                            <FileText className="h-4 w-4 text-primary" />
+                                            <h4 className="text-sm font-bold text-slate-900 uppercase tracking-tight">Reports</h4>
+                                        </div>
+
+                                        {reportsLoading ? (
+                                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                Checking for report availability...
+                                            </div>
+                                        ) : reportUrl ? (
+                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                                <p className="text-sm text-slate-600">Your latest lab report is ready to download.</p>
+                                                <a
+                                                    href={reportUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-green-700"
+                                                >
+                                                    <Download className="h-4 w-4" />
+                                                    {reportAction.kind === 'retry' ? 'Retry Download' : 'Download Report'}
+                                                </a>
+                                            </div>
+                                        ) : reportAction.kind === 'processing' ? (
+                                            <div className="flex items-center gap-2 text-sm text-amber-700">
+                                                <Clock className="h-4 w-4" />
+                                                Your report is being prepared. It will appear here as soon as it is available.
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-slate-500">
+                                                Reports will appear here once the lab shares them with us.
+                                            </p>
+                                        )}
                                     </div>
 
                                     {/* Phlebotomist Contact (if assigned) */}
@@ -173,16 +231,16 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
                                                             ? `${statusData.patientDetails[cust.vendor_customer_id].name} (${statusData.patientDetails[cust.vendor_customer_id].relation})`
                                                             : `Patient #${idx + 1}`}
                                                     </span>
-                                                    <div className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${getStatusInfo(cust.customer_status).color}`}>
-                                                        {getStatusInfo(cust.customer_status).label}
+                                                    <div className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${getStatusDisplay(cust.customer_status).color}`}>
+                                                        {getStatusDisplay(cust.customer_status).label}
                                                     </div>
                                                 </div>
                                                 <div className="p-4 space-y-3">
                                                     {cust.test_list?.map((test: any, tIdx: number) => (
                                                         <div key={tIdx} className="flex justify-between items-center text-sm">
                                                             <span className="text-slate-700 font-medium">{test.test_name}</span>
-                                                            <span className={`text-xs font-bold ${getStatusInfo(test.test_status).color.split(' ')[1]}`}>
-                                                                {getStatusInfo(test.test_status).label}
+                                                            <span className={`text-xs font-bold ${getStatusDisplay(test.test_status).color.split(' ')[1]}`}>
+                                                                {getStatusDisplay(test.test_status).label}
                                                             </span>
                                                         </div>
                                                     ))}
