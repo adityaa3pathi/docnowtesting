@@ -4,6 +4,7 @@ import { MapPin, Loader2, Phone, Download, Clock } from 'lucide-react';
 import { Button } from '@/components/ui';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
+import { getApiUrl } from '@/lib/api';
 import { BookingHeader, PhleboDetails, getReportAction, getStatusDisplay } from './types';
 
 interface BookingCardProps {
@@ -18,9 +19,8 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
     const [phleboData, setPhleboData] = useState<PhleboDetails | null>(null);
     const statusInfo = getStatusDisplay(booking.status, booking.reports);
     const reportAction = getReportAction(booking.reports);
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
     const reportUrl = reportAction.kind === 'download' || reportAction.kind === 'retry'
-        ? `${apiBaseUrl}/reports/${reportAction.report.id}/download`
+        ? getApiUrl(`/reports/${reportAction.report.id}/download`)
         : null;
     const isAwaitingPayment = booking.paymentStatus === 'INITIATED' || statusInfo.label === 'Awaiting Payment';
     const canTrack = !isAwaitingPayment && !!booking.partnerBookingId && !['Superseded', 'Refunded', 'Cancelled'].includes(statusInfo.label);

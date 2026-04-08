@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Loader2, AlertCircle, CheckCircle2, Phone, Download, Clock, FileText } from 'lucide-react';
 import api from '@/lib/api';
+import { getApiUrl } from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui';
 import toast from 'react-hot-toast';
@@ -79,7 +80,7 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
     const statusInfo = getStatusDisplay(statusData?.data?.booking_status, reports);
     const reportAction = getReportAction(reports);
     const reportUrl = reportAction.kind === 'download' || reportAction.kind === 'retry'
-        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/reports/${reportAction.report.id}/download`
+        ? getApiUrl(`/reports/${reportAction.report.id}/download`)
         : null;
 
     return (

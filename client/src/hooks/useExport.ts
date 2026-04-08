@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { getAppUrl } from '@/lib/api';
 
 export function useExport() {
     const [exporting, setExporting] = useState(false);
@@ -12,10 +13,7 @@ export function useExport() {
             searchParams.set('entity', entity);
 
             const url = `/api/admin/export?${searchParams.toString()}`;
-            
-            const reqUrl = process.env.NEXT_PUBLIC_API_URL 
-                ? `${process.env.NEXT_PUBLIC_API_URL.replace('/api', '')}${url}` 
-                : url.startsWith('/api') ? `http://localhost:5000${url}` : url; // fallback for standalone hook
+            const reqUrl = getAppUrl(url);
 
             const res = await fetch(reqUrl, {
                 headers: {
