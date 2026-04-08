@@ -1,10 +1,10 @@
 
 import { useState } from 'react';
-import { MapPin, Loader2, Phone } from 'lucide-react';
+import { MapPin, Loader2, Phone, Download, Clock } from 'lucide-react';
 import { Button } from '@/components/ui';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
-import { BookingHeader, PhleboDetails, STATUS_MAP } from './types';
+import { BookingHeader, PhleboDetails, getReportAction, getStatusDisplay } from './types';
 
 interface BookingCardProps {
     booking: BookingHeader;
@@ -16,6 +16,16 @@ interface BookingCardProps {
 export function BookingCard({ booking, onTrack, onReschedule, onCancel }: BookingCardProps) {
     const [phleboLoading, setPhleboLoading] = useState(false);
     const [phleboData, setPhleboData] = useState<PhleboDetails | null>(null);
+    const statusInfo = getStatusDisplay(booking.status, booking.reports);
+    const reportAction = getReportAction(booking.reports);
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const reportUrl = reportAction.kind === 'download' || reportAction.kind === 'retry'
+        ? `${apiBaseUrl}/reports/${reportAction.report.id}/download`
+        : null;
+    const isAwaitingPayment = booking.paymentStatus === 'INITIATED' || statusInfo.label === 'Awaiting Payment';
+    const canTrack = !isAwaitingPayment && !!booking.partnerBookingId && !['Superseded', 'Refunded', 'Cancelled'].includes(statusInfo.label);
+    const canReschedule = ['Order Booked', 'Sample Collector Assigned', 'Resample Required'].includes(statusInfo.label);
+    const canCancel = !['Cancelled', 'Sample Collected', 'Sample Received at Lab', 'Report Ready', 'Completed', 'Superseded', 'Refunded'].includes(statusInfo.label);
 
     const handleFetchPhlebo = async () => {
         setPhleboLoading(true);
@@ -53,8 +63,8 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                     <div className="text-xs sm:text-sm text-gray-500">Total Amount</div>
                     <div className="font-bold text-primary">₹{booking.totalAmount}</div>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest w-fit ${STATUS_MAP[booking.status]?.color || 'bg-gray-100 text-gray-700'}`}>
-                    {STATUS_MAP[booking.status]?.label || booking.status}
+                <div className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest w-fit ${statusInfo.color}`}>
+                    {statusInfo.label}
                 </div>
             </div>
 
@@ -70,12 +80,19 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                     ))}
                 </ul>
 
+                <div className="mb-6 rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+                    <p className="text-sm text-slate-700">{statusInfo.message}</p>
+                    {statusInfo.referenceCode && (
+                        <p className="mt-1 text-xs text-slate-500">Reference code: {statusInfo.referenceCode}</p>
+                    )}
+                </div>
+
                 {/* Actions */}
                 <div className="flex flex-wrap gap-2 sm:gap-3 pt-4 border-t border-gray-100">
                     <Button
                         onClick={() => onTrack(booking.id)}
                         variant="primary"
-                        disabled={booking.status === 'Rescheduled' || booking.status === 'Awaiting Payment' || booking.status === 'Refunded'}
+                        disabled={!canTrack}
                         className="gap-2 text-xs sm:text-sm"
                     >
                         <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -85,7 +102,7 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                     <Button
                         variant="outline"
                         onClick={() => onReschedule(booking)}
-                        disabled={!['Order Booked', 'Sample Collector Assigned', 'Sample Collection Scheduled', 'Resample Required'].includes(booking.status)}
+                        disabled={!canReschedule}
                         className="text-xs sm:text-sm"
                     >
                         Reschedule
@@ -94,14 +111,33 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                     <Button
                         variant="outline"
                         onClick={() => onCancel(booking.id)}
-                        disabled={['Cancelled', 'Sample Collected', 'Sample Received at Lab', 'Report Generated', 'Completed', 'Rescheduled', 'Superseded', 'Refunded'].includes(booking.status)}
+                        disabled={!canCancel}
                         className="text-red-500 hover:text-red-600 hover:bg-red-50 text-xs sm:text-sm"
                     >
                         Cancel
                     </Button>
 
+                    {reportUrl && (
+                        <a
+                            href={reportUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-xs font-bold text-green-700 transition-colors hover:bg-green-100 sm:text-sm"
+                        >
+                            <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            {reportAction.kind === 'retry' ? 'Retry Report Download' : 'Download Report'}
+                        </a>
+                    )}
+
+                    {reportAction.kind === 'processing' && (
+                        <div className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-50 px-4 py-2 text-xs font-bold text-amber-700 sm:text-sm">
+                            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            Report is being prepared
+                        </div>
+                    )}
+
                     {/* Phlebo Contact Action */}
-                    {booking.status === 'Sample Collector Assigned' && (
+                    {statusInfo.label === 'Sample Collector Assigned' && (
                         <div className="w-full sm:flex-1 sm:flex sm:justify-end mt-1 sm:mt-0">
                             {phleboData ? (
                                 <div className="bg-blue-50 p-2 px-4 rounded-lg border border-blue-100 flex items-center gap-4">
