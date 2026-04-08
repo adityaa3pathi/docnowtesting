@@ -87,9 +87,9 @@ export function resolveHealthiansStatus(bsCode: string): HealthiansStatusInfo {
     const mapped = HEALTHIANS_STATUS_MAP[bsCode];
     if (mapped) return mapped;
 
-    console.warn(`[HealthiansWebhook] Unknown BS code: ${bsCode}. Storing raw.`);
+    console.warn(`[HealthiansWebhook] Unknown BS code: ${bsCode}. Falling back to a generic customer-facing status.`);
     return {
-        docnowStatus: `Partner Status: ${bsCode}`,
+        docnowStatus: 'Processing Update Received',
         isFinal: false,
         action: 'update',
         source: 'UNKNOWN — not in webhook or B2B API documentation',
