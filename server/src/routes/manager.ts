@@ -6,6 +6,8 @@ import { HealthiansAdapter } from '../adapters/healthians';
 import { resolveOrCreateSelfPatient, patientSchema } from '../utils/patientValidation';
 import { getRazorpay } from '../services/razorpay';
 import { finalizeBooking } from '../services/bookingFinalization';
+import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callbacks';
+import { exportAdminData } from '../controllers/admin/export';
 
 const router = Router();
 const healthians = HealthiansAdapter.getInstance();
@@ -17,6 +19,14 @@ const mgr = [authMiddleware, requireManager] as const;
 router.get('/health', ...mgr, async (req: AuthRequest, res: Response) => {
     res.json({ ok: true, manager: req.adminName || 'Manager', role: (req as any).user?.role });
 });
+
+// ============================================
+// MANAGER DASHBOARD ADMIN ENDPOINTS
+// ============================================
+
+router.get('/callbacks', ...mgr, listCallbacks);
+router.put('/callbacks/:id/status', ...mgr, updateCallbackStatus);
+router.get('/export', ...mgr, exportAdminData);
 
 // ============================================
 // CATALOG SYNC — Import from Healthians

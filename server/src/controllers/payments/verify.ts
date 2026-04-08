@@ -116,6 +116,14 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
             );
 
             return res.json({ status: 'confirmed', bookingId });
+        } else if (result.status === 'refunded_due_to_partner_error') {
+            // Clear cart as payment was processed and booking inherently failed
+            await prisma.cartItem.deleteMany({ where: { cart: { userId } } });
+            return res.status(200).json({
+                status: 'refunded_due_to_partner_error',
+                bookingId,
+                message: 'Payment received but partner booking failed. An automated refund has been initiated.'
+            });
         } else {
             return res.status(200).json({
                 status: 'payment_received_booking_pending',

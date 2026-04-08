@@ -13,8 +13,10 @@ import {
     ChevronLeft,
     ChevronRight,
     Loader2,
-    FileText
+    FileText,
+    Download
 } from 'lucide-react';
+import { useExport } from '@/hooks/useExport';
 
 interface Order {
     id: string;
@@ -55,6 +57,8 @@ export default function OrdersPage() {
     // View Details Modal State
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [showModal, setShowModal] = useState(false);
+
+    const { exporting, exportCsv } = useExport();
 
     const fetchOrders = useCallback(async () => {
         setLoading(true);
@@ -120,13 +124,23 @@ export default function OrdersPage() {
                     <h1 className="text-3xl font-semibold text-gray-900">Order Management</h1>
                     <p className="text-gray-600 mt-1">View and manage all bookings</p>
                 </div>
-                <button
-                    onClick={fetchOrders}
-                    className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                    <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-                    Refresh
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => exportCsv('orders', { search: searchTerm, status: statusFilter })}
+                        disabled={exporting}
+                        className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    >
+                        {exporting ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}
+                        Export CSV
+                    </button>
+                    <button
+                        onClick={fetchOrders}
+                        className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                        Refresh
+                    </button>
+                </div>
             </div>
 
             {/* Filters & Search */}
