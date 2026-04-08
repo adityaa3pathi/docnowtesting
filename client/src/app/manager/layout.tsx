@@ -18,6 +18,7 @@ import {
     Home,
     Shield,
     ArrowLeftRight,
+    PhoneCall,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,6 +29,7 @@ const navItems = [
     { id: 'categories', label: 'Categories', icon: FolderTree, href: '/manager/categories' },
     { id: 'payment-links', label: 'Payment Links', icon: LinkIcon, href: '/manager/payment-links' },
     { id: 'orders', label: 'Orders', icon: ShoppingCart, href: '/manager/orders', badge: 'Read-only' },
+    { id: 'callbacks', label: 'Callbacks', icon: PhoneCall, href: '/manager/callbacks' },
     { id: 'settings', label: 'Settings', icon: Settings, href: '/manager/settings' },
 ];
 
