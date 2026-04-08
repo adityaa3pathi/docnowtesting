@@ -10,6 +10,7 @@ import {
     MapPin,
     CreditCard,
 } from 'lucide-react';
+import { getApiUrl } from '@/lib/api';
 import { Order } from '@/types/admin';
 import { formatDate, formatDateTime, getStatusColor, getPaymentStatusColor } from '@/utils/formatters';
 
@@ -251,7 +252,7 @@ export function OrderHistory({ orders, expandedOrders, onToggleExpand }: OrderHi
                                                     {order.reports.map((report, idx) => (
                                                         <a
                                                             key={report.id}
-                                                            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/reports/${report.id}/download`}
+                                                            href={report.id ? getApiUrl(`/reports/${report.id}/download`) : '#'}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
