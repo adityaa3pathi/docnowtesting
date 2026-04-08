@@ -23,6 +23,7 @@ export const STATUS_MAP: Record<string, { label: string, color: string, step: nu
     'Report Generated': { label: 'Report Generated', color: 'bg-green-100 text-green-700', step: 5 },
     'Rescheduled': { label: 'Superseded', color: 'bg-gray-100 text-gray-500', step: 0 },
     'Awaiting Payment': { label: 'Awaiting Payment', color: 'bg-orange-100 text-orange-700', step: 0 },
+    'Refunded': { label: 'Refunded (Failed)', color: 'bg-red-100 text-red-700', step: 0 },
 };
 
 export interface PhleboDetails {

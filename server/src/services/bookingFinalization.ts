@@ -2,6 +2,7 @@ import { PrismaClient, PaymentStatus } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { createHealthiansBooking } from './partnerBooking';
 import { sendDeadLetterAlert } from '../utils/slack';
+import { getRazorpay } from './razorpay';
 
 const prisma = new PrismaClient();
 
@@ -92,6 +93,27 @@ export async function finalizeBooking(bookingId: string) {
     } catch (error: any) {
         console.error(`[Finalization] Healthians failure for booking ${bookingId}:`, error.message);
 
+        // Auto Refund Logic
+        let statusToSet: 'PARTNER_FAILED' | 'REFUNDED' = 'PARTNER_FAILED';
+        if (booking.razorpayPaymentId) {
+            try {
+                // Initialize refund via Razorpay
+                console.log(`[Finalization] Auto-refunding payment ${booking.razorpayPaymentId} for booking ${bookingId}`);
+                await getRazorpay().payments.refund(booking.razorpayPaymentId, {
+                    notes: {
+                        reason: 'Healthians booking failed',
+                        bookingId: bookingId
+                    }
+                });
+                statusToSet = 'REFUNDED';
+            } catch (refundError: any) {
+                console.error(`🚨 [Finalization] Failed to auto-refund booking ${bookingId}. Manual refund required!`, refundError);
+            }
+        } else {
+             // For zero-amount bookings or other cases where payment isn't required but failed
+             statusToSet = 'REFUNDED';
+        }
+
         const updated = await prisma.booking.updateMany({
             where: {
                 id: bookingId,
@@ -99,15 +121,16 @@ export async function finalizeBooking(bookingId: string) {
                 processingAttemptId: attemptId
             },
             data: {
-                paymentStatus: 'PARTNER_FAILED',
+                paymentStatus: statusToSet,
+                status: statusToSet === 'REFUNDED' ? 'Refunded' : undefined,
                 partnerError: error.message || 'Unknown Partner Error',
                 processingAttemptId: null,
                 processingStartedAt: null
             }
         });
 
-        if (updated.count > 0) {
-            // Only create retry record if we still owned the lease and updated successfully
+        // Only create retry record if we didn't refund it successfully
+        if (updated.count > 0 && statusToSet !== 'REFUNDED') {
             await prisma.partnerRetry.upsert({
                 where: { bookingId },
                 update: {
@@ -122,8 +145,11 @@ export async function finalizeBooking(bookingId: string) {
             });
         }
 
-        await syncManagerOrder(bookingId, 'BOOKING_FAILED');
-        return { status: 'partner_failed', error: error.message };
+        await syncManagerOrder(bookingId, statusToSet === 'REFUNDED' ? 'REFUNDED' : 'BOOKING_FAILED');
+        return { 
+            status: statusToSet === 'REFUNDED' ? 'refunded_due_to_partner_error' : 'partner_failed', 
+            error: error.message 
+        };
     }
 }
 

@@ -11,6 +11,8 @@ import {
     getAuditLogs,
     listPromos, createPromo, updatePromo,
 } from '../controllers/admin';
+import { exportAdminData } from '../controllers/admin/export';
+import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callbacks';
 
 const router = Router();
 
@@ -56,6 +58,13 @@ router.get('/orders', ...admin, listOrders);
 
 // ── Audit Logs ─────────────────────────────────────────
 router.get('/audit-logs', ...admin, getAuditLogs);
+
+// ── Callbacks ──────────────────────────────────────────
+router.get('/callbacks', ...admin, listCallbacks);
+router.put('/callbacks/:id/status', ...admin, updateCallbackStatus);
+
+// ── Data Export ──────────────────────────────────────────
+router.get('/export', ...admin, exportAdminData);
 
 // ── Promos ─────────────────────────────────────────────
 router.get('/promos', ...admin, listPromos);

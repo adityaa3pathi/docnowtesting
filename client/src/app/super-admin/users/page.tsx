@@ -1,7 +1,8 @@
 'use client';
 
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Download } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
+import { useExport } from '@/hooks/useExport';
 import { useWalletAdjust } from '@/hooks/useWalletAdjust';
 import { UsersFilters } from '@/components/admin/UsersFilters';
 import { UsersTable } from '@/components/admin/UsersTable';
@@ -27,6 +28,8 @@ export default function UsersPage() {
         setPage
     } = useUsers();
 
+    const { exporting, exportCsv } = useExport();
+
     const wallet = useWalletAdjust({
         onSuccess: updateUserWallet
     });
@@ -39,13 +42,23 @@ export default function UsersPage() {
                     <h1 className="text-3xl font-semibold text-gray-900">User Management</h1>
                     <p className="text-gray-600 mt-1">Manage and monitor user accounts</p>
                 </div>
-                <button
-                    onClick={fetchUsers}
-                    className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                    <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-                    Refresh
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => exportCsv('users', { search: searchTerm, status: filterStatus, role: filterRole })}
+                        disabled={exporting}
+                        className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    >
+                        {exporting ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}
+                        Export CSV
+                    </button>
+                    <button
+                        onClick={fetchUsers}
+                        className="flex items-center gap-2 px-4 py-2 text-sm bg-[#4b2192] text-white border border-transparent rounded-lg hover:bg-[#3d1a75] transition-colors"
+                    >
+                        <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                        Refresh
+                    </button>
+                </div>
             </div>
 
             {/* Filters & Search */}

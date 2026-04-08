@@ -134,6 +134,13 @@ export function useCheckout({
                             toast.success('Payment received! Your booking is being confirmed. You will receive an update shortly.');
                             await refreshCart();
                             router.push('/profile?tab=bookings');
+                        } else if (verifyRes.data.status === 'refunded_due_to_partner_error') {
+                            toast.error('Booking Failed: Partner issue. Payment auto-refund initiated.', {
+                                duration: 8000,
+                                icon: '❌'
+                            });
+                            await refreshCart();
+                            router.push('/profile?tab=bookings');
                         } else {
                             toast.error('Payment verification failed. Please contact support.');
                         }
