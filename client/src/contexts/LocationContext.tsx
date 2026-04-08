@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import api from '@/lib/api';
+import { getApiUrl } from '@/lib/api';
 
 interface LocationContextType {
     selectedCity: string;
@@ -56,7 +57,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
         if (/^\d{6}$/.test(pincode)) {
             try {
                 const response = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/location/geocode?pincode=${pincode}`
+                    getApiUrl(`/location/geocode?pincode=${pincode}`)
                 );
 
                 if (!response.ok) return; // non-200 — silently skip
@@ -90,7 +91,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
             let geocodeRes: Response;
             try {
                 geocodeRes = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/location/geocode?pincode=${pincode}`
+                    getApiUrl(`/location/geocode?pincode=${pincode}`)
                 );
             } catch {
                 setServiceabilityStatus('error');

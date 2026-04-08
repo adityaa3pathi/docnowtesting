@@ -1,7 +1,23 @@
 import axios from 'axios';
 
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+export const APP_BASE_URL = API_BASE_URL.endsWith('/api')
+    ? API_BASE_URL.slice(0, -4)
+    : API_BASE_URL;
+
+export function getApiUrl(path: string) {
+    return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+export function getAppUrl(path: string) {
+    if (APP_BASE_URL) {
+        return `${APP_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+    }
+    return path.startsWith('/') ? path : `/${path}`;
+}
+
 const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api', // Backend URL
+    baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },

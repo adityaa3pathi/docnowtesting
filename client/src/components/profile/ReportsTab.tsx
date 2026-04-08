@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { FileText, Download, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
 import api from "@/lib/api";
+import { getApiUrl } from "@/lib/api";
 
 interface ReportItem {
     id: string;
@@ -50,7 +51,7 @@ export function ReportsTab() {
     };
 
     const getDownloadUrl = (reportId: string) => {
-        return `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/reports/${reportId}/download`;
+        return getApiUrl(`/reports/${reportId}/download`);
     };
 
     const formatDate = (dateStr: string) => {

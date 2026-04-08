@@ -23,6 +23,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getApiUrl } from '@/lib/api';
 
 const metroCities = [
     { name: 'Bengaluru', icon: '🏛️' },
@@ -88,7 +89,7 @@ export function Header() {
         e.preventDefault();
         setIsSubmittingCallback(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/callback/request`, {
+            const response = await fetch(getApiUrl('/callback/request'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(callbackForm)
