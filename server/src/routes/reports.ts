@@ -13,8 +13,16 @@ import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { prisma } from '../db';
 import { reportStorage } from '../services/reportStorage';
 import { ingestReport } from '../services/reportIngestion';
+import axios from 'axios';
 
 const router = Router();
+
+function sendPdfBuffer(res: Response, reportId: string, buffer: Buffer) {
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="report-${reportId}.pdf"`);
+    res.setHeader('Content-Length', buffer.length.toString());
+    return res.send(buffer);
+}
 
 // All report routes require authentication
 router.use(authMiddleware);
@@ -114,10 +122,7 @@ router.get('/:reportId/download', async (req: AuthRequest, res: Response) => {
                 const exists = await reportStorage.exists(report.storageKey);
                 if (exists) {
                     const buffer = await reportStorage.read(report.storageKey);
-                    res.setHeader('Content-Type', 'application/pdf');
-                    res.setHeader('Content-Disposition', `inline; filename="report-${reportId}.pdf"`);
-                    res.setHeader('Content-Length', buffer.length.toString());
-                    return res.send(buffer);
+                    return sendPdfBuffer(res, reportId, buffer);
                 }
             } catch (err) {
                 console.warn(`[Reports] Storage read failed for key ${report.storageKey}:`, err);
@@ -132,19 +137,34 @@ router.get('/:reportId/download', async (req: AuthRequest, res: Response) => {
                 const updated = await prisma.report.findUnique({ where: { id: reportId } });
                 if (updated?.storageKey) {
                     const buffer = await reportStorage.read(updated.storageKey);
-                    res.setHeader('Content-Type', 'application/pdf');
-                    res.setHeader('Content-Disposition', `inline; filename="report-${reportId}.pdf"`);
-                    res.setHeader('Content-Length', buffer.length.toString());
-                    return res.send(buffer);
+                    return sendPdfBuffer(res, reportId, buffer);
                 }
             } catch (err) {
                 console.warn(`[Reports] On-demand ingestion failed for ${reportId}:`, err);
             }
         }
 
-        // Path 3: Last resort — redirect to sourceUrl (may be expired)
-        console.warn(`[Reports] Falling back to sourceUrl for report ${reportId} (may be expired)`);
-        return res.redirect(report.sourceUrl);
+        // Path 3: Last resort — proxy the sourceUrl through our API.
+        // This avoids browser-side auth/cors issues with signed Healthians/S3 URLs.
+        if (report.sourceUrl) {
+            console.warn(`[Reports] Falling back to proxied sourceUrl for report ${reportId}`);
+            try {
+                const sourceResponse = await axios.get<ArrayBuffer>(report.sourceUrl, {
+                    responseType: 'arraybuffer',
+                    timeout: 30000,
+                    headers: {
+                        'User-Agent': 'DOCNOW-Server/1.0',
+                    },
+                });
+
+                const buffer = Buffer.from(sourceResponse.data);
+                return sendPdfBuffer(res, reportId, buffer);
+            } catch (err) {
+                console.warn(`[Reports] sourceUrl proxy failed for ${reportId}:`, err);
+            }
+        }
+
+        return res.status(502).json({ error: 'Report file is not available right now. Please try again shortly.' });
     } catch (error) {
         console.error('[Reports] Error downloading report:', error);
         return res.status(500).json({ error: 'Failed to download report' });
