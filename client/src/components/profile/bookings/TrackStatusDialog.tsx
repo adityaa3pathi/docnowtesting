@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Loader2, AlertCircle, CheckCircle2, Phone, Download, Clock, FileText } from 'lucide-react';
 import api from '@/lib/api';
-import { getApiUrl } from '@/lib/api';
+import { downloadAuthenticatedFile, getApiUrl } from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui';
 import toast from 'react-hot-toast';
@@ -22,6 +22,7 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
     const [phleboData, setPhleboData] = useState<any>(null);
     const [reportsLoading, setReportsLoading] = useState(false);
     const [reports, setReports] = useState<ReportSummary[]>([]);
+    const [reportDownloading, setReportDownloading] = useState(false);
 
     useEffect(() => {
         if (open && bookingId) {
@@ -74,6 +75,19 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
             toast.error(error.response?.data?.error || 'Phlebotomist contact not available yet.');
         } finally {
             setPhleboLoading(false);
+        }
+    };
+
+    const handleDownloadReport = async () => {
+        if (!reportUrl || !bookingId) return;
+        setReportDownloading(true);
+        try {
+            await downloadAuthenticatedFile(reportUrl, `report-${bookingId}.pdf`);
+        } catch (error: any) {
+            console.error('Error downloading report:', error);
+            toast.error(error.message || 'Failed to download report');
+        } finally {
+            setReportDownloading(false);
         }
     };
 
@@ -161,15 +175,19 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
                                         ) : reportUrl ? (
                                             <div className="flex flex-wrap items-center justify-between gap-3">
                                                 <p className="text-sm text-slate-600">Your latest lab report is ready to download.</p>
-                                                <a
-                                                    href={reportUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
+                                                <button
+                                                    type="button"
+                                                    onClick={handleDownloadReport}
+                                                    disabled={reportDownloading}
                                                     className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-green-700"
                                                 >
                                                     <Download className="h-4 w-4" />
-                                                    {reportAction.kind === 'retry' ? 'Retry Download' : 'Download Report'}
-                                                </a>
+                                                    {reportDownloading
+                                                        ? 'Downloading...'
+                                                        : reportAction.kind === 'retry'
+                                                            ? 'Retry Download'
+                                                            : 'Download Report'}
+                                                </button>
                                             </div>
                                         ) : reportAction.kind === 'processing' ? (
                                             <div className="flex items-center gap-2 text-sm text-amber-700">

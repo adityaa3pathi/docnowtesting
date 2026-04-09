@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { FileText, Download, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
 import api from "@/lib/api";
-import { getApiUrl } from "@/lib/api";
+import { downloadAuthenticatedFile, getApiUrl } from "@/lib/api";
+import toast from "react-hot-toast";
 
 interface ReportItem {
     id: string;
@@ -28,6 +29,7 @@ interface BookingWithReports {
 export function ReportsTab() {
     const [bookings, setBookings] = useState<BookingWithReports[]>([]);
     const [loading, setLoading] = useState(true);
+    const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchBookingsWithReports();
@@ -52,6 +54,18 @@ export function ReportsTab() {
 
     const getDownloadUrl = (reportId: string) => {
         return getApiUrl(`/reports/${reportId}/download`);
+    };
+
+    const handleDownload = async (reportId: string, label: string) => {
+        setDownloadingReportId(reportId);
+        try {
+            await downloadAuthenticatedFile(getDownloadUrl(reportId), label);
+        } catch (error: any) {
+            console.error("Error downloading report:", error);
+            toast.error(error.message || "Failed to download report");
+        } finally {
+            setDownloadingReportId(null);
+        }
     };
 
     const formatDate = (dateStr: string) => {
@@ -179,29 +193,29 @@ export function ReportsTab() {
                                     </div>
 
                                     {report.fetchStatus === "STORED" ? (
-                                        <a
-                                            href={getDownloadUrl(report.id)}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDownload(report.id, `report-${report.id}.pdf`)}
+                                            disabled={downloadingReportId === report.id}
                                             className="flex items-center gap-2 px-4 py-2 bg-[#241769] hover:bg-[#1a1050] text-white text-sm font-medium rounded-lg transition-colors shrink-0"
                                         >
                                             <Download size={16} />
-                                            Download
-                                        </a>
+                                            {downloadingReportId === report.id ? "Downloading..." : "Download"}
+                                        </button>
                                     ) : report.fetchStatus === "PENDING" ? (
                                         <span className="text-xs text-amber-600 font-medium px-3 py-1.5 bg-amber-50 rounded-lg">
                                             Processing...
                                         </span>
                                     ) : (
-                                        <a
-                                            href={getDownloadUrl(report.id)}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDownload(report.id, `report-${report.id}.pdf`)}
+                                            disabled={downloadingReportId === report.id}
                                             className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors shrink-0"
                                         >
                                             <Download size={16} />
-                                            Retry
-                                        </a>
+                                            {downloadingReportId === report.id ? "Retrying..." : "Retry"}
+                                        </button>
                                     )}
                                 </div>
                             ))}
