@@ -10,9 +10,11 @@ import {
     MapPin,
     CreditCard,
 } from 'lucide-react';
-import { getApiUrl } from '@/lib/api';
+import { downloadAuthenticatedFile, getApiUrl } from '@/lib/api';
 import { Order } from '@/types/admin';
 import { formatDate, formatDateTime, getStatusColor, getPaymentStatusColor } from '@/utils/formatters';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 interface OrderHistoryProps {
     orders: Order[];
@@ -21,6 +23,20 @@ interface OrderHistoryProps {
 }
 
 export function OrderHistory({ orders, expandedOrders, onToggleExpand }: OrderHistoryProps) {
+    const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
+
+    const handleDownloadReport = async (reportId: string) => {
+        setDownloadingReportId(reportId);
+        try {
+            await downloadAuthenticatedFile(getApiUrl(`/reports/${reportId}/download`), `report-${reportId}.pdf`);
+        } catch (error: any) {
+            console.error('Error downloading report:', error);
+            toast.error(error.message || 'Failed to download report');
+        } finally {
+            setDownloadingReportId(null);
+        }
+    };
+
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -250,11 +266,11 @@ export function OrderHistory({ orders, expandedOrders, onToggleExpand }: OrderHi
                                                 </h4>
                                                 <div className="flex flex-wrap gap-2">
                                                     {order.reports.map((report, idx) => (
-                                                        <a
+                                                        <button
+                                                            type="button"
                                                             key={report.id}
-                                                            href={report.id ? getApiUrl(`/reports/${report.id}/download`) : '#'}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
+                                                            onClick={() => report.id && handleDownloadReport(report.id)}
+                                                            disabled={!report.id || downloadingReportId === report.id}
                                                             className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                                                                 report.fetchStatus === 'STORED'
                                                                     ? 'bg-blue-50 hover:bg-blue-100 text-blue-700'
@@ -265,14 +281,17 @@ export function OrderHistory({ orders, expandedOrders, onToggleExpand }: OrderHi
                                                         >
                                                             <FileText size={16} />
                                                             {report.isFullReport ? 'Full' : 'Partial'} Report {idx + 1}
-                                                            {report.fetchStatus === 'STORED' && <ExternalLink size={14} />}
+                                                            {report.fetchStatus === 'STORED' && downloadingReportId !== report.id && <ExternalLink size={14} />}
+                                                            {downloadingReportId === report.id && (
+                                                                <span className="text-xs opacity-70">Downloading...</span>
+                                                            )}
                                                             {report.fetchStatus === 'PENDING' && (
                                                                 <span className="text-xs opacity-70">⏳</span>
                                                             )}
                                                             {report.fetchStatus === 'FAILED' && (
                                                                 <span className="text-xs opacity-70">⚠️</span>
                                                             )}
-                                                        </a>
+                                                        </button>
                                                     ))}
                                                 </div>
                                                 <p className="text-xs text-gray-400 mt-1">
