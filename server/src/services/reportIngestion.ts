@@ -16,11 +16,15 @@ import { prisma } from '../db';
 import { reportStorage, reportStorageKey } from './reportStorage';
 import { HealthiansAdapter } from '../adapters/healthians';
 
+interface IngestReportOptions {
+    forceRefresh?: boolean;
+}
+
 /**
  * Ingest a single report by ID.
  * Call this AFTER the webhook transaction commits.
  */
-export async function ingestReport(reportId: string): Promise<void> {
+export async function ingestReport(reportId: string, options: IngestReportOptions = {}): Promise<void> {
     const report = await prisma.report.findUnique({
         where: { id: reportId },
         include: {
@@ -38,10 +42,32 @@ export async function ingestReport(reportId: string): Promise<void> {
         return;
     }
 
-    // Skip if already stored
-    if (report.fetchStatus === 'STORED' && report.storageKey) {
-        console.log(`[ReportIngestion] Report ${reportId} already STORED. Skipping.`);
-        return;
+    // Skip only when we are sure the stored file still exists and no force refresh was requested.
+    if (!options.forceRefresh && report.fetchStatus === 'STORED' && report.storageKey) {
+        const exists = await reportStorage.exists(report.storageKey).catch(() => false);
+        if (exists) {
+            console.log(`[ReportIngestion] Report ${reportId} already STORED. Skipping.`);
+            return;
+        }
+        console.warn(`[ReportIngestion] Report ${reportId} marked STORED but storage key ${report.storageKey} is missing. Re-ingesting...`);
+    }
+
+    if (options.forceRefresh) {
+        console.log(`[ReportIngestion] Force refresh requested for report ${reportId}.`);
+    }
+
+    // If we were force-refreshing a stale STORED record, clear the stale state before retrying.
+    if (options.forceRefresh && report.fetchStatus === 'STORED') {
+        await prisma.report.update({
+            where: { id: reportId },
+            data: {
+                fetchStatus: 'PENDING',
+                fetchError: null,
+                storageKey: null,
+                fetchedAt: null,
+                fileSize: null,
+            },
+        });
     }
 
     console.log(`[ReportIngestion] Starting ingestion for report ${reportId}...`);

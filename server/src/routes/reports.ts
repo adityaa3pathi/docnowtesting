@@ -124,15 +124,17 @@ router.get('/:reportId/download', async (req: AuthRequest, res: Response) => {
                     const buffer = await reportStorage.read(report.storageKey);
                     return sendPdfBuffer(res, reportId, buffer);
                 }
+                console.warn(`[Reports] Report ${reportId} has storageKey=${report.storageKey} but the file is missing from storage. Will try force re-ingestion.`);
             } catch (err) {
                 console.warn(`[Reports] Storage read failed for key ${report.storageKey}:`, err);
             }
         }
 
-        // Path 2: Status is PENDING or FAILED → try on-demand ingestion
-        if (report.fetchStatus !== 'STORED') {
+        // Path 2: File missing or status is not STORED → try on-demand ingestion.
+        const shouldForceRefresh = !!report.storageKey;
+        if (report.fetchStatus !== 'STORED' || shouldForceRefresh) {
             try {
-                await ingestReport(reportId);
+                await ingestReport(reportId, { forceRefresh: shouldForceRefresh });
                 // Re-read after ingestion
                 const updated = await prisma.report.findUnique({ where: { id: reportId } });
                 if (updated?.storageKey) {
