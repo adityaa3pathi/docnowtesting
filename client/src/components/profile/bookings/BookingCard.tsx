@@ -4,7 +4,7 @@ import { MapPin, Loader2, Phone, Download, Clock } from 'lucide-react';
 import { Button } from '@/components/ui';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
-import { getApiUrl } from '@/lib/api';
+import { downloadAuthenticatedFile, getApiUrl } from '@/lib/api';
 import { BookingHeader, PhleboDetails, getReportAction, getStatusDisplay } from './types';
 
 interface BookingCardProps {
@@ -17,6 +17,7 @@ interface BookingCardProps {
 export function BookingCard({ booking, onTrack, onReschedule, onCancel }: BookingCardProps) {
     const [phleboLoading, setPhleboLoading] = useState(false);
     const [phleboData, setPhleboData] = useState<PhleboDetails | null>(null);
+    const [reportDownloading, setReportDownloading] = useState(false);
     const statusInfo = getStatusDisplay(booking.status, booking.reports);
     const reportAction = getReportAction(booking.reports);
     const reportUrl = reportAction.kind === 'download' || reportAction.kind === 'retry'
@@ -37,6 +38,19 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
             toast.error(error.response?.data?.error || 'Phlebotomist contact not available yet.');
         } finally {
             setPhleboLoading(false);
+        }
+    };
+
+    const handleDownloadReport = async () => {
+        if (!reportUrl) return;
+        setReportDownloading(true);
+        try {
+            await downloadAuthenticatedFile(reportUrl, `report-${booking.partnerBookingId || booking.id}.pdf`);
+        } catch (error: any) {
+            console.error('Error downloading report:', error);
+            toast.error(error.message || 'Failed to download report');
+        } finally {
+            setReportDownloading(false);
         }
     };
 
@@ -118,15 +132,19 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                     </Button>
 
                     {reportUrl && (
-                        <a
-                            href={reportUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        <button
+                            type="button"
+                            onClick={handleDownloadReport}
+                            disabled={reportDownloading}
                             className="inline-flex items-center justify-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-xs font-bold text-green-700 transition-colors hover:bg-green-100 sm:text-sm"
                         >
                             <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            {reportAction.kind === 'retry' ? 'Retry Report Download' : 'Download Report'}
-                        </a>
+                            {reportDownloading
+                                ? 'Downloading...'
+                                : reportAction.kind === 'retry'
+                                    ? 'Retry Report Download'
+                                    : 'Download Report'}
+                        </button>
                     )}
 
                     {reportAction.kind === 'processing' && (
