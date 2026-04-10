@@ -21,6 +21,7 @@ import {
     Home,
     Shield,
     PhoneCall,
+    Building2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,6 +34,7 @@ const navItems = [
     { id: 'wallets', label: 'Wallets', icon: Wallet, href: '/super-admin/wallets' },
     { id: 'promos', label: 'Promo Codes', icon: Ticket, href: '/super-admin/promos' },
     { id: 'callbacks', label: 'Callbacks', icon: PhoneCall, href: '/super-admin/callbacks' },
+    { id: 'corporate-inquiries', label: 'Corporate Inquiries', icon: Building2, href: '/super-admin/corporate-inquiries' },
     { id: 'referrals', label: 'Referrals', icon: Gift, href: '/super-admin/referrals' },
     { id: 'settings', label: 'System Settings', icon: Settings, href: '/super-admin/settings' },
     { id: 'audit', label: 'Audit Logs', icon: FileText, href: '/super-admin/audit-logs' },
@@ -320,4 +322,3 @@ export default function SuperAdminLayout({
         </div>
     );
 }
-

@@ -5,8 +5,8 @@ import { prisma } from '../../db';
 export async function exportAdminData(req: AuthRequest, res: Response) {
     try {
         const entity = req.query.entity as string;
-        if (!entity || !['users', 'orders', 'callbacks'].includes(entity)) {
-            return res.status(400).json({ error: 'Invalid or missing entity for export. Must be "users", "orders", or "callbacks".' });
+        if (!entity || !['users', 'orders', 'callbacks', 'corporate-inquiries'].includes(entity)) {
+            return res.status(400).json({ error: 'Invalid or missing entity for export. Must be "users", "orders", "callbacks", or "corporate-inquiries".' });
         }
 
         const search = (req.query.search as string) || '';
@@ -161,6 +161,55 @@ export async function exportAdminData(req: AuthRequest, res: Response) {
             
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader('Content-Disposition', 'attachment; filename="callbacks-export.csv"');
+            return res.status(200).send(csvContent);
+        } else if (entity === 'corporate-inquiries') {
+            const status = req.query.status as string;
+            const city = req.query.city as string;
+            const requirementType = req.query.requirementType as string;
+            const companySize = req.query.companySize as string;
+            const where: any = {};
+
+            if (status && status !== 'All') where.status = status;
+            if (city) where.city = { contains: city, mode: 'insensitive' };
+            if (requirementType) where.requirementType = requirementType;
+            if (companySize) where.companySize = companySize;
+
+            if (search) {
+                where.OR = [
+                    { contactName: { contains: search, mode: 'insensitive' } },
+                    { companyName: { contains: search, mode: 'insensitive' } },
+                    { mobile: { contains: search } },
+                    { workEmail: { contains: search, mode: 'insensitive' } },
+                    { city: { contains: search, mode: 'insensitive' } },
+                ];
+            }
+
+            const inquiries = await prisma.corporateInquiry.findMany({
+                where,
+                take: limitToExport,
+                orderBy: { createdAt: 'desc' },
+            });
+
+            const headers = ['ID', 'Created At', 'Company Name', 'Contact Person', 'Work Email', 'Mobile', 'City', 'Company Size', 'Requirement Type', 'Summary', 'Status', 'Notes'];
+            const rows = inquiries.map((inquiry) => [
+                inquiry.id,
+                inquiry.createdAt.toISOString(),
+                `"${inquiry.companyName}"`,
+                `"${inquiry.contactName}"`,
+                `"${inquiry.workEmail}"`,
+                inquiry.mobile,
+                `"${inquiry.city}"`,
+                inquiry.companySize,
+                `"${inquiry.requirementType}"`,
+                `"${inquiry.summary || ''}"`,
+                inquiry.status,
+                `"${inquiry.notes || ''}"`,
+            ]);
+
+            const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', 'attachment; filename="corporate-inquiries-export.csv"');
             return res.status(200).send(csvContent);
         }
 
