@@ -48,20 +48,32 @@ export async function getStatus(req: AuthRequest, res: Response) {
             return res.status(404).json({ error: 'Booking not found' });
         }
 
-        if (!booking.partnerBookingId) {
+        const currentPartnerBookingId = booking.rescheduledToId || booking.partnerBookingId;
+        const previousPartnerBookingIds =
+            booking.rescheduledToId && booking.partnerBookingId && booking.rescheduledToId !== booking.partnerBookingId
+                ? [booking.partnerBookingId]
+                : [];
+        const trackingReferenceUpdated = previousPartnerBookingIds.length > 0;
+
+        if (!currentPartnerBookingId) {
             return res.status(400).json({ error: 'Partner Booking ID missing for this order' });
         }
 
         // 4. Call Healthians API
-        const statusResponse = await healthians.getBookingStatus(booking.partnerBookingId);
+        const statusResponse = await healthians.getBookingStatus(currentPartnerBookingId);
 
         // 5. Sync status to local DB
         const healthiansStatus = statusResponse?.data?.booking_status;
         if (healthiansStatus) {
             const mappedStatus = resolveHealthiansStatus(healthiansStatus);
+            const refBookingId = statusResponse?.data?.ref_booking_id;
             await prisma.booking.update({
                 where: { id: bookingId },
-                data: { status: mappedStatus.docnowStatus }
+                data: {
+                    status: mappedStatus.docnowStatus,
+                    partnerStatus: healthiansStatus,
+                    ...(refBookingId && refBookingId !== '0' ? { rescheduledToId: String(refBookingId) } : {}),
+                }
             });
             console.log(`Synced booking ${bookingId} status to: ${mappedStatus.docnowStatus}`);
         }
@@ -71,7 +83,24 @@ export async function getStatus(req: AuthRequest, res: Response) {
 
         res.json({
             ...statusResponse,
-            patientDetails: patientMap
+            patientDetails: patientMap,
+            lineage: {
+                currentPartnerBookingId,
+                previousPartnerBookingIds,
+                trackingReferenceUpdated,
+                bookingChangeType:
+                    booking.status === 'Resample Required' || ['BS0018', 'BS018'].includes(booking.partnerStatus || '')
+                        ? 'RESAMPLED'
+                        : booking.status === 'Rescheduled' || booking.partnerStatus === 'BS0013'
+                            ? 'RESCHEDULED'
+                            : 'NONE',
+                bookingChangeMessage:
+                    booking.status === 'Resample Required' || ['BS0018', 'BS018'].includes(booking.partnerStatus || '')
+                        ? 'The lab has asked for a fresh sample collection. We will guide you through the next step.'
+                        : booking.partnerStatus === 'BS0013' || trackingReferenceUpdated
+                            ? 'We have updated your booking with the latest schedule from our lab partner.'
+                            : null,
+            }
         });
 
     } catch (error) {

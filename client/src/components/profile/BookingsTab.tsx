@@ -13,6 +13,8 @@ import { RescheduleDialog } from './bookings/RescheduleDialog';
 
 export function BookingsTab() {
     const { bookings, loading, fetchBookings } = useBookings();
+    const visibleBookings = bookings.filter((booking) => !booking.superseded);
+    const hiddenSupersededCount = bookings.length - visibleBookings.length;
 
     // Dialog States
     const [trackingId, setTrackingId] = useState<string | null>(null);
@@ -45,7 +47,7 @@ export function BookingsTab() {
         <div className="space-y-6">
             <h2 className="text-xl font-bold mb-6">My Bookings</h2>
 
-            {bookings.length === 0 ? (
+            {visibleBookings.length === 0 ? (
                 <div className="text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-200">
                     <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900">No bookings found</h3>
@@ -54,7 +56,12 @@ export function BookingsTab() {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {bookings.map((booking) => (
+                    {hiddenSupersededCount > 0 && (
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                            Older replaced booking references are hidden so you only see the latest active order journey.
+                        </div>
+                    )}
+                    {visibleBookings.map((booking) => (
                         <BookingCard
                             key={booking.id}
                             booking={booking}

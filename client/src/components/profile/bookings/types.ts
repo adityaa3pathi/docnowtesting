@@ -2,6 +2,9 @@
 export interface BookingHeader {
     id: string;
     partnerBookingId: string | null;
+    currentPartnerBookingId?: string | null;
+    previousPartnerBookingIds?: string[];
+    partnerStatus?: string | null;
     status: string;
     paymentStatus?: string;
     slotDate: string;
@@ -10,6 +13,10 @@ export interface BookingHeader {
     createdAt: string;
     addressId?: string;
     rescheduledToId?: string | null;
+    trackingReferenceUpdated?: boolean;
+    bookingChangeType?: 'NONE' | 'RESCHEDULED' | 'RESAMPLED';
+    bookingChangeMessage?: string | null;
+    superseded?: boolean;
     items: string[];
     reports?: ReportSummary[];
 }
@@ -28,7 +35,14 @@ export interface StatusDisplay {
     color: string;
     step: number;
     message: string;
+    subMessage?: string;
     referenceCode?: string;
+}
+
+export interface BookingJourneyBanner {
+    tone: 'info' | 'warning' | 'success';
+    title: string;
+    description: string;
 }
 
 export const STATUS_MAP: Record<string, StatusDisplay> = {
@@ -67,18 +81,21 @@ export const STATUS_MAP: Record<string, StatusDisplay> = {
         color: 'bg-yellow-100 text-yellow-700',
         step: 2,
         message: 'This booking has been rescheduled to a new slot.',
+        subMessage: 'We have refreshed your booking with the latest schedule from our lab partner.',
     },
     'BS0018': {
-        label: 'Resample Required',
+        label: 'Fresh Sample Needed',
         color: 'bg-red-100 text-red-700',
         step: 2,
-        message: 'The lab needs a fresh sample. Our team will help you reschedule.',
+        message: 'The lab has asked for a fresh sample collection.',
+        subMessage: 'Our team will help arrange the next slot for recollection.',
     },
     'BS018': {
-        label: 'Resample Required',
+        label: 'Fresh Sample Needed',
         color: 'bg-red-100 text-red-700',
         step: 2,
-        message: 'The lab needs a fresh sample. Our team will help you reschedule.',
+        message: 'The lab has asked for a fresh sample collection.',
+        subMessage: 'Our team will help arrange the next slot for recollection.',
     },
     'Order Booked': {
         label: 'Order Booked',
@@ -111,16 +128,24 @@ export const STATUS_MAP: Record<string, StatusDisplay> = {
         message: 'Your sample has reached the lab and testing is underway.',
     },
     'Rescheduled': {
+        label: 'Rescheduled',
+        color: 'bg-yellow-100 text-yellow-700',
+        step: 2,
+        message: 'Your collection slot has been updated.',
+        subMessage: 'We have refreshed your booking with the latest schedule from our lab partner.',
+    },
+    'Superseded': {
         label: 'Superseded',
         color: 'bg-gray-100 text-gray-500',
         step: 0,
-        message: 'This booking has been replaced by a rescheduled booking.',
+        message: 'This booking has been replaced by a newer booking reference.',
     },
     'Resample Required': {
-        label: 'Resample Required',
+        label: 'Fresh Sample Needed',
         color: 'bg-red-100 text-red-700',
         step: 2,
-        message: 'The lab needs a fresh sample. Our team will help you reschedule.',
+        message: 'The lab has asked for a fresh sample collection.',
+        subMessage: 'Our team will help arrange the next slot for recollection.',
     },
     'Report Generated': {
         label: 'Report Ready',
@@ -152,6 +177,7 @@ const UNKNOWN_PARTNER_STATUS: StatusDisplay = {
     color: 'bg-slate-100 text-slate-700',
     step: 4,
     message: 'We have received an update from our lab partner. Your booking is moving forward.',
+    subMessage: 'You can keep tracking this order for the latest status.',
 };
 
 export function extractPartnerCode(status?: string | null): string | undefined {
@@ -177,7 +203,11 @@ export function getLatestReport(reports?: ReportSummary[]): ReportSummary | unde
     return reports[0];
 }
 
-export function getStatusDisplay(status?: string | null, reports?: ReportSummary[]): StatusDisplay {
+export function getStatusDisplay(
+    status?: string | null,
+    reports?: ReportSummary[],
+    partnerStatus?: string | null
+): StatusDisplay {
     const latestReport = getLatestReport(reports);
     if (latestReport?.fetchStatus === 'STORED') {
         return STATUS_MAP['Report Generated'];
@@ -195,6 +225,21 @@ export function getStatusDisplay(status?: string | null, reports?: ReportSummary
         };
     }
 
+    const partnerCodeFromPartnerStatus = extractPartnerCode(partnerStatus);
+    if (partnerCodeFromPartnerStatus && STATUS_MAP[partnerCodeFromPartnerStatus]) {
+        return {
+            ...STATUS_MAP[partnerCodeFromPartnerStatus],
+            referenceCode: partnerCodeFromPartnerStatus,
+        };
+    }
+
+    if (partnerCodeFromPartnerStatus) {
+        return {
+            ...UNKNOWN_PARTNER_STATUS,
+            referenceCode: partnerCodeFromPartnerStatus,
+        };
+    }
+
     if (partnerCode) {
         return {
             ...UNKNOWN_PARTNER_STATUS,
@@ -208,6 +253,40 @@ export function getStatusDisplay(status?: string | null, reports?: ReportSummary
             label: status,
         }
         : UNKNOWN_PARTNER_STATUS;
+}
+
+export function getBookingJourneyBanner(booking: BookingHeader, statusInfo?: StatusDisplay): BookingJourneyBanner | null {
+    if (booking.bookingChangeType === 'RESAMPLED') {
+        return {
+            tone: 'warning',
+            title: 'Fresh sample requested',
+            description:
+                booking.bookingChangeMessage ||
+                statusInfo?.subMessage ||
+                'The lab has requested another sample collection for this booking.',
+        };
+    }
+
+    if (booking.bookingChangeType === 'RESCHEDULED') {
+        return {
+            tone: 'info',
+            title: 'Collection rescheduled',
+            description:
+                booking.bookingChangeMessage ||
+                statusInfo?.subMessage ||
+                'We have updated your booking with the latest schedule from our lab partner.',
+        };
+    }
+
+    if (booking.trackingReferenceUpdated) {
+        return {
+            tone: 'info',
+            title: 'Tracking reference updated',
+            description: 'This order is still the same booking. Our lab partner has changed the underlying tracking reference.',
+        };
+    }
+
+    return null;
 }
 
 export function getReportAction(reports?: ReportSummary[]) {
