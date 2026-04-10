@@ -30,14 +30,14 @@ export async function getStatus(req: AuthRequest, res: Response) {
         // 1. Validation
         const parse = validationSchemas.uuid.safeParse(bookingId);
         if (!parse.success) {
-            return res.status(400).json({ error: 'Invalid Booking ID format' });
+            return res.status(400).json({ error: 'This booking link looks invalid. Please refresh and try again.' });
         }
 
         // 2. Rate Limiting
         if (statusRateLimit) {
             const { success } = await statusRateLimit.limit(`status:${userId}`);
             if (!success) {
-                return res.status(429).json({ error: 'Too many status check requests' });
+                return res.status(429).json({ error: 'Please wait a moment before checking the latest update again.' });
             }
         }
 
@@ -45,7 +45,7 @@ export async function getStatus(req: AuthRequest, res: Response) {
         const booking = await BookingService.getBookingWithDetails(bookingId, userId);
 
         if (!booking) {
-            return res.status(404).json({ error: 'Booking not found' });
+            return res.status(404).json({ error: 'We could not find this booking. Please refresh your bookings and try again.' });
         }
 
         const currentPartnerBookingId = booking.rescheduledToId || booking.partnerBookingId;
@@ -56,7 +56,7 @@ export async function getStatus(req: AuthRequest, res: Response) {
         const trackingReferenceUpdated = previousPartnerBookingIds.length > 0;
 
         if (!currentPartnerBookingId) {
-            return res.status(400).json({ error: 'Partner Booking ID missing for this order' });
+            return res.status(400).json({ error: 'Live tracking is not available for this booking yet.' });
         }
 
         // 4. Call Healthians API
@@ -64,19 +64,36 @@ export async function getStatus(req: AuthRequest, res: Response) {
 
         // 5. Sync status to local DB
         const healthiansStatus = statusResponse?.data?.booking_status;
+        let effectiveStatus = booking.status;
+        let effectivePartnerStatus = booking.partnerStatus;
+        let effectiveRescheduledToId = booking.rescheduledToId;
+
         if (healthiansStatus) {
             const mappedStatus = resolveHealthiansStatus(healthiansStatus);
             const refBookingId = statusResponse?.data?.ref_booking_id;
+            effectiveStatus = mappedStatus.docnowStatus;
+            effectivePartnerStatus = healthiansStatus;
+            effectiveRescheduledToId = refBookingId && refBookingId !== '0'
+                ? String(refBookingId)
+                : booking.rescheduledToId;
+
             await prisma.booking.update({
                 where: { id: bookingId },
                 data: {
-                    status: mappedStatus.docnowStatus,
+                    status: effectiveStatus,
                     partnerStatus: healthiansStatus,
-                    ...(refBookingId && refBookingId !== '0' ? { rescheduledToId: String(refBookingId) } : {}),
+                    ...(effectiveRescheduledToId ? { rescheduledToId: effectiveRescheduledToId } : {}),
                 }
             });
-            console.log(`Synced booking ${bookingId} status to: ${mappedStatus.docnowStatus}`);
+            console.log(`Synced booking ${bookingId} status to: ${effectiveStatus}`);
         }
+
+        const effectiveCurrentPartnerBookingId = effectiveRescheduledToId || booking.partnerBookingId;
+        const effectivePreviousPartnerBookingIds =
+            effectiveRescheduledToId && booking.partnerBookingId && effectiveRescheduledToId !== booking.partnerBookingId
+                ? [booking.partnerBookingId]
+                : [];
+        const effectiveTrackingReferenceUpdated = effectivePreviousPartnerBookingIds.length > 0;
 
         // 6. Build patient details map
         const patientMap = BookingService.buildPatientMap(booking);
@@ -85,19 +102,19 @@ export async function getStatus(req: AuthRequest, res: Response) {
             ...statusResponse,
             patientDetails: patientMap,
             lineage: {
-                currentPartnerBookingId,
-                previousPartnerBookingIds,
-                trackingReferenceUpdated,
+                currentPartnerBookingId: effectiveCurrentPartnerBookingId,
+                previousPartnerBookingIds: effectivePreviousPartnerBookingIds,
+                trackingReferenceUpdated: effectiveTrackingReferenceUpdated,
                 bookingChangeType:
-                    booking.status === 'Resample Required' || ['BS0018', 'BS018'].includes(booking.partnerStatus || '')
+                    effectiveStatus === 'Resample Required' || ['BS0018', 'BS018'].includes(effectivePartnerStatus || '')
                         ? 'RESAMPLED'
-                        : booking.status === 'Rescheduled' || booking.partnerStatus === 'BS0013'
+                        : effectiveStatus === 'Rescheduled' || effectivePartnerStatus === 'BS0013'
                             ? 'RESCHEDULED'
                             : 'NONE',
                 bookingChangeMessage:
-                    booking.status === 'Resample Required' || ['BS0018', 'BS018'].includes(booking.partnerStatus || '')
+                    effectiveStatus === 'Resample Required' || ['BS0018', 'BS018'].includes(effectivePartnerStatus || '')
                         ? 'The lab has asked for a fresh sample collection. We will guide you through the next step.'
-                        : booking.partnerStatus === 'BS0013' || trackingReferenceUpdated
+                        : effectivePartnerStatus === 'BS0013' || effectiveTrackingReferenceUpdated
                             ? 'We have updated your booking with the latest schedule from our lab partner.'
                             : null,
             }
@@ -105,6 +122,6 @@ export async function getStatus(req: AuthRequest, res: Response) {
 
     } catch (error) {
         console.error('Track Status Error:', error);
-        res.status(500).json({ error: 'Failed to fetch booking status' });
+        res.status(500).json({ error: 'We could not fetch the latest booking update right now. Please try again shortly.' });
     }
 }

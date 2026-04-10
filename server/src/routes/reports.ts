@@ -50,7 +50,7 @@ router.get('/booking/:bookingId', async (req: AuthRequest, res: Response) => {
         });
 
         if (!booking) {
-            return res.status(404).json({ error: 'Booking not found' });
+            return res.status(404).json({ error: 'We could not find this booking.' });
         }
 
         const reports = await prisma.report.findMany({
@@ -70,7 +70,7 @@ router.get('/booking/:bookingId', async (req: AuthRequest, res: Response) => {
         return res.json({ reports });
     } catch (error) {
         console.error('[Reports] Error listing reports:', error);
-        return res.status(500).json({ error: 'Failed to fetch reports' });
+        return res.status(500).json({ error: 'We could not load your reports right now. Please try again shortly.' });
     }
 });
 
@@ -98,7 +98,7 @@ router.get('/:reportId/download', async (req: AuthRequest, res: Response) => {
         });
 
         if (!report) {
-            return res.status(404).json({ error: 'Report not found' });
+            return res.status(404).json({ error: 'This report is not available anymore.' });
         }
 
         // Auth check: user must own the booking, OR be admin/manager
@@ -113,7 +113,7 @@ router.get('/:reportId/download', async (req: AuthRequest, res: Response) => {
         const reportUserId = (report as any).booking.userId;
 
         if (!isAdmin && reportUserId !== userId) {
-            return res.status(403).json({ error: 'Access denied' });
+            return res.status(403).json({ error: 'You do not have access to this report.' });
         }
 
         // Path 1: File is in our storage → stream it
@@ -166,10 +166,10 @@ router.get('/:reportId/download', async (req: AuthRequest, res: Response) => {
             }
         }
 
-        return res.status(502).json({ error: 'Report file is not available right now. Please try again shortly.' });
+        return res.status(502).json({ error: 'Your report is still being prepared. Please try again shortly.' });
     } catch (error) {
         console.error('[Reports] Error downloading report:', error);
-        return res.status(500).json({ error: 'Failed to download report' });
+        return res.status(500).json({ error: 'We could not download your report right now. Please try again shortly.' });
     }
 });
 

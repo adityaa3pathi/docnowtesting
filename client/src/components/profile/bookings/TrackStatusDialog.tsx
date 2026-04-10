@@ -109,7 +109,7 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
                     {statusLoading ? (
                         <div className="flex flex-col items-center justify-center py-12">
                             <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-                            <p className="text-gray-500">Fetching latest status from Healthians...</p>
+                            <p className="text-gray-500">Checking the latest update from our lab partner...</p>
                         </div>
                     ) : statusData ? (
                         <div className="space-y-6">
@@ -130,7 +130,7 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
                                                 </div>
                                                 <p className="mt-3 max-w-md text-sm text-slate-600">{statusInfo.message}</p>
                                                 {statusInfo.referenceCode && (
-                                                    <p className="mt-1 text-xs text-slate-500">Reference code: {statusInfo.referenceCode}</p>
+                                                    <p className="mt-1 text-xs text-slate-500">Support code: {statusInfo.referenceCode}</p>
                                                 )}
                                             </div>
                                             <div className="text-right">
