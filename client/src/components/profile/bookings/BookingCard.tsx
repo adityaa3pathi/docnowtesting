@@ -106,9 +106,6 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                     {statusInfo.subMessage && (
                         <p className="mt-1 text-sm text-slate-500">{statusInfo.subMessage}</p>
                     )}
-                    {statusInfo.referenceCode && (
-                        <p className="mt-1 text-xs text-slate-500">Reference code: {statusInfo.referenceCode}</p>
-                    )}
                 </div>
 
                 {journeyBanner && (
