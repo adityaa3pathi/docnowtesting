@@ -72,9 +72,14 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
                 },
             });
 
-            // Step B: Find booking by partnerBookingId
+            // Step B: Find booking by the original or current partner booking reference.
             const booking = await tx.booking.findFirst({
-                where: { partnerBookingId: payload.booking_id },
+                where: {
+                    OR: [
+                        { partnerBookingId: payload.booking_id },
+                        { rescheduledToId: payload.booking_id },
+                    ],
+                },
                 include: { items: true },
             });
 
