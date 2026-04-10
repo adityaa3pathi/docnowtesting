@@ -44,6 +44,11 @@ export function Footer() {
                                     Contact
                                 </Link>
                             </li>
+                            <li>
+                                <Link href="/corporate" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                                    For Corporates
+                                </Link>
+                            </li>
                         </ul>
                     </div>
 

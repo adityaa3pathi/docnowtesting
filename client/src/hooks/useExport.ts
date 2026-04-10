@@ -5,14 +5,14 @@ import { getAppUrl } from '@/lib/api';
 export function useExport() {
     const [exporting, setExporting] = useState(false);
 
-    const exportCsv = async (entity: string, params: Record<string, string>) => {
+    const exportCsv = async (entity: string, params: Record<string, string>, apiPrefix: '/api/admin' | '/api/manager' = '/api/admin') => {
         setExporting(true);
         try {
             const token = localStorage.getItem('docnow_auth_token');
             const searchParams = new URLSearchParams(params);
             searchParams.set('entity', entity);
 
-            const url = `/api/admin/export?${searchParams.toString()}`;
+            const url = `${apiPrefix}/export?${searchParams.toString()}`;
             const reqUrl = getAppUrl(url);
 
             const res = await fetch(reqUrl, {

@@ -62,7 +62,7 @@ export function CallbacksView({ apiPrefix, title = 'Callback Requests', subtitle
                 </div>
                 <div className="flex gap-2">
                     <button
-                        onClick={() => exportCsv('callbacks', { search: searchTerm, status: statusFilter })}
+                        onClick={() => exportCsv('callbacks', { search: searchTerm, status: statusFilter }, apiPrefix)}
                         disabled={exporting}
                         className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                     >

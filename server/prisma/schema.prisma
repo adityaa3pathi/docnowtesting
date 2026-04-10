@@ -67,6 +67,13 @@ enum CollectionMode {
   OFFLINE_UPI
 }
 
+enum CorporateInquiryStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CLOSED
+}
+
 // ============================================
 // USER MODEL (Updated)
 // ============================================
@@ -242,6 +249,27 @@ model CallbackRequest {
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model CorporateInquiry {
+  id              String                 @id @default(uuid())
+  contactName     String
+  workEmail       String
+  mobile          String
+  companyName     String
+  city            String
+  companySize     String
+  requirementType String
+  summary         String?
+  status          CorporateInquiryStatus @default(NEW)
+  notes           String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  @@index([status, createdAt])
+  @@index([city])
+  @@index([requirementType])
+  @@index([companyName])
 }
 
 model Cart {

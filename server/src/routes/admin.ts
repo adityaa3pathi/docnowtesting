@@ -13,6 +13,7 @@ import {
 } from '../controllers/admin';
 import { exportAdminData } from '../controllers/admin/export';
 import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callbacks';
+import { listCorporateInquiries, updateCorporateInquiryStatus } from '../controllers/admin/corporateInquiries';
 
 const router = Router();
 
@@ -62,6 +63,10 @@ router.get('/audit-logs', ...admin, getAuditLogs);
 // ── Callbacks ──────────────────────────────────────────
 router.get('/callbacks', ...admin, listCallbacks);
 router.put('/callbacks/:id/status', ...admin, updateCallbackStatus);
+
+// ── Corporate Inquiries ────────────────────────────────
+router.get('/corporate-inquiries', ...admin, listCorporateInquiries);
+router.put('/corporate-inquiries/:id/status', ...admin, updateCorporateInquiryStatus);
 
 // ── Data Export ──────────────────────────────────────────
 router.get('/export', ...admin, exportAdminData);

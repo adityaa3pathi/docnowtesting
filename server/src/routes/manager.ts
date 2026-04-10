@@ -7,6 +7,7 @@ import { resolveOrCreateSelfPatient, patientSchema } from '../utils/patientValid
 import { getRazorpay } from '../services/razorpay';
 import { finalizeBooking } from '../services/bookingFinalization';
 import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callbacks';
+import { listCorporateInquiries, updateCorporateInquiryStatus } from '../controllers/admin/corporateInquiries';
 import { exportAdminData } from '../controllers/admin/export';
 
 const router = Router();
@@ -26,6 +27,8 @@ router.get('/health', ...mgr, async (req: AuthRequest, res: Response) => {
 
 router.get('/callbacks', ...mgr, listCallbacks);
 router.put('/callbacks/:id/status', ...mgr, updateCallbackStatus);
+router.get('/corporate-inquiries', ...mgr, listCorporateInquiries);
+router.put('/corporate-inquiries/:id/status', ...mgr, updateCorporateInquiryStatus);
 router.get('/export', ...mgr, exportAdminData);
 
 // ============================================
