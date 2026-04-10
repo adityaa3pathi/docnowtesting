@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button, Card, Input } from '@/components/ui';
@@ -24,6 +25,7 @@ import {
   Sparkles,
   CheckCircle2,
   Truck,
+  Building2,
   FileCheck,
   Loader2,
   ChevronRight,
@@ -254,6 +256,15 @@ export default function Home() {
                 >
                   <Phone className="mr-2 h-5 w-5" />
                   Request Callback
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => router.push('/corporate')}
+                  className="border-white/20 bg-white/5 text-white hover:bg-white/10 px-8 py-4 text-base backdrop-blur-sm"
+                >
+                  <Building2 className="mr-2 h-5 w-5" />
+                  For Corporates
                 </Button>
               </div>
 
@@ -742,6 +753,10 @@ export default function Home() {
               <p className="text-white/70 font-medium max-w-md mx-auto">
                 Our medical experts will call you back within 15 minutes to help you select the right tests.
               </p>
+              <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-white/80">
+                <Building2 className="h-4 w-4" />
+                Managing employee testing at scale?
+              </div>
             </div>
 
             {/* Form body */}
@@ -797,6 +812,16 @@ export default function Home() {
                     By requesting a callback, you agree to our{' '}
                     <a href="/privacy" className="text-purple-600 underline">Privacy Policy</a>.
                   </p>
+                  <div className="rounded-2xl border border-purple-100 bg-purple-50 px-4 py-4 text-left">
+                    <p className="text-sm font-bold text-[#2d1670]">Need a corporate diagnostics partner instead?</p>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Talk to our corporate team for employee wellness programs, onsite camps, and bulk testing partnerships.
+                    </p>
+                    <Link href="/corporate" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-[#4b2192] hover:text-[#2d1670]">
+                      Talk to our corporate team
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </div>
                 </form>
               )}
             </div>

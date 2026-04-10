@@ -19,6 +19,7 @@ import {
     Shield,
     ArrowLeftRight,
     PhoneCall,
+    Building2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,6 +31,7 @@ const navItems = [
     { id: 'payment-links', label: 'Payment Links', icon: LinkIcon, href: '/manager/payment-links' },
     { id: 'orders', label: 'Orders', icon: ShoppingCart, href: '/manager/orders', badge: 'Read-only' },
     { id: 'callbacks', label: 'Callbacks', icon: PhoneCall, href: '/manager/callbacks' },
+    { id: 'corporate-inquiries', label: 'Corporate Inquiries', icon: Building2, href: '/manager/corporate-inquiries' },
     { id: 'settings', label: 'Settings', icon: Settings, href: '/manager/settings' },
 ];
 
