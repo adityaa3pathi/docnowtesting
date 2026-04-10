@@ -31,6 +31,7 @@ export async function ingestReport(reportId: string, options: IngestReportOption
             booking: {
                 select: {
                     partnerBookingId: true,
+                    rescheduledToId: true,
                     userId: true,
                 },
             },
@@ -76,12 +77,14 @@ export async function ingestReport(reportId: string, options: IngestReportOption
     let pdfBuffer = await downloadPdf(report.sourceUrl);
 
     // Attempt 2: If download failed (likely expired URL), try getCustomerReport_v2
-    if (!pdfBuffer && report.booking?.partnerBookingId) {
+    const activePartnerBookingId = report.booking?.rescheduledToId || report.booking?.partnerBookingId;
+
+    if (!pdfBuffer && activePartnerBookingId) {
         console.log(`[ReportIngestion] sourceUrl failed. Trying getCustomerReport_v2 fallback...`);
         try {
             const adapter = HealthiansAdapter.getInstance();
             const freshReport = await adapter.getCustomerReport({
-                booking_id: report.booking.partnerBookingId,
+                booking_id: activePartnerBookingId,
                 vendor_billing_user_id: report.booking.userId,
                 vendor_customer_id: report.vendorCustomerId || '',
                 allow_partial_report: report.isFullReport ? 0 : 1,

@@ -82,7 +82,7 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
         if (!reportUrl || !bookingId) return;
         setReportDownloading(true);
         try {
-            await downloadAuthenticatedFile(reportUrl, `report-${bookingId}.pdf`);
+            await downloadAuthenticatedFile(reportUrl, `report-${statusData?.lineage?.currentPartnerBookingId || bookingId}.pdf`);
         } catch (error: any) {
             console.error('Error downloading report:', error);
             toast.error(error.message || 'Failed to download report');
@@ -96,6 +96,7 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
     const reportUrl = reportAction.kind === 'download' || reportAction.kind === 'retry'
         ? getApiUrl(`/reports/${reportAction.report.id}/download`)
         : null;
+    const lineage = statusData?.lineage;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -134,7 +135,14 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Booking ID</div>
-                                                <div className="font-mono font-bold text-slate-900">{statusData.data?.booking_id}</div>
+                                                <div className="font-mono font-bold text-slate-900">
+                                                    {lineage?.currentPartnerBookingId || statusData.data?.booking_id}
+                                                </div>
+                                                {lineage?.trackingReferenceUpdated && lineage?.previousPartnerBookingIds?.length ? (
+                                                    <p className="mt-1 text-xs text-slate-500">
+                                                        Previous reference: {lineage.previousPartnerBookingIds[0]}
+                                                    </p>
+                                                ) : null}
                                             </div>
                                         </div>
 
@@ -158,6 +166,69 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
                                             <span className="text-[10px] font-bold text-slate-400 uppercase">Assigned</span>
                                             <span className="text-[10px] font-bold text-slate-400 uppercase">Collected</span>
                                             <span className="text-[10px] font-bold text-slate-400 uppercase">Report</span>
+                                        </div>
+                                    </div>
+
+                                    {(lineage?.trackingReferenceUpdated || lineage?.bookingChangeMessage) && (
+                                        <div className={`rounded-xl border p-4 ${
+                                            lineage?.bookingChangeType === 'RESAMPLED'
+                                                ? 'border-amber-200 bg-amber-50'
+                                                : 'border-blue-200 bg-blue-50'
+                                        }`}>
+                                            <h4 className={`text-sm font-bold uppercase tracking-tight ${
+                                                lineage?.bookingChangeType === 'RESAMPLED' ? 'text-amber-900' : 'text-blue-900'
+                                            }`}>
+                                                {lineage?.bookingChangeType === 'RESAMPLED'
+                                                    ? 'Fresh sample requested'
+                                                    : lineage?.bookingChangeType === 'RESCHEDULED'
+                                                        ? 'Collection rescheduled'
+                                                        : 'Tracking reference updated'}
+                                            </h4>
+                                            <p className={`mt-1 text-sm ${
+                                                lineage?.bookingChangeType === 'RESAMPLED' ? 'text-amber-800' : 'text-blue-800'
+                                            }`}>
+                                                {lineage?.bookingChangeMessage || 'We have received a partner-side update for this booking.'}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    <div className="rounded-xl border border-slate-100 bg-white p-4">
+                                        <h4 className="text-sm font-bold text-slate-900 uppercase tracking-tight">Booking Journey</h4>
+                                        <div className="mt-3 space-y-3 text-sm text-slate-600">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div>
+                                                    <p className="font-medium text-slate-900">Current stage</p>
+                                                    <p>{statusInfo.message}</p>
+                                                </div>
+                                                <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${statusInfo.color}`}>
+                                                    {statusInfo.label}
+                                                </span>
+                                            </div>
+                                            {lineage?.bookingChangeType === 'RESCHEDULED' && (
+                                                <div>
+                                                    <p className="font-medium text-slate-900">Latest scheduling update</p>
+                                                    <p>Your collection has been moved to the latest slot shared by our lab partner.</p>
+                                                </div>
+                                            )}
+                                            {lineage?.bookingChangeType === 'RESAMPLED' && (
+                                                <div>
+                                                    <p className="font-medium text-slate-900">Recollection required</p>
+                                                    <p>The lab has asked for another sample. We will continue this booking on the same order card.</p>
+                                                </div>
+                                            )}
+                                            {lineage?.trackingReferenceUpdated && (
+                                                <div>
+                                                    <p className="font-medium text-slate-900">Tracking reference</p>
+                                                    <p>
+                                                        Current: <span className="font-mono">{lineage.currentPartnerBookingId}</span>
+                                                        {lineage.previousPartnerBookingIds?.length ? (
+                                                            <>
+                                                                {' '} | Previous: <span className="font-mono">{lineage.previousPartnerBookingIds[0]}</span>
+                                                            </>
+                                                        ) : null}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 

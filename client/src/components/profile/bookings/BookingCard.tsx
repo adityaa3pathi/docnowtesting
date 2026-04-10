@@ -5,7 +5,7 @@ import { Button } from '@/components/ui';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { downloadAuthenticatedFile, getApiUrl } from '@/lib/api';
-import { BookingHeader, PhleboDetails, getReportAction, getStatusDisplay } from './types';
+import { BookingHeader, PhleboDetails, getBookingJourneyBanner, getReportAction, getStatusDisplay } from './types';
 
 interface BookingCardProps {
     booking: BookingHeader;
@@ -18,14 +18,16 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
     const [phleboLoading, setPhleboLoading] = useState(false);
     const [phleboData, setPhleboData] = useState<PhleboDetails | null>(null);
     const [reportDownloading, setReportDownloading] = useState(false);
-    const statusInfo = getStatusDisplay(booking.status, booking.reports);
+    const statusInfo = getStatusDisplay(booking.status, booking.reports, booking.partnerStatus);
+    const journeyBanner = getBookingJourneyBanner(booking, statusInfo);
     const reportAction = getReportAction(booking.reports);
     const reportUrl = reportAction.kind === 'download' || reportAction.kind === 'retry'
         ? getApiUrl(`/reports/${reportAction.report.id}/download`)
         : null;
     const isAwaitingPayment = booking.paymentStatus === 'INITIATED' || statusInfo.label === 'Awaiting Payment';
-    const canTrack = !isAwaitingPayment && !!booking.partnerBookingId && !['Superseded', 'Refunded', 'Cancelled'].includes(statusInfo.label);
-    const canReschedule = ['Order Booked', 'Sample Collector Assigned', 'Resample Required'].includes(statusInfo.label);
+    const activePartnerBookingId = booking.currentPartnerBookingId || booking.rescheduledToId || booking.partnerBookingId;
+    const canTrack = !isAwaitingPayment && !!activePartnerBookingId && !['Superseded', 'Refunded', 'Cancelled'].includes(statusInfo.label);
+    const canReschedule = ['Order Booked', 'Sample Collector Assigned', 'Fresh Sample Needed', 'Rescheduled'].includes(statusInfo.label);
     const canCancel = !['Cancelled', 'Sample Collected', 'Sample Received at Lab', 'Report Ready', 'Completed', 'Superseded', 'Refunded'].includes(statusInfo.label);
 
     const handleFetchPhlebo = async () => {
@@ -45,7 +47,7 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
         if (!reportUrl) return;
         setReportDownloading(true);
         try {
-            await downloadAuthenticatedFile(reportUrl, `report-${booking.partnerBookingId || booking.id}.pdf`);
+            await downloadAuthenticatedFile(reportUrl, `report-${activePartnerBookingId || booking.id}.pdf`);
         } catch (error: any) {
             console.error('Error downloading report:', error);
             toast.error(error.message || 'Failed to download report');
@@ -61,8 +63,13 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                 <div>
                     <div className="text-xs sm:text-sm text-gray-500">Booking ID</div>
                     <div className="font-mono font-medium text-slate-800 text-sm">
-                        {booking.partnerBookingId || booking.id.slice(0, 8)}
+                        {activePartnerBookingId || booking.id.slice(0, 8)}
                     </div>
+                    {booking.trackingReferenceUpdated && booking.previousPartnerBookingIds?.length ? (
+                        <div className="mt-1 text-xs text-slate-500">
+                            Previous reference: {booking.previousPartnerBookingIds[0]}
+                        </div>
+                    ) : null}
                 </div>
                 <div>
                     <div className="text-xs sm:text-sm text-gray-500">Scheduled For</div>
@@ -96,10 +103,42 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
 
                 <div className="mb-6 rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                     <p className="text-sm text-slate-700">{statusInfo.message}</p>
+                    {statusInfo.subMessage && (
+                        <p className="mt-1 text-sm text-slate-500">{statusInfo.subMessage}</p>
+                    )}
                     {statusInfo.referenceCode && (
                         <p className="mt-1 text-xs text-slate-500">Reference code: {statusInfo.referenceCode}</p>
                     )}
                 </div>
+
+                {journeyBanner && (
+                    <div className={`mb-6 rounded-lg border px-4 py-3 ${
+                        journeyBanner.tone === 'warning'
+                            ? 'border-amber-200 bg-amber-50'
+                            : journeyBanner.tone === 'success'
+                                ? 'border-green-200 bg-green-50'
+                                : 'border-blue-200 bg-blue-50'
+                    }`}>
+                        <p className={`text-sm font-semibold ${
+                            journeyBanner.tone === 'warning'
+                                ? 'text-amber-800'
+                                : journeyBanner.tone === 'success'
+                                    ? 'text-green-800'
+                                    : 'text-blue-800'
+                        }`}>
+                            {journeyBanner.title}
+                        </p>
+                        <p className={`mt-1 text-sm ${
+                            journeyBanner.tone === 'warning'
+                                ? 'text-amber-700'
+                                : journeyBanner.tone === 'success'
+                                    ? 'text-green-700'
+                                    : 'text-blue-700'
+                        }`}>
+                            {journeyBanner.description}
+                        </p>
+                    </div>
+                )}
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-2 sm:gap-3 pt-4 border-t border-gray-100">

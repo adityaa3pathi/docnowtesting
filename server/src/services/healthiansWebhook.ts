@@ -115,6 +115,7 @@ export async function handleStatusUpdate(
             data: {
                 slotDate: data.sample_collection_date,
                 slotTime: `${data.start_time} - ${data.end_time}`,
+                rescheduledToId: data.ref_booking_id,
             },
         });
     }
