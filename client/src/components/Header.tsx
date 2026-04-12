@@ -24,6 +24,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getApiUrl } from '@/lib/api';
+import { DocnowLogo } from './DocnowLogo';
 
 const metroCities = [
     { name: 'Bengaluru', icon: '🏛️' },
@@ -198,9 +199,7 @@ export function Header() {
         <>
             <nav className="sticky top-0 z-50 border-b border-border bg-white/80 backdrop-blur-md shadow-sm">
                 <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-                    <Link href="/" className="text-2xl font-bold text-[#241769]">
-                        DOCNOW
-                    </Link>
+                    <DocnowLogo href="/" width={186} height={46} priority imageClassName="max-h-11 w-auto" />
 
                     <div className="hidden md:flex items-center gap-8 px-8">
                         <Link href="/search" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
@@ -473,9 +472,9 @@ export function Header() {
             >
                 {/* Drawer Header */}
                 <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100 flex-shrink-0">
-                    <Link href="/" className="text-xl font-bold text-[#241769]" onClick={() => setIsMobileMenuOpen(false)}>
-                        DOCNOW
-                    </Link>
+                    <div onClick={() => setIsMobileMenuOpen(false)}>
+                        <DocnowLogo href="/" width={146} height={36} imageClassName="max-h-9 w-auto" />
+                    </div>
                     <button
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"

@@ -1,5 +1,6 @@
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
 import Link from 'next/link';
+import { DocnowLogo } from './DocnowLogo';
 
 export function Footer() {
     return (
@@ -8,10 +9,8 @@ export function Footer() {
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
                     {/* Company Info */}
                     <div>
-                        <div className="flex items-center mb-6">
-                            <div className="text-2xl font-black tracking-tight text-primary">
-                                DOC<span className="text-foreground">NOW</span>
-                            </div>
+                        <div className="mb-6">
+                            <DocnowLogo href="/" width={196} height={48} imageClassName="max-h-12 w-auto" />
                         </div>
                         <p className="text-sm text-muted-foreground font-medium">
                             Your trusted partner for diagnostic and healthcare services. Fast reports, home visits, and certified labs.
