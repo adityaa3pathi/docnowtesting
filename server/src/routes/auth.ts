@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db';
 import { generateReferralCode, awardSignupBonus } from '../utils/referralService';
+import { sendOtpViaWhatsApp } from '../services/wappieWhatsApp';
 
 const router = express.Router();
 
@@ -17,12 +18,32 @@ const redis = process.env.UPSTASH_REDIS_REST_URL
     : null;
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
-const OTP_EXPIRY_MINS = 5;
+const OTP_EXPIRY_MINS = 10;
 const MAX_OTP_ATTEMPTS = 5;
 const RESEND_COOLDOWN_SECONDS = 60;
 
 // Helper: Generate OTP
 const generateOTP = () => crypto.randomInt(100000, 999999).toString();
+const isValidMobile = (mobile: string) => /^\d{10}$/.test(mobile);
+
+async function persistAndSendOtp(mobile: string, flow: 'signup' | 'login' | 'forgot_password') {
+    const code = generateOTP();
+    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINS * 60 * 1000);
+
+    await prisma.oTP.upsert({
+        where: { identifier: mobile },
+        update: { code, expiresAt, attempts: 0, updatedAt: new Date() },
+        create: { identifier: mobile, code, expiresAt, attempts: 0 }
+    });
+
+    try {
+        const result = await sendOtpViaWhatsApp(mobile, code);
+        console.log(`[AUTH-${flow.toUpperCase()}] OTP accepted by Wappie for ${mobile.slice(-4)} | messageId=${result.id} | status=${result.status}`);
+    } catch (error: any) {
+        console.error(`[AUTH-${flow.toUpperCase()}] WhatsApp OTP send failed for ${mobile.slice(-4)}:`, error.message);
+        throw new Error('We could not send your verification code right now. Please try again.');
+    }
+}
 
 // --- SIGNUP FLOW ---
 
@@ -31,7 +52,7 @@ router.post('/signup/send-otp', async (req: Request, res: Response) => {
     try {
         const { mobile, email } = req.body;
 
-        if (!mobile || mobile.length !== 10) {
+        if (!mobile || !isValidMobile(mobile)) {
             return res.status(400).json({ error: 'Valid 10-digit Mobile Number is required' });
         }
 
@@ -48,23 +69,12 @@ router.post('/signup/send-otp', async (req: Request, res: Response) => {
             }
         }
 
-        // Generate & Save OTP (Purpose: SIGNUP)
-        // ideally we should store purpose in OTP table, but for now specific flow logic handles it
-        const code = generateOTP();
-        const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINS * 60 * 1000);
-
-        await prisma.oTP.upsert({
-            where: { identifier: mobile },
-            update: { code, expiresAt, attempts: 0, updatedAt: new Date() },
-            create: { identifier: mobile, code, expiresAt, attempts: 0 }
-        });
-
-        console.log(`[AUTH-SIGNUP] OTP for ${mobile}: ${code}`);
+        await persistAndSendOtp(mobile, 'signup');
         res.status(200).json({ message: 'OTP sent successfully', expiry: OTP_EXPIRY_MINS });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Signup OTP Error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 });
 
@@ -184,26 +194,17 @@ router.post('/login/password', async (req: Request, res: Response) => {
 router.post('/login/send-otp', async (req: Request, res: Response) => {
     try {
         const { mobile } = req.body;
-        if (!mobile) return res.status(400).json({ error: 'Mobile number required' });
+        if (!mobile || !isValidMobile(mobile)) return res.status(400).json({ error: 'Valid 10-digit mobile number required' });
 
         const user = await prisma.user.findUnique({ where: { mobile } });
         if (!user) return res.status(404).json({ error: 'User does not exist. Please Signup.' });
 
-        const code = generateOTP();
-        const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINS * 60 * 1000);
-
-        await prisma.oTP.upsert({
-            where: { identifier: mobile },
-            update: { code, expiresAt, attempts: 0, updatedAt: new Date() },
-            create: { identifier: mobile, code, expiresAt, attempts: 0 }
-        });
-
-        console.log(`[AUTH-LOGIN] OTP for ${mobile}: ${code}`);
+        await persistAndSendOtp(mobile, 'login');
         res.status(200).json({ message: 'OTP sent successfully', expiry: OTP_EXPIRY_MINS });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Login OTP Error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 });
 
@@ -249,7 +250,7 @@ router.post('/forgot-password/send-otp', async (req: Request, res: Response) => 
     try {
         const { mobile } = req.body;
 
-        if (!mobile || !/^\d{10}$/.test(mobile)) {
+        if (!mobile || !isValidMobile(mobile)) {
             return res.status(400).json({ error: 'Valid 10-digit mobile number is required' });
         }
 
@@ -269,20 +270,11 @@ router.post('/forgot-password/send-otp', async (req: Request, res: Response) => 
             }
         }
 
-        const code = generateOTP();
-        const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINS * 60 * 1000);
-
-        await prisma.oTP.upsert({
-            where: { identifier: mobile },
-            update: { code, expiresAt, attempts: 0, updatedAt: new Date() },
-            create: { identifier: mobile, code, expiresAt, attempts: 0 }
-        });
-
-        console.log(`[AUTH-RESET] OTP for ${mobile}: ${code}`);
+        await persistAndSendOtp(mobile, 'forgot_password');
         res.status(200).json({ message: 'Reset OTP sent successfully', expiry: OTP_EXPIRY_MINS });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Forgot Password Send OTP Error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 });
 
