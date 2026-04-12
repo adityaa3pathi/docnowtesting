@@ -13,9 +13,10 @@
  */
 import axios from 'axios';
 import { prisma } from '../db';
-import { reportStorage, reportStorageKey } from './reportStorage';
+import { originalReportStorageKey, reportStorage, reportStorageKey } from './reportStorage';
 import { HealthiansAdapter } from '../adapters/healthians';
 import { sendReportReadyViaWhatsApp } from './reportNotifications';
+import { brandReportPdf } from './reportBrandingService';
 
 interface IngestReportOptions {
     forceRefresh?: boolean;
@@ -135,9 +136,18 @@ export async function ingestReport(reportId: string, options: IngestReportOption
     // Upload to our storage
     try {
         const key = reportStorageKey(report.bookingId, report.id);
+        const originalKey = originalReportStorageKey(report.bookingId, report.id);
         const shouldNotifyCustomer = !options.forceRefresh && report.fetchStatus !== 'STORED' && report.isFullReport;
+        let customerPdfBuffer = pdfBuffer;
 
-        await reportStorage.upload(key, pdfBuffer, 'application/pdf');
+        try {
+            customerPdfBuffer = await brandReportPdf(pdfBuffer);
+        } catch (brandingError: any) {
+            console.error(`[ReportIngestion] Branding failed for report ${reportId}. Falling back to original PDF:`, brandingError.message);
+        }
+
+        await reportStorage.upload(originalKey, pdfBuffer, 'application/pdf');
+        await reportStorage.upload(key, customerPdfBuffer, 'application/pdf');
 
         await prisma.report.update({
             where: { id: reportId },
@@ -146,12 +156,12 @@ export async function ingestReport(reportId: string, options: IngestReportOption
                 fetchStatus: 'STORED',
                 fetchError: null,
                 fetchedAt: new Date(),
-                fileSize: pdfBuffer.length,
+                fileSize: customerPdfBuffer.length,
             },
         });
 
         console.log(
-            `[ReportIngestion] SUCCESS: report ${reportId} stored as ${key} (${pdfBuffer.length} bytes)`
+            `[ReportIngestion] SUCCESS: report ${reportId} stored as ${key} (${customerPdfBuffer.length} bytes)`
         );
 
         if (shouldNotifyCustomer && report.booking?.user?.mobile) {
