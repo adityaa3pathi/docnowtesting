@@ -25,6 +25,7 @@ import { healthiansWebhookHandler } from './controllers/webhooks';
 import managerRoutes from './routes/manager';
 import promoRoutes from './routes/promos';
 import reportRoutes from './routes/reports';
+import invoiceRoutes from './routes/invoices';
 
 
 
@@ -59,6 +60,7 @@ app.use('/api/manager', managerRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/promos', promoRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/invoices', invoiceRoutes);
 
 app.get('/', (req, res) => {
     res.send('DOCNOW API is running');

@@ -136,3 +136,11 @@ export const reportStorage = new S3StorageProvider();
 export function reportStorageKey(bookingId: string, reportId: string): string {
     return `${bookingId}/${reportId}.pdf`;
 }
+
+/**
+ * Preserve the unmodified partner PDF for internal audit/debug access.
+ * The customer-facing canonical key should point to the branded copy.
+ */
+export function originalReportStorageKey(bookingId: string, reportId: string): string {
+    return `${bookingId}/${reportId}.original.pdf`;
+}

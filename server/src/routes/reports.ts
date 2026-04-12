@@ -11,9 +11,10 @@
 import { Router, Response } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { prisma } from '../db';
-import { reportStorage } from '../services/reportStorage';
+import { originalReportStorageKey, reportStorage } from '../services/reportStorage';
 import { ingestReport } from '../services/reportIngestion';
 import axios from 'axios';
+import { brandReportPdf } from '../services/reportBrandingService';
 
 const router = Router();
 
@@ -116,22 +117,36 @@ router.get('/:reportId/download', async (req: AuthRequest, res: Response) => {
             return res.status(403).json({ error: 'You do not have access to this report.' });
         }
 
+        let legacyStoredBuffer: Buffer | null = null;
+        let shouldForceRefresh = false;
+
         // Path 1: File is in our storage → stream it
         if (report.storageKey) {
             try {
                 const exists = await reportStorage.exists(report.storageKey);
                 if (exists) {
                     const buffer = await reportStorage.read(report.storageKey);
-                    return sendPdfBuffer(res, reportId, buffer);
+                    const originalKey = originalReportStorageKey(report.bookingId, reportId);
+                    const originalExists = await reportStorage.exists(originalKey).catch(() => false);
+
+                    if (originalExists) {
+                        return sendPdfBuffer(res, reportId, buffer);
+                    }
+
+                    legacyStoredBuffer = buffer;
+                    shouldForceRefresh = true;
+                    console.warn(`[Reports] Report ${reportId} appears to be a legacy unbranded stored PDF. Attempting refresh before serving.`);
+                } else {
+                    shouldForceRefresh = true;
+                    console.warn(`[Reports] Report ${reportId} has storageKey=${report.storageKey} but the file is missing from storage. Will try force re-ingestion.`);
                 }
-                console.warn(`[Reports] Report ${reportId} has storageKey=${report.storageKey} but the file is missing from storage. Will try force re-ingestion.`);
             } catch (err) {
                 console.warn(`[Reports] Storage read failed for key ${report.storageKey}:`, err);
+                shouldForceRefresh = true;
             }
         }
 
         // Path 2: File missing or status is not STORED → try on-demand ingestion.
-        const shouldForceRefresh = !!report.storageKey;
         if (report.fetchStatus !== 'STORED' || shouldForceRefresh) {
             try {
                 await ingestReport(reportId, { forceRefresh: shouldForceRefresh });
@@ -144,6 +159,10 @@ router.get('/:reportId/download', async (req: AuthRequest, res: Response) => {
             } catch (err) {
                 console.warn(`[Reports] On-demand ingestion failed for ${reportId}:`, err);
             }
+        }
+
+        if (legacyStoredBuffer) {
+            return sendPdfBuffer(res, reportId, legacyStoredBuffer);
         }
 
         // Path 3: Last resort — proxy the sourceUrl through our API.
@@ -159,8 +178,15 @@ router.get('/:reportId/download', async (req: AuthRequest, res: Response) => {
                     },
                 });
 
-                const buffer = Buffer.from(sourceResponse.data);
-                return sendPdfBuffer(res, reportId, buffer);
+                const originalBuffer: Buffer = Buffer.from(sourceResponse.data as ArrayBuffer);
+                let brandedBuffer: Buffer = originalBuffer;
+
+                try {
+                    brandedBuffer = await brandReportPdf(originalBuffer);
+                } catch (brandingError: any) {
+                    console.warn(`[Reports] Last-resort branding failed for ${reportId}:`, brandingError.message);
+                }
+                return sendPdfBuffer(res, reportId, brandedBuffer);
             } catch (err) {
                 console.warn(`[Reports] sourceUrl proxy failed for ${reportId}:`, err);
             }
