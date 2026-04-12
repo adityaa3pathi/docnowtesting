@@ -15,6 +15,7 @@ import axios from 'axios';
 import { prisma } from '../db';
 import { reportStorage, reportStorageKey } from './reportStorage';
 import { HealthiansAdapter } from '../adapters/healthians';
+import { sendReportReadyViaWhatsApp } from './reportNotifications';
 
 interface IngestReportOptions {
     forceRefresh?: boolean;
@@ -30,9 +31,21 @@ export async function ingestReport(reportId: string, options: IngestReportOption
         include: {
             booking: {
                 select: {
+                    id: true,
                     partnerBookingId: true,
                     rescheduledToId: true,
                     userId: true,
+                    user: {
+                        select: {
+                            name: true,
+                            mobile: true,
+                        },
+                    },
+                    items: {
+                        select: {
+                            testName: true,
+                        },
+                    },
                 },
             },
         },
@@ -122,6 +135,7 @@ export async function ingestReport(reportId: string, options: IngestReportOption
     // Upload to our storage
     try {
         const key = reportStorageKey(report.bookingId, report.id);
+        const shouldNotifyCustomer = !options.forceRefresh && report.fetchStatus !== 'STORED' && report.isFullReport;
 
         await reportStorage.upload(key, pdfBuffer, 'application/pdf');
 
@@ -139,6 +153,29 @@ export async function ingestReport(reportId: string, options: IngestReportOption
         console.log(
             `[ReportIngestion] SUCCESS: report ${reportId} stored as ${key} (${pdfBuffer.length} bytes)`
         );
+
+        if (shouldNotifyCustomer && report.booking?.user?.mobile) {
+            const itemNames = report.booking.items.map((item) => item.testName).filter(Boolean);
+            const reportLabel =
+                itemNames.length === 0
+                    ? `Booking ${report.booking.id.slice(0, 8)} report`
+                    : itemNames.length === 1
+                        ? itemNames[0]
+                        : `${itemNames[0]} + ${itemNames.length - 1} more test${itemNames.length - 1 > 1 ? 's' : ''}`;
+
+            try {
+                const notification = await sendReportReadyViaWhatsApp({
+                    mobile: report.booking.user.mobile,
+                    customerName: report.booking.user.name,
+                    reportLabel,
+                });
+                console.log(
+                    `[ReportIngestion] Report-ready WhatsApp accepted for report ${reportId} | messageId=${notification.id} | status=${notification.status}`
+                );
+            } catch (notifyErr: any) {
+                console.error(`[ReportIngestion] Report-ready WhatsApp failed for ${reportId}:`, notifyErr.message);
+            }
+        }
     } catch (err: any) {
         await prisma.report.update({
             where: { id: reportId },

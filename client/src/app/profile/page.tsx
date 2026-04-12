@@ -6,7 +6,7 @@ import { User, Users, FileText, Calendar, Loader2, Shield, Wallet } from 'lucide
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ProfileTab } from '@/components/profile/ProfileTab';
 import { FamilyTab } from '@/components/profile/FamilyTab';
 import { BookingsTab } from '@/components/profile/BookingsTab';
@@ -18,7 +18,15 @@ type Tab = 'profile' | 'family' | 'bookings' | 'reports' | 'wallet';
 export default function ProfilePage() {
     const { isAuthenticated, isInitialized, user } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [activeTab, setActiveTab] = useState<Tab>('profile');
+
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (tab && ['profile', 'family', 'bookings', 'reports', 'wallet'].includes(tab)) {
+            setActiveTab(tab as Tab);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         if (isInitialized && !isAuthenticated) {
