@@ -61,6 +61,7 @@ export async function listBookings(req: AuthRequest, res: Response) {
             slotTime: b.slotTime,
             totalAmount: b.totalAmount,
             createdAt: b.createdAt,
+            invoiceAvailable: b.paymentStatus === 'CONFIRMED',
             rescheduledToId: b.rescheduledToId,
             items: b.items.map(i => i.testName),
             address: b.addressLine ? {

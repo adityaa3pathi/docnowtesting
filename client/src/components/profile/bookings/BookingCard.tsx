@@ -18,11 +18,15 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
     const [phleboLoading, setPhleboLoading] = useState(false);
     const [phleboData, setPhleboData] = useState<PhleboDetails | null>(null);
     const [reportDownloading, setReportDownloading] = useState(false);
+    const [invoiceDownloading, setInvoiceDownloading] = useState(false);
     const statusInfo = getStatusDisplay(booking.status, booking.reports, booking.partnerStatus);
     const journeyBanner = getBookingJourneyBanner(booking, statusInfo);
     const reportAction = getReportAction(booking.reports);
     const reportUrl = reportAction.kind === 'download' || reportAction.kind === 'retry'
         ? getApiUrl(`/reports/${reportAction.report.id}/download`)
+        : null;
+    const invoiceUrl = booking.invoiceAvailable
+        ? getApiUrl(`/invoices/booking/${booking.id}/download`)
         : null;
     const isAwaitingPayment = booking.paymentStatus === 'INITIATED' || statusInfo.label === 'Awaiting Payment';
     const activePartnerBookingId = booking.currentPartnerBookingId || booking.rescheduledToId || booking.partnerBookingId;
@@ -53,6 +57,19 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
             toast.error(error.message || 'Failed to download report');
         } finally {
             setReportDownloading(false);
+        }
+    };
+
+    const handleDownloadInvoice = async () => {
+        if (!invoiceUrl) return;
+        setInvoiceDownloading(true);
+        try {
+            await downloadAuthenticatedFile(invoiceUrl, `invoice-${booking.id}.pdf`);
+        } catch (error: any) {
+            console.error('Error downloading invoice:', error);
+            toast.error(error.message || 'Failed to download invoice');
+        } finally {
+            setInvoiceDownloading(false);
         }
     };
 
@@ -188,6 +205,18 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                             <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             Report is being prepared
                         </div>
+                    )}
+
+                    {invoiceUrl && (
+                        <button
+                            type="button"
+                            onClick={handleDownloadInvoice}
+                            disabled={invoiceDownloading}
+                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-100 sm:text-sm"
+                        >
+                            <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            {invoiceDownloading ? 'Downloading Invoice...' : 'Download Invoice'}
+                        </button>
                     )}
 
                     {/* Phlebo Contact Action */}

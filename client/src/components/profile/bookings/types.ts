@@ -11,6 +11,7 @@ export interface BookingHeader {
     slotTime: string;
     totalAmount: number;
     createdAt: string;
+    invoiceAvailable?: boolean;
     addressId?: string;
     rescheduledToId?: string | null;
     trackingReferenceUpdated?: boolean;
