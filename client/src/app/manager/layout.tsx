@@ -14,7 +14,6 @@ import {
     X,
     LogOut,
     Loader2,
-    Activity,
     Home,
     Shield,
     ArrowLeftRight,
@@ -23,6 +22,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { DocnowLogo } from '@/components/DocnowLogo';
 
 const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/manager/dashboard' },
@@ -107,13 +107,15 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
             <aside className="hidden lg:flex lg:flex-col w-64 flex-shrink-0" style={{ backgroundColor: '#4b2192' }}>
                 {/* Logo */}
                 <div className="h-16 flex items-center px-6 border-b border-white/10">
-                    <div className="flex items-center gap-2">
-                        <Activity className="h-7 w-7 text-white" />
-                        <div>
-                            <span className="font-semibold text-white text-lg">DOCNOW</span>
-                            <p className="text-xs text-white/60 -mt-0.5">Manager Panel</p>
-                        </div>
-                    </div>
+                    <DocnowLogo
+                        href="/manager/dashboard"
+                        width={148}
+                        height={36}
+                        panel
+                        imageClassName="max-h-9 w-auto"
+                        subtitle="Manager Panel"
+                        subtitleClassName="text-white/70"
+                    />
                 </div>
 
                 {/* Navigation */}
@@ -199,10 +201,13 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                 style={{ backgroundColor: '#4b2192' }}
             >
                 <div className="h-16 flex items-center justify-between px-6 border-b border-white/10">
-                    <div className="flex items-center gap-2">
-                        <Activity className="h-7 w-7 text-white" />
-                        <span className="font-semibold text-white">DOCNOW</span>
-                    </div>
+                    <DocnowLogo
+                        href="/manager/dashboard"
+                        width={132}
+                        height={32}
+                        panel
+                        imageClassName="max-h-8 w-auto"
+                    />
                     <button onClick={() => setMobileMenuOpen(false)} className="text-white p-1 rounded hover:bg-white/10">
                         <X className="h-6 w-6" />
                     </button>

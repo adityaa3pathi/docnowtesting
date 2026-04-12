@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { DocnowLogo } from '@/components/DocnowLogo';
 
 // Navigation items matching the design
 const navItems = [
@@ -123,10 +124,15 @@ export default function SuperAdminLayout({
             {/* Logo Area */}
             <div className="p-6 border-b border-white/10">
                 <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-xl font-semibold">DOCNOW</h1>
-                        <p className="text-xs text-white/70 mt-1">Super Admin</p>
-                    </div>
+                    <DocnowLogo
+                        href="/super-admin/dashboard"
+                        width={148}
+                        height={36}
+                        panel
+                        imageClassName="max-h-9 w-auto"
+                        subtitle="Super Admin"
+                        subtitleClassName="text-white/70"
+                    />
                     {/* Close button for mobile, collapse toggle for desktop */}
                     <button
                         onClick={() => {
@@ -310,7 +316,7 @@ export default function SuperAdminLayout({
                     >
                         <Menu size={22} />
                     </button>
-                    <h1 className="text-lg font-bold text-[#4b2192]">DOCNOW</h1>
+                    <DocnowLogo href="/super-admin/dashboard" width={132} height={32} imageClassName="max-h-8 w-auto" />
                     <span className="text-xs text-gray-400 font-medium">Admin</span>
                 </header>
 
