@@ -9,6 +9,7 @@ import { getRazorpay } from '../services/razorpay';
 import { finalizeBooking } from '../services/bookingFinalization';
 import { generateReferralCode } from '../utils/referralService';
 import { getClientIP } from '../utils/adminHelpers';
+import { getGeodataFromPincode } from '../utils/geocoding';
 import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callbacks';
 import { listCorporateInquiries, updateCorporateInquiryStatus } from '../controllers/admin/corporateInquiries';
 import { exportAdminData } from '../controllers/admin/export';
@@ -666,18 +667,63 @@ router.delete('/users/:userId/addresses/:id', ...mgr, async (req: AuthRequest, r
 router.post('/slots', ...mgr, async (req: AuthRequest, res: Response) => {
     const { lat, long, zipcode, date, items } = req.body;
     try {
+        if (!zipcode || !date || !Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ error: 'zipcode, date, and items are required' });
+        }
+
+        let finalLat = typeof lat === 'string' ? lat : '';
+        let finalLong = typeof long === 'string' ? long : '';
+
+        if (!finalLat || !finalLong || finalLat === '0' || finalLong === '0') {
+            const geodata = await getGeodataFromPincode(String(zipcode));
+            if (geodata) {
+                finalLat = geodata.lat;
+                finalLong = geodata.long;
+            }
+        }
+
+        if (!finalLat || !finalLong || finalLat === '0' || finalLong === '0') {
+            return res.status(400).json({ error: 'Address is missing valid coordinates. Please update the address with latitude and longitude or try a different pincode.' });
+        }
+
+        const serviceability = await healthians.checkServiceability(finalLat, finalLong, String(zipcode));
+        const zoneId = serviceability?.data?.zone_id;
+        if (!zoneId) {
+            return res.status(400).json({ error: 'Could not determine zone for the selected address' });
+        }
+
+        const testCodes = items
+            .map((i: any) => i?.testCode)
+            .filter((code: unknown): code is string => typeof code === 'string' && code.length > 0);
+
+        if (testCodes.length === 0) {
+            return res.status(400).json({ error: 'No valid test codes found for slot lookup' });
+        }
+
+        const catalogItems = await prisma.catalogItem.findMany({
+            where: { partnerCode: { in: testCodes } }
+        });
+        const catalogMap = new Map(catalogItems.map(item => [item.partnerCode, item]));
+        const amount = testCodes.reduce((sum, code) => {
+            const item = catalogMap.get(code);
+            return sum + Math.max(0, item?.discountedPrice ?? item?.displayPrice ?? 0);
+        }, 0);
+
         const response = await healthians.getSlotsByLocation({
-            lat,
-            long,
-            zipcode,
-            zone_id: '',
-            slot_date: date,
-            amount: 0,
-            package: (items || []).map((i: any) => ({ deal_id: [i.testCode] }))
+            lat: finalLat,
+            long: finalLong,
+            zipcode: String(zipcode),
+            zone_id: String(zoneId),
+            slot_date: String(date),
+            amount,
+            package: [{ deal_id: testCodes }],
+            get_ppmc_slots: 0,
+            has_female_patient: 0
         });
         const results = Array.isArray(response) ? response : (response.data || response.slots || response || []);
         res.json(results);
     } catch (error: any) {
+        console.error('[Manager] Slot fetch error:', error);
         res.status(500).json({ error: error.message });
     }
 });
