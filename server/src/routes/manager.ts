@@ -2,13 +2,17 @@ import { Router, Response } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { requireManager } from '../middleware/requireManager';
 import { prisma } from '../db';
+import { z } from 'zod';
 import { HealthiansAdapter } from '../adapters/healthians';
 import { resolveOrCreateSelfPatient, patientSchema } from '../utils/patientValidation';
 import { getRazorpay } from '../services/razorpay';
 import { finalizeBooking } from '../services/bookingFinalization';
+import { generateReferralCode } from '../utils/referralService';
+import { getClientIP } from '../utils/adminHelpers';
 import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callbacks';
 import { listCorporateInquiries, updateCorporateInquiryStatus } from '../controllers/admin/corporateInquiries';
 import { exportAdminData } from '../controllers/admin/export';
+import { OTP_EXPIRY_MINS, isValidMobile, persistAndSendOtp } from '../services/otp';
 
 const router = Router();
 const healthians = HealthiansAdapter.getInstance();
@@ -394,6 +398,14 @@ function normalizeType(dealType?: string): 'TEST' | 'PACKAGE' | 'PROFILE' {
     return 'TEST';
 }
 
+const managerUserCreateSchema = z.object({
+    mobile: z.string().regex(/^\d{10}$/, 'Valid 10-digit mobile number is required'),
+    name: z.string().trim().min(1, 'Name is required'),
+    age: z.number().int().min(1, 'Age is required').max(150, 'Invalid age'),
+    gender: z.enum(['Male', 'Female', 'Other'], { message: 'Gender must be Male, Female, or Other' }),
+    email: z.string().email('Invalid email').optional().or(z.literal(''))
+});
+
 // ============================================
 // MANAGER ORDER FLOW
 // ============================================
@@ -411,6 +423,130 @@ router.get('/users/search', ...mgr, async (req: AuthRequest, res: Response) => {
         res.json(users);
     } catch (err: any) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+router.post('/users/create/send-otp', ...mgr, async (req: AuthRequest, res: Response) => {
+    try {
+        const parsed = managerUserCreateSchema.parse({
+            ...req.body,
+            age: Number(req.body?.age)
+        });
+
+        const { mobile, email } = parsed;
+        if (!isValidMobile(mobile)) {
+            return res.status(400).json({ error: 'Valid 10-digit mobile number is required' });
+        }
+
+        const [existingUser, existingEmail] = await Promise.all([
+            prisma.user.findUnique({ where: { mobile } }),
+            email ? prisma.user.findUnique({ where: { email } }) : Promise.resolve(null)
+        ]);
+
+        if (existingUser) {
+            return res.status(409).json({ error: 'User with this mobile number already exists. Please search and select them.' });
+        }
+
+        if (existingEmail) {
+            return res.status(409).json({ error: 'User with this email already exists.' });
+        }
+
+        await persistAndSendOtp(mobile, 'manager_create');
+        res.status(200).json({ message: 'OTP sent successfully', expiry: OTP_EXPIRY_MINS });
+    } catch (error: any) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: error.issues[0]?.message || 'Invalid user details' });
+        }
+        console.error('[Manager] Create user send OTP error:', error);
+        res.status(500).json({ error: error.message || 'Failed to send OTP' });
+    }
+});
+
+router.post('/users/create/verify', ...mgr, async (req: AuthRequest, res: Response) => {
+    try {
+        const { code } = req.body as { code?: string };
+        if (!code) {
+            return res.status(400).json({ error: 'OTP code is required' });
+        }
+
+        const parsed = managerUserCreateSchema.parse({
+            ...req.body,
+            age: Number(req.body?.age)
+        });
+        const { mobile, name, age, gender, email } = parsed;
+
+        const otpRecord = await prisma.oTP.findUnique({ where: { identifier: mobile } });
+        if (!otpRecord || new Date() > otpRecord.expiresAt || otpRecord.code !== code) {
+            return res.status(400).json({ error: 'Invalid or expired OTP' });
+        }
+
+        const [existingUser, existingEmail] = await Promise.all([
+            prisma.user.findUnique({ where: { mobile } }),
+            email ? prisma.user.findUnique({ where: { email } }) : Promise.resolve(null)
+        ]);
+
+        if (existingUser) {
+            return res.status(409).json({ error: 'User with this mobile number already exists. Please search and select them.' });
+        }
+
+        if (existingEmail) {
+            return res.status(409).json({ error: 'User with this email already exists.' });
+        }
+
+        const ipAddress = getClientIP(req);
+        const createdUser = await prisma.$transaction(async (tx) => {
+            const user = await tx.user.create({
+                data: {
+                    mobile,
+                    name,
+                    age,
+                    gender,
+                    email: email || null,
+                    isVerified: true,
+                    role: 'USER',
+                    status: 'ACTIVE',
+                    referralCode: generateReferralCode(name)
+                }
+            });
+
+            await tx.wallet.create({ data: { userId: user.id } });
+            await tx.oTP.delete({ where: { identifier: mobile } });
+            await tx.adminAuditLog.create({
+                data: {
+                    adminId: req.adminId!,
+                    adminName: req.adminName || 'Manager',
+                    action: 'USER_CREATED_BY_MANAGER',
+                    entity: 'User',
+                    targetId: user.id,
+                    newValue: {
+                        name: user.name,
+                        mobile: user.mobile,
+                        email: user.email,
+                        role: user.role
+                    },
+                    ipAddress,
+                    isDestructive: false
+                }
+            });
+
+            return user;
+        });
+
+        res.status(201).json({
+            message: 'User created successfully',
+            user: {
+                id: createdUser.id,
+                name: createdUser.name,
+                mobile: createdUser.mobile,
+                email: createdUser.email
+            }
+        });
+    } catch (error: any) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: error.issues[0]?.message || 'Invalid user details' });
+        }
+        console.error('[Manager] Create user verify error:', error);
+        res.status(500).json({ error: error.message || 'Failed to create user' });
     }
 });
 
@@ -458,8 +594,6 @@ router.put('/users/:userId/patients/:id', ...mgr, async (req: AuthRequest, res: 
 // ============================================
 // C. Address CRUD (for a customer, performed by manager)
 // ============================================
-
-import { z } from 'zod';
 
 const addressSchema = z.object({
     line1:   z.string().min(3),

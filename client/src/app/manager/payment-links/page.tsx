@@ -18,6 +18,15 @@ interface UserResult {
     mobile: string;
 }
 
+interface CreateUserForm {
+    mobile: string;
+    name: string;
+    age: string;
+    gender: 'Male' | 'Female' | 'Other';
+    email: string;
+    otp: string;
+}
+
 interface Patient {
     id: string;
     name: string;
@@ -109,6 +118,17 @@ function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<UserResult[]>([]);
     const [loading, setLoading] = useState(false);
+    const [mode, setMode] = useState<'search' | 'create' | 'otp'>('search');
+    const [submitting, setSubmitting] = useState(false);
+    const [resendTimer, setResendTimer] = useState(0);
+    const [form, setForm] = useState<CreateUserForm>({
+        mobile: '',
+        name: '',
+        age: '',
+        gender: 'Male',
+        email: '',
+        otp: '',
+    });
 
     const search = useCallback(async () => {
         if (query.length < 3) return;
@@ -120,41 +140,268 @@ function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
         finally { setLoading(false); }
     }, [query]);
 
+    useEffect(() => {
+        if (resendTimer <= 0) return;
+        const timer = window.setInterval(() => {
+            setResendTimer(prev => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+        return () => window.clearInterval(timer);
+    }, [resendTimer]);
+
+    const isValidMobile = /^\d{10}$/.test(query);
+
+    const openCreateFlow = () => {
+        setMode('create');
+        setForm({
+            mobile: query,
+            name: '',
+            age: '',
+            gender: 'Male',
+            email: '',
+            otp: '',
+        });
+    };
+
+    const sendOtp = async () => {
+        if (!/^\d{10}$/.test(form.mobile)) {
+            toast.error('Enter a valid 10-digit mobile number');
+            return;
+        }
+        if (!form.name.trim()) {
+            toast.error('Name is required');
+            return;
+        }
+        if (!form.age || Number(form.age) <= 0) {
+            toast.error('Age is required');
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            await api.post('/manager/users/create/send-otp', {
+                mobile: form.mobile,
+                name: form.name.trim(),
+                age: Number(form.age),
+                gender: form.gender,
+                email: form.email.trim() || undefined,
+            });
+            setMode('otp');
+            setResendTimer(60);
+            toast.success('OTP sent to customer');
+        } catch (e: any) {
+            toast.error(e?.response?.data?.error || 'Failed to send OTP');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const verifyOtp = async () => {
+        if (!form.otp.trim()) {
+            toast.error('Enter the OTP from the customer');
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            const res = await api.post('/manager/users/create/verify', {
+                mobile: form.mobile,
+                name: form.name.trim(),
+                age: Number(form.age),
+                gender: form.gender,
+                email: form.email.trim() || undefined,
+                code: form.otp.trim(),
+            });
+            toast.success('User created successfully');
+            onNext(res.data.user);
+        } catch (e: any) {
+            toast.error(e?.response?.data?.error || 'Failed to verify OTP');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const resendOtp = async () => {
+        if (resendTimer > 0) return;
+        setSubmitting(true);
+        try {
+            await api.post('/manager/users/create/send-otp', {
+                mobile: form.mobile,
+                name: form.name.trim(),
+                age: Number(form.age),
+                gender: form.gender,
+                email: form.email.trim() || undefined,
+            });
+            setResendTimer(60);
+            toast.success('OTP resent');
+        } catch (e: any) {
+            toast.error(e?.response?.data?.error || 'Failed to resend OTP');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     return (
         <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-800">Search Customer</h2>
-            <div className="flex gap-2">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                        value={query}
-                        onChange={e => setQuery(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && search()}
-                        placeholder="Search by mobile number…"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-300 outline-none"
-                    />
-                </div>
-                <button onClick={search} disabled={loading}
-                    className="px-4 py-2.5 rounded-lg text-white text-sm font-medium bg-[#4b2192] hover:bg-purple-900 disabled:opacity-60 flex items-center gap-2">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
-                </button>
-            </div>
-            {results.length > 0 && (
-                <div className="divide-y border border-gray-200 rounded-lg overflow-hidden">
-                    {results.map(u => (
-                        <button key={u.id} onClick={() => onNext(u)}
-                            className="w-full text-left px-4 py-3 hover:bg-purple-50 transition-colors flex items-center justify-between">
-                            <div>
-                                <p className="font-medium text-gray-900">{u.name || 'Unnamed'}</p>
-                                <p className="text-sm text-gray-500">{u.mobile}</p>
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-gray-400" />
+            {mode === 'search' && (
+                <>
+                    <h2 className="text-lg font-semibold text-gray-800">Search Customer</h2>
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <input
+                                value={query}
+                                onChange={e => setQuery(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && search()}
+                                placeholder="Search by mobile number…"
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-300 outline-none"
+                            />
+                        </div>
+                        <button onClick={search} disabled={loading}
+                            className="px-4 py-2.5 rounded-lg text-white text-sm font-medium bg-[#4b2192] hover:bg-purple-900 disabled:opacity-60 flex items-center gap-2">
+                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
                         </button>
-                    ))}
+                    </div>
+
+                    {results.length > 0 && (
+                        <div className="divide-y border border-gray-200 rounded-lg overflow-hidden">
+                            {results.map(u => (
+                                <button key={u.id} onClick={() => onNext(u)}
+                                    className="w-full text-left px-4 py-3 hover:bg-purple-50 transition-colors flex items-center justify-between">
+                                    <div>
+                                        <p className="font-medium text-gray-900">{u.name || 'Unnamed'}</p>
+                                        <p className="text-sm text-gray-500">{u.mobile}</p>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {results.length === 0 && query.length >= 3 && !loading && (
+                        <p className="text-sm text-gray-500 text-center py-2">No customers found for this number.</p>
+                    )}
+
+                    {isValidMobile && (
+                        <button
+                            onClick={openCreateFlow}
+                            className="w-full rounded-xl border border-dashed border-purple-300 bg-purple-50 px-4 py-4 text-left hover:border-purple-400 hover:bg-purple-100/60 transition-colors"
+                        >
+                            <p className="text-sm font-semibold text-purple-900">Create new user</p>
+                            <p className="text-xs text-purple-700 mt-1">Use {query} and verify the customer with OTP on call.</p>
+                        </button>
+                    )}
+                </>
+            )}
+
+            {mode === 'create' && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-lg font-semibold text-gray-800">Create New User</h2>
+                            <p className="text-sm text-gray-500 mt-1">Capture the customer details before sending OTP.</p>
+                        </div>
+                        <button
+                            onClick={() => setMode('search')}
+                            className="btn-ghost text-xs"
+                        >
+                            Back
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input
+                            value={form.mobile}
+                            onChange={e => setForm(prev => ({ ...prev, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                            placeholder="Mobile number"
+                            className="input-sm"
+                        />
+                        <input
+                            value={form.name}
+                            onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
+                            placeholder="Full name"
+                            className="input-sm"
+                        />
+                        <input
+                            type="number"
+                            value={form.age}
+                            onChange={e => setForm(prev => ({ ...prev, age: e.target.value }))}
+                            placeholder="Age"
+                            className="input-sm"
+                        />
+                        <select
+                            value={form.gender}
+                            onChange={e => setForm(prev => ({ ...prev, gender: e.target.value as CreateUserForm['gender'] }))}
+                            className="input-sm"
+                        >
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <input
+                            value={form.email}
+                            onChange={e => setForm(prev => ({ ...prev, email: e.target.value }))}
+                            placeholder="Email (optional)"
+                            className="input-sm sm:col-span-2"
+                        />
+                    </div>
+
+                    <button
+                        onClick={sendOtp}
+                        disabled={submitting}
+                        className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-60"
+                    >
+                        {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Smartphone className="w-4 h-4" />}
+                        Send OTP
+                    </button>
                 </div>
             )}
-            {results.length === 0 && query.length >= 3 && !loading && (
-                <p className="text-sm text-gray-500 text-center py-4">No customers found for this number.</p>
+
+            {mode === 'otp' && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-lg font-semibold text-gray-800">Verify Customer OTP</h2>
+                            <p className="text-sm text-gray-500 mt-1">Ask the customer for the OTP received on {form.mobile}.</p>
+                        </div>
+                        <button
+                            onClick={() => setMode('create')}
+                            className="btn-ghost text-xs"
+                        >
+                            Edit details
+                        </button>
+                    </div>
+
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm">
+                        <p className="font-medium text-gray-900">{form.name}</p>
+                        <p className="text-gray-500 mt-1">{form.mobile} · {form.age}y · {form.gender}</p>
+                        {form.email && <p className="text-gray-500 mt-1">{form.email}</p>}
+                    </div>
+
+                    <input
+                        value={form.otp}
+                        onChange={e => setForm(prev => ({ ...prev, otp: e.target.value.replace(/\D/g, '').slice(0, 6) }))}
+                        placeholder="Enter 6-digit OTP"
+                        className="input-sm"
+                    />
+
+                    <div className="flex items-center justify-between gap-3">
+                        <button
+                            onClick={resendOtp}
+                            disabled={submitting || resendTimer > 0}
+                            className="btn-ghost text-xs disabled:opacity-50"
+                        >
+                            {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
+                        </button>
+                        <button
+                            onClick={verifyOtp}
+                            disabled={submitting}
+                            className="btn-primary flex items-center justify-center gap-2 disabled:opacity-60"
+                        >
+                            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                            Verify & Create User
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );
