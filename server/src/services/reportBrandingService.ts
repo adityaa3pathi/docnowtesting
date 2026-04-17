@@ -6,7 +6,7 @@ const HEADER_BAND_HEIGHT = 56;
 const HEADER_BAND_RATIO = 0.65;
 const FOOTER_BAND_HEIGHT = 24;
 
-const DOCNOW_BAND = rgb(157 / 255, 76 / 255, 231 / 255);
+const DOCNOW_BAND = rgb(95 / 255, 27 / 255, 147 / 255);
 
 let cachedLogoBytes: Buffer | null = null;
 

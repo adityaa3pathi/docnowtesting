@@ -33,6 +33,8 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
     const canTrack = !isAwaitingPayment && !!activePartnerBookingId && !['Superseded', 'Refunded', 'Cancelled'].includes(statusInfo.label);
     const canReschedule = ['Order Booked', 'Sample Collector Assigned', 'Fresh Sample Needed', 'Rescheduled'].includes(statusInfo.label);
     const canCancel = !['Cancelled', 'Sample Collected', 'Sample Received at Lab', 'Report Ready', 'Completed', 'Superseded', 'Refunded'].includes(statusInfo.label);
+    const showPhleboContact = ['Sample Collector Assigned', 'Sample Collected'].includes(statusInfo.label);
+    const canContactPhlebo = statusInfo.label === 'Sample Collector Assigned';
 
     const handleFetchPhlebo = async () => {
         setPhleboLoading(true);
@@ -220,31 +222,58 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                     )}
 
                     {/* Phlebo Contact Action */}
-                    {statusInfo.label === 'Sample Collector Assigned' && (
+                    {showPhleboContact && (
                         <div className="w-full sm:flex-1 sm:flex sm:justify-end mt-1 sm:mt-0">
                             {phleboData ? (
-                                <div className="bg-blue-50 p-2 px-4 rounded-lg border border-blue-100 flex items-center gap-4">
+                                <div className={`p-2 px-4 rounded-lg border flex items-center gap-4 ${
+                                    canContactPhlebo
+                                        ? 'bg-blue-50 border-blue-100'
+                                        : 'bg-slate-50 border-slate-200'
+                                }`}>
                                     <div>
-                                        <div className="text-[10px] text-blue-500 uppercase font-bold">Assigned Phlebo</div>
-                                        <div className="text-sm font-bold text-blue-900">{phleboData.phlebo_name}</div>
+                                        <div className={`text-[10px] uppercase font-bold ${
+                                            canContactPhlebo ? 'text-blue-500' : 'text-slate-500'
+                                        }`}>
+                                            Assigned Phlebo
+                                        </div>
+                                        <div className={`text-sm font-bold ${
+                                            canContactPhlebo ? 'text-blue-900' : 'text-slate-700'
+                                        }`}>
+                                            {phleboData.phlebo_name}
+                                        </div>
                                     </div>
-                                    <a
-                                        href={`tel:${phleboData.masked_number}`}
-                                        className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors"
-                                        title={`Call ${phleboData.phlebo_name}`}
-                                    >
-                                        <Phone className="w-4 h-4" />
-                                    </a>
+                                    {canContactPhlebo ? (
+                                        <a
+                                            href={`tel:${phleboData.masked_number}`}
+                                            className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors"
+                                            title={`Call ${phleboData.phlebo_name}`}
+                                        >
+                                            <Phone className="w-4 h-4" />
+                                        </a>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            disabled
+                                            className="bg-slate-200 text-slate-500 p-2 rounded-full cursor-not-allowed"
+                                            title="Phlebotomist contact is unavailable after sample collection"
+                                        >
+                                            <Phone className="w-4 h-4" />
+                                        </button>
+                                    )}
                                 </div>
                             ) : (
                                 <Button
                                     variant="outline"
                                     onClick={handleFetchPhlebo}
-                                    disabled={phleboLoading}
-                                    className="gap-2 bg-blue-100 text-blue-700 hover:bg-blue-200 border-none"
+                                    disabled={phleboLoading || !canContactPhlebo}
+                                    className={`gap-2 border-none ${
+                                        canContactPhlebo
+                                            ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                            : 'bg-slate-100 text-slate-500 hover:bg-slate-100 cursor-not-allowed'
+                                    }`}
                                 >
                                     {phleboLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Phone className="w-4 h-4" />}
-                                    Contact Phlebotomist
+                                    {canContactPhlebo ? 'Contact Phlebotomist' : 'Phlebotomist Contact Closed'}
                                 </Button>
                             )}
                         </div>
