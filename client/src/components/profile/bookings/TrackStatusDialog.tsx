@@ -97,6 +97,9 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
         ? getApiUrl(`/reports/${reportAction.report.id}/download`)
         : null;
     const lineage = statusData?.lineage;
+    const bookingStatusCode = statusData?.data?.booking_status;
+    const showPhleboContact = bookingStatusCode === 'BS005' || bookingStatusCode === 'BS007';
+    const canContactPhlebo = bookingStatusCode === 'BS005';
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -273,37 +276,64 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
                                     </div>
 
                                     {/* Phlebotomist Contact (if assigned) */}
-                                    {statusData.data?.booking_status === 'BS005' && (
-                                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-center justify-between gap-4">
+                                    {showPhleboContact && (
+                                        <div className={`p-4 rounded-xl border flex items-center justify-between gap-4 ${
+                                            canContactPhlebo
+                                                ? 'bg-blue-50 border-blue-100'
+                                                : 'bg-slate-50 border-slate-200'
+                                        }`}>
                                             <div className="flex items-center gap-3">
-                                                <div className="bg-blue-600 p-2 rounded-full text-white">
+                                                <div className={`p-2 rounded-full text-white ${
+                                                    canContactPhlebo ? 'bg-blue-600' : 'bg-slate-400'
+                                                }`}>
                                                     <Phone className="w-4 h-4" />
                                                 </div>
                                                 <div>
-                                                    <div className="text-[10px] text-blue-500 uppercase font-bold tracking-wider">Assigned Phlebotomist</div>
-                                                    <div className="text-sm font-bold text-blue-900">
+                                                    <div className={`text-[10px] uppercase font-bold tracking-wider ${
+                                                        canContactPhlebo ? 'text-blue-500' : 'text-slate-500'
+                                                    }`}>
+                                                        Assigned Phlebotomist
+                                                    </div>
+                                                    <div className={`text-sm font-bold ${
+                                                        canContactPhlebo ? 'text-blue-900' : 'text-slate-700'
+                                                    }`}>
                                                         {phleboData?.phlebo_name || 'Collector Assigned'}
                                                     </div>
                                                 </div>
                                             </div>
                                             <div>
                                                 {phleboData ? (
-                                                    <a
-                                                        href={`tel:${phleboData.masked_number}`}
-                                                        className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors"
-                                                    >
-                                                        <Phone className="w-4 h-4" />
-                                                        {phleboData.masked_number}
-                                                    </a>
+                                                    canContactPhlebo ? (
+                                                        <a
+                                                            href={`tel:${phleboData.masked_number}`}
+                                                            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors"
+                                                        >
+                                                            <Phone className="w-4 h-4" />
+                                                            {phleboData.masked_number}
+                                                        </a>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            disabled
+                                                            className="inline-flex items-center gap-2 bg-slate-200 text-slate-500 px-4 py-2 rounded-lg text-sm font-bold cursor-not-allowed"
+                                                        >
+                                                            <Phone className="w-4 h-4" />
+                                                            Contact Closed
+                                                        </button>
+                                                    )
                                                 ) : (
                                                     <Button
                                                         variant="outline"
                                                         onClick={handleFetchPhlebo}
-                                                        disabled={phleboLoading}
-                                                        className="gap-2 bg-blue-100 text-blue-700 hover:bg-blue-200 border-none text-xs font-bold"
+                                                        disabled={phleboLoading || !canContactPhlebo}
+                                                        className={`gap-2 border-none text-xs font-bold ${
+                                                            canContactPhlebo
+                                                                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                                                : 'bg-slate-100 text-slate-500 hover:bg-slate-100 cursor-not-allowed'
+                                                        }`}
                                                     >
                                                         {phleboLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Phone className="w-3 h-3" />}
-                                                        Get Contact Number
+                                                        {canContactPhlebo ? 'Get Contact Number' : 'Contact Closed'}
                                                     </Button>
                                                 )}
                                             </div>

@@ -1,11 +1,10 @@
 import express, { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { Redis } from '@upstash/redis';
-import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db';
 import { generateReferralCode, awardSignupBonus } from '../utils/referralService';
-import { sendOtpViaWhatsApp } from '../services/wappieWhatsApp';
+import { OTP_EXPIRY_MINS, isValidMobile, persistAndSendOtp } from '../services/otp';
 
 const router = express.Router();
 
@@ -18,32 +17,8 @@ const redis = process.env.UPSTASH_REDIS_REST_URL
     : null;
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
-const OTP_EXPIRY_MINS = 10;
 const MAX_OTP_ATTEMPTS = 5;
 const RESEND_COOLDOWN_SECONDS = 60;
-
-// Helper: Generate OTP
-const generateOTP = () => crypto.randomInt(100000, 999999).toString();
-const isValidMobile = (mobile: string) => /^\d{10}$/.test(mobile);
-
-async function persistAndSendOtp(mobile: string, flow: 'signup' | 'login' | 'forgot_password') {
-    const code = generateOTP();
-    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINS * 60 * 1000);
-
-    await prisma.oTP.upsert({
-        where: { identifier: mobile },
-        update: { code, expiresAt, attempts: 0, updatedAt: new Date() },
-        create: { identifier: mobile, code, expiresAt, attempts: 0 }
-    });
-
-    try {
-        const result = await sendOtpViaWhatsApp(mobile, code);
-        console.log(`[AUTH-${flow.toUpperCase()}] OTP accepted by Wappie for ${mobile.slice(-4)} | messageId=${result.id} | status=${result.status}`);
-    } catch (error: any) {
-        console.error(`[AUTH-${flow.toUpperCase()}] WhatsApp OTP send failed for ${mobile.slice(-4)}:`, error.message);
-        throw new Error('We could not send your verification code right now. Please try again.');
-    }
-}
 
 // --- SIGNUP FLOW ---
 
