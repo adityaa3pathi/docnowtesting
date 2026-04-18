@@ -86,6 +86,19 @@ const STEPS = [
     { label: 'Confirm', icon: CreditCard },
 ];
 
+const PATIENT_RELATIONS = [
+    'Spouse',
+    'Child',
+    'Parent',
+    'Grand parent',
+    'Sibling',
+    'Friend',
+    'Native',
+    'Neighbour',
+    'Colleague',
+    'Others',
+] as const;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function StepIndicator({ current }: { current: number }) {
@@ -426,6 +439,7 @@ function StepPatientsAddress({
 
     const [pForm, setPForm] = useState({ name: '', relation: '', age: '', gender: 'Male' });
     const [aForm, setAForm] = useState({ line1: '', city: '', pincode: '', lat: '', long: '' });
+    const canSavePatient = Boolean(pForm.name.trim() && pForm.relation && pForm.age);
 
     const refresh = useCallback(async () => {
         const [pi, ai] = await Promise.all([
@@ -493,8 +507,16 @@ function StepPatientsAddress({
                         <div className="grid grid-cols-2 gap-3">
                             <input value={pForm.name} onChange={e => setPForm(f => ({ ...f, name: e.target.value }))}
                                 placeholder="Full name" className="input-sm" />
-                            <input value={pForm.relation} onChange={e => setPForm(f => ({ ...f, relation: e.target.value }))}
-                                placeholder="Relation (e.g. Mother)" className="input-sm" />
+                            <select
+                                value={pForm.relation}
+                                onChange={e => setPForm(f => ({ ...f, relation: e.target.value }))}
+                                className="input-sm"
+                            >
+                                <option value="">Select relation</option>
+                                {PATIENT_RELATIONS.map(relation => (
+                                    <option key={relation} value={relation}>{relation}</option>
+                                ))}
+                            </select>
                             <input type="number" value={pForm.age} onChange={e => setPForm(f => ({ ...f, age: e.target.value }))}
                                 placeholder="Age" className="input-sm" />
                             <select value={pForm.gender} onChange={e => setPForm(f => ({ ...f, gender: e.target.value }))} className="input-sm">
@@ -503,7 +525,7 @@ function StepPatientsAddress({
                         </div>
                         <div className="flex gap-2 justify-end">
                             <button onClick={() => setShowAddPatient(false)} className="btn-ghost text-xs">Cancel</button>
-                            <button onClick={addPatient} disabled={saving} className="btn-primary text-xs">
+                            <button onClick={addPatient} disabled={saving || !canSavePatient} className="btn-primary text-xs">
                                 {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save'}
                             </button>
                         </div>
@@ -969,6 +991,7 @@ const STATUS_COLORS: Record<string, string> = {
     PAYMENT_RECEIVED: 'bg-yellow-100 text-yellow-800',
     PAYMENT_CONFIRMED: 'bg-purple-100 text-purple-700',
     CONFIRMED: 'bg-green-100 text-green-700',
+    CANCELLED: 'bg-red-100 text-red-700',
     BOOKING_FAILED: 'bg-red-100 text-red-700',
     REFUNDED: 'bg-orange-100 text-orange-700',
 };
