@@ -17,14 +17,34 @@ import { exportAdminData } from '../controllers/admin/export';
 import { OTP_EXPIRY_MINS, isValidMobile, persistAndSendOtp } from '../services/otp';
 import { BookingService } from '../services/booking.service';
 import { validationSchemas } from '../utils/helpers';
+import { sendInvoiceViaWhatsApp } from '../services/invoiceNotifications';
+import { getInvoiceLinkExpiryHours } from '../services/invoiceAccess';
+import { getReportLinkExpiryHours } from '../services/reportAccess';
+import { sendSpecificReportViaWhatsApp } from '../services/reportNotifications';
 
 const router = Router();
 const healthians = HealthiansAdapter.getInstance();
 const NON_RESCHEDULABLE_STATUSES = ['Cancelled', 'Sample Collected', 'Report Generated', 'Completed', 'Rescheduled'];
 const MANAGER_GLOBAL_CANCELABLE_STATUSES = new Set(['CREATED', 'SENT', 'PAYMENT_RECEIVED', 'CONFIRMED']);
+const INVOICE_ELIGIBLE_BOOKING_STATUSES = new Set(['Order Booked', 'Sample Collector Assigned', 'Sample Collected', 'Report Generated', 'Completed']);
+const INVOICE_ELIGIBLE_PARTNER_STATUSES = new Set(['BS002', 'BS005', 'BS007', 'BS008', 'BS015']);
 const managerCancelSchema = z.object({
     remarks: z.string().trim().min(5, 'Reason for cancellation must be at least 5 characters long'),
 });
+
+function canSendInvoiceForBooking(booking: {
+    paymentStatus: string;
+    status: string;
+    partnerBookingId?: string | null;
+    partnerStatus?: string | null;
+    managerOrder?: { status: string } | null;
+}) {
+    if (booking.paymentStatus !== 'CONFIRMED') return false;
+    if (!booking.partnerBookingId) return false;
+    if (booking.managerOrder?.status === 'CONFIRMED') return true;
+    if (booking.partnerStatus && INVOICE_ELIGIBLE_PARTNER_STATUSES.has(booking.partnerStatus)) return true;
+    return INVOICE_ELIGIBLE_BOOKING_STATUSES.has(booking.status);
+}
 
 // All manager routes require auth + MANAGER/SUPER_ADMIN role
 const mgr = [authMiddleware, requireManager] as const;
@@ -982,11 +1002,25 @@ router.get('/bookings', ...mgr, async (req: AuthRequest, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 20;
         const search = (req.query.search as string) || '';
         const status = req.query.status as string;
+        const dateFrom = req.query.dateFrom as string;
+        const dateTo = req.query.dateTo as string;
 
         const where: any = {};
 
         if (status && status !== 'All') {
             where.status = status;
+        }
+
+        if (dateFrom || dateTo) {
+            where.createdAt = {};
+            if (dateFrom) {
+                where.createdAt.gte = new Date(`${dateFrom}T00:00:00.000Z`);
+            }
+            if (dateTo) {
+                const end = new Date(`${dateTo}T00:00:00.000Z`);
+                end.setUTCDate(end.getUTCDate() + 1);
+                where.createdAt.lt = end;
+            }
         }
 
         if (search) {
@@ -1034,6 +1068,40 @@ router.get('/bookings', ...mgr, async (req: AuthRequest, res: Response) => {
             prisma.booking.count({ where }),
         ]);
 
+        const orderIds = orders.map((order) => order.id);
+        const invoiceAuditLogs = orderIds.length > 0
+            ? await prisma.adminAuditLog.findMany({
+                where: {
+                    action: 'MANAGER_INVOICE_SENT',
+                    entity: 'Booking',
+                    targetId: { in: orderIds },
+                },
+                orderBy: { createdAt: 'desc' },
+            })
+            : [];
+        const invoiceAuditByBookingId = new Map<string, Date>();
+        invoiceAuditLogs.forEach((log) => {
+            if (log.targetId && !invoiceAuditByBookingId.has(log.targetId)) {
+                invoiceAuditByBookingId.set(log.targetId, log.createdAt);
+            }
+        });
+        const reportAuditLogs = orderIds.length > 0
+            ? await prisma.adminAuditLog.findMany({
+                where: {
+                    action: 'MANAGER_REPORT_SENT',
+                    entity: 'Booking',
+                    targetId: { in: orderIds },
+                },
+                orderBy: { createdAt: 'desc' },
+            })
+            : [];
+        const reportAuditByBookingId = new Map<string, Date>();
+        reportAuditLogs.forEach((log) => {
+            if (log.targetId && !reportAuditByBookingId.has(log.targetId)) {
+                reportAuditByBookingId.set(log.targetId, log.createdAt);
+            }
+        });
+
         res.json({
             orders: orders.map((order) => {
                 const latestReport = order.reports[0] || null;
@@ -1041,6 +1109,10 @@ router.get('/bookings', ...mgr, async (req: AuthRequest, res: Response) => {
                     ? MANAGER_GLOBAL_CANCELABLE_STATUSES.has(order.managerOrder.status)
                     : order.status !== 'Cancelled' && order.paymentStatus !== 'CANCELLED' && order.paymentStatus !== 'REFUNDED';
                 const canReschedule = Boolean(order.partnerBookingId) && !NON_RESCHEDULABLE_STATUSES.includes(order.status);
+                const canSendInvoice = canSendInvoiceForBooking(order);
+                const invoiceSentAt = invoiceAuditByBookingId.get(order.id) || null;
+                const canSendReport = Boolean(latestReport?.id);
+                const reportSentAt = reportAuditByBookingId.get(order.id) || null;
 
                 return {
                     id: order.id,
@@ -1062,6 +1134,10 @@ router.get('/bookings', ...mgr, async (req: AuthRequest, res: Response) => {
                     latestReportStatus: latestReport?.fetchStatus || null,
                     canCancel,
                     canReschedule,
+                    canSendInvoice,
+                    invoiceSentAt,
+                    canSendReport,
+                    reportSentAt,
                 };
             }),
             pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
@@ -1103,6 +1179,156 @@ router.get('/bookings/:id/reports', ...mgr, async (req: AuthRequest, res: Respon
     } catch (error) {
         console.error('[Manager] Error fetching booking reports:', error);
         res.status(500).json({ error: 'Failed to fetch reports' });
+    }
+});
+
+router.post('/bookings/:id/send-invoice', ...mgr, async (req: AuthRequest, res: Response) => {
+    try {
+        const bookingId = req.params.id as string;
+
+        const booking = await prisma.booking.findUnique({
+            where: { id: bookingId },
+            include: {
+                user: {
+                    select: { id: true, name: true, mobile: true }
+                },
+                managerOrder: {
+                    select: { status: true }
+                }
+            }
+        });
+
+        if (!booking) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+
+        if (!canSendInvoiceForBooking(booking)) {
+            return res.status(400).json({ error: 'Invoice can be sent only after payment is confirmed and the booking is successfully placed.' });
+        }
+
+        const invoiceLabel = booking.partnerBookingId || booking.id.slice(0, 8).toUpperCase();
+        const delivery = await sendInvoiceViaWhatsApp({
+            bookingId: booking.id,
+            mobile: booking.user.mobile,
+            customerName: booking.user.name,
+            invoiceLabel,
+        });
+
+        await prisma.adminAuditLog.create({
+            data: {
+                adminId: req.adminId!,
+                adminName: req.adminName || 'Manager',
+                action: 'MANAGER_INVOICE_SENT',
+                entity: 'Booking',
+                targetId: booking.id,
+                oldValue: null,
+                newValue: {
+                    mobile: booking.user.mobile,
+                    invoiceLabel,
+                    providerMessageId: delivery.id,
+                    providerStatus: delivery.status,
+                    invoiceLink: delivery.invoiceLink,
+                    linkExpiryHours: getInvoiceLinkExpiryHours(),
+                },
+                ipAddress: getClientIP(req),
+                isDestructive: false,
+            }
+        });
+
+        res.json({
+            success: true,
+            message: 'Invoice sent successfully',
+            mobile: booking.user.mobile,
+            sentAt: new Date().toISOString(),
+        });
+    } catch (error: any) {
+        console.error('[Manager] Send invoice error:', error);
+        res.status(500).json({ error: error.message || 'Failed to send invoice' });
+    }
+});
+
+router.post('/bookings/:id/send-report', ...mgr, async (req: AuthRequest, res: Response) => {
+    try {
+        const bookingId = req.params.id as string;
+
+        const booking = await prisma.booking.findUnique({
+            where: { id: bookingId },
+            include: {
+                user: {
+                    select: { id: true, name: true, mobile: true }
+                },
+                items: {
+                    select: { testName: true }
+                },
+                reports: {
+                    where: {
+                        OR: [
+                            { fetchStatus: 'STORED' },
+                            { storageKey: { not: null } },
+                            { sourceUrl: { not: null } },
+                        ],
+                    },
+                    orderBy: { generatedAt: 'desc' },
+                    take: 1,
+                }
+            }
+        });
+
+        if (!booking) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+
+        const report = booking.reports[0];
+        if (!report) {
+            return res.status(400).json({ error: 'No downloadable report is available for this booking yet.' });
+        }
+
+        const itemNames = booking.items.map((item) => item.testName).filter(Boolean);
+        const reportLabel =
+            itemNames.length === 0
+                ? `Booking ${booking.id.slice(0, 8)} report`
+                : itemNames.length === 1
+                    ? itemNames[0]
+                    : `${itemNames[0]} + ${itemNames.length - 1} more test${itemNames.length - 1 > 1 ? 's' : ''}`;
+
+        const delivery = await sendSpecificReportViaWhatsApp({
+            mobile: booking.user.mobile,
+            customerName: booking.user.name,
+            reportLabel,
+            reportId: report.id,
+        });
+
+        await prisma.adminAuditLog.create({
+            data: {
+                adminId: req.adminId!,
+                adminName: req.adminName || 'Manager',
+                action: 'MANAGER_REPORT_SENT',
+                entity: 'Booking',
+                targetId: booking.id,
+                oldValue: null,
+                newValue: {
+                    mobile: booking.user.mobile,
+                    reportId: report.id,
+                    reportLabel,
+                    providerMessageId: delivery.id,
+                    providerStatus: delivery.status,
+                    reportLink: delivery.reportLink,
+                    linkExpiryHours: getReportLinkExpiryHours(),
+                },
+                ipAddress: getClientIP(req),
+                isDestructive: false,
+            }
+        });
+
+        res.json({
+            success: true,
+            message: 'Report sent successfully',
+            mobile: booking.user.mobile,
+            sentAt: new Date().toISOString(),
+        });
+    } catch (error: any) {
+        console.error('[Manager] Send report error:', error);
+        res.status(500).json({ error: error.message || 'Failed to send report' });
     }
 });
 
@@ -1371,6 +1597,19 @@ router.get('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
                         status: true,
                         paymentStatus: true,
                         partnerBookingId: true,
+                        partnerStatus: true,
+                        reports: {
+                            where: {
+                                OR: [
+                                    { fetchStatus: 'STORED' },
+                                    { storageKey: { not: null } },
+                                    { sourceUrl: { not: null } },
+                                ],
+                            },
+                            orderBy: { generatedAt: 'desc' },
+                            take: 1,
+                            select: { id: true }
+                        },
                         items: {
                             select: { testName: true }
                         }
@@ -1382,7 +1621,53 @@ router.get('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
             skip: (parseInt(page as string) - 1) * parseInt(limit as string),
             take: parseInt(limit as string)
         });
-        res.json(orders);
+        const bookingIds = orders.map((order) => order.bookingId);
+        const invoiceAuditLogs = bookingIds.length > 0
+            ? await prisma.adminAuditLog.findMany({
+                where: {
+                    action: 'MANAGER_INVOICE_SENT',
+                    entity: 'Booking',
+                    targetId: { in: bookingIds },
+                },
+                orderBy: { createdAt: 'desc' },
+            })
+            : [];
+        const invoiceAuditByBookingId = new Map<string, string>();
+        invoiceAuditLogs.forEach((log) => {
+            if (log.targetId && !invoiceAuditByBookingId.has(log.targetId)) {
+                invoiceAuditByBookingId.set(log.targetId, log.createdAt.toISOString());
+            }
+        });
+        const reportAuditLogs = bookingIds.length > 0
+            ? await prisma.adminAuditLog.findMany({
+                where: {
+                    action: 'MANAGER_REPORT_SENT',
+                    entity: 'Booking',
+                    targetId: { in: bookingIds },
+                },
+                orderBy: { createdAt: 'desc' },
+            })
+            : [];
+        const reportAuditByBookingId = new Map<string, string>();
+        reportAuditLogs.forEach((log) => {
+            if (log.targetId && !reportAuditByBookingId.has(log.targetId)) {
+                reportAuditByBookingId.set(log.targetId, log.createdAt.toISOString());
+            }
+        });
+
+        res.json(orders.map((order) => ({
+            ...order,
+            canSendInvoice: canSendInvoiceForBooking({
+                paymentStatus: order.booking.paymentStatus,
+                status: order.booking.status,
+                partnerBookingId: order.booking.partnerBookingId,
+                partnerStatus: order.booking.partnerStatus,
+                managerOrder: { status: order.status },
+            }),
+            invoiceSentAt: invoiceAuditByBookingId.get(order.bookingId) || null,
+            canSendReport: Boolean(order.booking.reports[0]?.id),
+            reportSentAt: reportAuditByBookingId.get(order.bookingId) || null,
+        })));
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

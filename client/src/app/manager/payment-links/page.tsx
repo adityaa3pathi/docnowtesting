@@ -5,7 +5,7 @@ import {
     Plus, Copy, ChevronRight, ChevronLeft, Search,
     CheckCircle, X, User, MapPin, FlaskConical, Calendar,
     CreditCard, Smartphone, Banknote, ExternalLink, Loader2,
-    AlertCircle,
+    AlertCircle, FileText,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -74,6 +74,10 @@ interface ManagerOrder {
     razorpayLinkUrl?: string;
     customer: { name: string | null; mobile: string };
     createdAt: string;
+    canSendInvoice?: boolean;
+    invoiceSentAt?: string | null;
+    canSendReport?: boolean;
+    reportSentAt?: string | null;
 }
 
 // ─── Step indicators ─────────────────────────────────────────────────────────
@@ -1000,6 +1004,8 @@ function OrderList({ refresh }: { refresh: boolean }) {
     const [orders, setOrders] = useState<ManagerOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState<string | null>(null);
+    const [invoiceSendingId, setInvoiceSendingId] = useState<string | null>(null);
+    const [reportSendingId, setReportSendingId] = useState<string | null>(null);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -1025,6 +1031,32 @@ function OrderList({ refresh }: { refresh: boolean }) {
         } catch (e: any) {
             toast.error(e?.response?.data?.error || 'Failed to generate link');
         } finally { setGenerating(null); }
+    };
+
+    const sendInvoice = async (order: ManagerOrder) => {
+        setInvoiceSendingId(order.id);
+        try {
+            const res = await api.post(`/manager/bookings/${order.bookingId}/send-invoice`);
+            toast.success(res.data.message || 'Invoice sent successfully');
+            await load();
+        } catch (e: any) {
+            toast.error(e?.response?.data?.error || 'Failed to send invoice');
+        } finally {
+            setInvoiceSendingId(null);
+        }
+    };
+
+    const sendReport = async (order: ManagerOrder) => {
+        setReportSendingId(order.id);
+        try {
+            const res = await api.post(`/manager/bookings/${order.bookingId}/send-report`);
+            toast.success(res.data.message || 'Report sent successfully');
+            await load();
+        } catch (e: any) {
+            toast.error(e?.response?.data?.error || 'Failed to send report');
+        } finally {
+            setReportSendingId(null);
+        }
     };
 
     if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-purple-500" /></div>;
@@ -1068,13 +1100,43 @@ function OrderList({ refresh }: { refresh: boolean }) {
                                 {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                             </td>
                             <td className="px-4 py-3 text-right">
-                                {['CREATED', 'SENT'].includes(order.status) && (
-                                    <button onClick={() => generateLink(order.id)} disabled={generating === order.id}
-                                        className="text-xs px-3 py-1.5 rounded-lg bg-[#4b2192] text-white hover:bg-purple-900 disabled:opacity-60 flex items-center gap-1 ml-auto">
-                                        {generating === order.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Smartphone className="w-3 h-3" />}
-                                        {order.status === 'SENT' ? 'Resend' : 'Send'} Link
-                                    </button>
-                                )}
+                                <div className="flex flex-col items-end gap-2">
+                                    {['CREATED', 'SENT'].includes(order.status) && (
+                                        <button onClick={() => generateLink(order.id)} disabled={generating === order.id}
+                                            className="text-xs px-3 py-1.5 rounded-lg bg-[#4b2192] text-white hover:bg-purple-900 disabled:opacity-60 flex items-center gap-1">
+                                            {generating === order.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Smartphone className="w-3 h-3" />}
+                                            {order.status === 'SENT' ? 'Resend' : 'Send'} Link
+                                        </button>
+                                    )}
+                                    {order.canSendInvoice && (
+                                        <button
+                                            onClick={() => sendInvoice(order)}
+                                            disabled={invoiceSendingId === order.id}
+                                            className="text-xs px-3 py-1.5 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 disabled:opacity-60 flex items-center gap-1"
+                                        >
+                                            {invoiceSendingId === order.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
+                                            {invoiceSendingId === order.id
+                                                ? 'Sending...'
+                                                : order.invoiceSentAt
+                                                    ? 'Resend Invoice'
+                                                    : 'Send Invoice'}
+                                        </button>
+                                    )}
+                                    {order.canSendReport && (
+                                        <button
+                                            onClick={() => sendReport(order)}
+                                            disabled={reportSendingId === order.id}
+                                            className="text-xs px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 disabled:opacity-60 flex items-center gap-1"
+                                        >
+                                            {reportSendingId === order.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
+                                            {reportSendingId === order.id
+                                                ? 'Sending...'
+                                                : order.reportSentAt
+                                                    ? 'Resend Report'
+                                                    : 'Send Report'}
+                                        </button>
+                                    )}
+                                </div>
                             </td>
                         </tr>
                     ))}

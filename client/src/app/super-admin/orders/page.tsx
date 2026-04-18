@@ -26,6 +26,7 @@ interface Order {
     slotTime: string;
     amount: number;
     status: string;
+    paymentStatus: string;
     user: {
         id: string;
         name: string | null;
@@ -53,6 +54,8 @@ export default function OrdersPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
 
     // View Details Modal State
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -65,12 +68,14 @@ export default function OrdersPage() {
         try {
             const token = localStorage.getItem('docnow_auth_token');
             const params = new URLSearchParams({
-                page: pagination.page.toString(),
-                limit: pagination.limit.toString(),
-                status: statusFilter,
-            });
+                    page: pagination.page.toString(),
+                    limit: pagination.limit.toString(),
+                    status: statusFilter,
+                });
 
             if (searchTerm) params.append('search', searchTerm);
+            if (dateFrom) params.append('dateFrom', dateFrom);
+            if (dateTo) params.append('dateTo', dateTo);
 
             const res = await fetch(`/api/admin/orders?${params}`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -86,7 +91,7 @@ export default function OrdersPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.limit, searchTerm, statusFilter]);
+    }, [pagination.page, pagination.limit, searchTerm, statusFilter, dateFrom, dateTo]);
 
     useEffect(() => {
         fetchOrders();
@@ -98,7 +103,7 @@ export default function OrdersPage() {
             setPagination(prev => ({ ...prev, page: 1 }));
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchTerm]);
+    }, [searchTerm, statusFilter, dateFrom, dateTo]);
 
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString('en-IN', {
@@ -126,7 +131,7 @@ export default function OrdersPage() {
                 </div>
                 <div className="flex gap-2">
                     <button
-                        onClick={() => exportCsv('orders', { search: searchTerm, status: statusFilter })}
+                        onClick={() => exportCsv('orders', { search: searchTerm, status: statusFilter, dateFrom, dateTo })}
                         disabled={exporting}
                         className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                     >
@@ -145,7 +150,7 @@ export default function OrdersPage() {
 
             {/* Filters & Search */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex flex-col md:flex-row gap-4 md:flex-wrap">
                     <div className="flex-1 relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                         <input
@@ -173,6 +178,21 @@ export default function OrdersPage() {
                             </button>
                         ))}
                     </div>
+                    <input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => setDateFrom(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        aria-label="Filter from date"
+                    />
+                    <input
+                        type="date"
+                        value={dateTo}
+                        min={dateFrom || undefined}
+                        onChange={(e) => setDateTo(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        aria-label="Filter to date"
+                    />
                 </div>
             </div>
 
@@ -189,14 +209,15 @@ export default function OrdersPage() {
                 ) : (
                     <>
                         <div className="overflow-x-auto">
-                            <table className="w-full">
+                            <table className="w-full min-w-[1200px]">
                                 <thead className="bg-gray-50 border-b border-gray-100">
                                     <tr>
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
-                                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">User / Patient</th>
+                                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Tests</th>
-                                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                                     </tr>
@@ -226,10 +247,17 @@ export default function OrdersPage() {
                                                 <div>
                                                     <p className="font-medium text-gray-900 flex items-center gap-1.5">
                                                         <User size={14} className="text-gray-400" />
-                                                        {order.patient?.name || 'Unknown Patient'}
+                                                        {order.user.name || order.user.mobile}
                                                     </p>
-                                                    <p className="text-xs text-gray-500 mt-0.5 ml-5">
-                                                        Booked by: {order.user.name || order.user.mobile}
+                                                    <p className="text-xs text-gray-500 mt-0.5 ml-5">{order.user.mobile}</p>
+                                                    <p className="text-xs text-gray-400 mt-0.5 ml-5">{order.user.email || 'No email'}</p>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div>
+                                                    <p className="font-medium text-gray-900">{order.patient?.name || 'Unknown Patient'}</p>
+                                                    <p className="text-xs text-gray-500 mt-0.5">
+                                                        {order.patient ? `${order.patient.gender}, ${order.patient.age}` : 'No patient details'}
                                                     </p>
                                                 </div>
                                             </td>
@@ -241,8 +269,9 @@ export default function OrdersPage() {
                                                     <span className="text-xs text-blue-600">+{order.testNames.length - 2} more</span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 font-medium text-gray-900">
-                                                ₹{order.amount.toLocaleString('en-IN')}
+                                            <td className="px-6 py-4">
+                                                <p className="font-medium text-gray-900">₹{order.amount.toLocaleString('en-IN')}</p>
+                                                <p className="text-xs text-gray-500 mt-0.5">{order.paymentStatus}</p>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
@@ -319,6 +348,7 @@ export default function OrdersPage() {
                                     <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedOrder.status)}`}>
                                         {selectedOrder.status}
                                     </span>
+                                    <p className="text-xs text-gray-500 mt-2">Payment: {selectedOrder.paymentStatus}</p>
                                 </div>
                             </div>
 

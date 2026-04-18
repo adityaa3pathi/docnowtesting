@@ -11,11 +11,25 @@ export async function listOrders(req: AuthRequest, res: Response) {
         const limit = parseInt(req.query.limit as string) || 20;
         const search = req.query.search as string;
         const status = req.query.status as string;
+        const dateFrom = req.query.dateFrom as string;
+        const dateTo = req.query.dateTo as string;
 
         const where: any = {};
 
         if (status && status !== 'All') {
             where.status = status;
+        }
+
+        if (dateFrom || dateTo) {
+            where.createdAt = {};
+            if (dateFrom) {
+                where.createdAt.gte = new Date(`${dateFrom}T00:00:00.000Z`);
+            }
+            if (dateTo) {
+                const end = new Date(`${dateTo}T00:00:00.000Z`);
+                end.setUTCDate(end.getUTCDate() + 1);
+                where.createdAt.lt = end;
+            }
         }
 
         if (search) {
@@ -24,7 +38,8 @@ export async function listOrders(req: AuthRequest, res: Response) {
                 { partnerBookingId: { contains: search, mode: 'insensitive' } },
                 { user: { name: { contains: search, mode: 'insensitive' } } },
                 { user: { mobile: { contains: search } } },
-                { patient: { name: { contains: search, mode: 'insensitive' } } }
+                { items: { some: { patient: { name: { contains: search, mode: 'insensitive' } } } } },
+                { items: { some: { testName: { contains: search, mode: 'insensitive' } } } }
             ];
         }
 
@@ -55,6 +70,7 @@ export async function listOrders(req: AuthRequest, res: Response) {
                 slotTime: order.slotTime,
                 amount: order.totalAmount,
                 status: order.status,
+                paymentStatus: order.paymentStatus,
                 user: order.user,
                 address: order.address,
                 patient: order.items[0]?.patient || null,

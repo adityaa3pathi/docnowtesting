@@ -11,6 +11,7 @@ export function useUsers() {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<StatusFilter>('All');
     const [filterRole, setFilterRole] = useState<RoleFilter>('All');
+    const [createdDate, setCreatedDate] = useState('');
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
     const fetchUsers = useCallback(async () => {
@@ -25,6 +26,7 @@ export function useUsers() {
             if (searchTerm) params.append('search', searchTerm);
             if (filterStatus !== 'All') params.append('status', filterStatus);
             if (filterRole !== 'All') params.append('role', filterRole);
+            if (createdDate) params.append('createdDate', createdDate);
 
             const res = await fetch(`/api/admin/users?${params}`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -40,7 +42,7 @@ export function useUsers() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.limit, searchTerm, filterStatus, filterRole]);
+    }, [pagination.page, pagination.limit, searchTerm, filterStatus, filterRole, createdDate]);
 
     useEffect(() => {
         fetchUsers();
@@ -52,7 +54,7 @@ export function useUsers() {
             setPagination(prev => ({ ...prev, page: 1 }));
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchTerm]);
+    }, [searchTerm, createdDate]);
 
     const handleBlockUnblock = async (user: AdminUser) => {
         const newStatus = user.status === 'ACTIVE' ? 'BLOCKED' : 'ACTIVE';
@@ -150,6 +152,8 @@ export function useUsers() {
         setStatusFilter,
         filterRole,
         setRoleFilter,
+        createdDate,
+        setCreatedDate,
         actionLoading,
         fetchUsers,
         handleBlockUnblock,
