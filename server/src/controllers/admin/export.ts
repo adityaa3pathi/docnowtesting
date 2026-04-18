@@ -167,12 +167,19 @@ export async function exportAdminData(req: AuthRequest, res: Response) {
             const city = req.query.city as string;
             const requirementType = req.query.requirementType as string;
             const companySize = req.query.companySize as string;
+            const createdDate = req.query.createdDate as string;
             const where: any = {};
 
             if (status && status !== 'All') where.status = status;
             if (city) where.city = { contains: city, mode: 'insensitive' };
-            if (requirementType) where.requirementType = requirementType;
-            if (companySize) where.companySize = companySize;
+            if (requirementType && requirementType !== 'All') where.requirementType = requirementType;
+            if (companySize && companySize !== 'All') where.companySize = companySize;
+            if (createdDate) {
+                const start = new Date(`${createdDate}T00:00:00.000Z`);
+                const end = new Date(start);
+                end.setUTCDate(end.getUTCDate() + 1);
+                where.createdAt = { gte: start, lt: end };
+            }
 
             if (search) {
                 where.OR = [
