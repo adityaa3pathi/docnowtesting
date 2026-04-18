@@ -110,6 +110,7 @@ export async function getWalletLedger(req: AuthRequest, res: Response) {
         const limit = parseInt(req.query.limit as string) || 20;
         const type = req.query.type as string;
         const search = req.query.search as string;
+        const createdDate = req.query.createdDate as string;
 
         const where: any = {};
 
@@ -127,6 +128,13 @@ export async function getWalletLedger(req: AuthRequest, res: Response) {
                     ]
                 }
             };
+        }
+
+        if (createdDate) {
+            const start = new Date(`${createdDate}T00:00:00.000Z`);
+            const end = new Date(start);
+            end.setUTCDate(end.getUTCDate() + 1);
+            where.createdAt = { gte: start, lt: end };
         }
 
         const ledger = await prisma.walletLedger.findMany({

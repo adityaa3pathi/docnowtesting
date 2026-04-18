@@ -10,7 +10,6 @@ import {
     Stethoscope,
     Users,
     Home,
-    Building2,
     ShieldCheck,
     CalendarCheck,
     UserCheck,
@@ -48,10 +47,6 @@ const expertiseItems = [
         label: "Specialized Women's & Men's Health Packages",
     },
     {
-        icon: Building2,
-        label: "Corporate Wellness Screening Programs",
-    },
-    {
         icon: Home,
         label: "Premium Home Sample Collection Services",
     },
@@ -87,6 +82,12 @@ const innovationItems = [
         title: "Dedicated Customer Support",
         description:
             "Our care team is always ready to assist you at every step of your journey.",
+    },
+    {
+        icon: Home,
+        title: "Comfort-First Home Testing",
+        description:
+            "Enjoy a smoother diagnostic journey with doorstep collection designed around your routine and convenience.",
     },
 ];
 

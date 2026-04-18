@@ -5,8 +5,8 @@ import { prisma } from '../../db';
 export async function exportAdminData(req: AuthRequest, res: Response) {
     try {
         const entity = req.query.entity as string;
-        if (!entity || !['users', 'orders', 'callbacks', 'corporate-inquiries'].includes(entity)) {
-            return res.status(400).json({ error: 'Invalid or missing entity for export. Must be "users", "orders", "callbacks", or "corporate-inquiries".' });
+        if (!entity || !['users', 'orders', 'callbacks', 'corporate-inquiries', 'wallets'].includes(entity)) {
+            return res.status(400).json({ error: 'Invalid or missing entity for export. Must be "users", "orders", "callbacks", "corporate-inquiries", or "wallets".' });
         }
 
         const search = (req.query.search as string) || '';
@@ -250,6 +250,67 @@ export async function exportAdminData(req: AuthRequest, res: Response) {
 
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader('Content-Disposition', 'attachment; filename="corporate-inquiries-export.csv"');
+            return res.status(200).send(csvContent);
+        } else if (entity === 'wallets') {
+            const type = req.query.type as string;
+            const createdDate = req.query.createdDate as string;
+            const where: any = {};
+
+            if (type && ['CREDIT', 'DEBIT'].includes(type)) {
+                where.type = type;
+            }
+
+            if (search) {
+                where.wallet = {
+                    user: {
+                        OR: [
+                            { name: { contains: search, mode: 'insensitive' } },
+                            { mobile: { contains: search } },
+                            { email: { contains: search, mode: 'insensitive' } }
+                        ]
+                    }
+                };
+            }
+
+            if (createdDate) {
+                const start = new Date(`${createdDate}T00:00:00.000Z`);
+                const end = new Date(start);
+                end.setUTCDate(end.getUTCDate() + 1);
+                where.createdAt = { gte: start, lt: end };
+            }
+
+            const ledger = await prisma.walletLedger.findMany({
+                where,
+                take: limitToExport,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    wallet: {
+                        include: {
+                            user: { select: { id: true, name: true, mobile: true, email: true } }
+                        }
+                    }
+                }
+            });
+
+            const headers = ['Date', 'User Name', 'User Mobile', 'User Email', 'Type', 'Amount', 'Balance After', 'Description', 'Reference Type', 'Reference ID', 'Admin ID'];
+            const rows = ledger.map((entry) => [
+                entry.createdAt.toISOString(),
+                `"${entry.wallet.user.name || ''}"`,
+                entry.wallet.user.mobile,
+                `"${entry.wallet.user.email || ''}"`,
+                entry.type,
+                entry.amount,
+                entry.balanceAfter,
+                `"${entry.description || ''}"`,
+                entry.referenceType || '',
+                entry.referenceId || '',
+                entry.createdById || '',
+            ]);
+
+            const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', 'attachment; filename="wallets-export.csv"');
             return res.status(200).send(csvContent);
         }
 
