@@ -24,12 +24,20 @@ import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { DocnowLogo } from '@/components/DocnowLogo';
 
-const navItems = [
+type NavItem = {
+    id: string;
+    label: string;
+    icon: any;
+    href: string;
+    badge?: string;
+};
+
+const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/manager/dashboard' },
     { id: 'catalog', label: 'Catalog', icon: Package, href: '/manager/catalog' },
     { id: 'categories', label: 'Categories', icon: FolderTree, href: '/manager/categories' },
     { id: 'payment-links', label: 'Payment Links', icon: LinkIcon, href: '/manager/payment-links' },
-    { id: 'orders', label: 'Orders', icon: ShoppingCart, href: '/manager/orders', badge: 'Read-only' },
+    { id: 'orders', label: 'Orders', icon: ShoppingCart, href: '/manager/orders' },
     { id: 'callbacks', label: 'Callbacks', icon: PhoneCall, href: '/manager/callbacks' },
     { id: 'corporate-inquiries', label: 'Corporate Inquiries', icon: Building2, href: '/manager/corporate-inquiries' },
     { id: 'settings', label: 'Settings', icon: Settings, href: '/manager/settings' },
