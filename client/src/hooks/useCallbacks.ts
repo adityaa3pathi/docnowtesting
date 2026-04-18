@@ -24,7 +24,7 @@ export function useCallbacks(apiPrefix: '/api/admin' | '/api/manager' = '/api/ma
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-    const fetchCallbacks = useCallback(async (params: { page: number; search?: string; status?: string }) => {
+    const fetchCallbacks = useCallback(async (params: { page: number; search?: string; status?: string; createdDate?: string }) => {
         setLoading(true);
         try {
             const token = localStorage.getItem('docnow_auth_token');
@@ -35,6 +35,7 @@ export function useCallbacks(apiPrefix: '/api/admin' | '/api/manager' = '/api/ma
 
             if (params.search) searchParams.append('search', params.search);
             if (params.status && params.status !== 'All') searchParams.append('status', params.status);
+            if (params.createdDate) searchParams.append('createdDate', params.createdDate);
 
             const res = await fetch(`${apiPrefix}/callbacks?${searchParams.toString()}`, {
                 headers: { Authorization: `Bearer ${token}` }

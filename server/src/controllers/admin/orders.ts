@@ -53,7 +53,7 @@ export async function listOrders(req: AuthRequest, res: Response) {
                 address: { select: { id: true, line1: true, city: true, pincode: true } },
                 items: {
                     include: {
-                        patient: { select: { name: true, gender: true, age: true } }
+                        patient: { select: { name: true, relation: true, gender: true, age: true } }
                     }
                 }
             }

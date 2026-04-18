@@ -150,6 +150,7 @@ export async function exportAdminData(req: AuthRequest, res: Response) {
             return res.status(200).send(csvContent);
         } else if (entity === 'callbacks') {
             const status = req.query.status as string;
+            const createdDate = req.query.createdDate as string;
             const where: any = {};
 
             if (status && status !== 'All') {
@@ -162,6 +163,13 @@ export async function exportAdminData(req: AuthRequest, res: Response) {
                     { mobile: { contains: search } },
                     { city: { contains: search, mode: 'insensitive' } },
                 ];
+            }
+
+            if (createdDate) {
+                const start = new Date(`${createdDate}T00:00:00.000Z`);
+                const end = new Date(start);
+                end.setUTCDate(end.getUTCDate() + 1);
+                where.createdAt = { gte: start, lt: end };
             }
 
             const callbacks = await prisma.callbackRequest.findMany({
