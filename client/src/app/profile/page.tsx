@@ -2,7 +2,7 @@
 
 import { Header } from '@/components/Header';
 import { WalletTab } from '@/components/profile/WalletTab';
-import { User, Users, FileText, Calendar, Loader2, Shield, Wallet } from 'lucide-react';
+import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,9 +11,10 @@ import { ProfileTab } from '@/components/profile/ProfileTab';
 import { FamilyTab } from '@/components/profile/FamilyTab';
 import { BookingsTab } from '@/components/profile/BookingsTab';
 import { ReportsTab } from '@/components/profile/ReportsTab';
+import { ReferralTab } from '@/components/profile/ReferralTab';
 import Link from 'next/link';
 
-type Tab = 'profile' | 'family' | 'bookings' | 'reports' | 'wallet';
+type Tab = 'profile' | 'family' | 'bookings' | 'reports' | 'wallet' | 'referrals';
 
 export default function ProfilePage() {
     const { isAuthenticated, isInitialized, user } = useAuth();
@@ -23,7 +24,7 @@ export default function ProfilePage() {
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const tab = params.get('tab');
-        if (tab && ['profile', 'family', 'bookings', 'reports', 'wallet'].includes(tab)) {
+        if (tab && ['profile', 'family', 'bookings', 'reports', 'wallet', 'referrals'].includes(tab)) {
             setActiveTab(tab as Tab);
         }
     }, []);
@@ -78,6 +79,12 @@ export default function ProfilePage() {
                                     onClick={() => setActiveTab('wallet')}
                                 />
                                 <NavButton
+                                    icon={<Gift className="w-4 h-4" />}
+                                    label="Referrals"
+                                    active={activeTab === 'referrals'}
+                                    onClick={() => setActiveTab('referrals')}
+                                />
+                                <NavButton
                                     icon={<FileText className="w-4 h-4" />}
                                     label="Reports"
                                     active={activeTab === 'reports'}
@@ -116,6 +123,7 @@ export default function ProfilePage() {
                             {activeTab === 'family' && <FamilyTab />}
                             {activeTab === 'bookings' && <BookingsTab />}
                             {activeTab === 'wallet' && <WalletTab />}
+                            {activeTab === 'referrals' && <ReferralTab />}
                             {activeTab === 'reports' && <ReportsTab />}
                         </div>
                     </div>
