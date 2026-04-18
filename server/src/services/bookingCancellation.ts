@@ -311,8 +311,8 @@ async function runCancellation(params: {
     const nextPaymentStatus: PaymentStatus = refundAttempt.refundStatus === 'refunded'
         ? 'REFUNDED'
         : 'CANCELLED';
-    const nextManagerOrderStatus: ManagerOrderStatus | undefined = managerOrder
-        ? ((refundAttempt.refundStatus === 'refunded' ? 'REFUNDED' : 'CANCELLED') as any)
+    const nextManagerOrderStatus: CancellationResult['managerOrderStatus'] = managerOrder
+        ? (refundAttempt.refundStatus === 'refunded' ? 'REFUNDED' : 'CANCELLED')
         : undefined;
 
     await applyCancellationUpdates({
