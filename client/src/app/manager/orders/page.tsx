@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Loader2, RefreshCw, Smartphone, CheckCircle, Banknote } from 'lucide-react';
+import { Search, Loader2, RefreshCw, Smartphone, CheckCircle, Banknote, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 
@@ -31,6 +31,7 @@ const STATUS_COLORS: Record<string, string> = {
     PAYMENT_RECEIVED: 'bg-yellow-100 text-yellow-800',
     PAYMENT_CONFIRMED: 'bg-purple-100 text-purple-700',
     CONFIRMED: 'bg-green-100 text-green-700',
+    CANCELLED: 'bg-red-100 text-red-700',
     BOOKING_FAILED: 'bg-red-100 text-red-700',
     REFUNDED: 'bg-orange-100 text-orange-700',
 };
@@ -43,6 +44,8 @@ export default function OrdersPage() {
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [confirmModal, setConfirmModal] = useState<{ orderId: string; type: 'link' | 'offline' } | null>(null);
     const [offlineMode, setOfflineMode] = useState<'OFFLINE_CASH' | 'OFFLINE_UPI'>('OFFLINE_CASH');
+    const [cancelModal, setCancelModal] = useState<string | null>(null);
+    const [cancelReason, setCancelReason] = useState('');
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -101,6 +104,33 @@ export default function OrdersPage() {
         } finally {
             setActionLoading(null);
             setConfirmModal(null);
+        }
+    };
+
+    const cancelOrder = async (orderId: string) => {
+        if (cancelReason.trim().length < 5) return;
+
+        setActionLoading(orderId);
+        try {
+            const res = await api.post(`/manager/orders/${orderId}/cancel`, {
+                remarks: cancelReason.trim(),
+            });
+
+            if (res.data.manualRefundRequired) {
+                toast('Order cancelled. Online refund needs manual follow-up.', { icon: '⚠️' });
+            } else if (res.data.refundStatus === 'refunded') {
+                toast.success('Order cancelled and refund initiated.');
+            } else {
+                toast.success('Order cancelled successfully.');
+            }
+
+            setCancelModal(null);
+            setCancelReason('');
+            await load();
+        } catch (e: any) {
+            toast.error(e?.response?.data?.error || 'Failed to cancel order');
+        } finally {
+            setActionLoading(null);
         }
     };
 
@@ -166,7 +196,9 @@ export default function OrdersPage() {
                         <option value="SENT">Link Sent</option>
                         <option value="PAYMENT_RECEIVED">Payment Received</option>
                         <option value="CONFIRMED">Confirmed</option>
+                        <option value="CANCELLED">Cancelled</option>
                         <option value="BOOKING_FAILED">Booking Failed</option>
+                        <option value="REFUNDED">Refunded</option>
                     </select>
                 </div>
             </div>
@@ -233,6 +265,19 @@ export default function OrdersPage() {
                                         </td>
                                         <td className="px-5 py-4">
                                             <div className="flex items-center justify-end gap-2">
+                                                {['CREATED', 'SENT', 'PAYMENT_RECEIVED', 'CONFIRMED'].includes(order.status) && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setCancelReason('');
+                                                            setCancelModal(order.id);
+                                                        }}
+                                                        disabled={actionLoading === order.id}
+                                                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-60 transition-colors"
+                                                    >
+                                                        <XCircle className="w-3 h-3" />
+                                                        Cancel Order
+                                                    </button>
+                                                )}
                                                 {/* Send / Resend payment link */}
                                                 {['CREATED', 'SENT'].includes(order.status) && (
                                                     <button
@@ -297,6 +342,48 @@ export default function OrdersPage() {
                                 className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 disabled:opacity-60 flex items-center justify-center gap-2">
                                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                                 Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {cancelModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md space-y-5">
+                        <div>
+                            <h3 className="font-bold text-gray-900 text-lg">Cancel Manager Order</h3>
+                            <p className="mt-1 text-sm text-gray-500">
+                                Online-paid orders will be auto-refunded when possible. Offline cash and UPI refunds must be handled manually outside the system.
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700">Reason for cancellation</label>
+                            <textarea
+                                value={cancelReason}
+                                onChange={e => setCancelReason(e.target.value)}
+                                placeholder="Enter a clear reason for cancellation"
+                                rows={4}
+                                className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
+                            />
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    setCancelModal(null);
+                                    setCancelReason('');
+                                }}
+                                className="flex-1 py-2.5 border border-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50"
+                            >
+                                Keep Order
+                            </button>
+                            <button
+                                onClick={() => cancelOrder(cancelModal)}
+                                disabled={!!actionLoading || cancelReason.trim().length < 5}
+                                className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 disabled:opacity-60 flex items-center justify-center gap-2"
+                            >
+                                {actionLoading === cancelModal ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                                Confirm Cancel
                             </button>
                         </div>
                     </div>
