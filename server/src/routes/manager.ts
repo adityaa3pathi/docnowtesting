@@ -1121,22 +1121,21 @@ router.get('/bookings/:id/reschedulable-slots', ...mgr, async (req: AuthRequest,
             return res.status(404).json({ error: 'Booking not found' });
         }
 
-        let address = booking.address;
-
-        if (!address && selectedAddressId) {
-            address = await prisma.address.findFirst({
+        const fallbackAddress = !booking.address && selectedAddressId
+            ? await prisma.address.findFirst({
                 where: {
                     id: selectedAddressId,
                     userId: booking.userId,
                 }
-            });
-        }
+            })
+            : null;
+        const address = booking.address ?? fallbackAddress;
 
         if (!address) {
             const addresses = await prisma.address.findMany({
                 where: { userId: booking.userId },
                 select: { id: true, line1: true, city: true, pincode: true },
-                orderBy: { createdAt: 'desc' },
+                orderBy: { id: 'desc' },
             });
 
             return res.status(400).json({
@@ -1212,12 +1211,12 @@ router.post('/bookings/:id/reschedule', ...mgr, async (req: AuthRequest, res: Re
             return res.status(400).json({ error: 'Partner booking ID not found' });
         }
 
-        let address = booking.address;
-        if (!address && addressId) {
-            address = await prisma.address.findFirst({
+        const fallbackAddress = !booking.address && addressId
+            ? await prisma.address.findFirst({
                 where: { id: addressId, userId: booking.userId }
-            });
-        }
+            })
+            : null;
+        const address = booking.address ?? fallbackAddress;
 
         if (!address) {
             return res.status(400).json({ error: 'Booking address is missing. Please select an address first.' });
