@@ -15,6 +15,7 @@ import { originalReportStorageKey, reportStorage } from '../services/reportStora
 import { ingestReport } from '../services/reportIngestion';
 import axios from 'axios';
 import { brandReportPdf } from '../services/reportBrandingService';
+import { verifyReportAccessToken } from '../services/reportAccess';
 
 const router = Router();
 
@@ -24,6 +25,108 @@ function sendPdfBuffer(res: Response, reportId: string, buffer: Buffer) {
     res.setHeader('Content-Length', buffer.length.toString());
     return res.send(buffer);
 }
+
+async function streamReportPdf(reportId: string, res: Response) {
+    const report = await prisma.report.findUnique({
+        where: { id: reportId },
+        include: {
+            booking: {
+                select: { userId: true },
+            },
+        },
+    });
+
+    if (!report) {
+        return res.status(404).json({ error: 'This report is not available anymore.' });
+    }
+
+    let legacyStoredBuffer: Buffer | null = null;
+    let shouldForceRefresh = false;
+
+    if (report.storageKey) {
+        try {
+            const exists = await reportStorage.exists(report.storageKey);
+            if (exists) {
+                const buffer = await reportStorage.read(report.storageKey);
+                const originalKey = originalReportStorageKey(report.bookingId, reportId);
+                const originalExists = await reportStorage.exists(originalKey).catch(() => false);
+
+                if (originalExists) {
+                    return sendPdfBuffer(res, reportId, buffer);
+                }
+
+                legacyStoredBuffer = buffer;
+                shouldForceRefresh = true;
+                console.warn(`[Reports] Report ${reportId} appears to be a legacy unbranded stored PDF. Attempting refresh before serving.`);
+            } else {
+                shouldForceRefresh = true;
+                console.warn(`[Reports] Report ${reportId} has storageKey=${report.storageKey} but the file is missing from storage. Will try force re-ingestion.`);
+            }
+        } catch (err) {
+            console.warn(`[Reports] Storage read failed for key ${report.storageKey}:`, err);
+            shouldForceRefresh = true;
+        }
+    }
+
+    if (report.fetchStatus !== 'STORED' || shouldForceRefresh) {
+        try {
+            await ingestReport(reportId, { forceRefresh: shouldForceRefresh });
+            const updated = await prisma.report.findUnique({ where: { id: reportId } });
+            if (updated?.storageKey) {
+                const buffer = await reportStorage.read(updated.storageKey);
+                return sendPdfBuffer(res, reportId, buffer);
+            }
+        } catch (err) {
+            console.warn(`[Reports] On-demand ingestion failed for ${reportId}:`, err);
+        }
+    }
+
+    if (legacyStoredBuffer) {
+        return sendPdfBuffer(res, reportId, legacyStoredBuffer);
+    }
+
+    if (report.sourceUrl) {
+        console.warn(`[Reports] Falling back to proxied sourceUrl for report ${reportId}`);
+        try {
+            const sourceResponse = await axios.get<ArrayBuffer>(report.sourceUrl, {
+                responseType: 'arraybuffer',
+                timeout: 30000,
+                headers: {
+                    'User-Agent': 'DOCNOW-Server/1.0',
+                },
+            });
+
+            const originalBuffer: Buffer = Buffer.from(sourceResponse.data as ArrayBuffer);
+            let brandedBuffer: Buffer = originalBuffer;
+
+            try {
+                brandedBuffer = await brandReportPdf(originalBuffer);
+            } catch (brandingError: any) {
+                console.warn(`[Reports] Last-resort branding failed for ${reportId}:`, brandingError.message);
+            }
+            return sendPdfBuffer(res, reportId, brandedBuffer);
+        } catch (err) {
+            console.warn(`[Reports] sourceUrl proxy failed for ${reportId}:`, err);
+        }
+    }
+
+    return res.status(502).json({ error: 'Your report is still being prepared. Please try again shortly.' });
+}
+
+router.get('/public/:token', async (req: AuthRequest, res: Response) => {
+    try {
+        const token = req.params.token as string;
+        const payload = verifyReportAccessToken(token);
+        return await streamReportPdf(payload.reportId, res);
+    } catch (error: any) {
+        const message = error.message || 'We could not open this report link.';
+        const status = message.includes('expired') || message.includes('Invalid report token') ? 400 : 500;
+        if (status === 500) {
+            console.error('[Reports] Error opening public report link:', error);
+        }
+        return res.status(status).json({ error: message });
+    }
+});
 
 // All report routes require authentication
 router.use(authMiddleware);
@@ -116,83 +219,7 @@ router.get('/:reportId/download', async (req: AuthRequest, res: Response) => {
         if (!isAdmin && reportUserId !== userId) {
             return res.status(403).json({ error: 'You do not have access to this report.' });
         }
-
-        let legacyStoredBuffer: Buffer | null = null;
-        let shouldForceRefresh = false;
-
-        // Path 1: File is in our storage → stream it
-        if (report.storageKey) {
-            try {
-                const exists = await reportStorage.exists(report.storageKey);
-                if (exists) {
-                    const buffer = await reportStorage.read(report.storageKey);
-                    const originalKey = originalReportStorageKey(report.bookingId, reportId);
-                    const originalExists = await reportStorage.exists(originalKey).catch(() => false);
-
-                    if (originalExists) {
-                        return sendPdfBuffer(res, reportId, buffer);
-                    }
-
-                    legacyStoredBuffer = buffer;
-                    shouldForceRefresh = true;
-                    console.warn(`[Reports] Report ${reportId} appears to be a legacy unbranded stored PDF. Attempting refresh before serving.`);
-                } else {
-                    shouldForceRefresh = true;
-                    console.warn(`[Reports] Report ${reportId} has storageKey=${report.storageKey} but the file is missing from storage. Will try force re-ingestion.`);
-                }
-            } catch (err) {
-                console.warn(`[Reports] Storage read failed for key ${report.storageKey}:`, err);
-                shouldForceRefresh = true;
-            }
-        }
-
-        // Path 2: File missing or status is not STORED → try on-demand ingestion.
-        if (report.fetchStatus !== 'STORED' || shouldForceRefresh) {
-            try {
-                await ingestReport(reportId, { forceRefresh: shouldForceRefresh });
-                // Re-read after ingestion
-                const updated = await prisma.report.findUnique({ where: { id: reportId } });
-                if (updated?.storageKey) {
-                    const buffer = await reportStorage.read(updated.storageKey);
-                    return sendPdfBuffer(res, reportId, buffer);
-                }
-            } catch (err) {
-                console.warn(`[Reports] On-demand ingestion failed for ${reportId}:`, err);
-            }
-        }
-
-        if (legacyStoredBuffer) {
-            return sendPdfBuffer(res, reportId, legacyStoredBuffer);
-        }
-
-        // Path 3: Last resort — proxy the sourceUrl through our API.
-        // This avoids browser-side auth/cors issues with signed Healthians/S3 URLs.
-        if (report.sourceUrl) {
-            console.warn(`[Reports] Falling back to proxied sourceUrl for report ${reportId}`);
-            try {
-                const sourceResponse = await axios.get<ArrayBuffer>(report.sourceUrl, {
-                    responseType: 'arraybuffer',
-                    timeout: 30000,
-                    headers: {
-                        'User-Agent': 'DOCNOW-Server/1.0',
-                    },
-                });
-
-                const originalBuffer: Buffer = Buffer.from(sourceResponse.data as ArrayBuffer);
-                let brandedBuffer: Buffer = originalBuffer;
-
-                try {
-                    brandedBuffer = await brandReportPdf(originalBuffer);
-                } catch (brandingError: any) {
-                    console.warn(`[Reports] Last-resort branding failed for ${reportId}:`, brandingError.message);
-                }
-                return sendPdfBuffer(res, reportId, brandedBuffer);
-            } catch (err) {
-                console.warn(`[Reports] sourceUrl proxy failed for ${reportId}:`, err);
-            }
-        }
-
-        return res.status(502).json({ error: 'Your report is still being prepared. Please try again shortly.' });
+        return await streamReportPdf(reportId, res);
     } catch (error) {
         console.error('[Reports] Error downloading report:', error);
         return res.status(500).json({ error: 'We could not download your report right now. Please try again shortly.' });

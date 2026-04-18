@@ -8,6 +8,8 @@ interface UsersFiltersProps {
     setStatusFilter: (status: StatusFilter) => void;
     filterRole: RoleFilter;
     setRoleFilter: (role: RoleFilter) => void;
+    createdDate: string;
+    setCreatedDate: (date: string) => void;
 }
 
 const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
@@ -28,7 +30,9 @@ export function UsersFilters({
     filterStatus,
     setStatusFilter,
     filterRole,
-    setRoleFilter
+    setRoleFilter,
+    createdDate,
+    setCreatedDate
 }: UsersFiltersProps) {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
@@ -71,6 +75,13 @@ export function UsersFilters({
                         </button>
                     ))}
                 </div>
+                <input
+                    type="date"
+                    value={createdDate}
+                    onChange={(e) => setCreatedDate(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    aria-label="Filter by created date"
+                />
             </div>
         </div>
     );

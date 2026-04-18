@@ -1,4 +1,5 @@
 import { sendTemplateViaWhatsApp } from './wappieWhatsApp';
+import { createReportAccessToken } from './reportAccess';
 
 const WAPPIE_REPORT_TEMPLATE_NAME = process.env.WAPPIE_REPORT_TEMPLATE_NAME || 'template_marketing_20260401171046';
 const WAPPIE_REPORT_TEMPLATE_LANGUAGE = process.env.WAPPIE_REPORT_TEMPLATE_LANGUAGE || 'en';
@@ -43,4 +44,26 @@ export async function sendReportReadyViaWhatsApp({
             ],
         },
     ]);
+}
+
+export async function sendSpecificReportViaWhatsApp(params: {
+    mobile: string;
+    customerName?: string | null;
+    reportLabel: string;
+    reportId: string;
+}) {
+    const token = createReportAccessToken(params.reportId);
+    const reportLink = `${APP_BASE_URL}/api/reports/public/${token}`;
+
+    const result = await sendReportReadyViaWhatsApp({
+        mobile: params.mobile,
+        customerName: params.customerName,
+        reportLabel: params.reportLabel,
+        reportLink,
+    });
+
+    return {
+        ...result,
+        reportLink,
+    };
 }
