@@ -357,8 +357,10 @@ export function Header() {
                                             <User className="w-4 h-4" /> Profile
                                         </Link>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem>
-                                        <ShoppingCart className="w-4 h-4 mr-2" /> My Bookings
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/profile?tab=bookings" className="flex items-center gap-2 w-full">
+                                            <ShoppingCart className="w-4 h-4" /> My Bookings
+                                        </Link>
                                     </DropdownMenuItem>
                                     {(user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN') && (
                                         <>
@@ -601,6 +603,14 @@ export function Header() {
                             >
                                 <User className="w-4 h-4 text-gray-400" />
                                 My Profile
+                            </Link>
+                            <Link
+                                href="/profile?tab=bookings"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-primary transition-all"
+                            >
+                                <ShoppingCart className="w-4 h-4 text-gray-400" />
+                                My Bookings
                             </Link>
                             {(user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN') && (
                                 <Link
