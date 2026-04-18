@@ -9,7 +9,10 @@ export function useExport() {
         setExporting(true);
         try {
             const token = localStorage.getItem('docnow_auth_token');
-            const searchParams = new URLSearchParams(params);
+            const filteredParams = Object.fromEntries(
+                Object.entries(params).filter(([, value]) => value !== '')
+            );
+            const searchParams = new URLSearchParams(filteredParams);
             searchParams.set('entity', entity);
 
             const url = `${apiPrefix}/export?${searchParams.toString()}`;
