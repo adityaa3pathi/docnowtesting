@@ -102,6 +102,15 @@ async function loadBookingById(bookingId: string, userId: string) {
     });
 }
 
+async function loadGlobalBookingById(bookingId: string) {
+    return prisma.booking.findUnique({
+        where: { id: bookingId },
+        include: {
+            managerOrder: true,
+        },
+    });
+}
+
 async function loadManagerOrderById(managerOrderId: string, managerId: string) {
     return prisma.managerOrder.findFirst({
         where: { id: managerOrderId, managerId },
@@ -388,5 +397,34 @@ export async function cancelCustomerBooking(params: {
         remarks: params.remarks,
         allowPendingLocalCancel: false,
         enableRefunds: Boolean(booking.managerOrder),
+    });
+}
+
+export async function cancelGlobalBookingAsManager(params: {
+    bookingId: string;
+    managerId: string;
+    adminId: string;
+    adminName: string;
+    ipAddress: string;
+    remarks: string;
+}): Promise<CancellationResult> {
+    const booking = await loadGlobalBookingById(params.bookingId);
+    if (!booking) {
+        throw new Error('Booking not found');
+    }
+
+    return runCancellation({
+        booking,
+        managerOrder: booking.managerOrder ? { id: booking.managerOrder.id, status: booking.managerOrder.status } : null,
+        actor: {
+            type: 'manager',
+            userId: params.managerId,
+            adminId: params.adminId,
+            adminName: params.adminName,
+            ipAddress: params.ipAddress,
+        },
+        remarks: params.remarks,
+        allowPendingLocalCancel: true,
+        enableRefunds: true,
     });
 }

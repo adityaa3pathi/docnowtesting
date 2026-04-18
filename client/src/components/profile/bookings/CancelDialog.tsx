@@ -11,9 +11,16 @@ interface CancelDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
+    apiPrefix?: string;
 }
 
-export function CancelDialog({ bookingId, open, onOpenChange, onSuccess }: CancelDialogProps) {
+export function CancelDialog({
+    bookingId,
+    open,
+    onOpenChange,
+    onSuccess,
+    apiPrefix = '/bookings',
+}: CancelDialogProps) {
     const [cancelReason, setCancelReason] = useState('');
     const [isCancelling, setIsCancelling] = useState(false);
 
@@ -22,7 +29,7 @@ export function CancelDialog({ bookingId, open, onOpenChange, onSuccess }: Cance
 
         setIsCancelling(true);
         try {
-            await api.post(`/bookings/${bookingId}/cancel`, { remarks: cancelReason });
+            await api.post(`${apiPrefix}/${bookingId}/cancel`, { remarks: cancelReason });
             setCancelReason('');
             onSuccess();
             onOpenChange(false);

@@ -7,7 +7,7 @@ import { HealthiansAdapter } from '../adapters/healthians';
 import { resolveOrCreateSelfPatient, patientSchema } from '../utils/patientValidation';
 import { getRazorpay } from '../services/razorpay';
 import { finalizeBooking } from '../services/bookingFinalization';
-import { cancelManagerOrder } from '../services/bookingCancellation';
+import { cancelGlobalBookingAsManager, cancelManagerOrder } from '../services/bookingCancellation';
 import { generateReferralCode } from '../utils/referralService';
 import { getClientIP } from '../utils/adminHelpers';
 import { getGeodataFromPincode } from '../utils/geocoding';
@@ -15,9 +15,13 @@ import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callba
 import { listCorporateInquiries, updateCorporateInquiryStatus } from '../controllers/admin/corporateInquiries';
 import { exportAdminData } from '../controllers/admin/export';
 import { OTP_EXPIRY_MINS, isValidMobile, persistAndSendOtp } from '../services/otp';
+import { BookingService } from '../services/booking.service';
+import { validationSchemas } from '../utils/helpers';
 
 const router = Router();
 const healthians = HealthiansAdapter.getInstance();
+const NON_RESCHEDULABLE_STATUSES = ['Cancelled', 'Sample Collected', 'Report Generated', 'Completed', 'Rescheduled'];
+const MANAGER_GLOBAL_CANCELABLE_STATUSES = new Set(['CREATED', 'SENT', 'PAYMENT_RECEIVED', 'CONFIRMED']);
 const managerCancelSchema = z.object({
     remarks: z.string().trim().min(5, 'Reason for cancellation must be at least 5 characters long'),
 });
@@ -956,6 +960,388 @@ router.post('/orders/:id/cancel', ...mgr, async (req: AuthRequest, res: Response
 
         const message = error.message || 'Failed to cancel order';
         if (message.includes('not found') || message.includes('access denied')) {
+            return res.status(404).json({ error: message });
+        }
+        if (
+            message.includes('already cancelled') ||
+            message.includes('Cancellation not allowed') ||
+            message.includes('cannot be cancelled') ||
+            message.includes('Partner Booking ID is missing') ||
+            message.includes('No active customers found')
+        ) {
+            return res.status(400).json({ error: message, details: error.details });
+        }
+
+        res.status(500).json({ error: message, details: error.details });
+    }
+});
+
+router.get('/bookings', ...mgr, async (req: AuthRequest, res: Response) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+        const search = (req.query.search as string) || '';
+        const status = req.query.status as string;
+
+        const where: any = {};
+
+        if (status && status !== 'All') {
+            where.status = status;
+        }
+
+        if (search) {
+            where.OR = [
+                { id: { contains: search, mode: 'insensitive' } },
+                { partnerBookingId: { contains: search, mode: 'insensitive' } },
+                { user: { name: { contains: search, mode: 'insensitive' } } },
+                { user: { mobile: { contains: search } } },
+                { items: { some: { patient: { name: { contains: search, mode: 'insensitive' } } } } },
+                { items: { some: { testName: { contains: search, mode: 'insensitive' } } } },
+            ];
+        }
+
+        const [orders, total] = await Promise.all([
+            prisma.booking.findMany({
+                where,
+                skip: (page - 1) * limit,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    user: { select: { id: true, name: true, mobile: true, email: true } },
+                    address: { select: { id: true, line1: true, city: true, pincode: true } },
+                    managerOrder: { select: { id: true, status: true, managerId: true } },
+                    items: {
+                        include: {
+                            patient: { select: { name: true, gender: true, age: true } }
+                        }
+                    },
+                    reports: {
+                        select: {
+                            id: true,
+                            fetchStatus: true,
+                            generatedAt: true,
+                        },
+                        orderBy: { generatedAt: 'desc' },
+                        take: 1,
+                    },
+                    _count: {
+                        select: {
+                            reports: true,
+                        }
+                    }
+                }
+            }),
+            prisma.booking.count({ where }),
+        ]);
+
+        res.json({
+            orders: orders.map((order) => {
+                const latestReport = order.reports[0] || null;
+                const canCancel = order.managerOrder
+                    ? MANAGER_GLOBAL_CANCELABLE_STATUSES.has(order.managerOrder.status)
+                    : order.status !== 'Cancelled' && order.paymentStatus !== 'CANCELLED' && order.paymentStatus !== 'REFUNDED';
+                const canReschedule = Boolean(order.partnerBookingId) && !NON_RESCHEDULABLE_STATUSES.includes(order.status);
+
+                return {
+                    id: order.id,
+                    partnerBookingId: order.partnerBookingId,
+                    date: order.createdAt,
+                    createdAt: order.createdAt,
+                    slotDate: order.slotDate,
+                    slotTime: order.slotTime,
+                    amount: order.totalAmount,
+                    status: order.status,
+                    paymentStatus: order.paymentStatus,
+                    user: order.user,
+                    address: order.address,
+                    managerOrder: order.managerOrder,
+                    patient: order.items[0]?.patient || null,
+                    testNames: order.items.map((item) => item.testName),
+                    reportCount: order._count.reports,
+                    latestReportId: latestReport?.id || null,
+                    latestReportStatus: latestReport?.fetchStatus || null,
+                    canCancel,
+                    canReschedule,
+                };
+            }),
+            pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
+        });
+    } catch (error) {
+        console.error('[Manager] Error fetching global bookings:', error);
+        res.status(500).json({ error: 'Failed to fetch bookings' });
+    }
+});
+
+router.get('/bookings/:id/reports', ...mgr, async (req: AuthRequest, res: Response) => {
+    try {
+        const bookingId = req.params.id as string;
+
+        const booking = await prisma.booking.findUnique({
+            where: { id: bookingId },
+            select: { id: true },
+        });
+
+        if (!booking) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+
+        const reports = await prisma.report.findMany({
+            where: { bookingId },
+            select: {
+                id: true,
+                isFullReport: true,
+                fetchStatus: true,
+                verifiedAt: true,
+                fileSize: true,
+                generatedAt: true,
+                vendorCustomerId: true,
+            },
+            orderBy: { generatedAt: 'desc' },
+        });
+
+        res.json({ reports });
+    } catch (error) {
+        console.error('[Manager] Error fetching booking reports:', error);
+        res.status(500).json({ error: 'Failed to fetch reports' });
+    }
+});
+
+router.get('/bookings/:id/reschedulable-slots', ...mgr, async (req: AuthRequest, res: Response) => {
+    try {
+        const bookingId = req.params.id as string;
+        const date = req.query.date as string || new Date().toISOString().split('T')[0];
+        const selectedAddressId = (req.query.addressId as string) || null;
+
+        const booking = await prisma.booking.findUnique({
+            where: { id: bookingId },
+            include: { items: true, address: true, user: { select: { id: true } } }
+        });
+
+        if (!booking) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+
+        let address = booking.address;
+
+        if (!address && selectedAddressId) {
+            address = await prisma.address.findFirst({
+                where: {
+                    id: selectedAddressId,
+                    userId: booking.userId,
+                }
+            });
+        }
+
+        if (!address) {
+            const addresses = await prisma.address.findMany({
+                where: { userId: booking.userId },
+                select: { id: true, line1: true, city: true, pincode: true },
+                orderBy: { createdAt: 'desc' },
+            });
+
+            return res.status(400).json({
+                error: 'Booking address is missing. Please select an address to continue.',
+                code: 'ADDRESS_REQUIRED',
+                addresses,
+            });
+        }
+
+        const zoneId = await BookingService.getZoneId(
+            address.lat || '28.6139',
+            address.long || '77.2090',
+            address.pincode
+        );
+
+        if (!zoneId) {
+            return res.status(400).json({ error: 'Could not determine zone_id for rescheduling' });
+        }
+
+        const patientGroups = new Map<string, string[]>();
+        booking.items.forEach((item: any) => {
+            if (!patientGroups.has(item.patientId)) {
+                patientGroups.set(item.patientId, []);
+            }
+            patientGroups.get(item.patientId)!.push(item.testCode);
+        });
+
+        const packagesPayload = Array.from(patientGroups.values()).map((testCodes) => ({
+            deal_id: testCodes
+        }));
+
+        const slotsResponse = await healthians.getSlotsByLocation({
+            lat: address.lat || '28.6139',
+            long: address.long || '77.2090',
+            zipcode: address.pincode,
+            zone_id: zoneId.toString(),
+            slot_date: date,
+            amount: booking.totalAmount,
+            package: packagesPayload
+        });
+
+        res.json(slotsResponse);
+    } catch (error) {
+        console.error('[Manager] Fetch reschedulable slots error:', error);
+        res.status(500).json({ error: 'Failed to fetch available slots for rescheduling' });
+    }
+});
+
+router.post('/bookings/:id/reschedule', ...mgr, async (req: AuthRequest, res: Response) => {
+    try {
+        const bookingId = req.params.id as string;
+        const { slot_id, slotDate, slotTime, reschedule_reason, addressId } = req.body;
+
+        const parse = validationSchemas.rescheduleBooking.safeParse({ slot_id, slotDate, slotTime, reschedule_reason });
+        if (!parse.success) {
+            return res.status(400).json({ error: parse.error.issues[0].message });
+        }
+
+        const booking = await prisma.booking.findUnique({
+            where: { id: bookingId },
+            include: { items: true, address: true }
+        });
+
+        if (!booking) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+
+        if (NON_RESCHEDULABLE_STATUSES.includes(booking.status)) {
+            return res.status(400).json({ error: `Booking cannot be rescheduled in current status: ${booking.status}` });
+        }
+
+        if (!booking.partnerBookingId) {
+            return res.status(400).json({ error: 'Partner booking ID not found' });
+        }
+
+        let address = booking.address;
+        if (!address && addressId) {
+            address = await prisma.address.findFirst({
+                where: { id: addressId, userId: booking.userId }
+            });
+        }
+
+        if (!address) {
+            return res.status(400).json({ error: 'Booking address is missing. Please select an address first.' });
+        }
+
+        const { customers } = await BookingService.getHealthiansCustomers(booking.partnerBookingId);
+        if (customers.length === 0) {
+            return res.status(400).json({ error: 'No customers found for this booking' });
+        }
+
+        const response = await healthians.rescheduleBooking({
+            booking_id: booking.partnerBookingId,
+            slot: { slot_id: String(slot_id) },
+            customers: customers.map((customer: any) => ({
+                vendor_customer_id: String(customer.vendor_customer_id)
+            })),
+            reschedule_reason,
+        });
+
+        if (!(response.status && response.data?.new_booking_id)) {
+            return res.status(400).json({ error: response.message || 'Failed to reschedule on partner platform' });
+        }
+
+        const newPartnerBookingId = response.data.new_booking_id;
+
+        const result = await prisma.$transaction(async (tx) => {
+            const newBooking = await tx.booking.create({
+                data: {
+                    userId: booking.userId,
+                    addressId: address.id,
+                    addressLine: booking.addressLine || address.line1,
+                    addressCity: booking.addressCity || address.city,
+                    addressPincode: booking.addressPincode || address.pincode,
+                    addressLat: booking.addressLat || address.lat,
+                    addressLong: booking.addressLong || address.long,
+                    partnerBookingId: newPartnerBookingId.toString(),
+                    status: 'Order Booked',
+                    slotDate,
+                    slotTime,
+                    totalAmount: booking.totalAmount,
+                    paymentStatus: booking.paymentStatus,
+                    razorpayOrderId: booking.razorpayOrderId,
+                    razorpayPaymentId: booking.razorpayPaymentId,
+                    paidAt: booking.paidAt,
+                    items: {
+                        create: booking.items.map((item) => ({
+                            testCode: item.testCode,
+                            testName: item.testName,
+                            price: item.price,
+                            patientId: item.patientId
+                        }))
+                    }
+                }
+            });
+
+            await tx.booking.update({
+                where: { id: bookingId },
+                data: { status: 'Rescheduled', rescheduledToId: newBooking.id }
+            });
+
+            await tx.adminAuditLog.create({
+                data: {
+                    adminId: req.adminId!,
+                    adminName: req.adminName || 'Manager',
+                    action: 'MANAGER_BOOKING_RESCHEDULED',
+                    entity: 'Booking',
+                    targetId: bookingId,
+                    oldValue: {
+                        slotDate: booking.slotDate,
+                        slotTime: booking.slotTime,
+                        partnerBookingId: booking.partnerBookingId,
+                    },
+                    newValue: {
+                        slotDate,
+                        slotTime,
+                        partnerBookingId: String(newPartnerBookingId),
+                        newBookingId: newBooking.id,
+                        reason: reschedule_reason,
+                    },
+                    ipAddress: getClientIP(req),
+                    isDestructive: false,
+                }
+            });
+
+            return newBooking;
+        });
+
+        res.json({
+            success: true,
+            message: 'Booking rescheduled successfully',
+            new_booking_id: result.id
+        });
+    } catch (error: any) {
+        console.error('[Manager] Reschedule error:', error);
+        res.status(500).json({
+            error: error.response?.data?.message || error.message || 'Internal server error while rescheduling',
+            details: error.response?.data,
+        });
+    }
+});
+
+router.post('/bookings/:id/cancel', ...mgr, async (req: AuthRequest, res: Response) => {
+    const id = req.params.id as string;
+    const parsed = managerCancelSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Reason is required' });
+    }
+
+    try {
+        const result = await cancelGlobalBookingAsManager({
+            bookingId: id,
+            managerId: req.userId!,
+            adminId: req.adminId!,
+            adminName: req.adminName || 'Manager',
+            ipAddress: getClientIP(req),
+            remarks: parsed.data.remarks,
+        });
+        res.json(result);
+    } catch (error: any) {
+        console.error('[Manager] Cancel booking error:', error);
+
+        const message = error.message || 'Failed to cancel booking';
+        if (message.includes('not found')) {
             return res.status(404).json({ error: message });
         }
         if (
