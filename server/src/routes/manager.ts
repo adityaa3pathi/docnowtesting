@@ -1221,7 +1221,6 @@ router.post('/bookings/:id/send-invoice', ...mgr, async (req: AuthRequest, res: 
                 action: 'MANAGER_INVOICE_SENT',
                 entity: 'Booking',
                 targetId: booking.id,
-                oldValue: null,
                 newValue: {
                     mobile: booking.user.mobile,
                     invoiceLabel,
@@ -1265,7 +1264,7 @@ router.post('/bookings/:id/send-report', ...mgr, async (req: AuthRequest, res: R
                         OR: [
                             { fetchStatus: 'STORED' },
                             { storageKey: { not: null } },
-                            { sourceUrl: { not: null } },
+                            { sourceUrl: { not: '' } },
                         ],
                     },
                     orderBy: { generatedAt: 'desc' },
@@ -1277,23 +1276,28 @@ router.post('/bookings/:id/send-report', ...mgr, async (req: AuthRequest, res: R
         if (!booking) {
             return res.status(404).json({ error: 'Booking not found' });
         }
+        const bookingData = booking as typeof booking & {
+            reports: Array<{ id: string }>;
+            items: Array<{ testName: string }>;
+            user: { mobile: string; name: string | null };
+        };
 
-        const report = booking.reports[0];
+        const report = bookingData.reports[0];
         if (!report) {
             return res.status(400).json({ error: 'No downloadable report is available for this booking yet.' });
         }
 
-        const itemNames = booking.items.map((item) => item.testName).filter(Boolean);
+        const itemNames = bookingData.items.map((item) => item.testName).filter(Boolean);
         const reportLabel =
             itemNames.length === 0
-                ? `Booking ${booking.id.slice(0, 8)} report`
+                ? `Booking ${bookingData.id.slice(0, 8)} report`
                 : itemNames.length === 1
                     ? itemNames[0]
                     : `${itemNames[0]} + ${itemNames.length - 1} more test${itemNames.length - 1 > 1 ? 's' : ''}`;
 
         const delivery = await sendSpecificReportViaWhatsApp({
-            mobile: booking.user.mobile,
-            customerName: booking.user.name,
+            mobile: bookingData.user.mobile,
+            customerName: bookingData.user.name,
             reportLabel,
             reportId: report.id,
         });
@@ -1304,10 +1308,9 @@ router.post('/bookings/:id/send-report', ...mgr, async (req: AuthRequest, res: R
                 adminName: req.adminName || 'Manager',
                 action: 'MANAGER_REPORT_SENT',
                 entity: 'Booking',
-                targetId: booking.id,
-                oldValue: null,
+                targetId: bookingData.id,
                 newValue: {
-                    mobile: booking.user.mobile,
+                    mobile: bookingData.user.mobile,
                     reportId: report.id,
                     reportLabel,
                     providerMessageId: delivery.id,
@@ -1323,7 +1326,7 @@ router.post('/bookings/:id/send-report', ...mgr, async (req: AuthRequest, res: R
         res.json({
             success: true,
             message: 'Report sent successfully',
-            mobile: booking.user.mobile,
+            mobile: bookingData.user.mobile,
             sentAt: new Date().toISOString(),
         });
     } catch (error: any) {
@@ -1603,7 +1606,7 @@ router.get('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
                                 OR: [
                                     { fetchStatus: 'STORED' },
                                     { storageKey: { not: null } },
-                                    { sourceUrl: { not: null } },
+                                    { sourceUrl: { not: '' } },
                                 ],
                             },
                             orderBy: { generatedAt: 'desc' },
@@ -1655,7 +1658,17 @@ router.get('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
             }
         });
 
-        res.json(orders.map((order) => ({
+        const managerOrders = orders as Array<typeof orders[number] & {
+            booking: {
+                paymentStatus: string;
+                status: string;
+                partnerBookingId: string | null;
+                partnerStatus: string | null;
+                reports: Array<{ id: string }>;
+            };
+        }>;
+
+        res.json(managerOrders.map((order) => ({
             ...order,
             canSendInvoice: canSendInvoiceForBooking({
                 paymentStatus: order.booking.paymentStatus,
