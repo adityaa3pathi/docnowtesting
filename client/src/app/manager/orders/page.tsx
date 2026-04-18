@@ -17,6 +17,7 @@ import toast from 'react-hot-toast';
 import { CancelDialog } from '@/components/profile/bookings/CancelDialog';
 import { RescheduleDialog } from '@/components/profile/bookings/RescheduleDialog';
 import type { BookingHeader } from '@/components/profile/bookings/types';
+import { useExport } from '@/hooks/useExport';
 import { Button } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import api, { downloadAuthenticatedFile, getApiUrl } from '@/lib/api';
@@ -59,6 +60,10 @@ interface Order {
     latestReportStatus: string | null;
     canCancel: boolean;
     canReschedule: boolean;
+    canSendInvoice: boolean;
+    invoiceSentAt: string | null;
+    canSendReport: boolean;
+    reportSentAt: string | null;
 }
 
 interface Pagination {
@@ -120,6 +125,8 @@ export default function OrdersPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [rescheduleOrder, setRescheduleOrder] = useState<Order | null>(null);
     const [cancelOrder, setCancelOrder] = useState<Order | null>(null);
@@ -127,6 +134,9 @@ export default function OrdersPage() {
     const [reports, setReports] = useState<ReportItem[]>([]);
     const [reportsLoading, setReportsLoading] = useState(false);
     const [downloadLoadingId, setDownloadLoadingId] = useState<string | null>(null);
+    const [invoiceSendingId, setInvoiceSendingId] = useState<string | null>(null);
+    const [reportSendingId, setReportSendingId] = useState<string | null>(null);
+    const { exporting, exportCsv } = useExport();
 
     const fetchOrders = useCallback(async () => {
         setLoading(true);
@@ -137,6 +147,8 @@ export default function OrdersPage() {
                     limit: pagination.limit,
                     status: statusFilter,
                     search: searchTerm || undefined,
+                    dateFrom: dateFrom || undefined,
+                    dateTo: dateTo || undefined,
                 }
             });
 
@@ -148,7 +160,7 @@ export default function OrdersPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.limit, searchTerm, statusFilter]);
+    }, [pagination.page, pagination.limit, searchTerm, statusFilter, dateFrom, dateTo]);
 
     useEffect(() => {
         fetchOrders();
@@ -160,7 +172,7 @@ export default function OrdersPage() {
         }, 400);
 
         return () => window.clearTimeout(timer);
-    }, [searchTerm, statusFilter]);
+    }, [searchTerm, statusFilter, dateFrom, dateTo]);
 
     const stats = useMemo(() => ({
         total: pagination.total,
@@ -205,6 +217,32 @@ export default function OrdersPage() {
         await fetchReports(order.id);
     };
 
+    const handleSendInvoice = async (order: Order) => {
+        setInvoiceSendingId(order.id);
+        try {
+            const res = await api.post(`/manager/bookings/${order.id}/send-invoice`);
+            toast.success(res.data.message || 'Invoice sent successfully');
+            await fetchOrders();
+        } catch (error: any) {
+            toast.error(error?.response?.data?.error || 'Failed to send invoice');
+        } finally {
+            setInvoiceSendingId(null);
+        }
+    };
+
+    const handleSendReport = async (order: Order) => {
+        setReportSendingId(order.id);
+        try {
+            const res = await api.post(`/manager/bookings/${order.id}/send-report`);
+            toast.success(res.data.message || 'Report sent successfully');
+            await fetchOrders();
+        } catch (error: any) {
+            toast.error(error?.response?.data?.error || 'Failed to send report');
+        } finally {
+            setReportSendingId(null);
+        }
+    };
+
     const rescheduleBookingHeader = rescheduleOrder ? toBookingHeader(rescheduleOrder) : null;
 
     return (
@@ -220,6 +258,19 @@ export default function OrdersPage() {
                 >
                     <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
                     Refresh
+                </button>
+                <button
+                    onClick={() => exportCsv('orders', {
+                        search: searchTerm,
+                        status: statusFilter,
+                        dateFrom,
+                        dateTo,
+                    }, '/api/manager')}
+                    disabled={exporting}
+                    className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                    Export CSV
                 </button>
             </div>
 
@@ -238,7 +289,7 @@ export default function OrdersPage() {
             </div>
 
             <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-3 lg:flex-row">
+                <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                         <input
@@ -263,6 +314,21 @@ export default function OrdersPage() {
                             </button>
                         ))}
                     </div>
+                    <input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(event) => setDateFrom(event.target.value)}
+                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        aria-label="Filter from date"
+                    />
+                    <input
+                        type="date"
+                        value={dateTo}
+                        min={dateFrom || undefined}
+                        onChange={(event) => setDateTo(event.target.value)}
+                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        aria-label="Filter to date"
+                    />
                 </div>
             </div>
 
@@ -278,11 +344,12 @@ export default function OrdersPage() {
                 ) : (
                     <>
                         <div className="overflow-x-auto">
-                            <table className="w-full min-w-[1200px]">
+                            <table className="w-full min-w-[1320px]">
                                 <thead className="border-b border-gray-100 bg-gray-50">
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Booking</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Customer / Patient</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Customer</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Patient</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Tests</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Slot</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Payment</th>
@@ -303,9 +370,12 @@ export default function OrdersPage() {
                                             <td className="px-6 py-4 align-top">
                                                 <p className="text-sm font-semibold text-gray-900">{order.user.name || 'Unnamed User'}</p>
                                                 <p className="text-xs text-gray-500">{order.user.mobile}</p>
-                                                <p className="mt-2 text-xs text-gray-700">
-                                                    Patient: {order.patient?.name || 'NA'}
-                                                    {order.patient ? ` • ${order.patient.gender}, ${order.patient.age}` : ''}
+                                                <p className="mt-1 text-xs text-gray-500">{order.user.email || 'No email'}</p>
+                                            </td>
+                                            <td className="px-6 py-4 align-top">
+                                                <p className="text-sm font-semibold text-gray-900">{order.patient?.name || 'NA'}</p>
+                                                <p className="mt-1 text-xs text-gray-500">
+                                                    {order.patient ? `${order.patient.gender}, ${order.patient.age}` : 'No patient summary'}
                                                 </p>
                                             </td>
                                             <td className="px-6 py-4 align-top">
@@ -335,15 +405,45 @@ export default function OrdersPage() {
                                             </td>
                                             <td className="px-6 py-4 align-top">
                                                 {order.reportCount > 0 ? (
-                                                    <button
-                                                        onClick={() => handleOpenReports(order)}
-                                                        className="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-medium text-green-700 transition-colors hover:bg-green-100"
-                                                    >
-                                                        <FileText size={14} />
-                                                        {order.reportCount === 1 ? 'Download report' : `${order.reportCount} reports`}
-                                                    </button>
+                                                    <div className="flex flex-col items-start gap-2">
+                                                        <button
+                                                            onClick={() => handleOpenReports(order)}
+                                                            className="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-medium text-green-700 transition-colors hover:bg-green-100"
+                                                        >
+                                                            <FileText size={14} />
+                                                            {order.reportCount === 1 ? 'Download report' : `${order.reportCount} reports`}
+                                                        </button>
+                                                        {order.canSendReport && (
+                                                            <button
+                                                                onClick={() => handleSendReport(order)}
+                                                                disabled={reportSendingId === order.id}
+                                                                className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                                            >
+                                                                {reportSendingId === order.id ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+                                                                {reportSendingId === order.id
+                                                                    ? 'Sending...'
+                                                                    : order.reportSentAt
+                                                                        ? 'Resend Report'
+                                                                        : 'Send Report'}
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 ) : (
                                                     <span className="text-xs text-gray-400">No reports yet</span>
+                                                )}
+                                                {order.canSendInvoice && (
+                                                    <button
+                                                        onClick={() => handleSendInvoice(order)}
+                                                        disabled={invoiceSendingId === order.id}
+                                                        className="mt-2 inline-flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-medium text-purple-700 transition-colors hover:bg-purple-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                                    >
+                                                        {invoiceSendingId === order.id ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+                                                        {invoiceSendingId === order.id
+                                                            ? 'Sending...'
+                                                            : order.invoiceSentAt
+                                                                ? 'Resend Invoice'
+                                                                : 'Send Invoice'}
+                                                    </button>
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 align-top">

@@ -12,7 +12,7 @@ export async function listUsers(req: AuthRequest, res: Response) {
         const limit = parseInt(req.query.limit as string) || 20;
         const search = (req.query.search as string) || '';
         const statusFilter = req.query.status as string;
-
+        const createdDate = req.query.createdDate as string;
         const roleFilter = req.query.role as string;
         const where: any = {};
 
@@ -33,6 +33,13 @@ export async function listUsers(req: AuthRequest, res: Response) {
 
         if (statusFilter && (statusFilter === 'ACTIVE' || statusFilter === 'BLOCKED')) {
             where.status = statusFilter;
+        }
+
+        if (createdDate) {
+            const start = new Date(`${createdDate}T00:00:00.000Z`);
+            const end = new Date(start);
+            end.setUTCDate(end.getUTCDate() + 1);
+            where.createdAt = { gte: start, lt: end };
         }
 
         const users = await prisma.user.findMany({

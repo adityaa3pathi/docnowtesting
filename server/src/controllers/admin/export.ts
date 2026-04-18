@@ -15,6 +15,7 @@ export async function exportAdminData(req: AuthRequest, res: Response) {
         if (entity === 'users') {
             const roleFilter = req.query.role as string;
             const statusFilter = req.query.status as string;
+            const createdDate = req.query.createdDate as string;
             const where: any = {};
 
             if (roleFilter && ['USER', 'MANAGER'].includes(roleFilter)) {
@@ -33,6 +34,13 @@ export async function exportAdminData(req: AuthRequest, res: Response) {
 
             if (statusFilter && (statusFilter === 'ACTIVE' || statusFilter === 'BLOCKED')) {
                 where.status = statusFilter;
+            }
+
+            if (createdDate) {
+                const start = new Date(`${createdDate}T00:00:00.000Z`);
+                const end = new Date(start);
+                end.setUTCDate(end.getUTCDate() + 1);
+                where.createdAt = { gte: start, lt: end };
             }
 
             const users = await prisma.user.findMany({
@@ -72,10 +80,24 @@ export async function exportAdminData(req: AuthRequest, res: Response) {
 
         } else if (entity === 'orders') {
             const status = req.query.status as string;
+            const dateFrom = req.query.dateFrom as string;
+            const dateTo = req.query.dateTo as string;
             const where: any = {};
 
             if (status && status !== 'All') {
                 where.status = status;
+            }
+
+            if (dateFrom || dateTo) {
+                where.createdAt = {};
+                if (dateFrom) {
+                    where.createdAt.gte = new Date(`${dateFrom}T00:00:00.000Z`);
+                }
+                if (dateTo) {
+                    const end = new Date(`${dateTo}T00:00:00.000Z`);
+                    end.setUTCDate(end.getUTCDate() + 1);
+                    where.createdAt.lt = end;
+                }
             }
 
             if (search) {
@@ -84,7 +106,8 @@ export async function exportAdminData(req: AuthRequest, res: Response) {
                     { partnerBookingId: { contains: search, mode: 'insensitive' } },
                     { user: { name: { contains: search, mode: 'insensitive' } } },
                     { user: { mobile: { contains: search } } },
-                    { items: { some: { patient: { name: { contains: search, mode: 'insensitive' } } } } }
+                    { items: { some: { patient: { name: { contains: search, mode: 'insensitive' } } } } },
+                    { items: { some: { testName: { contains: search, mode: 'insensitive' } } } }
                 ];
             }
 
@@ -104,14 +127,16 @@ export async function exportAdminData(req: AuthRequest, res: Response) {
             });
 
             // Format as CSV
-            const headers = ['Order ID', 'Healthians ID', 'Slot Date', 'Slot Time', 'Amount', 'Status', 'User Name', 'User Mobile', 'Patient Name', 'Tests'];
+            const headers = ['Order ID', 'Healthians ID', 'Created At', 'Slot Date', 'Slot Time', 'Amount', 'Status', 'Payment Status', 'User Name', 'User Mobile', 'Patient Name', 'Tests'];
             const rows = orders.map(order => [
                 order.id,
                 order.partnerBookingId || '',
+                order.createdAt.toISOString(),
                 order.slotDate,
                 order.slotTime,
                 order.totalAmount,
                 order.status,
+                order.paymentStatus,
                 `"${order.user.name || ''}"`,
                 order.user.mobile,
                 `"${order.items[0]?.patient?.name || ''}"`,

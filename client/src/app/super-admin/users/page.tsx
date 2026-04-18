@@ -20,6 +20,8 @@ export default function UsersPage() {
         setStatusFilter,
         filterRole,
         setRoleFilter,
+        createdDate,
+        setCreatedDate,
         actionLoading,
         fetchUsers,
         handleBlockUnblock,
@@ -44,7 +46,7 @@ export default function UsersPage() {
                 </div>
                 <div className="flex gap-2">
                     <button
-                        onClick={() => exportCsv('users', { search: searchTerm, status: filterStatus, role: filterRole })}
+                        onClick={() => exportCsv('users', { search: searchTerm, status: filterStatus, role: filterRole, createdDate })}
                         disabled={exporting}
                         className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                     >
@@ -69,6 +71,8 @@ export default function UsersPage() {
                 setStatusFilter={setStatusFilter}
                 filterRole={filterRole}
                 setRoleFilter={setRoleFilter}
+                createdDate={createdDate}
+                setCreatedDate={setCreatedDate}
             />
 
             {/* Users Table */}
