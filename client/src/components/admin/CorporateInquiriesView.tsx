@@ -33,6 +33,7 @@ export function CorporateInquiriesView({
     const [cityFilter, setCityFilter] = useState('');
     const [requirementFilter, setRequirementFilter] = useState('All');
     const [companySizeFilter, setCompanySizeFilter] = useState('All');
+    const [createdDateFilter, setCreatedDateFilter] = useState('');
     const [page, setPage] = useState(1);
 
     const [selectedInquiry, setSelectedInquiry] = useState<CorporateInquiry | null>(null);
@@ -47,8 +48,9 @@ export function CorporateInquiriesView({
             city: cityFilter,
             requirementType: requirementFilter,
             companySize: companySizeFilter,
+            createdDate: createdDateFilter,
         });
-    }, [page, statusFilter, cityFilter, requirementFilter, companySizeFilter, fetchInquiries]);
+    }, [page, statusFilter, cityFilter, requirementFilter, companySizeFilter, createdDateFilter, fetchInquiries]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -61,11 +63,12 @@ export function CorporateInquiriesView({
                     city: cityFilter,
                     requirementType: requirementFilter,
                     companySize: companySizeFilter,
+                    createdDate: createdDateFilter,
                 });
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchTerm, page, statusFilter, cityFilter, requirementFilter, companySizeFilter, fetchInquiries]);
+    }, [searchTerm, page, statusFilter, cityFilter, requirementFilter, companySizeFilter, createdDateFilter, fetchInquiries]);
 
     const formatDate = (dateStr: string) => {
         const date = new Date(dateStr);
@@ -101,6 +104,7 @@ export function CorporateInquiriesView({
                             city: cityFilter,
                             requirementType: requirementFilter,
                             companySize: companySizeFilter,
+                            createdDate: createdDateFilter,
                         }, apiPrefix)}
                         disabled={exporting}
                         className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
@@ -109,7 +113,7 @@ export function CorporateInquiriesView({
                         Export CSV
                     </button>
                     <button
-                        onClick={() => fetchInquiries({ page, search: searchTerm, status: statusFilter, city: cityFilter, requirementType: requirementFilter, companySize: companySizeFilter })}
+                        onClick={() => fetchInquiries({ page, search: searchTerm, status: statusFilter, city: cityFilter, requirementType: requirementFilter, companySize: companySizeFilter, createdDate: createdDateFilter })}
                         className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                         <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -137,6 +141,12 @@ export function CorporateInquiriesView({
                             value={cityFilter}
                             onChange={(e) => { setCityFilter(e.target.value); setPage(1); }}
                             placeholder="Filter by city"
+                            className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+                        />
+                        <input
+                            type="date"
+                            value={createdDateFilter}
+                            onChange={(e) => { setCreatedDateFilter(e.target.value); setPage(1); }}
                             className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
                         />
                         <select

@@ -18,6 +18,9 @@ interface ManagerOrder {
         status: string;
         paymentStatus: string;
         partnerBookingId: string | null;
+        items: Array<{
+            testName: string;
+        }>;
     };
     customer: {
         name: string | null;
@@ -222,6 +225,7 @@ export default function OrdersPage() {
                             <thead>
                                 <tr className="border-b border-gray-100 text-left text-xs uppercase text-gray-500 tracking-wide">
                                     <th className="px-5 py-3">Customer</th>
+                                    <th className="px-5 py-3">Tests / Packages</th>
                                     <th className="px-5 py-3">Amount</th>
                                     <th className="px-5 py-3">Order Status</th>
                                     <th className="px-5 py-3">Partner Booking</th>
@@ -235,6 +239,19 @@ export default function OrdersPage() {
                                         <td className="px-5 py-4">
                                             <p className="font-semibold text-gray-900">{order.customer.name || 'Unnamed'}</p>
                                             <p className="text-xs text-gray-400">{order.customer.mobile}</p>
+                                        </td>
+                                        <td className="px-5 py-4">
+                                            <div className="max-w-xs space-y-1">
+                                                {order.booking.items.length > 0 ? (
+                                                    order.booking.items.map((item, index) => (
+                                                        <p key={`${order.id}-${index}`} className="text-xs text-gray-700 truncate">
+                                                            {item.testName}
+                                                        </p>
+                                                    ))
+                                                ) : (
+                                                    <span className="text-xs text-gray-400">No items</span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="px-5 py-4 font-bold text-purple-800">
                                             ₹{order.totalAmount.toLocaleString()}

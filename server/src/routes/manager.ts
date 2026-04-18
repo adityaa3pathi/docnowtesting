@@ -981,7 +981,16 @@ router.get('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
                 ...(status ? { status: status as any } : {})
             },
             include: {
-                booking: { select: { status: true, paymentStatus: true, partnerBookingId: true } },
+                booking: {
+                    select: {
+                        status: true,
+                        paymentStatus: true,
+                        partnerBookingId: true,
+                        items: {
+                            select: { testName: true }
+                        }
+                    }
+                },
                 customer: { select: { name: true, mobile: true } }
             },
             orderBy: { createdAt: 'desc' },

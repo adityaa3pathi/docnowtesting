@@ -31,7 +31,7 @@ export function useCorporateInquiries(apiPrefix: '/api/admin' | '/api/manager' =
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-    const fetchInquiries = useCallback(async (params: { page: number; search?: string; status?: string; city?: string; requirementType?: string; companySize?: string }) => {
+    const fetchInquiries = useCallback(async (params: { page: number; search?: string; status?: string; city?: string; requirementType?: string; companySize?: string; createdDate?: string }) => {
         setLoading(true);
         try {
             const token = localStorage.getItem('docnow_auth_token');
@@ -45,6 +45,7 @@ export function useCorporateInquiries(apiPrefix: '/api/admin' | '/api/manager' =
             if (params.city) searchParams.append('city', params.city);
             if (params.requirementType && params.requirementType !== 'All') searchParams.append('requirementType', params.requirementType);
             if (params.companySize && params.companySize !== 'All') searchParams.append('companySize', params.companySize);
+            if (params.createdDate) searchParams.append('createdDate', params.createdDate);
 
             const res = await fetch(`${apiPrefix}/corporate-inquiries?${searchParams.toString()}`, {
                 headers: { Authorization: `Bearer ${token}` },

@@ -92,20 +92,20 @@ export function CallbacksView({ apiPrefix, title = 'Callback Requests', subtitle
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4b2192] focus:border-transparent"
                         />
                     </div>
-                    <div className="flex gap-2">
-                        {['All', 'PENDING', 'RESOLVED'].map((status) => (
-                            <button
-                                key={status}
-                                onClick={() => { setStatusFilter(status); setPage(1); }}
-                                className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-                                    statusFilter === status
-                                        ? 'bg-[#4b2192] text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
-                            >
-                                {status}
-                            </button>
-                        ))}
+                    <div className="w-full md:w-52 relative">
+                        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => {
+                                setStatusFilter(e.target.value);
+                                setPage(1);
+                            }}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#4b2192] focus:border-transparent"
+                        >
+                            <option value="All">All Statuses</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="RESOLVED">Resolved</option>
+                        </select>
                     </div>
                 </div>
             </div>
