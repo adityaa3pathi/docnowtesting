@@ -15,23 +15,24 @@ export function CallbacksView({ apiPrefix, title = 'Callback Requests', subtitle
 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
+    const [createdDate, setCreatedDate] = useState('');
     const [page, setPage] = useState(1);
 
     const [selectedCallback, setSelectedCallback] = useState<CallbackRequest | null>(null);
     const [notes, setNotes] = useState('');
 
     useEffect(() => {
-        fetchCallbacks({ page, search: searchTerm, status: statusFilter });
+        fetchCallbacks({ page, search: searchTerm, status: statusFilter, createdDate });
     }, [page, statusFilter, fetchCallbacks]); // searchTerm triggers explicitly via debounce
 
     // Debounced search
     useEffect(() => {
         const timer = setTimeout(() => {
             if (page !== 1) setPage(1);
-            else fetchCallbacks({ page: 1, search: searchTerm, status: statusFilter });
+            else fetchCallbacks({ page: 1, search: searchTerm, status: statusFilter, createdDate });
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchTerm]);
+    }, [searchTerm, createdDate]);
 
     const handleResolveSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -62,7 +63,7 @@ export function CallbacksView({ apiPrefix, title = 'Callback Requests', subtitle
                 </div>
                 <div className="flex gap-2">
                     <button
-                        onClick={() => exportCsv('callbacks', { search: searchTerm, status: statusFilter }, apiPrefix)}
+                        onClick={() => exportCsv('callbacks', { search: searchTerm, status: statusFilter, createdDate }, apiPrefix)}
                         disabled={exporting}
                         className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                     >
@@ -70,7 +71,7 @@ export function CallbacksView({ apiPrefix, title = 'Callback Requests', subtitle
                         Export CSV
                     </button>
                     <button
-                        onClick={() => fetchCallbacks({ page, search: searchTerm, status: statusFilter })}
+                        onClick={() => fetchCallbacks({ page, search: searchTerm, status: statusFilter, createdDate })}
                         className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                         <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -81,7 +82,7 @@ export function CallbacksView({ apiPrefix, title = 'Callback Requests', subtitle
 
             {/* Filters */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex flex-col md:flex-row gap-4 md:flex-wrap">
                     <div className="flex-1 relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                         <input
@@ -107,6 +108,16 @@ export function CallbacksView({ apiPrefix, title = 'Callback Requests', subtitle
                             <option value="RESOLVED">Resolved</option>
                         </select>
                     </div>
+                    <input
+                        type="date"
+                        value={createdDate}
+                        onChange={(e) => {
+                            setCreatedDate(e.target.value);
+                            setPage(1);
+                        }}
+                        className="w-full md:w-52 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#4b2192] focus:border-transparent"
+                        aria-label="Filter callback date"
+                    />
                 </div>
             </div>
 
