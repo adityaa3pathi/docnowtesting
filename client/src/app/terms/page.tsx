@@ -20,6 +20,7 @@ import {
     Mail,
     Heart,
 } from "lucide-react";
+import { SUPPORT_ADDRESS, SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY } from "@/lib/supportConfig";
 
 /* ------------------------------------------------------------------ */
 /*  TABLE OF CONTENTS                                                  */
@@ -398,15 +399,15 @@ export default function TermsPage() {
                                     <div className="space-y-3 text-sm">
                                         <p className="flex items-center gap-3">
                                             <Mail className="h-4 w-4 text-primary shrink-0" />
-                                            <a href="mailto:harshagarwal@docnow.in" className="text-primary hover:underline font-semibold">harshagarwal@docnow.in</a>
+                                            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-primary hover:underline font-semibold">{SUPPORT_EMAIL}</a>
                                         </p>
                                         <p className="flex items-center gap-3">
                                             <span className="text-primary shrink-0 text-base">📞</span>
-                                            <span className="font-semibold text-foreground">+91 9649 089 089</span>
+                                            <span className="font-semibold text-foreground">{SUPPORT_PHONE_DISPLAY}</span>
                                         </p>
                                         <p className="flex items-start gap-3">
                                             <span className="text-primary shrink-0 text-base mt-0.5">🏢</span>
-                                            <span className="font-semibold text-foreground">Shop No 21, Chandpole Bazar, Jaipur</span>
+                                            <span className="font-semibold text-foreground">{SUPPORT_ADDRESS}</span>
                                         </p>
                                     </div>
                                 </Card>

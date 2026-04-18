@@ -16,8 +16,8 @@ const COMPANY = {
     registeredAddress:
         process.env.DOCNOW_REGISTERED_ADDRESS ||
         'Shop No 21, Chandpole Bazar, Jaipur',
-    supportPhone: process.env.DOCNOW_SUPPORT_PHONE || '+91 9649 089 089',
-    supportEmail: process.env.DOCNOW_SUPPORT_EMAIL || 'harshagarwal@docnow.in',
+    supportPhone: process.env.DOCNOW_SUPPORT_PHONE || '+91 9649089089',
+    supportEmail: process.env.DOCNOW_SUPPORT_EMAIL || 'docnowhealthcare@gmail.com',
     gstin: process.env.DOCNOW_GSTIN || 'GSTIN pending configuration',
     refundPolicy:
         process.env.DOCNOW_REFUND_POLICY ||
