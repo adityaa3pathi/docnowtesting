@@ -76,6 +76,21 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        if (!isOpen || typeof window === 'undefined') return;
+
+        const params = new URLSearchParams(window.location.search);
+        const referralCode = params.get('ref') || params.get('referralCode');
+        if (!referralCode) return;
+
+        setSignupData((prev) => ({
+            ...prev,
+            referralCode: referralCode.toUpperCase()
+        }));
+        setView('SIGNUP');
+        setSignupStep('DETAILS');
+    }, [isOpen]);
+
     const handleError = (err: any) => {
         setError(err.response?.data?.error || 'Something went wrong. Please try again.');
         setLoading(false);

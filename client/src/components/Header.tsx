@@ -42,6 +42,10 @@ const otherCities = [
     'Agra', 'Ahmadnagar', 'Ahmedabad', 'Aligarh', 'Allahabad', 'Almora', 'Alwar', 'Ambala', 'Ambedkar Nagar', 'Amravati', 'Amritsar', 'Amroha', 'Aurangabad', 'Ayodhya', 'Azamgarh', 'Baghpat', 'Bahadurgarh', 'Bardhaman', 'Bareilly', 'Belgaum', 'Bharatpur', 'Bhatinda', 'Bhilai', 'Bhilwara', 'Bhiwani', 'Bhopal', 'Bhubaneswar', 'Bijnor', 'Bikaner', 'Bilaspur', 'Bokaro', 'Bulandshahar', 'Chandigarh', 'Darbhanga', 'Dehradun', 'Deulpur', 'Dhampur', 'Dhanbad', 'Durgapur', 'Etah', 'Faizabad', 'Faridabad', 'Firozabad', 'Gadarpur', 'Gandhinagar', 'Ganganagar', 'Gaya', 'Ghaziabad', 'Ghazipur', 'Gonda', 'Gorakhpur', 'Greater Noida', 'Guwahati', 'Gwalior', 'Hajipur', 'Haldwani', 'Hapur', 'Hardoi', 'Haridwar', 'Hathras', 'Hazaribagh', 'Hisar', 'Hoshiarpur', 'Indore', 'Jabalpur', 'Jaipur', 'Jalandhar', 'Jamnagar', 'Jamshedpur', 'Jaunpur', 'Jhansi', 'Jodhpur', 'Kanpur', 'Karimnagar', 'Karnal', 'Kasganj', 'Kashipur', 'Khagaria', 'Khurja', 'Kota', 'Lakhimpur', 'Latur', 'Lucknow', 'Ludhiana', 'Mainpuri', 'Mathura', 'Meerut', 'Mehsana', 'Modinagar', 'Moga', 'Mohali', 'Moradabad', 'Munger', 'Muzaffarnagar', 'Mysuru', 'Nagpur', 'Nashik', 'Palwal', 'Panchkula', 'Panipat', 'Paschim Medinipur', 'Patiala', 'Patna', 'Pratapgarh', 'Prayagraj', 'Raebareli', 'Raipur', 'Rajkot', 'Rampur', 'Ranchi', 'Rewa', 'Rewari', 'Rishikesh', 'Rohtak', 'Roorkee', 'Rudrapur Udham Singh Nagar', 'Sagar', 'Saharanpur', 'Samastipur', 'Sambhal', 'Shahabad', 'Shamli', 'Sohna', 'Sonipat', 'Srinagar', 'Sultanpur', 'Surat', 'Tarn Taran', 'Udaipur', 'Ujjain', 'Una', 'Vadodara', 'Varanasi', 'Vijayawada', 'Visakhapatnam', 'Warangal', 'Yamuna Nagar'
 ];
 
+const callbackCities = Array.from(new Set([...metroCities.map((city) => city.name), ...otherCities])).sort((a, b) =>
+    a.localeCompare(b)
+);
+
 export function Header() {
     const { selectedCity, selectedPincode, updateCity, updatePincode, checkAndSetPincode, serviceabilityStatus } = useLocation();
     const { user, isAuthenticated, logout } = useAuth();
@@ -439,16 +443,18 @@ export function Header() {
                                     onChange={(e) => setCallbackForm({ ...callbackForm, name: e.target.value })}
                                 />
                                 <div className="relative">
-                                    <select
-                                        className="w-full h-12 rounded-xl border border-border bg-white px-3 text-sm focus:outline-none focus:border-primary appearance-none font-medium"
+                                    <Input
+                                        list="callback-city-options"
+                                        placeholder="Select or type your city *"
+                                        required
                                         value={callbackForm.city}
                                         onChange={(e) => setCallbackForm({ ...callbackForm, city: e.target.value })}
-                                    >
-                                        <option value="Gurgaon">Gurgaon</option>
-                                        <option value="Delhi">Delhi</option>
-                                        <option value="Noida">Noida</option>
-                                        <option value="Other">Other</option>
-                                    </select>
+                                    />
+                                    <datalist id="callback-city-options">
+                                        {callbackCities.map((city) => (
+                                            <option key={city} value={city} />
+                                        ))}
+                                    </datalist>
                                 </div>
                                 <Button type="submit" className="w-full h-12 rounded-xl font-bold text-lg" disabled={isSubmittingCallback}>
                                     {isSubmittingCallback ? <Loader2 className="animate-spin" /> : "Submit"}
