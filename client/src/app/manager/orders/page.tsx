@@ -51,6 +51,7 @@ interface Order {
     } | null;
     patient: {
         name: string;
+        relation: string;
         gender: string;
         age: number;
     } | null;
@@ -375,7 +376,7 @@ export default function OrdersPage() {
                                             <td className="px-6 py-4 align-top">
                                                 <p className="text-sm font-semibold text-gray-900">{order.patient?.name || 'NA'}</p>
                                                 <p className="mt-1 text-xs text-gray-500">
-                                                    {order.patient ? `${order.patient.gender}, ${order.patient.age}` : 'No patient summary'}
+                                                    {order.patient ? `${order.patient.relation} • ${order.patient.gender}, ${order.patient.age}` : 'No patient summary'}
                                                 </p>
                                             </td>
                                             <td className="px-6 py-4 align-top">
@@ -536,7 +537,7 @@ export default function OrdersPage() {
                                     <p className="text-xs uppercase tracking-wide text-gray-500">Patient</p>
                                     <p className="mt-2 font-medium text-gray-900">{selectedOrder.patient?.name || 'NA'}</p>
                                     <p className="text-gray-500">
-                                        {selectedOrder.patient ? `${selectedOrder.patient.gender}, ${selectedOrder.patient.age}` : 'No patient summary'}
+                                        {selectedOrder.patient ? `${selectedOrder.patient.relation} • ${selectedOrder.patient.gender}, ${selectedOrder.patient.age}` : 'No patient summary'}
                                     </p>
                                 </div>
                             </div>

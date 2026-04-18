@@ -1046,7 +1046,7 @@ router.get('/bookings', ...mgr, async (req: AuthRequest, res: Response) => {
                     managerOrder: { select: { id: true, status: true, managerId: true } },
                     items: {
                         include: {
-                            patient: { select: { name: true, gender: true, age: true } }
+                            patient: { select: { name: true, relation: true, gender: true, age: true } }
                         }
                     },
                     reports: {

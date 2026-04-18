@@ -35,6 +35,7 @@ interface Order {
     };
     patient: {
         name: string;
+        relation: string;
         gender: string;
         age: number;
     } | null;
@@ -257,7 +258,7 @@ export default function OrdersPage() {
                                                 <div>
                                                     <p className="font-medium text-gray-900">{order.patient?.name || 'Unknown Patient'}</p>
                                                     <p className="text-xs text-gray-500 mt-0.5">
-                                                        {order.patient ? `${order.patient.gender}, ${order.patient.age}` : 'No patient details'}
+                                                        {order.patient ? `${order.patient.relation} • ${order.patient.gender}, ${order.patient.age}` : 'No patient details'}
                                                     </p>
                                                 </div>
                                             </td>
@@ -369,6 +370,7 @@ export default function OrdersPage() {
                                     </h3>
                                     <div className="space-y-1 text-sm text-gray-600">
                                         <p><span className="text-gray-400 w-16 inline-block">Name:</span> {selectedOrder.patient?.name || '-'}</p>
+                                        <p><span className="text-gray-400 w-16 inline-block">Relation:</span> {selectedOrder.patient?.relation || '-'}</p>
                                         <p><span className="text-gray-400 w-16 inline-block">Age/Sex:</span> {selectedOrder.patient?.age} / {selectedOrder.patient?.gender}</p>
                                     </div>
                                 </div>
