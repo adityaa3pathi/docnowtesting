@@ -7,6 +7,7 @@ import { HealthiansAdapter } from '../adapters/healthians';
 import { resolveOrCreateSelfPatient, patientSchema } from '../utils/patientValidation';
 import { getRazorpay } from '../services/razorpay';
 import { finalizeBooking } from '../services/bookingFinalization';
+import { cancelManagerOrder } from '../services/bookingCancellation';
 import { generateReferralCode } from '../utils/referralService';
 import { getClientIP } from '../utils/adminHelpers';
 import { getGeodataFromPincode } from '../utils/geocoding';
@@ -17,6 +18,9 @@ import { OTP_EXPIRY_MINS, isValidMobile, persistAndSendOtp } from '../services/o
 
 const router = Router();
 const healthians = HealthiansAdapter.getInstance();
+const managerCancelSchema = z.object({
+    remarks: z.string().trim().min(5, 'Reason for cancellation must be at least 5 characters long'),
+});
 
 // All manager routes require auth + MANAGER/SUPER_ADMIN role
 const mgr = [authMiddleware, requireManager] as const;
@@ -929,6 +933,45 @@ router.post('/orders/:id/confirm-payment', ...mgr, async (req: AuthRequest, res:
 });
 
 // H. List Orders
+router.post('/orders/:id/cancel', ...mgr, async (req: AuthRequest, res: Response) => {
+    const id = req.params.id as string;
+    const parsed = managerCancelSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Reason is required' });
+    }
+
+    try {
+        const result = await cancelManagerOrder({
+            managerOrderId: id,
+            managerId: req.userId!,
+            adminId: req.adminId!,
+            adminName: req.adminName || 'Manager',
+            ipAddress: getClientIP(req),
+            remarks: parsed.data.remarks,
+        });
+        res.json(result);
+    } catch (error: any) {
+        console.error('[Manager] Cancel order error:', error);
+
+        const message = error.message || 'Failed to cancel order';
+        if (message.includes('not found') || message.includes('access denied')) {
+            return res.status(404).json({ error: message });
+        }
+        if (
+            message.includes('already cancelled') ||
+            message.includes('Cancellation not allowed') ||
+            message.includes('cannot be cancelled') ||
+            message.includes('Partner Booking ID is missing') ||
+            message.includes('No active customers found')
+        ) {
+            return res.status(400).json({ error: message, details: error.details });
+        }
+
+        res.status(500).json({ error: message, details: error.details });
+    }
+});
+
 router.get('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
     const { status, page = '1', limit = '50' } = req.query;
     try {

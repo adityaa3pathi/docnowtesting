@@ -57,6 +57,7 @@ enum ManagerOrderStatus {
   PAYMENT_RECEIVED
   PAYMENT_CONFIRMED
   CONFIRMED
+  CANCELLED
   BOOKING_FAILED
   REFUNDED
 }
@@ -555,6 +556,7 @@ model ManagerOrder {
   razorpayLinkUrl String?
   confirmedAt     DateTime?
   cancelledAt     DateTime?
+  cancellationReason String?
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
