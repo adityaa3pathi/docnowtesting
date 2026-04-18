@@ -1,6 +1,12 @@
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { DocnowLogo } from './DocnowLogo';
+import {
+    SUPPORT_ADDRESS,
+    SUPPORT_EMAIL,
+    SUPPORT_PHONE_DISPLAY,
+    SUPPORT_PHONE_LINK,
+} from '@/lib/supportConfig';
 
 export function Footer() {
     return (
@@ -88,15 +94,19 @@ export function Footer() {
                         <ul className="space-y-4">
                             <li className="flex items-center text-sm font-medium text-muted-foreground">
                                 <Phone className="mr-3 h-4 w-4 text-primary" />
-                                +91 9649 089 089
+                                <a href={`tel:${SUPPORT_PHONE_LINK}`} className="hover:text-primary">
+                                    {SUPPORT_PHONE_DISPLAY}
+                                </a>
                             </li>
                             <li className="flex items-center text-sm font-medium text-muted-foreground">
                                 <Mail className="mr-3 h-4 w-4 text-primary" />
-                                harshagarwal@docnow.in
+                                <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-primary">
+                                    {SUPPORT_EMAIL}
+                                </a>
                             </li>
                             <li className="flex items-center text-sm font-medium text-muted-foreground">
                                 <MapPin className="mr-3 h-4 w-4 text-primary" />
-                                Shop No 21, Chandpole Bazar, Jaipur
+                                {SUPPORT_ADDRESS}
                             </li>
                         </ul>
                     </div>
