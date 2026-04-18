@@ -12,9 +12,16 @@ interface RescheduleDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
+    apiPrefix?: string;
 }
 
-export function RescheduleDialog({ booking, open, onOpenChange, onSuccess }: RescheduleDialogProps) {
+export function RescheduleDialog({
+    booking,
+    open,
+    onOpenChange,
+    onSuccess,
+    apiPrefix = '/bookings',
+}: RescheduleDialogProps) {
     const [rescheduleDate, setRescheduleDate] = useState(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
     const [availableSlots, setAvailableSlots] = useState<any[]>([]);
     const [slotsLoading, setSlotsLoading] = useState(false);
@@ -46,7 +53,7 @@ export function RescheduleDialog({ booking, open, onOpenChange, onSuccess }: Res
         if (open && booking && (booking.addressId || selectedAddressId)) {
             fetchRescheduleSlots(booking.id, rescheduleDate, selectedAddressId);
         }
-    }, [rescheduleDate, selectedAddressId]);
+    }, [rescheduleDate, selectedAddressId, open, booking, apiPrefix]);
 
     const fetchRescheduleSlots = async (bookingId: string, date: string, addressId: string | null) => {
         setSlotsLoading(true);
@@ -56,7 +63,7 @@ export function RescheduleDialog({ booking, open, onOpenChange, onSuccess }: Res
             if (addressId) {
                 params.addressId = addressId;
             }
-            const res = await api.get(`/bookings/${bookingId}/reschedulable-slots`, { params });
+            const res = await api.get(`${apiPrefix}/${bookingId}/reschedulable-slots`, { params });
             console.log('Reschedule slots API response:', res.data);
 
             const slots = res.data?.data?.slots || res.data?.slots || res.data?.data || [];
@@ -94,11 +101,12 @@ export function RescheduleDialog({ booking, open, onOpenChange, onSuccess }: Res
 
         setIsRescheduling(true);
         try {
-            const res = await api.post(`/bookings/${booking.id}/reschedule`, {
+            const res = await api.post(`${apiPrefix}/${booking.id}/reschedule`, {
                 slot_id: slotId,
                 slotDate: rescheduleDate,
                 slotTime: `${startTime} - ${endTime}`,
-                reschedule_reason: rescheduleReason
+                reschedule_reason: rescheduleReason,
+                addressId: selectedAddressId,
             });
 
             if (res.data.success) {
