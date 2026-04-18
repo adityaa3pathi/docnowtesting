@@ -6,12 +6,13 @@ import {
     ArrowUpRight,
     ArrowDownLeft,
     Search,
-    Filter,
     RefreshCw,
     ChevronLeft,
     ChevronRight,
     Loader2,
+    Download,
 } from 'lucide-react';
+import { useExport } from '@/hooks/useExport';
 
 interface LedgerEntry {
     id: string;
@@ -44,6 +45,8 @@ export default function WalletsPage() {
     const [loading, setLoading] = useState(true);
     const [filterType, setFilterType] = useState<'All' | 'CREDIT' | 'DEBIT'>('All');
     const [searchTerm, setSearchTerm] = useState('');
+    const [createdDate, setCreatedDate] = useState('');
+    const { exporting, exportCsv } = useExport();
 
     const fetchLedger = useCallback(async () => {
         setLoading(true);
@@ -56,6 +59,7 @@ export default function WalletsPage() {
 
             if (filterType !== 'All') params.append('type', filterType);
             if (searchTerm) params.append('search', searchTerm);
+            if (createdDate) params.append('createdDate', createdDate);
 
             const res = await fetch(`/api/admin/wallets/ledger?${params}`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -71,7 +75,7 @@ export default function WalletsPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.limit, filterType, searchTerm]);
+    }, [pagination.page, pagination.limit, filterType, searchTerm, createdDate]);
 
     useEffect(() => {
         fetchLedger();
@@ -83,7 +87,7 @@ export default function WalletsPage() {
             setPagination(prev => ({ ...prev, page: 1 }));
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchTerm]);
+    }, [searchTerm, createdDate]);
 
     const formatDateTime = (dateStr: string) => {
         return new Date(dateStr).toLocaleString('en-IN', {
@@ -103,18 +107,28 @@ export default function WalletsPage() {
                     <h1 className="text-3xl font-semibold text-gray-900">Wallet Management</h1>
                     <p className="text-gray-600 mt-1">System-wide transaction ledger</p>
                 </div>
-                <button
-                    onClick={fetchLedger}
-                    className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                    <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-                    Refresh
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => exportCsv('wallets', { search: searchTerm, type: filterType, createdDate })}
+                        disabled={exporting}
+                        className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    >
+                        {exporting ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}
+                        Export CSV
+                    </button>
+                    <button
+                        onClick={fetchLedger}
+                        className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                        Refresh
+                    </button>
+                </div>
             </div>
 
             {/* Filters & Search */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex flex-col md:flex-row gap-4 md:flex-wrap">
                     <div className="flex-1 relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                         <input
@@ -142,6 +156,13 @@ export default function WalletsPage() {
                             </button>
                         ))}
                     </div>
+                    <input
+                        type="date"
+                        value={createdDate}
+                        onChange={(e) => setCreatedDate(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        aria-label="Filter wallet date"
+                    />
                 </div>
             </div>
 
