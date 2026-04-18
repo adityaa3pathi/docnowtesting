@@ -1,9 +1,32 @@
 import express, { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { generateReferralCode } from '../utils/referralService';
 
 const router = express.Router();
 const prisma = new PrismaClient();
+const APP_BASE_URL = (process.env.APP_BASE_URL || 'http://localhost:3000').replace(/\/+$/g, '');
+
+async function ensureReferralCode(userId: string, name?: string | null, existingCode?: string | null) {
+    if (existingCode) return existingCode;
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+        const nextCode = generateReferralCode(name);
+        try {
+            const updated = await prisma.user.update({
+                where: { id: userId },
+                data: { referralCode: nextCode },
+                select: { referralCode: true }
+            });
+            return updated.referralCode!;
+        } catch (error: any) {
+            if (error?.code === 'P2002') continue;
+            throw error;
+        }
+    }
+
+    throw new Error('Failed to generate a unique referral code');
+}
 
 // GET /api/profile - Get current user's profile
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
@@ -103,6 +126,153 @@ router.get('/wallet', authMiddleware, async (req: AuthRequest, res: Response) =>
         });
     } catch (error) {
         console.error('Get Wallet Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// GET /api/profile/referrals - Get referral center data
+router.get('/referrals', authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        const baseUser = await prisma.user.findUnique({
+            where: { id: req.userId },
+            select: {
+                id: true,
+                name: true,
+                mobile: true,
+                referralCode: true
+            }
+        });
+
+        if (!baseUser) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+
+        const referralCode = await ensureReferralCode(baseUser.id, baseUser.name, baseUser.referralCode);
+
+        const [configs, referredUsers, rewardRows] = await Promise.all([
+            prisma.systemConfig.findMany({
+                where: {
+                    key: {
+                        in: ['REFERRAL_BONUS_REFEREE', 'REFERRAL_BONUS_REFERRER']
+                    }
+                },
+                select: {
+                    key: true,
+                    value: true
+                }
+            }),
+            prisma.user.findMany({
+                where: { referredById: req.userId },
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    id: true,
+                    name: true,
+                    mobile: true,
+                    createdAt: true
+                }
+            }),
+            prisma.referralReward.findMany({
+                where: {
+                    OR: [
+                        { referrerId: req.userId, rewardType: 'REFERRER_ORDER' },
+                        { refereeId: req.userId, rewardType: 'REFEREE_SIGNUP' }
+                    ]
+                },
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    id: true,
+                    referrerId: true,
+                    refereeId: true,
+                    rewardType: true,
+                    amount: true,
+                    status: true,
+                    triggerEvent: true,
+                    processedAt: true,
+                    createdAt: true,
+                    referrer: {
+                        select: {
+                            id: true,
+                            name: true,
+                            mobile: true
+                        }
+                    }
+                }
+            })
+        ]);
+
+        const typedConfigs = configs as Array<{ key: string; value: string }>;
+        const typedReferredUsers = referredUsers as Array<{ id: string; name: string | null; mobile: string; createdAt: Date }>;
+        const typedRewardRows = rewardRows as Array<{
+            id: string;
+            referrerId: string;
+            refereeId: string;
+            rewardType: string;
+            amount: number;
+            status: string;
+            triggerEvent: string;
+            processedAt: Date | null;
+            createdAt: Date;
+        }>;
+
+        const refereeReward = typedConfigs.find((config) => config.key === 'REFERRAL_BONUS_REFEREE');
+        const referrerReward = typedConfigs.find((config) => config.key === 'REFERRAL_BONUS_REFERRER');
+        const latestOrderRewards = new Map(
+            typedRewardRows
+                .filter((reward) => reward.rewardType === 'REFERRER_ORDER' && reward.referrerId === req.userId)
+                .map((reward) => [reward.refereeId, reward])
+        );
+
+        const userLookup = new Map(
+            typedReferredUsers.map((user) => [user.id, user])
+        );
+
+        const referrals = typedReferredUsers.map((user) => ({
+            id: user.id,
+            name: user.name,
+            mobile: user.mobile,
+            joinedAt: user.createdAt,
+            status: latestOrderRewards.has(user.id) ? 'ORDER_COMPLETED' : 'SIGNED_UP'
+        }));
+
+        const rewardHistory = typedRewardRows.map((reward) => {
+            const relatedReferee = userLookup.get(reward.refereeId);
+            const isSignupBonusForCurrentUser = reward.rewardType === 'REFEREE_SIGNUP' && reward.refereeId === req.userId;
+
+            return {
+                id: reward.id,
+                rewardType: reward.rewardType,
+                amount: reward.amount,
+                processedAt: reward.processedAt,
+                createdAt: reward.createdAt,
+                triggerEvent: reward.triggerEvent,
+                status: reward.status,
+                refereeName: relatedReferee?.name || (isSignupBonusForCurrentUser ? baseUser.name : null),
+                refereeMobile: relatedReferee?.mobile || (isSignupBonusForCurrentUser ? baseUser.mobile : null),
+                isBeneficiaryReferee: isSignupBonusForCurrentUser
+            };
+        });
+
+        const totalEarnings = rewardHistory
+            .filter((reward) => reward.status === 'PROCESSED')
+            .reduce((sum, reward) => sum + reward.amount, 0);
+
+        res.json({
+            referralCode,
+            shareLink: `${APP_BASE_URL}/?ref=${encodeURIComponent(referralCode)}`,
+            rewardsConfig: {
+                refereeBonus: parseFloat(refereeReward?.value || '50'),
+                referrerBonus: parseFloat(referrerReward?.value || '100')
+            },
+            stats: {
+                totalReferrals: referrals.length,
+                totalEarnings
+            },
+            referrals,
+            rewardHistory
+        });
+    } catch (error) {
+        console.error('Get Referral Center Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
