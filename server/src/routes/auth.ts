@@ -20,10 +20,14 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
 const MAX_OTP_ATTEMPTS = 5;
 const RESEND_COOLDOWN_SECONDS = 60;
 
+import { rateLimiter } from '../middleware/rateLimiter';
+// 5 requests per 15 minutes for OTP endpoints
+const authRateLimiter = rateLimiter(5, 15 * 60, 'auth_otp');
+
 // --- SIGNUP FLOW ---
 
 // POST /api/auth/signup/send-otp
-router.post('/signup/send-otp', async (req: Request, res: Response) => {
+router.post('/signup/send-otp', authRateLimiter, async (req: Request, res: Response) => {
     try {
         const { mobile, email } = req.body;
 
@@ -166,7 +170,7 @@ router.post('/login/password', async (req: Request, res: Response) => {
 });
 
 // POST /api/auth/login/send-otp
-router.post('/login/send-otp', async (req: Request, res: Response) => {
+router.post('/login/send-otp', authRateLimiter, async (req: Request, res: Response) => {
     try {
         const { mobile } = req.body;
         if (!mobile || !isValidMobile(mobile)) return res.status(400).json({ error: 'Valid 10-digit mobile number required' });
@@ -221,7 +225,7 @@ router.post('/login/verify-otp', async (req: Request, res: Response) => {
 // --- FORGOT PASSWORD FLOW ---
 
 // POST /api/auth/forgot-password/send-otp
-router.post('/forgot-password/send-otp', async (req: Request, res: Response) => {
+router.post('/forgot-password/send-otp', authRateLimiter, async (req: Request, res: Response) => {
     try {
         const { mobile } = req.body;
 
