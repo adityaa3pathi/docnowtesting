@@ -13,6 +13,14 @@ import { rollbackInitiatedBooking } from '../services/rollback';
 import { assertTransition, canTransition } from '../utils/paymentStateMachine';
 import { sendDeadLetterAlert } from '../utils/slack';
 import { finalizeBooking, syncManagerOrder } from '../services/bookingFinalization';
+import { Redis } from '@upstash/redis';
+
+const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+    : null;
 
 const INITIATED_TTL_MS = 30 * 60 * 1000;    // 30 minutes
 const AUTHORIZED_STUCK_MS = 5 * 60 * 1000;  // 5 minutes
@@ -206,12 +214,31 @@ export function startReconciler() {
         const start = Date.now();
         console.log('[Reconciler] Running reconciliation cycle...');
 
+        const lockKey = 'reconciler:lock';
+        if (redis) {
+            try {
+                // Try to acquire lock for 4.5 minutes (270 seconds)
+                const acquired = await redis.set(lockKey, 'locked', { nx: true, ex: 270 });
+                if (!acquired) {
+                    console.log('[Reconciler] Another server instance is currently processing the reconciliation. Skipping tick safely.');
+                    return;
+                }
+            } catch (err) {
+                console.error('[Reconciler] Redis lock error. Proceeding without lock:', err);
+            }
+        }
+
         try {
+            await recoverStuckProcessing();
             await expireAbandonedBookings();
             await processStuckAuthorized();
             await retryPartnerBookings();
         } catch (err) {
             console.error('[Reconciler] Unhandled error in reconciliation cycle:', err);
+        } finally {
+            if (redis) {
+                try { await redis.del(lockKey); } catch (e) {}
+            }
         }
 
         console.log(`[Reconciler] Cycle complete in ${Date.now() - start}ms`);

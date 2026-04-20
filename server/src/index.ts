@@ -33,7 +33,18 @@ import invoiceRoutes from './routes/invoices';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+const allowedOrigins = process.env.APP_BASE_URL ? [process.env.APP_BASE_URL, 'http://localhost:3000'] : ['http://localhost:3000'];
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+}));
 app.use(helmet());
 app.use(morgan('dev'));
 
@@ -82,6 +93,19 @@ app.get('/debug/ip', async (req, res) => {
 });
 
 // export const prisma = new PrismaClient();
+
+import { Request, Response, NextFunction } from 'express';
+
+// GLOBAL ERROR HANDLER FALLBACK
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    console.error('Unhandled Global Error Encountered:', err);
+    if (err.message === 'Not allowed by CORS') {
+        return res.status(403).json({ error: 'CORS verification failed.' });
+    }
+    res.status(err.status || 500).json({
+        error: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message
+    });
+});
 
 import { startReconciler } from './workers/reconciler';
 
