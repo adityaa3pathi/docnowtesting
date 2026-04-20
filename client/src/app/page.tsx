@@ -2,10 +2,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Header } from '@/components/Header';
+
 import { Footer } from '@/components/Footer';
 import { Button, Card, Input } from '@/components/ui';
-import { LocationSelector } from '@/components/LocationSelector';
+
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
@@ -22,7 +22,6 @@ import {
   Users,
   Phone,
   Beaker,
-  Sparkles,
   CheckCircle2,
   Truck,
   Building2,
@@ -201,138 +200,81 @@ export default function Home() {
   // ────────────────────── Render
   return (
     <main className="flex flex-col min-h-screen bg-white">
-      <Header />
-
       {/* ═══════════ HERO ═══════════ */}
-      <section className="relative overflow-hidden pt-24 pb-16 md:pt-32 md:pb-24">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1a0f3c] via-[#2d1670] to-[#4b2192]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(123,58,237,0.4)_0%,_transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(79,70,229,0.3)_0%,_transparent_50%)]" />
+      <section
+        className="relative pb-16 md:pb-24 lg:pb-32"
+        style={{
+          background:
+            'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)',
+        }}
+      >
+        {/* Content */}
+        <div className="max-w-[1380px] mx-auto px-6 lg:px-16 pt-4 pb-8 lg:pb-16">
+          <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-0">
 
-        {/* Animated floating shapes */}
-        <div className="absolute top-20 right-10 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-10 left-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/3 w-48 h-48 bg-fuchsia-500/8 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '2s' }} />
-
-        {/* Grid pattern overlay */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h60v60H0z\' fill=\'none\' stroke=\'white\' stroke-width=\'0.5\'/%3E%3C/svg%3E")' }} />
-
-        <div className="relative z-10 container mx-auto px-4 sm:px-6 max-w-7xl">
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
-            {/* Left — Copy */}
-            <div className="text-center lg:text-left max-w-2xl mx-auto lg:mx-0">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 mb-8">
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                <span className="text-sm font-semibold text-white/90">NABL & CAP Certified Labs</span>
-              </div>
-
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-white leading-[1.1] mb-6 tracking-tight">
-                Healthcare that{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-fuchsia-300 to-pink-300">
-                  comes to you.
-                </span>
+            {/* Left: Hero Text + CTAs */}
+            <div className="flex-1 flex flex-col items-start pt-8 lg:pt-16 max-w-xl lg:max-w-none lg:pr-10">
+              <h1 className="text-white font-black font-inter text-4xl md:text-5xl lg:text-[56px] leading-[1.1] mb-5">
+                Precision Diagnostics,{' '}
+                <br className="hidden sm:block" />
+                Delivered to Your Door.
               </h1>
-
-              <p className="text-lg sm:text-xl text-white/70 font-medium max-w-xl mx-auto lg:mx-0 mb-10 leading-relaxed">
-                Professional home sample collection, secure digital reports,
-                and expert consultations — all from the comfort of your home.
+              <p className="text-white/80 font-inter text-base md:text-lg mb-10 leading-relaxed max-w-lg">
+                Get NABL &amp; CAP certified lab tests and health checkups at home.
+                Fast, accurate results you can trust.
               </p>
 
-              <div className="flex flex-col gap-4 sm:flex-row justify-center lg:justify-start">
-                <Button
-                  size="lg"
+              {/* CTA Buttons */}
+              <div className="flex flex-wrap gap-4 mb-10">
+                <button
                   onClick={() => router.push('/search')}
-                  className="bg-white text-[#2d1670] hover:bg-gray-100 px-8 py-4 text-base font-bold shadow-xl shadow-black/20 group"
+                  className="border border-white text-white font-inter font-semibold text-base px-6 py-3 rounded-lg hover:bg-white/10 transition-all whitespace-nowrap"
                 >
-                  Browse Tests
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => document.getElementById('callback-section')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="border-white/20 bg-white/5 text-white hover:bg-white/10 px-8 py-4 text-base backdrop-blur-sm"
+                  Book a Test Now
+                </button>
+                <button
+                  onClick={() => router.push('/search?type=PACKAGE')}
+                  className="border border-white text-white font-inter font-semibold text-base px-6 py-3 rounded-lg hover:bg-white/10 transition-all whitespace-nowrap"
                 >
-                  <Phone className="mr-2 h-5 w-5" />
-                  Request Callback
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => router.push('/corporate')}
-                  className="border-white/20 bg-white/5 text-white hover:bg-white/10 px-8 py-4 text-base backdrop-blur-sm"
-                >
-                  <Building2 className="mr-2 h-5 w-5" />
-                  For Corporates
-                </Button>
+                  View Health Packages
+                </button>
               </div>
 
-              {/* Trust badges */}
-              <div className="mt-12 flex items-center gap-6 justify-center lg:justify-start flex-wrap">
-                {[
-                  { icon: Shield, text: '100% Secure' },
-                  { icon: Clock, text: 'Reports in 24h' },
-                  { icon: Truck, text: 'Free Collection' },
-                ].map((badge) => (
-                  <div key={badge.text} className="flex items-center gap-2 text-white/50">
-                    <badge.icon className="w-4 h-4" />
-                    <span className="text-xs font-semibold uppercase tracking-wider">{badge.text}</span>
-                  </div>
-                ))}
+              {/* Trust Badges */}
+              <div className="flex flex-wrap items-center gap-5 text-white/80 text-sm font-inter font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <Shield size={15} className="text-white/70" />
+                  100% SECURE
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Clock size={15} className="text-white/70" />
+                  REPORTS IN 24H
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Truck size={15} className="text-white/70" />
+                  FREE COLLECTION
+                </span>
               </div>
             </div>
 
-            {/* Right — Location Card */}
-            <div className="hidden lg:block">
-              <div className="relative">
-                <div className="absolute -inset-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-3xl blur-2xl" />
-                <div className="relative bg-white/[0.07] backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
-                  <div className="text-center mb-6">
-                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/10 mb-4">
-                      <Activity className="w-7 h-7 text-purple-300" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2">Check Service Availability</h3>
-                    <p className="text-white/50 text-sm">Enter your pincode to find available tests</p>
-                  </div>
-                  <LocationSelector />
-                </div>
-              </div>
-            </div>
+
           </div>
+        </div>
+
+        {/* Stats Card — overlaps bottom on desktop */}
+        <div className="hidden lg:block absolute -bottom-14 left-1/2 -translate-x-1/2 w-[calc(100%-5rem)] max-w-4xl z-20">
+          <HeroStatsCard />
+        </div>
+
+        {/* Stats Card — mobile (in-flow) */}
+        <div className="lg:hidden mx-4 relative z-20 -mb-4">
+          <HeroStatsCard />
         </div>
       </section>
 
-      {/* Mobile location checker — visible below hero on mobile */}
-      <section className="lg:hidden -mt-8 relative z-20 px-4">
-        <LocationSelector />
-      </section>
 
-      {/* ═══════════ STATS STRIP ═══════════ */}
-      <section
-        id="stats"
-        ref={setSectionRef('stats')}
-        className="py-12 md:py-16 bg-white border-b border-gray-100"
-      >
-        <div className={`container mx-auto px-4 max-w-6xl ${sectionClass('stats')}`}>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
-            {[
-              { value: '50K+', label: 'Happy Patients', icon: Users, color: 'text-purple-600 bg-purple-50' },
-              { value: '200+', label: 'Lab Tests', icon: TestTubes, color: 'text-blue-600 bg-blue-50' },
-              { value: '24h', label: 'Report Delivery', icon: Clock, color: 'text-amber-600 bg-amber-50' },
-              { value: '100+', label: 'Cities Covered', icon: Truck, color: 'text-green-600 bg-green-50' },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center group">
-                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl ${stat.color} mb-3 group-hover:scale-110 transition-transform`}>
-                  <stat.icon className="w-6 h-6" />
-                </div>
-                <div className="text-3xl md:text-4xl font-black text-gray-900 mb-1">{stat.value}</div>
-                <div className="text-xs md:text-sm font-semibold text-gray-500 uppercase tracking-wider">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
+
 
       {/* ═══════════ HEALTH PACKAGES ═══════════ */}
       <section
@@ -831,5 +773,59 @@ export default function Home() {
 
       <Footer />
     </main>
+  );
+}
+
+// ────────────────────── HeroStatsCard
+const heroStats = [
+  {
+    icon: Users,
+    iconBg: 'bg-purple-50',
+    iconColor: 'text-purple-500',
+    value: '50K+',
+    label: 'HAPPY PATIENTS',
+  },
+  {
+    icon: FlaskConical,
+    iconBg: 'bg-blue-50',
+    iconColor: 'text-blue-500',
+    value: '200+',
+    label: 'LAB TESTS',
+  },
+  {
+    icon: Clock,
+    iconBg: 'bg-orange-50',
+    iconColor: 'text-orange-400',
+    value: '24h',
+    label: 'REPORT DELIVERY',
+  },
+  {
+    icon: Truck,
+    iconBg: 'bg-green-50',
+    iconColor: 'text-green-500',
+    value: '100+',
+    label: 'CITIES COVERED',
+  },
+];
+
+function HeroStatsCard() {
+  return (
+    <div className="bg-white rounded-2xl shadow-[0_9px_30px_rgba(0,0,0,0.18)] px-6 py-6 md:px-10">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4">
+        {heroStats.map((stat) => (
+          <div key={stat.label} className="flex flex-col items-center gap-2 text-center">
+            <div className={`w-11 h-11 rounded-full ${stat.iconBg} flex items-center justify-center`}>
+              <stat.icon size={24} className={stat.iconColor} />
+            </div>
+            <span className="font-inter font-black text-2xl md:text-3xl text-gray-900">
+              {stat.value}
+            </span>
+            <span className="font-inter font-semibold text-xs text-gray-400 tracking-wide uppercase">
+              {stat.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

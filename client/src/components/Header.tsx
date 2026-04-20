@@ -1,6 +1,10 @@
 "use client";
 import Link from 'next/link';
-import { ShoppingCart, User, Users, Menu, X, MapPin, Search, Navigation, Loader2, Shield, Phone, LogOut, Delete, Building2 } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import {
+    ShoppingCart, User, Users, Menu, X, MapPin, Search,
+    Navigation, Loader2, Shield, Phone, LogOut, Delete, Building2,
+} from 'lucide-react';
 import { Button, Input } from './ui';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
@@ -46,7 +50,14 @@ const callbackCities = Array.from(new Set([...metroCities.map((city) => city.nam
     a.localeCompare(b)
 );
 
+// Desktop nav links (3 only — "Get a Callback" is rendered as a button separately)
+const desktopNavLinks = [
+    { label: 'Our Tests', href: '/search' },
+    { label: 'About Us', href: '/about' },
+];
+
 export function Header() {
+    const pathname = usePathname();
     const { selectedCity, selectedPincode, updateCity, updatePincode, checkAndSetPincode, serviceabilityStatus } = useLocation();
     const { user, isAuthenticated, logout } = useAuth();
     const { cartCount } = useCart();
@@ -71,7 +82,7 @@ export function Header() {
     // Mobile Drawer State
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // Close mobile menu on route change (resize)
+    // Close mobile menu on resize
     useEffect(() => {
         const handleResize = () => {
             if (window.innerWidth >= 768) setIsMobileMenuOpen(false);
@@ -82,11 +93,7 @@ export function Header() {
 
     // Prevent body scroll when mobile menu is open
     useEffect(() => {
-        if (isMobileMenuOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
+        document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
         return () => { document.body.style.overflow = ''; };
     }, [isMobileMenuOpen]);
 
@@ -97,9 +104,8 @@ export function Header() {
             const response = await fetch(getApiUrl('/callback/request'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(callbackForm)
+                body: JSON.stringify(callbackForm),
             });
-
             if (response.ok) {
                 toast.success("Request submitted! Our health expert will call you shortly.");
                 setCallbackForm({ name: '', mobile: '', city: 'Gurgaon' });
@@ -130,10 +136,8 @@ export function Header() {
             toast.error("Geolocation is not supported by your browser");
             return;
         }
-
         setIsLoadingLocation(true);
         setIsLoadingPincode(true);
-
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 try {
@@ -142,24 +146,21 @@ export function Header() {
                         `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
                     );
                     const data = await response.json();
-
                     const detectedCity = data.city || data.locality || data.principalSubdivision;
                     let detectedPincode = data.postcode;
-
                     if (!detectedPincode) {
                         try {
                             const nominatimRes = await fetch(
                                 `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
                             );
                             const nominatimData = await nominatimRes.json();
-                            if (nominatimData.address && nominatimData.address.postcode) {
+                            if (nominatimData.address?.postcode) {
                                 detectedPincode = nominatimData.address.postcode;
                             }
                         } catch (err) {
                             console.error("Nominatim fallback failed:", err);
                         }
                     }
-
                     if (detectedCity) updateCity(`${detectedCity} (Detected)`);
                     if (detectedPincode) {
                         setPincodeInput(detectedPincode);
@@ -201,36 +202,49 @@ export function Header() {
 
     return (
         <>
-            <nav className="sticky top-0 z-50 border-b border-border bg-white/80 backdrop-blur-md shadow-sm">
-                <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-                    <DocnowLogo href="/" width={186} height={46} priority imageClassName="max-h-11 w-auto" />
+            {/* ─── Main Navbar ─── */}
+            <nav
+                className="sticky top-0 z-50 w-full overflow-hidden"
+                style={{
+                    background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)',
+                }}
+            >
+                <div className="mx-auto flex h-16 max-w-[1380px] items-center justify-between px-6 lg:px-10">
 
-                    <div className="hidden md:flex items-center gap-8 px-8">
-                        <Link href="/search" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
-                            Our Packages
-                        </Link>
-                        <Link href="/search" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
-                            Our Tests
-                        </Link>
-                        <Link href="/about" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
-                            About Us
-                        </Link>
-                        <Link href="/corporate" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
-                            For Corporates
-                        </Link>
-                        <button onClick={() => setIsCallbackOpen(true)} className="text-sm font-bold text-primary hover:text-primary/80 transition-colors animate-pulse">
+                    {/* Logo */}
+                    <DocnowLogo href="/" noBackground priority width={120} height={47} />
+
+                    {/* Desktop Nav Links */}
+                    <div className="hidden md:flex items-center gap-6 lg:gap-8">
+                        {desktopNavLinks.map((link) => (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                className={`text-white font-semibold text-base leading-none transition-opacity hover:opacity-80 ${pathname === link.href ? 'underline underline-offset-4' : ''
+                                    }`}
+                            >
+                                {link.label}
+                            </Link>
+                        ))}
+                        {/* Get a Callback — styled as outlined pill */}
+                        <button
+                            onClick={() => setIsCallbackOpen(true)}
+                            className="border border-white text-white font-semibold text-base px-5 py-2 rounded-[7px] hover:bg-white/10 transition-all whitespace-nowrap"
+                        >
                             Get a Callback
                         </button>
                     </div>
 
-                    <div className="hidden md:flex items-center gap-4">
-                        {/* Location Selectors */}
+                    {/* Desktop Right Controls */}
+                    <div className="hidden md:flex items-center gap-3">
+
+                        {/* Select City */}
                         <Dialog open={isLocationDialogOpen} onOpenChange={setIsLocationDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button variant="outline" className="text-muted-foreground min-w-[140px] justify-start rounded-xl">
-                                    <MapPin className="mr-2 h-4 w-4 text-primary" />
+                                <button className="flex items-center gap-1.5 text-white/90 text-sm font-semibold px-3 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition-all min-w-[130px] truncate">
+                                    <MapPin className="h-4 w-4 text-white flex-shrink-0" />
                                     <span className="truncate">{selectedCity}</span>
-                                </Button>
+                                </button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-hidden flex flex-col">
                                 <DialogHeader><DialogTitle className="text-2xl font-black">Select your Location</DialogTitle></DialogHeader>
@@ -251,10 +265,11 @@ export function Header() {
                                         onClick={detectUserLocation}
                                         disabled={isLoadingLocation}
                                     >
-                                        {isLoadingLocation ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" /> : <Navigation className="mr-2 h-4 w-4 text-primary" />}
+                                        {isLoadingLocation
+                                            ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" />
+                                            : <Navigation className="mr-2 h-4 w-4 text-primary" />}
                                         {isLoadingLocation ? "Detecting..." : "Use Current Location"}
                                     </Button>
-
                                     {!citySearch && (
                                         <div>
                                             <h3 className="mb-4 text-xs font-black uppercase tracking-widest text-muted-foreground">Metro Cities</h3>
@@ -290,12 +305,13 @@ export function Header() {
                             </DialogContent>
                         </Dialog>
 
+                        {/* Select Pincode */}
                         <Dialog open={isPincodeDialogOpen} onOpenChange={setIsPincodeDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button variant="outline" className="text-muted-foreground min-w-[140px] justify-start rounded-xl">
-                                    <MapPin className="mr-2 h-4 w-4 text-primary" />
+                                <button className="flex items-center gap-1.5 text-white/90 text-sm font-semibold px-3 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition-all min-w-[120px] truncate">
+                                    <MapPin className="h-4 w-4 text-white flex-shrink-0" />
                                     <span className="truncate">{selectedPincode}</span>
-                                </Button>
+                                </button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[400px]">
                                 <DialogHeader><DialogTitle className="text-2xl font-black text-center">Enter Pincode</DialogTitle></DialogHeader>
@@ -321,35 +337,53 @@ export function Header() {
                                             onClick={detectUserLocation}
                                             disabled={isLoadingPincode}
                                         >
-                                            {isLoadingPincode ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" /> : <Navigation className="mr-2 h-4 w-4 text-primary" />}
+                                            {isLoadingPincode
+                                                ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" />
+                                                : <Navigation className="mr-2 h-4 w-4 text-primary" />}
                                             {isLoadingPincode ? "Detecting..." : "Detect my location"}
                                         </Button>
                                     </div>
                                     <div className="grid grid-cols-3 gap-3">
                                         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                                            <button key={num} onClick={() => handleKeypadClick(num.toString())} className="h-14 rounded-xl bg-secondary/50 text-xl font-bold hover:bg-primary/10 hover:text-primary transition-all active:scale-95">{num}</button>
+                                            <button
+                                                key={num}
+                                                onClick={() => handleKeypadClick(num.toString())}
+                                                className="h-14 rounded-xl bg-secondary/50 text-xl font-bold hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
+                                            >
+                                                {num}
+                                            </button>
                                         ))}
-                                        <button onClick={handleBackspace} className="h-14 rounded-xl bg-secondary/50 text-xl font-bold hover:bg-destructive/10 hover:text-destructive transition-all active:scale-95 flex items-center justify-center"><Delete className="w-6 h-6" /></button>
+                                        <button onClick={handleBackspace} className="h-14 rounded-xl bg-secondary/50 text-xl font-bold hover:bg-destructive/10 hover:text-destructive transition-all active:scale-95 flex items-center justify-center">
+                                            <Delete className="w-6 h-6" />
+                                        </button>
                                         <button onClick={() => handleKeypadClick('0')} className="h-14 rounded-xl bg-secondary/50 text-xl font-bold hover:bg-primary/10 hover:text-primary transition-all active:scale-95">0</button>
-                                        <button onClick={handlePincodeSubmit} disabled={serviceabilityStatus === 'loading'} className="h-14 rounded-xl bg-primary text-primary-foreground text-xl font-bold hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">{serviceabilityStatus === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : 'OK'}</button>
+                                        <button
+                                            onClick={handlePincodeSubmit}
+                                            disabled={serviceabilityStatus === 'loading'}
+                                            className="h-14 rounded-xl bg-primary text-primary-foreground text-xl font-bold hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {serviceabilityStatus === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : 'OK'}
+                                        </button>
                                     </div>
                                 </div>
                             </DialogContent>
                         </Dialog>
 
-                        <Link href="/cart" className="p-2 text-muted-foreground hover:text-primary transition-colors relative">
-                            <ShoppingCart className="w-5 h-5 font-bold" />
+                        {/* Cart */}
+                        <Link href="/cart" className="relative p-2 text-white hover:text-white/80 transition-colors">
+                            <ShoppingCart className="w-5 h-5" />
                             {cartCount > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-primary text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                                <span className="absolute -top-1 -right-1 bg-white text-[#4B0082] text-xs font-black rounded-full h-5 w-5 flex items-center justify-center">
                                     {cartCount}
                                 </span>
                             )}
                         </Link>
 
+                        {/* Auth */}
                         {isAuthenticated ? (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <button className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold hover:bg-primary/90 transition-colors">
+                                    <button className="w-9 h-9 rounded-full bg-white text-[#4B0082] flex items-center justify-center text-sm font-black hover:bg-white/90 transition-colors">
                                         {user?.name?.[0]?.toUpperCase() || 'U'}
                                     </button>
                                 </DropdownMenuTrigger>
@@ -395,25 +429,28 @@ export function Header() {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         ) : (
-                            <Button className="rounded-xl px-6 font-bold" onClick={() => setIsAuthOpen(true)}>
-                                <User className="mr-2 h-4 w-4" />
+                            <button
+                                onClick={() => setIsAuthOpen(true)}
+                                className="border border-white text-white font-semibold text-sm px-5 py-2 rounded-[7px] hover:bg-white/10 transition-all flex items-center gap-2"
+                            >
+                                <User className="h-4 w-4" />
                                 Sign In
-                            </Button>
+                            </button>
                         )}
                     </div>
 
                     {/* ─── Mobile: Cart + Hamburger ─── */}
                     <div className="flex md:hidden items-center gap-2">
-                        <Link href="/cart" className="p-2 text-muted-foreground hover:text-primary transition-colors relative">
+                        <Link href="/cart" className="relative p-2 text-white hover:text-white/80 transition-colors">
                             <ShoppingCart className="w-5 h-5" />
                             {cartCount > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                                <span className="absolute -top-1 -right-1 bg-white text-[#4B0082] text-[10px] font-black rounded-full h-4 w-4 flex items-center justify-center">
                                     {cartCount}
                                 </span>
                             )}
                         </Link>
                         <button
-                            className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                            className="p-2 text-white hover:text-white/80 transition-colors"
                             onClick={() => setIsMobileMenuOpen(true)}
                             aria-label="Open navigation menu"
                         >
@@ -423,6 +460,7 @@ export function Header() {
 
                     <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
 
+                    {/* Callback Dialog */}
                     <Dialog open={isCallbackOpen} onOpenChange={setIsCallbackOpen}>
                         <DialogContent className="sm:max-w-[400px] border-none shadow-2xl">
                             <DialogHeader className="space-y-3">
@@ -465,36 +503,32 @@ export function Header() {
                 </div>
             </nav>
 
-            {/* ─── Mobile Navigation Drawer (outside nav to avoid clipping) ─── */}
+            {/* ─── Mobile Navigation Drawer ─── */}
             {/* Backdrop */}
             <div
-                className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 md:hidden ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                    }`}
+                className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 md:hidden ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={() => setIsMobileMenuOpen(false)}
             />
 
-            {/* Drawer Panel */}
+            {/* Drawer Panel — white bg so icons stay readable */}
             <div
-                className={`fixed top-0 left-0 h-full w-[280px] bg-white z-[70] shadow-2xl transform transition-transform duration-300 ease-out md:hidden flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-                    }`}
+                className={`fixed top-0 left-0 h-full w-[280px] bg-white z-[70] shadow-2xl transform transition-transform duration-300 ease-out md:hidden flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
                 {/* Drawer Header */}
-                <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100 flex-shrink-0">
-                    <div onClick={() => setIsMobileMenuOpen(false)}>
-                        <DocnowLogo href="/" width={146} height={36} imageClassName="max-h-9 w-auto" />
-                    </div>
+                <div className="flex items-center justify-end px-5 h-16 border-b border-gray-100 flex-shrink-0 overflow-hidden"
+                    style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}>
                     <button
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                        className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
                         aria-label="Close menu"
                     >
                         <X className="h-5 w-5" />
                     </button>
                 </div>
 
-                {/* Drawer Body — scrollable */}
+                {/* Drawer Body */}
                 <div className="flex-1 overflow-y-auto">
-                    {/* User Info Section */}
+                    {/* User Info */}
                     {isAuthenticated ? (
                         <div className="px-5 py-4 bg-primary/5 border-b border-gray-100">
                             <div className="flex items-center gap-3">
@@ -545,15 +579,7 @@ export function Header() {
                         <Link
                             href="/search"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-primary transition-all"
-                        >
-                            <Search className="w-4 h-4 text-gray-400" />
-                            Our Packages
-                        </Link>
-                        <Link
-                            href="/search"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-primary transition-all"
+                            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname === '/search' ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
                         >
                             <Search className="w-4 h-4 text-gray-400" />
                             Our Tests
@@ -561,23 +587,15 @@ export function Header() {
                         <Link
                             href="/about"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-primary transition-all"
+                            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname === '/about' ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
                         >
                             <Users className="w-4 h-4 text-gray-400" />
                             About Us
                         </Link>
                         <Link
-                            href="/corporate"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-primary transition-all"
-                        >
-                            <Building2 className="w-4 h-4 text-gray-400" />
-                            For Corporates
-                        </Link>
-                        <Link
                             href="/cart"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-primary transition-all"
+                            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname === '/cart' ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
                         >
                             <ShoppingCart className="w-4 h-4 text-gray-400" />
                             Cart
