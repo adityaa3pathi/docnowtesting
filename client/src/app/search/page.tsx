@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, Suspense } from 'react';
-import { Header } from '@/components/Header';
 import { Search, Filter, Loader2, ShoppingCart, Info, Check, Tag, X } from 'lucide-react';
 import api from '@/lib/api';
 import { useLocation } from '@/contexts/LocationContext';
@@ -37,7 +36,6 @@ export default function SearchPage() {
     return (
         <Suspense fallback={
             <div className="min-h-screen bg-gray-50">
-                <Header />
                 <div className="flex justify-center items-center py-20">
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 </div>
@@ -141,7 +139,6 @@ function SearchPageContent() {
 
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
-            <Header />
 
             <div className="bg-gradient-to-br from-primary/5 to-secondary/5 border-b border-border">
                 <div className="container mx-auto px-4 py-8">

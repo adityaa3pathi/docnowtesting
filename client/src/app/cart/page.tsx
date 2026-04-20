@@ -1,6 +1,5 @@
 "use client";
 
-import { Header } from '@/components/Header';
 import { Loader2, ShoppingBag } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
@@ -124,7 +123,6 @@ export default function CartPage() {
     if (loading || loadingPatients || loadingAddresses) {
         return (
             <div className="min-h-screen bg-gray-50">
-                <Header />
                 <div className="flex justify-center items-center py-20">
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 </div>
@@ -140,7 +138,6 @@ export default function CartPage() {
 
     return (
         <div className="w-full min-h-screen bg-gray-50 pb-32 md:pb-20 overflow-x-hidden">
-            <Header />
 
             <div className="container mx-auto px-3 sm:px-4 py-5 sm:py-8 max-w-4xl">
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-5 sm:mb-8">Your Cart</h1>

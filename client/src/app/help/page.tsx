@@ -1,7 +1,6 @@
 import { Headphones, Mail, Phone } from 'lucide-react';
 
 import { Footer } from '@/components/Footer';
-import { Header } from '@/components/Header';
 import { Card } from '@/components/ui';
 import { RichTextRenderer } from '@/components/support/RichTextRenderer';
 import { getHelpCenterContent } from '@/lib/supportContent';
@@ -12,7 +11,6 @@ export default async function HelpPage() {
 
     return (
         <main className="flex min-h-screen flex-col bg-white">
-            <Header />
 
             <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary/80 py-20 text-white md:py-24">
                 <div className="absolute inset-x-0 top-0 h-40 bg-white/5 blur-3xl" />

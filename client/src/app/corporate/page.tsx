@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Building2, CheckCircle2, ClipboardCheck, Factory, HeartPulse, Loader2, ShieldCheck, Stethoscope, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button, Card, Input } from '@/components/ui';
 import api from '@/lib/api';
@@ -91,7 +90,6 @@ export default function CorporatePage() {
 
     return (
         <main className="min-h-screen bg-[#faf8ff]">
-            <Header />
 
             <section className="relative overflow-hidden border-b border-purple-100 bg-[radial-gradient(circle_at_top_left,_rgba(139,92,246,0.18),_transparent_38%),linear-gradient(180deg,#ffffff_0%,#f7f2ff_100%)]">
                 <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">

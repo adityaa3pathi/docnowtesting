@@ -1,6 +1,5 @@
 "use client";
 
-import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card } from "@/components/ui";
 import {
@@ -98,7 +97,6 @@ const innovationItems = [
 export default function AboutPage() {
     return (
         <main className="flex flex-col min-h-screen">
-            <Header />
 
             {/* ── Hero Section ─────────────────────────────────────────── */}
             <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary/80 text-white py-20 md:py-28">
