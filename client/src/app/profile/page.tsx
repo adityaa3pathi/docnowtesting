@@ -1,6 +1,5 @@
 "use client";
 
-import { Header } from '@/components/Header';
 import { WalletTab } from '@/components/profile/WalletTab';
 import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -44,7 +43,6 @@ export default function ProfilePage() {
 
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
-            <Header />
 
             <div className="container mx-auto px-4 py-8">
                 <h1 className="text-3xl font-bold text-slate-900 mb-8">My Account</h1>

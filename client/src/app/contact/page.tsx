@@ -1,7 +1,6 @@
 import { Clock3, Mail, MessageSquareText, Phone } from 'lucide-react';
 
 import { Footer } from '@/components/Footer';
-import { Header } from '@/components/Header';
 import { Card } from '@/components/ui';
 import { RichTextRenderer } from '@/components/support/RichTextRenderer';
 import { getContactPageContent } from '@/lib/supportContent';
@@ -17,7 +16,6 @@ export default async function ContactPage() {
 
     return (
         <main className="flex min-h-screen flex-col bg-slate-50">
-            <Header />
 
             <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary/80 py-20 text-white md:py-24">
                 <div className="absolute -top-20 left-10 h-60 w-60 rounded-full bg-white/10 blur-3xl" />
