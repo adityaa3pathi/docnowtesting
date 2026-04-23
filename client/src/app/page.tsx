@@ -64,7 +64,6 @@ export default function Home() {
   const [tests, setTests] = useState<CatalogProduct[]>([]);
   const [loadingPackages, setLoadingPackages] = useState(true);
   const [loadingTests, setLoadingTests] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
 
   // Callback state
@@ -105,11 +104,10 @@ export default function Home() {
 
   const fetchPackages = async (retries = 2) => {
     try {
-      const res = await api.get('/catalog/products', { params: { type: 'PACKAGE' } });
+      const res = await api.get('/catalog/featured', { params: { type: 'PACKAGE,PROFILE', limit: 6 } });
       setPackages(res.data.products || []);
     } catch (err: any) {
       if (retries > 0 && err?.isNetworkError) {
-        // Silently retry after a short delay
         await new Promise(r => setTimeout(r, 1500));
         return fetchPackages(retries - 1);
       }
@@ -121,7 +119,7 @@ export default function Home() {
 
   const fetchTests = async (retries = 2) => {
     try {
-      const res = await api.get('/catalog/products', { params: { type: 'TEST' } });
+      const res = await api.get('/catalog/featured', { params: { type: 'TEST', limit: 9 } });
       setTests(res.data.products || []);
     } catch (err: any) {
       if (retries > 0 && err?.isNetworkError) {
@@ -178,13 +176,6 @@ export default function Home() {
     }
   };
 
-  // Filter tests by search
-  const filteredTests = tests.filter(
-    (t) =>
-      t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.categories.some((c) => c.name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
   const discountPercent = (price: number, mrp: number | null) => {
     if (!mrp || mrp <= price) return 0;
     return Math.round(((mrp - price) / mrp) * 100);
@@ -227,13 +218,13 @@ export default function Home() {
               {/* CTA Buttons */}
               <div className="flex flex-wrap gap-4 mb-10">
                 <button
-                  onClick={() => router.push('/search')}
+                  onClick={() => router.push('/tests')}
                   className="border border-white text-white font-inter font-semibold text-base px-6 py-3 rounded-lg hover:bg-white/10 transition-all whitespace-nowrap"
                 >
                   Book a Test Now
                 </button>
                 <button
-                  onClick={() => router.push('/search?type=PACKAGE')}
+                  onClick={() => router.push('/packages')}
                   className="border border-white text-white font-inter font-semibold text-base px-6 py-3 rounded-lg hover:bg-white/10 transition-all whitespace-nowrap"
                 >
                   View Health Packages
@@ -407,19 +398,17 @@ export default function Home() {
             </div>
           )}
 
-          {packages.length > 6 && (
-            <div className="mt-12 text-center">
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => router.push('/search?type=PACKAGE')}
-                className="border-purple-200 text-purple-700 hover:bg-purple-50"
-              >
-                View All Packages
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-            </div>
-          )}
+          <div className="mt-12 text-center">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => router.push('/packages')}
+              className="border-purple-200 text-purple-700 hover:bg-purple-50"
+            >
+              View All Packages
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -499,34 +488,18 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Search bar */}
-          <div className="mb-10 mx-auto max-w-2xl">
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 group-focus-within:text-purple-600 transition-colors" />
-              <Input
-                type="text"
-                placeholder="Search tests — e.g. Vitamin D, Thyroid, CBC..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 py-7 text-base shadow-sm border-gray-200 focus:shadow-md transition-shadow bg-white"
-              />
-            </div>
-          </div>
-
           {loadingTests ? (
             <div className="flex justify-center py-20">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : filteredTests.length === 0 ? (
+          ) : tests.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
               <Beaker className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 font-medium">
-                {searchTerm ? `No tests found for "${searchTerm}"` : 'No tests available right now.'}
-              </p>
+              <p className="text-gray-500 font-medium">No tests available right now.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredTests.slice(0, 9).map((test) => {
+              {tests.map((test) => {
                 const discount = discountPercent(test.price, test.mrp);
                 const inCart = isInCart(test.partnerCode);
 
@@ -602,19 +575,17 @@ export default function Home() {
             </div>
           )}
 
-          {filteredTests.length > 9 && (
-            <div className="mt-10 text-center">
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => router.push('/search')}
-                className="border-gray-200 text-gray-700 hover:bg-gray-50"
-              >
-                View All {filteredTests.length} Tests
-                <ChevronRight className="ml-1 w-5 h-5" />
-              </Button>
-            </div>
-          )}
+          <div className="mt-10 text-center">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => router.push('/tests')}
+              className="border-gray-200 text-gray-700 hover:bg-gray-50"
+            >
+              View All Tests
+              <ChevronRight className="ml-1 w-5 h-5" />
+            </Button>
+          </div>
         </div>
       </section>
 
