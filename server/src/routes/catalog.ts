@@ -5,15 +5,21 @@ const router = Router();
 
 // ============================================
 // GET /api/catalog/products
-// User-facing: returns enabled items with manager-set prices
+// User-facing: paginated, filterable, searchable
 // ============================================
 router.get('/products', async (req: Request, res: Response) => {
-    const { type, search, category, zipcode } = req.query;
+    const { type, search, category, zipcode, page = '1', limit = '12' } = req.query;
 
-    console.log('[Catalog] GET /api/catalog/products — query params:', { type, search, category, zipcode });
+    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit as string, 10) || 12));
+    const skip = (pageNum - 1) * limitNum;
 
     const where: any = { isEnabled: true };
-    if (type) where.type = type;
+    if (type) {
+        // Support comma-separated types: PACKAGE,PROFILE
+        const types = (type as string).split(',').map(t => t.trim().toUpperCase());
+        where.type = types.length === 1 ? types[0] : { in: types };
+    }
     if (search) where.name = { contains: search as string, mode: 'insensitive' };
     if (category) {
         where.categories = {
@@ -22,19 +28,23 @@ router.get('/products', async (req: Request, res: Response) => {
     }
 
     try {
-        const items = await prisma.catalogItem.findMany({
-            where,
-            include: {
-                categories: {
-                    include: {
-                        category: { select: { id: true, name: true, slug: true } }
+        const [items, totalCount] = await Promise.all([
+            prisma.catalogItem.findMany({
+                where,
+                include: {
+                    categories: {
+                        include: {
+                            category: { select: { id: true, name: true, slug: true } }
+                        }
                     }
-                }
-            },
-            orderBy: { name: 'asc' }
-        });
+                },
+                orderBy: { name: 'asc' },
+                skip,
+                take: limitNum,
+            }),
+            prisma.catalogItem.count({ where }),
+        ]);
 
-        // Flatten categories in response
         const formatted = items.map(item => ({
             id: item.id,
             partnerCode: item.partnerCode,
@@ -51,13 +61,70 @@ router.get('/products', async (req: Request, res: Response) => {
             categories: item.categories.map(c => c.category)
         }));
 
-        console.log(`[Catalog] Response: ${formatted.length} products returned`);
-        console.log('[Catalog] Full response:', JSON.stringify({ products: formatted }, null, 2));
-
-        res.json({ products: formatted });
+        res.json({
+            products: formatted,
+            totalCount,
+            page: pageNum,
+            limit: limitNum,
+            totalPages: Math.ceil(totalCount / limitNum),
+        });
     } catch (error: any) {
         console.error('[Catalog] Error fetching products:', error.message);
         res.status(500).json({ error: 'Failed to fetch products' });
+    }
+});
+
+// ============================================
+// GET /api/catalog/featured?type=PACKAGE|TEST
+// Landing page: returns featured items ordered by featuredOrder
+// ============================================
+router.get('/featured', async (req: Request, res: Response) => {
+    const { type, limit = '6' } = req.query;
+    const limitNum = Math.min(20, parseInt(limit as string, 10) || 6);
+
+    const where: any = { isEnabled: true, isFeatured: true };
+    if (type) {
+        const types = (type as string).split(',').map(t => t.trim().toUpperCase());
+        where.type = types.length === 1 ? types[0] : { in: types };
+    }
+
+    try {
+        const items = await prisma.catalogItem.findMany({
+            where,
+            include: {
+                categories: {
+                    include: {
+                        category: { select: { id: true, name: true, slug: true } }
+                    }
+                }
+            },
+            orderBy: [
+                { featuredOrder: 'asc' },
+                { name: 'asc' },
+            ],
+            take: limitNum,
+        });
+
+        const formatted = items.map(item => ({
+            id: item.id,
+            partnerCode: item.partnerCode,
+            name: item.name,
+            type: item.type,
+            displayPrice: item.displayPrice,
+            discountedPrice: item.discountedPrice,
+            description: item.description,
+            parameters: item.parameters,
+            sampleType: item.sampleType,
+            reportTime: item.reportTime,
+            price: item.discountedPrice ?? item.displayPrice,
+            mrp: item.discountedPrice ? item.displayPrice : null,
+            categories: item.categories.map(c => c.category)
+        }));
+
+        res.json({ products: formatted });
+    } catch (error: any) {
+        console.error('[Catalog] Error fetching featured:', error.message);
+        res.status(500).json({ error: 'Failed to fetch featured products' });
     }
 });
 
@@ -145,3 +212,4 @@ router.get('/categories', async (req: Request, res: Response) => {
 });
 
 export default router;
+

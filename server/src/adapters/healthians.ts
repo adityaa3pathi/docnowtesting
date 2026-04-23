@@ -2,8 +2,8 @@ import axios, { AxiosInstance } from 'axios';
 import { generateChecksum } from '../utils/security';
 
 
-const HEALTHIANS_BASE_URL = process.env.HEALTHIANS_BASE_URL || 'https://t25crm.healthians.co.in/api';
-const PARTNER_NAME = process.env.HEALTHIANS_PARTNER_NAME || 'docnow1';
+// Re-evaluate the env inside methods rather than module-scope to fix dotenv initialization races
+// Removed module-level constants
 
 interface AccessTokenResponse {
     access_token: string;
@@ -18,8 +18,10 @@ export class HealthiansAdapter {
     private tokenExpiry: number | null = null;
 
     private constructor() {
+        const baseUrl = process.env.HEALTHIANS_BASE_URL || 'https://t25crm.healthians.co.in/api';
+        const partnerName = process.env.HEALTHIANS_PARTNER_NAME || 'docnow1';
         this.client = axios.create({
-            baseURL: `${HEALTHIANS_BASE_URL}/${PARTNER_NAME}`,
+            baseURL: `${baseUrl}/${partnerName}`,
             headers: {
                 'Content-Type': 'application/json',
                 'User-Agent': 'DOCNOW-Server/1.0'
@@ -66,10 +68,13 @@ export class HealthiansAdapter {
                 throw new Error("Missing Healthians Credentials");
             }
 
-            const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
-            console.log(`[Healthians] Authenticating with ${HEALTHIANS_BASE_URL}/${PARTNER_NAME}/getAccessToken`);
+            const baseUrl = process.env.HEALTHIANS_BASE_URL || 'https://t25crm.healthians.co.in/api';
+            const partnerName = process.env.HEALTHIANS_PARTNER_NAME || 'docnow1';
 
-            const response = await axios.get<AccessTokenResponse>(`${HEALTHIANS_BASE_URL}/${PARTNER_NAME}/getAccessToken`, {
+            const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+            console.log(`[Healthians] Authenticating with ${baseUrl}/${partnerName}/getAccessToken`);
+
+            const response = await axios.get<AccessTokenResponse>(`${baseUrl}/${partnerName}/getAccessToken`, {
                 headers: {
                     Authorization: authHeader,
                     'User-Agent': 'DOCNOW-Server/1.0',
@@ -116,19 +121,57 @@ export class HealthiansAdapter {
     }
 
     /**
-     * Get Partner Products (Packages/Tests) for a Zipcode
+     * Get ALL Partner Products for a Zipcode.
+     * Fetches each product_type (package, profile, parameter) separately
+     * since the API only returns one type at a time. Each type is paginated
+     * using a `start` cursor (10 items/page), stopping when data_count === 0.
      */
     public async getPartnerProducts(zipcode: string) {
+        const PAGE_SIZE = 10;
+        const PRODUCT_TYPES = ['package', 'profile', 'parameter'];
+        const allProducts: any[] = [];
+
         try {
-            const response = await this.client.post('/getPartnerProducts', {
-                zipcode
-            });
-            return response.data;
+            for (const product_type of PRODUCT_TYPES) {
+                let start = 0;
+                console.log(`[Healthians] Fetching product_type=${product_type} for zipcode=${zipcode}`);
+
+                while (true) {
+                    const response = await this.client.post('/getPartnerProducts', {
+                        zipcode,
+                        product_type,
+                        start
+                    });
+
+                    const page = response.data;
+                    const items: any[] = page?.data || [];
+                    const dataCount: number = page?.data_count ?? items.length;
+
+                    console.log(`[Healthians] product_type=${product_type} start=${start}: ${dataCount} items`);
+
+                    if (dataCount === 0 || items.length === 0) {
+                        break;
+                    }
+
+                    allProducts.push(...items);
+                    start += PAGE_SIZE;
+
+                    // Safety cap — avoid infinite loops
+                    if (start > 50000) {
+                        console.warn(`[Healthians] Safety cap hit for product_type=${product_type}`);
+                        break;
+                    }
+                }
+            }
+
+            console.log(`[Healthians] getPartnerProducts total fetched: ${allProducts.length} (packages+profiles+parameters)`);
+            return { data: allProducts };
         } catch (error) {
             console.error('getPartnerProducts Error:', error);
             throw error;
         }
     }
+
 
     /**
      * Get Active Zipcodes (Can be heavy, maybe cache this)
