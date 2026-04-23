@@ -68,11 +68,13 @@ router.get('/export', ...mgr, exportAdminData);
 // CATALOG SYNC — Import from Healthians
 // ============================================
 
+// Simple in-memory lock so only one sync runs at a time
+let syncInProgress = false;
+
 /**
  * POST /api/manager/catalog/sync
- * Fetches products from Healthians and upserts into CatalogItem.
- * New items get partnerPrice = displayPrice (manager can adjust later).
- * Existing items: only partnerPrice and metadata are updated.
+ * Triggers a background sync from Healthians. Responds immediately with 202.
+ * Poll GET /api/manager/catalog/sync/status to check progress.
  */
 router.post('/catalog/sync', ...mgr, async (req: AuthRequest, res: Response) => {
     const { zipcode } = req.body;
@@ -81,76 +83,97 @@ router.post('/catalog/sync', ...mgr, async (req: AuthRequest, res: Response) => 
         return res.status(400).json({ error: 'zipcode is required for sync' });
     }
 
-    try {
-        const response = await healthians.getPartnerProducts(zipcode);
-        const products = response?.data || response?.products || response || [];
+    if (syncInProgress) {
+        return res.status(409).json({ error: 'A sync is already in progress. Please wait.' });
+    }
 
-        if (!Array.isArray(products)) {
-            return res.status(400).json({ error: 'Unexpected response format from Healthians', raw: response });
-        }
+    // Respond immediately — the actual work runs in the background
+    res.status(202).json({ message: 'Sync started in background. Check catalog in ~60 seconds.' });
 
-        let created = 0;
-        let updated = 0;
+    // Fire and forget
+    syncInProgress = true;
+    (async () => {
+        try {
+            console.log(`[Manager] Background catalog sync started for zipcode=${zipcode}`);
+            const response = await healthians.getPartnerProducts(zipcode);
+            const products: any[] = response?.data || [];
 
-        for (const product of products) {
-            // Normalize Healthians response fields
-            const partnerCode = String(product.deal_id || `${product.product_type}_${product.product_type_id}` || product.id);
-            const name = product.test_name || product.name || product.deal_name || 'Unknown';
-            const price = parseFloat(product.price || product.mrp || '0');
-            const type = normalizeType(product.product_type || product.deal_type);
+            if (!Array.isArray(products) || products.length === 0) {
+                console.warn('[Manager] No products returned from Healthians.');
+                return;
+            }
 
-            const existing = await prisma.catalogItem.findUnique({
-                where: { partnerCode }
+            console.log(`[Manager] Processing ${products.length} products...`);
+
+            // Normalize all products
+            const normalized = products.map((product: any) => {
+                const partnerCode = String(product.deal_id || `${product.product_type}_${product.product_type_id}` || product.id);
+                const name = product.test_name || product.name || product.deal_name || 'Unknown';
+                const price = parseFloat(product.price || product.mrp || '0');
+                const type = normalizeType(product.product_type || product.deal_type);
+                return { partnerCode, name, price, type, raw: product };
             });
 
-            if (existing) {
-                // Update partner price + metadata only; keep manager overrides
-                await prisma.catalogItem.update({
-                    where: { partnerCode },
-                    data: {
-                        partnerPrice: price,
-                        name: name,
-                        type: type,
-                        description: product.description || existing.description,
-                        parameters: product.parameters || product.parameter_count?.toString() || existing.parameters,
-                        sampleType: product.sample_type || existing.sampleType,
-                        reportTime: product.report_time || product.report_tat || existing.reportTime,
-                        partnerData: product
-                    }
-                });
-                updated++;
-            } else {
-                // New item: displayPrice defaults to partner price
-                await prisma.catalogItem.create({
-                    data: {
-                        partnerCode,
-                        name,
-                        type,
-                        partnerPrice: price,
-                        displayPrice: price,  // Default: can be overridden by manager
-                        description: product.description || null,
-                        parameters: product.parameters || product.parameter_count?.toString() || null,
-                        sampleType: product.sample_type || null,
-                        reportTime: product.report_time || product.report_tat || null,
-                        partnerData: product,
-                        isEnabled: true  // Products are available globally per Healthians confirmation
-                    }
-                });
-                created++;
-            }
-        }
+            // Get all existing partnerCodes in one query
+            const existingCodes = new Set(
+                (await prisma.catalogItem.findMany({ select: { partnerCode: true } }))
+                    .map(r => r.partnerCode)
+            );
 
-        res.json({
-            message: `Sync complete: ${created} created, ${updated} updated`,
-            total: products.length,
-            created,
-            updated
-        });
-    } catch (error: any) {
-        console.error('[Manager] Catalog sync error:', error.message);
-        res.status(500).json({ error: 'Failed to sync catalog', details: error.message });
-    }
+            const toCreate = normalized.filter(p => !existingCodes.has(p.partnerCode));
+            const toUpdate = normalized.filter(p => existingCodes.has(p.partnerCode));
+
+            // Batch create new items
+            if (toCreate.length > 0) {
+                await prisma.catalogItem.createMany({
+                    data: toCreate.map(p => ({
+                        partnerCode: p.partnerCode,
+                        name: p.name,
+                        type: p.type,
+                        partnerPrice: p.price,
+                        displayPrice: p.price,
+                        description: p.raw.description || null,
+                        parameters: p.raw.parameters || p.raw.parameter_count?.toString() || null,
+                        sampleType: p.raw.sample_type || null,
+                        reportTime: p.raw.report_time || p.raw.report_tat || null,
+                        partnerData: p.raw,
+                        isEnabled: true,
+                    })),
+                    skipDuplicates: true,
+                });
+            }
+
+            // Update existing items in batches of 50
+            const BATCH = 50;
+            for (let i = 0; i < toUpdate.length; i += BATCH) {
+                const batch = toUpdate.slice(i, i + BATCH);
+                await Promise.all(batch.map(p =>
+                    prisma.catalogItem.update({
+                        where: { partnerCode: p.partnerCode },
+                        data: {
+                            partnerPrice: p.price,
+                            name: p.name,
+                            type: p.type,
+                            description: p.raw.description || undefined,
+                            parameters: p.raw.parameters || p.raw.parameter_count?.toString() || undefined,
+                            sampleType: p.raw.sample_type || undefined,
+                            reportTime: p.raw.report_time || p.raw.report_tat || undefined,
+                            partnerData: p.raw,
+                        },
+                    })
+                ));
+            }
+
+            console.log(`[Manager] Catalog sync complete: ${toCreate.length} created, ${toUpdate.length} updated (total ${products.length})`);
+        } catch (err: any) {
+            console.error('[Manager] Background catalog sync error:', err.message);
+        } finally {
+            syncInProgress = false;
+        }
+    })();
 });
+
+
 
 // ============================================
 // CATALOG CRUD
@@ -250,6 +273,33 @@ router.put('/catalog/:id/toggle', ...mgr, async (req: AuthRequest, res: Response
         res.json({ id: updated.id, name: updated.name, isEnabled: updated.isEnabled });
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to toggle item', details: error.message });
+    }
+});
+
+/**
+ * PUT /api/manager/catalog/:id/feature
+ * Toggle featured status + set order for landing page.
+ * Body: { isFeatured: boolean, featuredOrder?: number }
+ */
+router.put('/catalog/:id/feature', ...mgr, async (req: AuthRequest, res: Response) => {
+    const id = req.params.id as string;
+    const { isFeatured, featuredOrder } = req.body;
+
+    try {
+        const existing = await prisma.catalogItem.findUnique({ where: { id } });
+        if (!existing) return res.status(404).json({ error: 'Catalog item not found' });
+
+        const updated = await prisma.catalogItem.update({
+            where: { id },
+            data: {
+                isFeatured: typeof isFeatured === 'boolean' ? isFeatured : !existing.isFeatured,
+                featuredOrder: isFeatured === false ? null : (featuredOrder ?? existing.featuredOrder),
+            }
+        });
+
+        res.json({ id: updated.id, name: updated.name, isFeatured: updated.isFeatured, featuredOrder: updated.featuredOrder });
+    } catch (error: any) {
+        res.status(500).json({ error: 'Failed to update featured status', details: error.message });
     }
 });
 

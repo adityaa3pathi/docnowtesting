@@ -10,6 +10,7 @@ import {
     Loader2,
     ChevronLeft,
     ChevronRight,
+    Star,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -22,6 +23,8 @@ interface CatalogItem {
     displayPrice: number;
     discountedPrice: number | null;
     isEnabled: boolean;
+    isFeatured: boolean;
+    featuredOrder: number | null;
 }
 
 export default function CatalogManagement() {
@@ -78,9 +81,18 @@ export default function CatalogManagement() {
                 body: JSON.stringify({ zipcode: '110001' }),
             });
             const data = await res.json();
-            if (res.ok) {
+            if (res.status === 202) {
+                // Background sync started — auto-refresh after ~70s
+                toast.success('Sync started! Catalog will update in about 60 seconds...');
+                setTimeout(() => {
+                    fetchCatalog();
+                    toast.success('Catalog refreshed with latest products!');
+                }, 70000);
+            } else if (res.ok) {
                 toast.success(data.message);
                 fetchCatalog();
+            } else if (res.status === 409) {
+                toast.error('A sync is already running. Please wait.');
             } else {
                 toast.error(data.error || 'Sync failed');
             }
@@ -88,12 +100,29 @@ export default function CatalogManagement() {
         setSyncing(false);
     };
 
+
+
     const handleToggle = async (id: string) => {
         try {
             const res = await fetch(`/api/manager/catalog/${id}/toggle`, { method: 'PUT', headers });
             if (res.ok) {
                 const data = await res.json();
                 setItems(prev => prev.map(i => i.id === id ? { ...i, isEnabled: data.isEnabled } : i));
+            }
+        } catch { /* ignore */ }
+    };
+
+    const handleFeature = async (id: string, currentlyFeatured: boolean) => {
+        try {
+            const res = await fetch(`/api/manager/catalog/${id}/feature`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify({ isFeatured: !currentlyFeatured }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setItems(prev => prev.map(i => i.id === id ? { ...i, isFeatured: data.isFeatured, featuredOrder: data.featuredOrder } : i));
+                toast.success(data.isFeatured ? `"${data.name}" added to featured` : `"${data.name}" removed from featured`);
             }
         } catch { /* ignore */ }
     };
@@ -207,6 +236,7 @@ export default function CatalogManagement() {
                                     <th className="px-6 py-3 font-medium text-gray-500">Display Price</th>
                                     <th className="px-6 py-3 font-medium text-gray-500">Discounted</th>
                                     <th className="px-6 py-3 font-medium text-gray-500">Status</th>
+                                    <th className="px-6 py-3 font-medium text-gray-500 text-center">Featured</th>
                                     <th className="px-6 py-3 font-medium text-gray-500 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -254,6 +284,19 @@ export default function CatalogManagement() {
                                                 }`}>
                                                 {item.isEnabled ? 'Enabled' : 'Disabled'}
                                             </span>
+                                        </td>
+                                        <td className="px-6 py-3 text-center">
+                                            <button
+                                                onClick={() => handleFeature(item.id, item.isFeatured)}
+                                                className={`h-8 w-8 mx-auto flex items-center justify-center rounded-lg transition-colors ${
+                                                    item.isFeatured
+                                                        ? 'text-amber-500 bg-amber-50 hover:bg-amber-100'
+                                                        : 'text-gray-300 hover:text-amber-400 hover:bg-amber-50'
+                                                }`}
+                                                title={item.isFeatured ? 'Remove from featured' : 'Add to featured'}
+                                            >
+                                                <Star className={`h-4 w-4 ${item.isFeatured ? 'fill-current' : ''}`} />
+                                            </button>
                                         </td>
                                         <td className="px-6 py-3">
                                             <div className="flex items-center justify-end gap-2">

@@ -508,6 +508,11 @@ model CatalogItem {
   partnerData      Json?              // Raw Healthians response for reference
   
   isEnabled        Boolean            @default(true)
+  
+  // Landing page featured controls
+  isFeatured       Boolean            @default(false)
+  featuredOrder    Int?               // Lower = appears first on landing page
+  
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   
@@ -515,6 +520,7 @@ model CatalogItem {
   
   @@index([isEnabled])
   @@index([type, isEnabled])
+  @@index([isFeatured, type, featuredOrder])
 }
 
 model Category {
