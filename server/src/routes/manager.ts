@@ -651,7 +651,7 @@ router.post('/users/:userId/patients', ...mgr, async (req: AuthRequest, res: Res
         });
         res.status(201).json(patient);
     } catch (error: any) {
-        res.status(400).json({ error: error.errors || error.message });
+        res.status(400).json({ error: error.errors?.[0]?.message || error.message });
     }
 });
 
@@ -666,7 +666,7 @@ router.put('/users/:userId/patients/:id', ...mgr, async (req: AuthRequest, res: 
         });
         res.json(patient);
     } catch (error: any) {
-        res.status(400).json({ error: error.errors || error.message });
+        res.status(400).json({ error: error.errors?.[0]?.message || error.message });
     }
 });
 
@@ -705,7 +705,7 @@ router.post('/users/:userId/addresses', ...mgr, async (req: AuthRequest, res: Re
         });
         res.status(201).json(address);
     } catch (error: any) {
-        res.status(400).json({ error: error.errors || error.message });
+        res.status(400).json({ error: error.errors?.[0]?.message || error.message });
     }
 });
 
@@ -721,7 +721,7 @@ router.put('/users/:userId/addresses/:id', ...mgr, async (req: AuthRequest, res:
         });
         res.json(address);
     } catch (error: any) {
-        res.status(400).json({ error: error.errors || error.message });
+        res.status(400).json({ error: error.errors?.[0]?.message || error.message });
     }
 });
 

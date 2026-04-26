@@ -31,8 +31,11 @@ export function ProfileTab() {
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [loading, setLoading] = useState(true);
     const [editMode, setEditMode] = useState(false);
-    const [formData, setFormData] = useState({ gender: '', age: '' });
+    const [formData, setFormData] = useState({ gender: '', age: '', email: '' });
     const [addressDialogOpen, setAddressDialogOpen] = useState(false);
+    const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+    const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    const [passwordLoading, setPasswordLoading] = useState(false);
     const [editingAddress, setEditingAddress] = useState<Address | null>(null);
     const [addressForm, setAddressForm] = useState({ line1: '', city: '', pincode: '' });
 
@@ -47,7 +50,8 @@ export function ProfileTab() {
             setProfile(res.data);
             setFormData({
                 gender: res.data.gender || 'Male',
-                age: res.data.age ? res.data.age.toString() : ''
+                age: res.data.age ? res.data.age.toString() : '',
+                email: res.data.email || ''
             });
         } catch (error) {
             console.error('Error fetching profile:', error);
@@ -71,10 +75,32 @@ export function ProfileTab() {
             await api.put('/profile', formData);
             await fetchProfile();
             setEditMode(false);
+            toast.success('Profile updated successfully');
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Failed to update profile');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleChangePassword = async () => {
+        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+            toast.error('New passwords do not match');
+            return;
+        }
+        try {
+            setPasswordLoading(true);
+            await api.put('/profile/password', {
+                currentPassword: passwordForm.currentPassword,
+                newPassword: passwordForm.newPassword
+            });
+            toast.success('Password updated successfully');
+            setPasswordDialogOpen(false);
+            setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || 'Failed to update password');
+        } finally {
+            setPasswordLoading(false);
         }
     };
 
@@ -106,9 +132,14 @@ export function ProfileTab() {
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold">Personal Information</h2>
                 {!editMode && (
-                    <Button variant="outline" onClick={() => setEditMode(true)} className="gap-2">
-                        <Edit2 className="w-4 h-4" /> Edit Profile
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => setPasswordDialogOpen(true)} className="gap-2">
+                            <Lock className="w-4 h-4" /> Change Password
+                        </Button>
+                        <Button variant="outline" onClick={() => setEditMode(true)} className="gap-2">
+                            <Edit2 className="w-4 h-4" /> Edit Profile
+                        </Button>
+                    </div>
                 )}
             </div>
 
@@ -145,18 +176,22 @@ export function ProfileTab() {
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1.5">
                         Email ID
-                        <span className="inline-flex items-center gap-1 text-[10px] text-gray-400 font-normal bg-gray-100 px-1.5 py-0.5 rounded-full">
-                            <Lock className="w-2.5 h-2.5" /> Locked
-                        </span>
+                        {!editMode && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-gray-400 font-normal bg-gray-100 px-1.5 py-0.5 rounded-full">
+                                <Lock className="w-2.5 h-2.5" /> Locked
+                            </span>
+                        )}
                     </label>
                     <div className="relative">
                         <Input
                             type="email"
-                            value={profile?.email || ''}
-                            disabled
-                            className="bg-gray-50 text-gray-600 cursor-not-allowed pr-8"
+                            value={editMode ? formData.email : (profile?.email || '')}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            disabled={!editMode}
+                            className={!editMode ? 'bg-gray-50 text-gray-600 cursor-not-allowed pr-8' : ''}
+                            placeholder="Email address"
                         />
-                        <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300" />
+                        {!editMode && <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300" />}
                     </div>
                 </div>
 
@@ -197,7 +232,8 @@ export function ProfileTab() {
                         setEditMode(false);
                         setFormData({
                             gender: profile?.gender || 'Male',
-                            age: profile?.age ? profile.age.toString() : ''
+                            age: profile?.age ? profile.age.toString() : '',
+                            email: profile?.email || ''
                         });
                     }}>
                         Cancel
@@ -258,6 +294,44 @@ export function ProfileTab() {
                             </div>
                         </div>
                         <Button onClick={handleAddAddress} className="w-full">Add Address</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+                <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader><DialogTitle>Change Password</DialogTitle></DialogHeader>
+                    <div className="space-y-4 mt-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Current Password</label>
+                            <Input
+                                type="password"
+                                value={passwordForm.currentPassword}
+                                onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                                placeholder="Enter current password"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">New Password</label>
+                            <Input
+                                type="password"
+                                value={passwordForm.newPassword}
+                                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                                placeholder="At least 6 characters, 1 letter, 1 number"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Confirm New Password</label>
+                            <Input
+                                type="password"
+                                value={passwordForm.confirmPassword}
+                                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                                placeholder="Confirm new password"
+                            />
+                        </div>
+                        <Button onClick={handleChangePassword} disabled={passwordLoading} className="w-full mt-2">
+                            {passwordLoading ? <Loader2 className="animate-spin" /> : 'Update Password'}
+                        </Button>
                     </div>
                 </DialogContent>
             </Dialog>

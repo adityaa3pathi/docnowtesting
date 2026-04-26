@@ -41,6 +41,7 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
     const [signupData, setSignupData] = useState({
         mobile: '',
         age: '',
+        gender: '',
         password: '',
         confirmPassword: '',
         email: '',
@@ -139,6 +140,22 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
         setError(null);
 
         if (signupStep === 'DETAILS') {
+            if (!signupData.name || signupData.name.trim() === '') {
+                setError("Full Name is required");
+                return;
+            }
+            if (/\d/.test(signupData.name)) {
+                setError("Name cannot contain numbers");
+                return;
+            }
+            if (!signupData.age || parseInt(signupData.age) <= 0 || parseInt(signupData.age) > 120) {
+                setError("Please enter a valid age");
+                return;
+            }
+            if (!signupData.gender) {
+                setError("Please select a gender");
+                return;
+            }
             if (signupData.password !== signupData.confirmPassword) {
                 setError("Passwords do not match");
                 return;
@@ -355,10 +372,11 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                         <div className="relative">
                             <UserIcon className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                             <Input
-                                placeholder="Full Name (Optional)"
+                                placeholder="Full Name"
                                 value={signupData.name}
                                 onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
                                 className="pl-10"
+                                required
                             />
                         </div>
                         <div className="relative">
@@ -370,8 +388,37 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                                 onChange={(e) => setSignupData({ ...signupData, age: e.target.value })}
                                 className="pl-10"
                                 required
+                                min="1"
+                                max="120"
                             />
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-xl">
+                        <button
+                            type="button"
+                            onClick={() => setSignupData({ ...signupData, gender: 'Male' })}
+                            className={cn(
+                                "py-2 text-sm font-bold rounded-lg transition-all",
+                                signupData.gender === 'Male'
+                                    ? "bg-white text-primary shadow-sm"
+                                    : "text-muted-foreground hover:text-gray-900"
+                            )}
+                        >
+                            Male
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setSignupData({ ...signupData, gender: 'Female' })}
+                            className={cn(
+                                "py-2 text-sm font-bold rounded-lg transition-all",
+                                signupData.gender === 'Female'
+                                    ? "bg-white text-primary shadow-sm"
+                                    : "text-muted-foreground hover:text-gray-900"
+                            )}
+                        >
+                            Female
+                        </button>
                     </div>
 
                     <div className="relative">
