@@ -232,8 +232,8 @@ export function RescheduleDialog({
                         onClick={handleRescheduleBooking}
                         disabled={isRescheduling || !selectedNewSlot || rescheduleReason.length < 5}
                         className={`rounded-xl px-8 font-black h-11 shadow-lg transition-all ${!selectedNewSlot || rescheduleReason.length < 5
-                            ? 'bg-slate-300 shadow-none'
-                            : 'bg-primary hover:bg-primary/90 shadow-primary/20 hover:scale-105 active:scale-95'
+                            ? 'bg-slate-200 text-slate-500 shadow-none disabled:opacity-100'
+                            : 'bg-primary hover:bg-primary/90 text-white shadow-primary/20 hover:scale-105 active:scale-95'
                             }`}
                     >
                         {isRescheduling ? (

@@ -60,10 +60,26 @@ router.post('/signup/send-otp', authRateLimiter, async (req: Request, res: Respo
 // POST /api/auth/signup/verify
 router.post('/signup/verify', async (req: Request, res: Response) => {
     try {
-        const { mobile, code, password, age, name, email, referralCode: appliedCode } = req.body;
+        const { mobile, code, password, age, name, email, gender, referralCode: appliedCode } = req.body;
 
-        if (!mobile || !code || !password || !age) {
+        if (!mobile || !code || !password || !age || !name || !gender) {
             return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        // Validate Name (no numbers)
+        if (/\d/.test(name)) {
+            return res.status(400).json({ error: 'Name cannot contain numbers' });
+        }
+
+        // Validate Age
+        const parsedAge = parseInt(age);
+        if (isNaN(parsedAge) || parsedAge <= 0 || parsedAge > 120) {
+            return res.status(400).json({ error: 'Invalid age provided' });
+        }
+
+        // Validate Gender
+        if (!['Male', 'Female', 'Other'].includes(gender)) {
+            return res.status(400).json({ error: 'Invalid gender provided' });
         }
 
         // Verify OTP
@@ -92,8 +108,9 @@ router.post('/signup/verify', async (req: Request, res: Response) => {
             data: {
                 mobile,
                 password: hashedPassword,
-                age: parseInt(age),
-                name: name || null,
+                age: parsedAge,
+                gender: gender,
+                name: name,
                 email: email || null,
                 isVerified: true,
                 referralCode: generateReferralCode(name),

@@ -1,5 +1,6 @@
 import express, { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { generateReferralCode } from '../utils/referralService';
 
@@ -65,18 +66,18 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 // PUT /api/profile - Update user profile
 router.put('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-        const { gender, age } = req.body;
+        const { gender, age, email } = req.body;
 
         // Validate at least one field is provided
-        if (!gender && !age) {
+        if (gender === undefined && age === undefined && email === undefined) {
             res.status(400).json({ error: 'At least one field to update is required' });
             return;
         }
 
-        // Note: name and email are immutable after registration
         const updateData: any = {};
-        if (gender) updateData.gender = gender;
-        if (age) updateData.age = parseInt(age);
+        if (gender !== undefined) updateData.gender = gender;
+        if (age !== undefined) updateData.age = parseInt(age);
+        if (email !== undefined) updateData.email = email;
 
         const updatedUser = await prisma.user.update({
             where: { id: req.userId },
@@ -103,6 +104,61 @@ router.put('/', authMiddleware, async (req: AuthRequest, res: Response) => {
             res.status(404).json({ error: 'User not found. Please log in again.' });
             return;
         }
+        if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
+            res.status(400).json({ error: 'This email is already in use.' });
+            return;
+        }
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// PUT /api/profile/password - Update user password
+router.put('/password', authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            res.status(400).json({ error: 'Current password and new password are required' });
+            return;
+        }
+
+        if (newPassword.length < 6) {
+            res.status(400).json({ error: 'New password must be at least 6 characters' });
+            return;
+        }
+        if (!/[a-zA-Z]/.test(newPassword) || !/\d/.test(newPassword)) {
+            res.status(400).json({ error: 'New password must contain at least one letter and one number' });
+            return;
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: req.userId } });
+
+        if (!user) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+
+        if (!user.password) {
+            res.status(400).json({ error: 'Password is not set. Please use forgot password or contact support.' });
+            return;
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            res.status(401).json({ error: 'Incorrect current password' });
+            return;
+        }
+
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+        await prisma.user.update({
+            where: { id: req.userId },
+            data: { password: hashedNewPassword }
+        });
+
+        res.status(200).json({ message: 'Password updated successfully' });
+    } catch (error) {
+        console.error('Update Password Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });

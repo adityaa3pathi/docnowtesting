@@ -99,20 +99,26 @@ router.post('/items', authMiddleware, async (req: AuthRequest, res: Response) =>
         // We do NOT check for existing item.
         // Each add call creates a new row, allowing user to assign different patients later.
 
-        // 5. Create cart item with server-side data
-        const cartItem = await prisma.cartItem.create({
-            data: {
-                cartId: cart.id,
-                testCode,
-                testName: catalogItem.name,
-                price: serverPrice,
-                mrp: serverMrp,
-                patientId: patientId || null
-            },
-            include: {
-                patient: { select: { id: true, name: true, relation: true } }
-            }
-        });
+        // 5. Create cart item with server-side data and bump lastActivityAt
+        const [cartItem] = await prisma.$transaction([
+            prisma.cartItem.create({
+                data: {
+                    cartId: cart.id,
+                    testCode,
+                    testName: catalogItem.name,
+                    price: serverPrice,
+                    mrp: serverMrp,
+                    patientId: patientId || null
+                },
+                include: {
+                    patient: { select: { id: true, name: true, relation: true } }
+                }
+            }),
+            prisma.cart.update({
+                where: { id: cart.id },
+                data: { lastActivityAt: new Date() }
+            })
+        ]);
 
         res.status(201).json({
             message: 'Item added to cart',
@@ -146,20 +152,26 @@ router.put('/items/:id', authMiddleware, async (req: AuthRequest, res: Response)
             return;
         }
 
-        // Update cart item
-        const updatedItem = await prisma.cartItem.update({
-            where: { id },
-            data: { patientId: patientId || null },
-            include: {
-                patient: {
-                    select: {
-                        id: true,
-                        name: true,
-                        relation: true
+        // Update cart item and bump lastActivityAt
+        const [updatedItem] = await prisma.$transaction([
+            prisma.cartItem.update({
+                where: { id },
+                data: { patientId: patientId || null },
+                include: {
+                    patient: {
+                        select: {
+                            id: true,
+                            name: true,
+                            relation: true
+                        }
                     }
                 }
-            }
-        });
+            }),
+            prisma.cart.update({
+                where: { id: cartItem.cart.id },
+                data: { lastActivityAt: new Date() }
+            })
+        ]);
 
         res.status(200).json({
             message: 'Cart item updated',
@@ -195,9 +207,15 @@ router.delete('/items/:id', authMiddleware, async (req: AuthRequest, res: Respon
             return;
         }
 
-        await prisma.cartItem.delete({
-            where: { id }
-        });
+        await prisma.$transaction([
+            prisma.cartItem.delete({
+                where: { id }
+            }),
+            prisma.cart.update({
+                where: { id: cartItem.cart.id },
+                data: { lastActivityAt: new Date() }
+            })
+        ]);
         console.log(`[CART] Successfully removed item ${id}`);
 
         res.status(200).json({ message: 'Item removed from cart' });
