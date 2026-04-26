@@ -20,13 +20,23 @@ export class HealthiansAdapter {
     private constructor() {
         const baseUrl = process.env.HEALTHIANS_BASE_URL || 'https://t25crm.healthians.co.in/api';
         const partnerName = process.env.HEALTHIANS_PARTNER_NAME || 'docnow1';
-        this.client = axios.create({
+        
+        const axiosConfig: any = {
             baseURL: `${baseUrl}/${partnerName}`,
             headers: {
                 'Content-Type': 'application/json',
                 'User-Agent': 'DOCNOW-Server/1.0'
             },
-        });
+        };
+
+        if (process.env.USE_LIVE_PROXY === 'true') {
+            console.log('[Healthians] Routing requests through LIVE EC2 proxy (api.docnow.in)');
+            const proxyBaseUrl = process.env.LIVE_PROXY_URL || 'https://api.docnow.in/api/admin/proxy-healthians';
+            axiosConfig.baseURL = `${proxyBaseUrl}/${partnerName}`;
+            axiosConfig.headers['x-proxy-secret'] = process.env.HEALTHIANS_PROXY_SECRET || 'docnow-dev-proxy-secret-123';
+        }
+
+        this.client = axios.create(axiosConfig);
 
         // Interceptor to add Bearer token to requests (except auth)
         this.client.interceptors.request.use(async (config) => {
@@ -74,7 +84,7 @@ export class HealthiansAdapter {
             const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
             console.log(`[Healthians] Authenticating with ${baseUrl}/${partnerName}/getAccessToken`);
 
-            const response = await axios.get<AccessTokenResponse>(`${baseUrl}/${partnerName}/getAccessToken`, {
+            const response = await this.client.get<AccessTokenResponse>('/getAccessToken', {
                 headers: {
                     Authorization: authHeader,
                     'User-Agent': 'DOCNOW-Server/1.0',

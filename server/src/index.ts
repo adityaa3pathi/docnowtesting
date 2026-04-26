@@ -26,6 +26,7 @@ import managerRoutes from './routes/manager';
 import promoRoutes from './routes/promos';
 import reportRoutes from './routes/reports';
 import invoiceRoutes from './routes/invoices';
+import healthiansProxyRoutes from './routes/healthiansProxy';
 
 
 
@@ -72,6 +73,9 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/promos', promoRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/invoices', invoiceRoutes);
+
+// Special proxy route to allow local dev environments to hit Healthians API via the EC2 IP
+app.use('/api/admin/proxy-healthians', healthiansProxyRoutes);
 
 app.get('/', (req, res) => {
     res.send('DOCNOW API is running');
