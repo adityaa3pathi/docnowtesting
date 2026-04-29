@@ -13,6 +13,7 @@ import {
     Star,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '@/lib/api';
 
 interface CatalogItem {
     id: string;
@@ -42,9 +43,6 @@ export default function CatalogManagement() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValues, setEditValues] = useState({ displayPrice: 0, discountedPrice: '' as string });
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('docnow_auth_token') : null;
-    const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
     const fetchCatalog = useCallback(async () => {
         setLoading(true);
         const params = new URLSearchParams({ page: String(page), limit: String(limit) });
@@ -53,12 +51,9 @@ export default function CatalogManagement() {
         if (searchTerm) params.set('search', searchTerm);
 
         try {
-            const res = await fetch(`/api/manager/catalog?${params}`, { headers });
-            if (res.ok) {
-                const data = await res.json();
-                setItems(data.items || []);
-                setTotal(data.total || 0);
-            }
+            const res = await api.get(`/manager/catalog?${params}`);
+            setItems(res.data.items || []);
+            setTotal(res.data.total || 0);
         } catch { /* ignore */ }
         setLoading(false);
     }, [page, typeFilter, statusFilter, searchTerm]);
@@ -75,12 +70,7 @@ export default function CatalogManagement() {
     const handleSync = async () => {
         setSyncing(true);
         try {
-            const res = await fetch('/api/manager/catalog/sync', {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({ zipcode: '110001' }),
-            });
-            const data = await res.json();
+            const res = await api.post('/manager/catalog/sync', { zipcode: '110001' });
             if (res.status === 202) {
                 // Background sync started — auto-refresh after ~70s
                 toast.success('Sync started! Catalog will update in about 60 seconds...');
@@ -88,15 +78,17 @@ export default function CatalogManagement() {
                     fetchCatalog();
                     toast.success('Catalog refreshed with latest products!');
                 }, 70000);
-            } else if (res.ok) {
-                toast.success(data.message);
+            } else {
+                toast.success(res.data.message);
                 fetchCatalog();
-            } else if (res.status === 409) {
+            }
+        } catch (error: any) {
+            if (error.response?.status === 409) {
                 toast.error('A sync is already running. Please wait.');
             } else {
-                toast.error(data.error || 'Sync failed');
+                toast.error(error.response?.data?.error || 'Sync failed');
             }
-        } catch { toast.error('Network error during sync'); }
+        }
         setSyncing(false);
     };
 
@@ -104,26 +96,16 @@ export default function CatalogManagement() {
 
     const handleToggle = async (id: string) => {
         try {
-            const res = await fetch(`/api/manager/catalog/${id}/toggle`, { method: 'PUT', headers });
-            if (res.ok) {
-                const data = await res.json();
-                setItems(prev => prev.map(i => i.id === id ? { ...i, isEnabled: data.isEnabled } : i));
-            }
+            const res = await api.put(`/manager/catalog/${id}/toggle`);
+            setItems(prev => prev.map(i => i.id === id ? { ...i, isEnabled: res.data.isEnabled } : i));
         } catch { /* ignore */ }
     };
 
     const handleFeature = async (id: string, currentlyFeatured: boolean) => {
         try {
-            const res = await fetch(`/api/manager/catalog/${id}/feature`, {
-                method: 'PUT',
-                headers,
-                body: JSON.stringify({ isFeatured: !currentlyFeatured }),
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setItems(prev => prev.map(i => i.id === id ? { ...i, isFeatured: data.isFeatured, featuredOrder: data.featuredOrder } : i));
-                toast.success(data.isFeatured ? `"${data.name}" added to featured` : `"${data.name}" removed from featured`);
-            }
+            const res = await api.put(`/manager/catalog/${id}/feature`, { isFeatured: !currentlyFeatured });
+            setItems(prev => prev.map(i => i.id === id ? { ...i, isFeatured: res.data.isFeatured, featuredOrder: res.data.featuredOrder } : i));
+            toast.success(res.data.isFeatured ? `"${res.data.name}" added to featured` : `"${res.data.name}" removed from featured`);
         } catch { /* ignore */ }
     };
 
@@ -140,17 +122,9 @@ export default function CatalogManagement() {
             const body: any = { displayPrice: editValues.displayPrice };
             body.discountedPrice = editValues.discountedPrice ? parseFloat(editValues.discountedPrice) : null;
 
-            const res = await fetch(`/api/manager/catalog/${id}`, {
-                method: 'PUT',
-                headers,
-                body: JSON.stringify(body),
-            });
-
-            if (res.ok) {
-                const updated = await res.json();
-                setItems(prev => prev.map(i => i.id === id ? { ...i, displayPrice: updated.displayPrice, discountedPrice: updated.discountedPrice } : i));
-                setEditingId(null);
-            }
+            const res = await api.put(`/manager/catalog/${id}`, body);
+            setItems(prev => prev.map(i => i.id === id ? { ...i, displayPrice: res.data.displayPrice, discountedPrice: res.data.discountedPrice } : i));
+            setEditingId(null);
         } catch { /* ignore */ }
     };
 

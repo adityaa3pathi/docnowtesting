@@ -109,7 +109,7 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                     mobile: loginMobile,
                     password: loginPassword
                 });
-                login(res.data.user, res.data.token);
+                login(res.data.user);
                 onClose();
             } else {
                 // OTP Login Flow
@@ -126,7 +126,7 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                     mobile: loginMobile,
                     code: loginOtp
                 });
-                login(res.data.user, res.data.token);
+                login(res.data.user);
                 onClose();
             }
         } catch (err) {
@@ -190,7 +190,7 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                     age: parseInt(signupData.age),
                     code: signupOtp
                 });
-                login(res.data.user, res.data.token);
+                login(res.data.user);
                 onClose();
             } catch (err) {
                 handleError(err);

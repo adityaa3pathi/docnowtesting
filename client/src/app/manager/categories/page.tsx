@@ -11,6 +11,7 @@ import {
     Check,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '@/lib/api';
 
 interface Category {
     id: string;
@@ -47,23 +48,17 @@ export default function CategoryManagement() {
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
     const [assigning, setAssigning] = useState(false);
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('docnow_auth_token') : null;
-    const headers: Record<string, string> = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
     useEffect(() => { fetchData(); }, []);
 
     const fetchData = async () => {
         setLoading(true);
         try {
             const [catRes, itemRes] = await Promise.all([
-                fetch('/api/manager/categories', { headers }),
-                fetch('/api/manager/catalog?limit=9999', { headers }),
+                api.get('/manager/categories'),
+                api.get('/manager/catalog?limit=9999'),
             ]);
-            if (catRes.ok) { const data = await catRes.json(); setCategories(data); }
-            if (itemRes.ok) {
-                const data = await itemRes.json();
-                setAllItems((data.items || []).map((i: any) => ({ id: i.id, name: i.name, isEnabled: i.isEnabled })));
-            }
+            setCategories(catRes.data);
+            setAllItems((itemRes.data.items || []).map((i: any) => ({ id: i.id, name: i.name, isEnabled: i.isEnabled })));
         } catch { /* ignore */ }
         setLoading(false);
     };
@@ -74,24 +69,17 @@ export default function CategoryManagement() {
         if (!newName.trim()) { toast.error('Name is required'); return; }
         setCreating(true);
         try {
-            const res = await fetch('/api/manager/categories', {
-                method: 'POST', headers,
-                body: JSON.stringify({ name: newName, description: newDesc || undefined }),
-            });
-            if (res.ok) {
-                setShowCreate(false); setNewName(''); setNewSlug(''); setNewDesc('');
-                fetchData();
-            } else {
-                const err = await res.json(); toast.error(err.error || 'Failed');
-            }
-        } catch { toast.error('Network error'); }
+            await api.post('/manager/categories', { name: newName, description: newDesc || undefined });
+            setShowCreate(false); setNewName(''); setNewSlug(''); setNewDesc('');
+            fetchData();
+        } catch (error: any) { toast.error(error.response?.data?.error || 'Failed'); }
         setCreating(false);
     };
 
     const handleDelete = async (id: string) => {
         if (!confirm('Delete this category?')) return;
         try {
-            await fetch(`/api/manager/categories/${id}`, { method: 'DELETE', headers });
+            await api.delete(`/manager/categories/${id}`);
             fetchData();
         } catch { /* ignore */ }
     };
@@ -100,17 +88,10 @@ export default function CategoryManagement() {
         if (!assignCatId || selectedItems.length === 0) { toast.error('Select a category and at least one product'); return; }
         setAssigning(true);
         try {
-            const res = await fetch(`/api/manager/categories/${assignCatId}/items`, {
-                method: 'POST', headers,
-                body: JSON.stringify({ itemIds: selectedItems }),
-            });
-            if (res.ok) {
-                setShowAssign(false); setAssignCatId(''); setSelectedItems([]);
-                fetchData();
-            } else {
-                const err = await res.json(); toast.error(err.error || 'Failed');
-            }
-        } catch { toast.error('Network error'); }
+            await api.post(`/manager/categories/${assignCatId}/items`, { itemIds: selectedItems });
+            setShowAssign(false); setAssignCatId(''); setSelectedItems([]);
+            fetchData();
+        } catch (error: any) { toast.error(error.response?.data?.error || 'Failed'); }
         setAssigning(false);
     };
 

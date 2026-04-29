@@ -1,5 +1,8 @@
 import express, { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import { createSession, rotateRefreshToken, revokeSession, revokeAllUserSessions } from '../services/sessionService';
+import { setAuthResponse, clearAuthCookies, isWebClient } from '../utils/cookieHelpers';
+import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { Redis } from '@upstash/redis';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db';
@@ -16,13 +19,17 @@ const redis = process.env.UPSTASH_REDIS_REST_URL
     })
     : null;
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined in environment variables');
+}
 const MAX_OTP_ATTEMPTS = 5;
 const RESEND_COOLDOWN_SECONDS = 60;
 
 import { rateLimiter } from '../middleware/rateLimiter';
 // 5 requests per 15 minutes for OTP endpoints
 const authRateLimiter = rateLimiter(5, 15 * 60, 'auth_otp');
+const verifyRateLimiter = rateLimiter(10, 15 * 60, 'auth_verify_otp');
 
 // --- SIGNUP FLOW ---
 
@@ -58,7 +65,7 @@ router.post('/signup/send-otp', authRateLimiter, async (req: Request, res: Respo
 });
 
 // POST /api/auth/signup/verify
-router.post('/signup/verify', async (req: Request, res: Response) => {
+router.post('/signup/verify', verifyRateLimiter, async (req: Request, res: Response) => {
     try {
         const { mobile, code, password, age, name, email, gender, referralCode: appliedCode } = req.body;
 
@@ -131,19 +138,16 @@ router.post('/signup/verify', async (req: Request, res: Response) => {
         // Cleanup OTP
         await prisma.oTP.delete({ where: { identifier: mobile } });
 
-        // Issue Token
-        const token = jwt.sign({ userId: newUser.id, mobile: newUser.mobile }, JWT_SECRET, { expiresIn: '7d' });
-
-        res.status(201).json({
-            message: 'User created successfully',
-            token,
-            user: {
-                id: newUser.id,
-                name: newUser.name,
-                mobile: newUser.mobile,
-                email: newUser.email,
-                referralCode: newUser.referralCode
-            }
+        // Issue Dual-Mode Token
+        const clientType = req.headers['x-client-type'] === 'mobile' ? 'mobile' : 'web';
+        const session = await createSession(newUser.id, newUser.mobile, req.ip, req.headers['user-agent'], clientType);
+        
+        setAuthResponse(req, res, session, {
+            id: newUser.id,
+            name: newUser.name,
+            mobile: newUser.mobile,
+            email: newUser.email,
+            referralCode: newUser.referralCode
         });
 
     } catch (error) {
@@ -172,13 +176,10 @@ router.post('/login/password', async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        const token = jwt.sign({ userId: user.id, mobile: user.mobile }, JWT_SECRET, { expiresIn: '7d' });
+        const clientType = req.headers['x-client-type'] === 'mobile' ? 'mobile' : 'web';
+        const session = await createSession(user.id, user.mobile, req.ip, req.headers['user-agent'], clientType);
 
-        res.status(200).json({
-            message: 'Login successful',
-            token,
-            user: { id: user.id, name: user.name, mobile: user.mobile, email: user.email, role: user.role }
-        });
+        setAuthResponse(req, res, session, { id: user.id, name: user.name, mobile: user.mobile, email: user.email, role: user.role });
 
     } catch (error) {
         console.error('Login Password Error:', error);
@@ -205,7 +206,7 @@ router.post('/login/send-otp', authRateLimiter, async (req: Request, res: Respon
 });
 
 // POST /api/auth/login/verify-otp
-router.post('/login/verify-otp', async (req: Request, res: Response) => {
+router.post('/login/verify-otp', verifyRateLimiter, async (req: Request, res: Response) => {
     try {
         const { mobile, code } = req.body;
 
@@ -224,13 +225,10 @@ router.post('/login/verify-otp', async (req: Request, res: Response) => {
 
         await prisma.oTP.delete({ where: { identifier: mobile } });
 
-        const token = jwt.sign({ userId: user.id, mobile: user.mobile }, JWT_SECRET, { expiresIn: '7d' });
+        const clientType = req.headers['x-client-type'] === 'mobile' ? 'mobile' : 'web';
+        const session = await createSession(user.id, user.mobile, req.ip, req.headers['user-agent'], clientType);
 
-        res.status(200).json({
-            message: 'Login successful',
-            token,
-            user: { id: user.id, name: user.name, mobile: user.mobile, email: user.email }
-        });
+        setAuthResponse(req, res, session, { id: user.id, name: user.name, mobile: user.mobile, email: user.email, role: user.role });
 
     } catch (error) {
         console.error('Login Verify OTP Error:', error);
@@ -275,7 +273,7 @@ router.post('/forgot-password/send-otp', authRateLimiter, async (req: Request, r
 });
 
 // POST /api/auth/forgot-password/verify-reset
-router.post('/forgot-password/verify-reset', async (req: Request, res: Response) => {
+router.post('/forgot-password/verify-reset', verifyRateLimiter, async (req: Request, res: Response) => {
     try {
         const { mobile, code, newPassword } = req.body;
 
@@ -339,7 +337,86 @@ router.post('/forgot-password/verify-reset', async (req: Request, res: Response)
     }
 });
 
-// Legacy/Compatibility Routes (Optional: remove if fully breaking)
-// Keeping send-otp generic for now if needed, but client should use specific endpoints.
+// --- SESSION MANAGEMENT ---
+
+// POST /api/auth/refresh
+router.post('/refresh', async (req: Request, res: Response) => {
+    try {
+        const refreshToken = isWebClient(req)
+            ? req.cookies?.docnow_refresh
+            : req.body.refreshToken;
+
+        if (!refreshToken) {
+            return res.status(401).json({ error: 'Refresh token missing' });
+        }
+
+        const session = await rotateRefreshToken(refreshToken, req.ip, req.headers['user-agent']);
+        setAuthResponse(req, res, session, null); // Do not send user data on refresh to save payload
+    } catch (error: any) {
+        console.error('Refresh Token Error:', error.message);
+        clearAuthCookies(res);
+        res.status(401).json({ error: error.message || 'Invalid session' });
+    }
+});
+
+// POST /api/auth/logout
+router.post('/logout', authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        // Find session ID from token payload
+        let token = req.cookies?.docnow_access;
+        if (!token) {
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                token = authHeader.split(' ')[1];
+            }
+        }
+        
+        if (token) {
+            const decoded = jwt.decode(token) as { sessionId?: string };
+            if (decoded?.sessionId) {
+                await revokeSession(decoded.sessionId);
+            }
+        }
+        
+        clearAuthCookies(res);
+        res.status(200).json({ success: true, message: 'Logged out successfully' });
+    } catch (error) {
+        console.error('Logout Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// POST /api/auth/logout-all
+router.post('/logout-all', authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        if (!req.userId) return res.status(401).json({ error: 'Unauthorized' });
+        
+        await revokeAllUserSessions(req.userId);
+        clearAuthCookies(res);
+        res.status(200).json({ success: true, message: 'Logged out from all devices' });
+    } catch (error) {
+        console.error('Logout All Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// GET /api/auth/me
+router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        if (!req.userId) return res.status(401).json({ error: 'Unauthorized' });
+        
+        const user = await prisma.user.findUnique({
+            where: { id: req.userId },
+            select: { id: true, name: true, mobile: true, email: true, role: true, isVerified: true, referralCode: true }
+        });
+        
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        res.status(200).json({ user });
+    } catch (error) {
+        console.error('Get Me Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
 
 export default router;

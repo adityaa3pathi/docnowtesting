@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 import { LocationProvider } from "@/contexts/LocationContext";
@@ -8,11 +8,20 @@ import { CartProvider } from "@/contexts/CartContext";
 import { Toaster } from "react-hot-toast";
 import { GlobalHeader } from "@/components/GlobalHeader";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = localFont({
+  src: "./fonts/InterVariable.woff2",
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "DOCNOW - Premium Health Bookings",
   description: "Book lab tests from home with our premium partners.",
+  icons: {
+    icon: "/docnow-logo.png",
+    shortcut: "/docnow-logo.png",
+    apple: "/docnow-logo.png",
+  },
 };
 
 export default function RootLayout({

@@ -11,6 +11,7 @@ import {
     Loader2,
     RefreshCw,
 } from 'lucide-react';
+import api from '@/lib/api';
 
 interface CatalogStats {
     total: number;
@@ -27,21 +28,15 @@ export default function DashboardOverview() {
     }, []);
 
     const fetchStats = async () => {
-        const token = localStorage.getItem('docnow_auth_token');
         try {
             // Fetch all items to compute stats
-            const res = await fetch('/api/manager/catalog?limit=9999', {
-                headers: { Authorization: `Bearer ${token}` },
+            const res = await api.get('/manager/catalog?limit=9999');
+            const items = res.data.items || [];
+            setStats({
+                total: items.length,
+                enabled: items.filter((i: any) => i.isEnabled).length,
+                disabled: items.filter((i: any) => !i.isEnabled).length,
             });
-            if (res.ok) {
-                const data = await res.json();
-                const items = data.items || [];
-                setStats({
-                    total: items.length,
-                    enabled: items.filter((i: any) => i.isEnabled).length,
-                    disabled: items.filter((i: any) => !i.isEnabled).length,
-                });
-            }
         } catch { /* ignore */ }
         setLoading(false);
     };

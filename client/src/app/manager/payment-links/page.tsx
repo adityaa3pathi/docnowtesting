@@ -55,8 +55,8 @@ interface CatalogItem {
 
 interface Slot {
     stm_id: string;
-    slot_start_time: string;
-    slot_end_time: string;
+    slot_time: string;
+    end_time: string;
 }
 
 interface CartItem {
@@ -105,20 +105,27 @@ const PATIENT_RELATIONS = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function StepIndicator({ current }: { current: number }) {
+function StepIndicator({ current, onStepClick }: { current: number; onStepClick?: (step: number) => void }) {
     return (
         <nav className="flex items-center justify-center gap-0 mb-8 overflow-x-auto">
             {STEPS.map((step, i) => {
                 const Icon = step.icon;
                 const done = i < current;
                 const active = i === current;
+                const clickable = done && onStepClick;
                 return (
                     <div key={i} className="flex items-center">
-                        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all
-                            ${active ? 'bg-[#4b2192] text-white shadow-md' : done ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-400'}`}>
+                        <button
+                            type="button"
+                            onClick={() => clickable && onStepClick(i)}
+                            disabled={!clickable}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all
+                                ${active ? 'bg-[#4b2192] text-white shadow-md' : done ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 cursor-pointer' : 'bg-gray-100 text-gray-400'}
+                                ${!clickable ? 'cursor-default' : ''}`}
+                        >
                             {done ? <CheckCircle className="w-3.5 h-3.5" /> : <Icon className="w-3.5 h-3.5" />}
                             <span className="hidden sm:inline">{step.label}</span>
-                        </div>
+                        </button>
                         {i < STEPS.length - 1 && (
                             <div className={`h-px w-6 sm:w-8 ${done ? 'bg-purple-400' : 'bg-gray-200'}`} />
                         )}
@@ -135,6 +142,7 @@ function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<UserResult[]>([]);
     const [loading, setLoading] = useState(false);
+    const [searched, setSearched] = useState(false);
     const [mode, setMode] = useState<'search' | 'create' | 'otp'>('search');
     const [submitting, setSubmitting] = useState(false);
     const [resendTimer, setResendTimer] = useState(0);
@@ -153,6 +161,7 @@ function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
         try {
             const res = await api.get('/manager/users/search', { params: { mobile: query } });
             setResults(res.data);
+            setSearched(true);
         } catch { toast.error('Search failed'); }
         finally { setLoading(false); }
     }, [query]);
@@ -267,7 +276,7 @@ function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                             <input
                                 value={query}
-                                onChange={e => setQuery(e.target.value)}
+                                onChange={e => { setQuery(e.target.value); setSearched(false); setResults([]); }}
                                 onKeyDown={e => e.key === 'Enter' && search()}
                                 placeholder="Search by mobile number…"
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-300 outline-none"
@@ -294,11 +303,11 @@ function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
                         </div>
                     )}
 
-                    {results.length === 0 && query.length >= 3 && !loading && (
+                    {searched && results.length === 0 && !loading && (
                         <p className="text-sm text-gray-500 text-center py-2">No customers found for this number.</p>
                     )}
 
-                    {isValidMobile && (
+                    {isValidMobile && searched && results.length === 0 && !loading && (
                         <button
                             onClick={openCreateFlow}
                             className="w-full rounded-xl border border-dashed border-purple-300 bg-purple-50 px-4 py-4 text-left hover:border-purple-400 hover:bg-purple-100/60 transition-colors"
@@ -427,16 +436,18 @@ function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
 // ─── Step 2: Patients & Address ────────────────────────────────────────────────
 
 function StepPatientsAddress({
-    user, onNext, onBack
+    user, selectedPatientId, selectedAddress, setSelectedPatientId, setSelectedAddress, onNext, onBack
 }: {
     user: UserResult;
-    onNext: (patientId: string, address: Address) => void;
+    selectedPatientId: string;
+    selectedAddress: Address | null;
+    setSelectedPatientId: (id: string) => void;
+    setSelectedAddress: (addr: Address | null) => void;
+    onNext: () => void;
     onBack: () => void;
 }) {
     const [patients, setPatients] = useState<Patient[]>([]);
     const [addresses, setAddresses] = useState<Address[]>([]);
-    const [selectedPatient, setSelectedPatient] = useState<string>('');
-    const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
     const [showAddPatient, setShowAddPatient] = useState(false);
     const [showAddAddress, setShowAddAddress] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -483,7 +494,7 @@ function StepPatientsAddress({
         finally { setSaving(false); }
     };
 
-    const canProceed = (selectedPatient === 'self' || selectedPatient !== '') && selectedAddress !== null;
+    const canProceed = (selectedPatientId === 'self' || selectedPatientId !== '') && selectedAddress !== null;
 
     return (
         <div className="space-y-6">
@@ -538,10 +549,10 @@ function StepPatientsAddress({
                 <div className="space-y-2">
                     {/* Self option */}
                     <label className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors
-                        ${selectedPatient === 'self' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}>
+                        ${selectedPatientId === 'self' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}>
                         <input type="radio" name="patient" value="self"
-                            checked={selectedPatient === 'self'}
-                            onChange={() => setSelectedPatient('self')}
+                            checked={selectedPatientId === 'self'}
+                            onChange={() => setSelectedPatientId('self')}
                             className="accent-purple-700" />
                         <div>
                             <p className="font-medium text-sm">{user.name || 'Customer'}</p>
@@ -550,10 +561,10 @@ function StepPatientsAddress({
                     </label>
                     {patients.map(p => (
                         <label key={p.id} className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors
-                            ${selectedPatient === p.id ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}>
+                            ${selectedPatientId === p.id ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}>
                             <input type="radio" name="patient" value={p.id}
-                                checked={selectedPatient === p.id}
-                                onChange={() => setSelectedPatient(p.id)}
+                                checked={selectedPatientId === p.id}
+                                onChange={() => setSelectedPatientId(p.id)}
                                 className="accent-purple-700" />
                             <div>
                                 <p className="font-medium text-sm">{p.name}</p>
@@ -622,7 +633,7 @@ function StepPatientsAddress({
                 <button onClick={onBack} className="btn-ghost flex items-center gap-1">
                     <ChevronLeft className="w-4 h-4" /> Back
                 </button>
-                <button disabled={!canProceed} onClick={() => onNext(selectedPatient, selectedAddress!)}
+                <button disabled={!canProceed} onClick={onNext}
                     className="btn-primary flex-1 flex items-center justify-center gap-1 disabled:opacity-50">
                     Continue <ChevronRight className="w-4 h-4" />
                 </button>
@@ -755,7 +766,7 @@ function StepSlot({
             const res = await api.post('/manager/slots', {
                 lat: address.lat || '0', long: address.long || '0',
                 zipcode: address.pincode, date: slotDate,
-                items: cart.map(c => ({ testCode: c.testCode }))
+                items: cart.map(c => ({ testCode: c.testCode, patientId: c.patientId }))
             });
             const raw = Array.isArray(res.data) ? res.data : (res.data?.slots || res.data?.data || []);
             setSlots(raw);
@@ -784,7 +795,7 @@ function StepSlot({
                     ) : slots.length > 0 ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             {slots.map(s => {
-                                const label = `${s.slot_start_time} – ${s.slot_end_time}`;
+                                const label = `${s.slot_time} – ${s.end_time}`;
                                 const selected = slotTime === s.stm_id;
                                 return (
                                     <button key={s.stm_id} onClick={() => setSlotTime(s.stm_id)}
@@ -1207,16 +1218,47 @@ export default function PaymentLinksPage() {
                                     <X className="w-5 h-5 text-gray-600" />
                                 </button>
                             </div>
-                            <StepIndicator current={step} />
+                            <StepIndicator current={step} onStepClick={(s) => setStep(s)} />
                         </div>
                         <div className="p-6">
                             {step === 0 && (
-                                <StepCustomer onNext={user => { setSelectedUser(user); setStep(1); }} />
+                                selectedUser ? (
+                                    <div className="space-y-4">
+                                        <h2 className="text-lg font-semibold text-gray-800">Selected Customer</h2>
+                                        <div className="flex items-center justify-between p-4 bg-purple-50 border border-purple-200 rounded-xl">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center text-purple-700 font-bold text-sm">
+                                                    {(selectedUser.name || 'U')[0].toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-gray-900">{selectedUser.name || 'Unnamed'}</p>
+                                                    <p className="text-sm text-gray-500">{selectedUser.mobile}</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => { setSelectedUser(null); setSelectedPatientId(''); setSelectedAddress(null); setCart([]); setSlotDate(''); setSlotTime(''); }}
+                                                className="text-sm text-purple-700 hover:text-purple-900 font-medium px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors"
+                                            >
+                                                Change
+                                            </button>
+                                        </div>
+                                        <button onClick={() => setStep(1)}
+                                            className="btn-primary w-full flex items-center justify-center gap-1">
+                                            Continue <ChevronRight className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <StepCustomer onNext={user => { setSelectedUser(user); setStep(1); }} />
+                                )
                             )}
                             {step === 1 && selectedUser && (
                                 <StepPatientsAddress
                                     user={selectedUser}
-                                    onNext={(patId, addr) => { setSelectedPatientId(patId); setSelectedAddress(addr); setStep(2); }}
+                                    selectedPatientId={selectedPatientId}
+                                    selectedAddress={selectedAddress}
+                                    setSelectedPatientId={setSelectedPatientId}
+                                    setSelectedAddress={setSelectedAddress}
+                                    onNext={() => setStep(2)}
                                     onBack={() => setStep(0)}
                                 />
                             )}

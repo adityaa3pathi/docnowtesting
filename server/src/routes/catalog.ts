@@ -1,5 +1,6 @@
 import { Router, Response, Request } from 'express';
 import { prisma } from '../db';
+import { HealthiansAdapter } from '../adapters/healthians';
 
 const router = Router();
 
@@ -156,6 +157,38 @@ router.get('/products/:code', async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to fetch product' });
+    }
+});
+
+// ============================================
+// GET /api/catalog/product-details/:dealType/:dealTypeId
+// Fetch rich product details from Healthians API
+// ============================================
+router.get('/product-details/:dealType/:dealTypeId', async (req: Request, res: Response) => {
+    try {
+        const dealType = req.params.dealType as string;
+        const dealTypeId = req.params.dealTypeId as string;
+        
+        // Basic validation
+        if (!['package', 'profile', 'parameter'].includes(dealType.toLowerCase())) {
+            return res.status(400).json({ error: 'Invalid dealType' });
+        }
+        if (!dealTypeId || isNaN(Number(dealTypeId))) {
+            return res.status(400).json({ error: 'Invalid dealTypeId' });
+        }
+
+        const adapter = HealthiansAdapter.getInstance();
+        const details = await adapter.getProductDetails(dealType.toLowerCase(), dealTypeId);
+
+        // Map Healthians standard error response to standard HTTP status if needed
+        if (details && details.status === false) {
+             return res.status(404).json({ error: details.message || 'Product details not found' });
+        }
+
+        res.json(details);
+    } catch (error: any) {
+        console.error('[Catalog] Error fetching product details:', error.message);
+        res.status(500).json({ error: 'Failed to fetch product details' });
     }
 });
 

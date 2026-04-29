@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Search, Tag, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import api from '@/lib/api';
 
 interface PromoCode {
     id: string;
@@ -26,15 +27,9 @@ export default function PromosPage() {
     const fetchPromos = async () => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
             const query = search ? `?search=${search}` : '';
-            const res = await fetch(`/api/admin/promos${query}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setPromos(data.promos || []);
-            }
+            const res = await api.get(`/admin/promos${query}`);
+            setPromos(res.data.promos || []);
         } catch (error) {
             console.error('Failed to fetch promos', error);
         } finally {
@@ -49,18 +44,8 @@ export default function PromosPage() {
 
     const toggleStatus = async (id: string, currentStatus: boolean) => {
         try {
-            const token = localStorage.getItem('docnow_auth_token');
-            const res = await fetch(`/api/admin/promos/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ isActive: !currentStatus })
-            });
-            if (res.ok) {
-                fetchPromos();
-            }
+            await api.put(`/admin/promos/${id}`, { isActive: !currentStatus });
+            fetchPromos();
         } catch (error) {
             console.error('Failed to toggle status', error);
         }

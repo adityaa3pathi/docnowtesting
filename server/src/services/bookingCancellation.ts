@@ -387,6 +387,10 @@ export async function cancelCustomerBooking(params: {
         throw new Error('Booking not found or access denied');
     }
 
+    if (booking.partnerStatus && !PARTNER_CANCELABLE_STATUSES.has(booking.partnerStatus)) {
+        throw new Error(`Cancellation not allowed. Current status is: ${booking.partnerStatus}`);
+    }
+
     return runCancellation({
         booking,
         managerOrder: booking.managerOrder ? { id: booking.managerOrder.id, status: booking.managerOrder.status } : null,
@@ -396,7 +400,7 @@ export async function cancelCustomerBooking(params: {
         },
         remarks: params.remarks,
         allowPendingLocalCancel: false,
-        enableRefunds: Boolean(booking.managerOrder),
+        enableRefunds: true,
     });
 }
 

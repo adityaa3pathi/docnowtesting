@@ -5,35 +5,26 @@ import {
     Search,
     Eye,
     Calendar,
-    Clock,
     User,
     RefreshCw,
     ChevronLeft,
     ChevronRight,
     Loader2,
-    FileText,
-    Download
+    Download,
+    AlertTriangle
 } from 'lucide-react';
 import { useExport } from '@/hooks/useExport';
-import api, { downloadAuthenticatedFile, getApiUrl } from '@/lib/api';
-import toast from 'react-hot-toast';
 import { Button } from '@/components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import api from '@/lib/api';
 
-interface Order {
+interface FailedOrder {
     id: string;
     partnerBookingId: string | null;
     date: string;
-    slotDate: string;
-    slotTime: string;
     amount: number;
     status: string;
     paymentStatus: string;
-    managerOrder: {
-        id: string;
-        status: string;
-        managerId: string;
-    } | null;
     user: {
         id: string;
         name: string | null;
@@ -47,13 +38,10 @@ interface Order {
         age: number;
     } | null;
     testNames: string[];
-    reportCount: number;
-    latestReportId: string | null;
-    latestReportStatus: string | null;
-    canSendInvoice: boolean;
-    invoiceSentAt: string | null;
-    canSendReport: boolean;
-    reportSentAt: string | null;
+    partnerError: string | null;
+    retryLastError: string | null;
+    retryAttempts: number;
+    nextRetryAt: string | null;
 }
 
 interface Pagination {
@@ -63,34 +51,17 @@ interface Pagination {
     totalPages: number;
 }
 
-interface ReportItem {
-    id: string;
-    isFullReport: boolean;
-    fetchStatus: string;
-    verifiedAt: string | null;
-    fileSize: number | null;
-    generatedAt: string;
-    vendorCustomerId: string | null;
-}
-
-export default function OrdersPage() {
-    const [orders, setOrders] = useState<Order[]>([]);
+export default function FailedOrdersPage() {
+    const [orders, setOrders] = useState<FailedOrder[]>([]);
     const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 20, total: 0, totalPages: 0 });
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('All');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
 
     // View Details Modal State
-    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+    const [selectedOrder, setSelectedOrder] = useState<FailedOrder | null>(null);
     const [showModal, setShowModal] = useState(false);
-    const [reportModalOrder, setReportModalOrder] = useState<Order | null>(null);
-    const [reports, setReports] = useState<ReportItem[]>([]);
-    const [reportsLoading, setReportsLoading] = useState(false);
-    const [downloadLoadingId, setDownloadLoadingId] = useState<string | null>(null);
-    const [invoiceSendingId, setInvoiceSendingId] = useState<string | null>(null);
-    const [reportSendingId, setReportSendingId] = useState<string | null>(null);
 
     const { exporting, exportCsv } = useExport();
 
@@ -98,24 +69,23 @@ export default function OrdersPage() {
         setLoading(true);
         try {
             const params = new URLSearchParams({
-                    page: pagination.page.toString(),
-                    limit: pagination.limit.toString(),
-                    status: statusFilter,
-                });
+                page: pagination.page.toString(),
+                limit: pagination.limit.toString(),
+            });
 
             if (searchTerm) params.append('search', searchTerm);
             if (dateFrom) params.append('dateFrom', dateFrom);
             if (dateTo) params.append('dateTo', dateTo);
 
-            const res = await api.get(`/admin/orders?${params}`);
+            const res = await api.get(`/admin/failed-orders?${params}`);
             setOrders(res.data.orders);
             setPagination(res.data.pagination);
         } catch (error) {
-            console.error('Error fetching orders:', error);
+            console.error('Error fetching failed orders:', error);
         } finally {
             setLoading(false);
         }
-    }, [pagination.page, pagination.limit, searchTerm, statusFilter, dateFrom, dateTo]);
+    }, [pagination.page, pagination.limit, searchTerm, dateFrom, dateTo]);
 
     useEffect(() => {
         fetchOrders();
@@ -127,95 +97,24 @@ export default function OrdersPage() {
             setPagination(prev => ({ ...prev, page: 1 }));
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchTerm, statusFilter, dateFrom, dateTo]);
+    }, [searchTerm, dateFrom, dateTo]);
 
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString('en-IN', {
             day: '2-digit',
             month: 'short',
             year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
         });
     };
 
     const getStatusColor = (status: string) => {
         const s = status.toLowerCase();
-        if (s.includes('report') || s.includes('complete')) return 'bg-green-100 text-green-700';
+        if (s.includes('refund')) return 'bg-purple-100 text-purple-700';
         if (s.includes('cancel')) return 'bg-red-100 text-red-700';
-        if (s.includes('pending') || s.includes('booked')) return 'bg-yellow-100 text-yellow-700';
+        if (s.includes('fail')) return 'bg-orange-100 text-orange-700';
         return 'bg-gray-100 text-gray-700';
-    };
-
-    const fetchReports = useCallback(async (bookingId: string) => {
-        setReportsLoading(true);
-        try {
-            const res = await api.get(`/reports/booking/${bookingId}`);
-            setReports(res.data.reports || []);
-        } catch (error) {
-            console.error('Error fetching reports:', error);
-            toast.error('Failed to load reports');
-        } finally {
-            setReportsLoading(false);
-        }
-    }, []);
-
-    const handleDownloadReport = async (reportId: string) => {
-        setDownloadLoadingId(reportId);
-        try {
-            await downloadAuthenticatedFile(getApiUrl(`/reports/${reportId}/download`), `report-${reportId}.pdf`);
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to download report');
-        } finally {
-            setDownloadLoadingId(null);
-        }
-    };
-
-    const handleDownloadInvoice = async (bookingId: string) => {
-        setDownloadLoadingId(bookingId);
-        try {
-            await downloadAuthenticatedFile(getApiUrl(`/invoices/booking/${bookingId}/download`), `invoice-${bookingId}.pdf`);
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to download invoice');
-        } finally {
-            setDownloadLoadingId(null);
-        }
-    };
-
-    const handleOpenReports = async (order: Order) => {
-        if (order.reportCount === 0) return;
-
-        if (order.reportCount === 1 && order.latestReportId) {
-            await handleDownloadReport(order.latestReportId);
-            return;
-        }
-
-        setReportModalOrder(order);
-        await fetchReports(order.id);
-    };
-
-    const handleSendInvoice = async (order: Order) => {
-        setInvoiceSendingId(order.id);
-        try {
-            const res = await api.post(`/manager/bookings/${order.id}/send-invoice`);
-            toast.success(res.data.message || 'Invoice sent successfully');
-            await fetchOrders();
-        } catch (error: any) {
-            toast.error(error?.response?.data?.error || 'Failed to send invoice');
-        } finally {
-            setInvoiceSendingId(null);
-        }
-    };
-
-    const handleSendReport = async (order: Order) => {
-        setReportSendingId(order.id);
-        try {
-            const res = await api.post(`/manager/bookings/${order.id}/send-report`);
-            toast.success(res.data.message || 'Report sent successfully');
-            await fetchOrders();
-        } catch (error: any) {
-            toast.error(error?.response?.data?.error || 'Failed to send report');
-        } finally {
-            setReportSendingId(null);
-        }
     };
 
     return (
@@ -223,12 +122,15 @@ export default function OrdersPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-semibold text-gray-900">Order Management</h1>
-                    <p className="text-gray-600 mt-1">View and manage all bookings</p>
+                    <h1 className="text-3xl font-semibold text-gray-900 flex items-center gap-3">
+                        <AlertTriangle className="text-red-500" size={32} />
+                        Failed Orders
+                    </h1>
+                    <p className="text-gray-600 mt-1">Track and analyze bookings that failed to process or confirm</p>
                 </div>
                 <div className="flex gap-2">
                     <button
-                        onClick={() => exportCsv('orders', { search: searchTerm, status: statusFilter, dateFrom, dateTo })}
+                        onClick={() => exportCsv('failed-orders', { search: searchTerm, dateFrom, dateTo })}
                         disabled={exporting}
                         className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                     >
@@ -258,23 +160,6 @@ export default function OrdersPage() {
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4b2192] focus:border-transparent"
                         />
                     </div>
-                    <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-                        {['All', 'Booked', 'Report Generated', 'Cancelled'].map((status) => (
-                            <button
-                                key={status}
-                                onClick={() => {
-                                    setStatusFilter(status);
-                                    setPagination(prev => ({ ...prev, page: 1 }));
-                                }}
-                                className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${statusFilter === status
-                                    ? 'bg-[#4b2192] text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                    }`}
-                            >
-                                {status}
-                            </button>
-                        ))}
-                    </div>
                     <input
                         type="date"
                         value={dateFrom}
@@ -301,7 +186,7 @@ export default function OrdersPage() {
                     </div>
                 ) : orders.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                        <p>No orders found</p>
+                        <p>No failed orders found</p>
                     </div>
                 ) : (
                     <>
@@ -312,11 +197,9 @@ export default function OrdersPage() {
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Tests</th>
-                                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
-                                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Documents</th>
+                                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider max-w-xs">Failure Reason</th>
                                         <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                                     </tr>
                                 </thead>
@@ -334,11 +217,7 @@ export default function OrdersPage() {
                                             <td className="px-6 py-4 text-sm text-gray-600">
                                                 <div className="flex items-center gap-1.5">
                                                     <Calendar size={14} className="text-gray-400" />
-                                                    {formatDate(order.slotDate)}
-                                                </div>
-                                                <div className="flex items-center gap-1.5 mt-1">
-                                                    <Clock size={14} className="text-gray-400" />
-                                                    {order.slotTime}
+                                                    {formatDate(order.date)}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
@@ -348,84 +227,28 @@ export default function OrdersPage() {
                                                         {order.user.name || order.user.mobile}
                                                     </p>
                                                     <p className="text-xs text-gray-500 mt-0.5 ml-5">{order.user.mobile}</p>
-                                                    <p className="text-xs text-gray-400 mt-0.5 ml-5">{order.user.email || 'No email'}</p>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div>
-                                                    <p className="font-medium text-gray-900">{order.patient?.name || 'Unknown Patient'}</p>
-                                                    <p className="text-xs text-gray-500 mt-0.5">
-                                                        {order.patient ? `${order.patient.relation} • ${order.patient.gender}, ${order.patient.age}` : 'No patient details'}
-                                                    </p>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">
-                                                <div className="max-w-xs truncate" title={order.testNames.join(', ')}>
-                                                    {order.testNames.join(', ') || 'No tests'}
-                                                </div>
-                                                {order.testNames.length > 2 && (
-                                                    <span className="text-xs text-blue-600">+{order.testNames.length - 2} more</span>
-                                                )}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <p className="font-medium text-gray-900">₹{order.amount.toLocaleString('en-IN')}</p>
-                                                <p className="text-xs text-gray-500 mt-0.5">{order.paymentStatus}</p>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col items-start gap-2">
-                                                    <button
-                                                        onClick={() => handleDownloadInvoice(order.id)}
-                                                        disabled={downloadLoadingId === order.id || order.paymentStatus !== 'CONFIRMED'}
-                                                        className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-                                                    >
-                                                        {downloadLoadingId === order.id ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-                                                        View Invoice
-                                                    </button>
-                                                    {order.canSendInvoice && (
-                                                        <button
-                                                            onClick={() => handleSendInvoice(order)}
-                                                            disabled={invoiceSendingId === order.id}
-                                                            className="inline-flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-medium text-purple-700 transition-colors hover:bg-purple-100 disabled:cursor-not-allowed disabled:opacity-60"
-                                                        >
-                                                            {invoiceSendingId === order.id ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
-                                                            {invoiceSendingId === order.id
-                                                                ? 'Sending...'
-                                                                : order.invoiceSentAt
-                                                                    ? 'Resend Invoice'
-                                                                    : 'Send Invoice'}
-                                                        </button>
-                                                    )}
-                                                    {order.reportCount > 0 ? (
-                                                        <button
-                                                            onClick={() => handleOpenReports(order)}
-                                                            className="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-medium text-green-700 transition-colors hover:bg-green-100"
-                                                        >
-                                                            <FileText size={14} />
-                                                            {order.reportCount === 1 ? 'View Report' : `${order.reportCount} Reports`}
-                                                        </button>
-                                                    ) : (
-                                                        <span className="text-xs text-gray-400">No reports yet</span>
-                                                    )}
-                                                    {order.canSendReport && (
-                                                        <button
-                                                            onClick={() => handleSendReport(order)}
-                                                            disabled={reportSendingId === order.id}
-                                                            className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
-                                                        >
-                                                            {reportSendingId === order.id ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
-                                                            {reportSendingId === order.id
-                                                                ? 'Sending...'
-                                                                : order.reportSentAt
-                                                                    ? 'Resend Report'
-                                                                    : 'Send Report'}
-                                                        </button>
-                                                    )}
-                                                </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                                                     {order.status}
                                                 </span>
+                                                <p className={`text-xs mt-1 px-1.5 inline-block rounded font-medium ${getStatusColor(order.paymentStatus)}`}>
+                                                    {order.paymentStatus}
+                                                </p>
+                                            </td>
+                                            <td className="px-6 py-4 max-w-xs">
+                                                <div className="text-sm text-red-600 line-clamp-2" title={order.partnerError || order.retryLastError || 'Unknown'}>
+                                                    {order.partnerError || order.retryLastError || 'Unknown Failure'}
+                                                </div>
+                                                {order.retryAttempts > 0 && (
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        Retries: {order.retryAttempts}
+                                                    </p>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <button
@@ -477,7 +300,7 @@ export default function OrdersPage() {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                            <h2 className="text-xl font-semibold text-gray-900">Order Details</h2>
+                            <h2 className="text-xl font-semibold text-gray-900">Failed Order Details</h2>
                             <button
                                 onClick={() => setShowModal(false)}
                                 className="text-gray-400 hover:text-gray-600"
@@ -487,6 +310,23 @@ export default function OrdersPage() {
                         </div>
 
                         <div className="p-6 space-y-6">
+                            <div className="bg-red-50 border border-red-100 p-4 rounded-lg">
+                                <h3 className="text-sm font-semibold text-red-800 flex items-center gap-2 mb-2">
+                                    <AlertTriangle size={16} /> Failure Information
+                                </h3>
+                                <p className="text-sm text-red-700 break-words font-mono mt-1">
+                                    {selectedOrder.partnerError || selectedOrder.retryLastError || 'No error message recorded.'}
+                                </p>
+                                {selectedOrder.retryAttempts > 0 && (
+                                    <div className="mt-3 text-xs text-red-600">
+                                        <p>Failed Retry Attempts: {selectedOrder.retryAttempts}</p>
+                                        {selectedOrder.nextRetryAt && (
+                                            <p>Next Retry Scheduled: {formatDate(selectedOrder.nextRetryAt)}</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="bg-gray-50 p-4 rounded-lg">
                                     <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Order ID</p>
@@ -497,7 +337,9 @@ export default function OrdersPage() {
                                     <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedOrder.status)}`}>
                                         {selectedOrder.status}
                                     </span>
-                                    <p className="text-xs text-gray-500 mt-2">Payment: {selectedOrder.paymentStatus}</p>
+                                    <p className={`text-xs mt-2 px-1.5 py-0.5 inline-block rounded font-medium ${getStatusColor(selectedOrder.paymentStatus)}`}>
+                                        Payment: {selectedOrder.paymentStatus}
+                                    </p>
                                 </div>
                             </div>
 
@@ -524,28 +366,11 @@ export default function OrdersPage() {
                                 </div>
                             </div>
 
-                            <div>
-                                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-3">
-                                    <FileText size={16} /> Order Items
-                                </h3>
-                                <div className="bg-gray-50 rounded-lg p-4">
-                                    <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-                                        {selectedOrder.testNames.map((test, i) => (
-                                            <li key={i}>{test}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-gray-100">
                                 <div className="flex items-center gap-4 sm:gap-6 text-sm text-gray-600">
                                     <div className="flex items-center gap-2">
                                         <Calendar size={16} />
-                                        {formatDate(selectedOrder.slotDate)}
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Clock size={16} />
-                                        {selectedOrder.slotTime}
+                                        {formatDate(selectedOrder.date)}
                                     </div>
                                 </div>
                                 <div className="sm:text-right">
@@ -566,48 +391,6 @@ export default function OrdersPage() {
                     </div>
                 </div>
             )}
-
-            <Dialog open={Boolean(reportModalOrder)} onOpenChange={(open) => !open && setReportModalOrder(null)}>
-                <DialogContent className="sm:max-w-xl">
-                    <DialogHeader>
-                        <DialogTitle>
-                            {reportModalOrder ? `Reports for ${reportModalOrder.partnerBookingId || reportModalOrder.id.slice(0, 8)}` : 'Booking Reports'}
-                        </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-3">
-                        {reportsLoading ? (
-                            <div className="flex items-center justify-center py-10 text-gray-500">
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                Loading reports...
-                            </div>
-                        ) : reports.length === 0 ? (
-                            <div className="py-10 text-center text-sm text-gray-500">No reports available.</div>
-                        ) : (
-                            reports.map((report) => (
-                                <div key={report.id} className="flex items-center justify-between rounded-xl border border-gray-200 p-4">
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-900">
-                                            {report.isFullReport ? 'Full report' : 'Report'} • {formatDate(report.generatedAt)}
-                                        </p>
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            Status: {report.fetchStatus}
-                                            {report.vendorCustomerId ? ` • Customer ${report.vendorCustomerId}` : ''}
-                                        </p>
-                                    </div>
-                                    <Button
-                                        onClick={() => handleDownloadReport(report.id)}
-                                        disabled={downloadLoadingId === report.id}
-                                        className="gap-2"
-                                    >
-                                        {downloadLoadingId === report.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                                        Download
-                                    </Button>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }

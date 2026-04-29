@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { getAppUrl } from '@/lib/api';
+import api from '@/lib/api';
 
 export function useExport() {
     const [exporting, setExporting] = useState(false);
@@ -8,27 +8,18 @@ export function useExport() {
     const exportCsv = async (entity: string, params: Record<string, string>, apiPrefix: '/api/admin' | '/api/manager' = '/api/admin') => {
         setExporting(true);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
             const filteredParams = Object.fromEntries(
                 Object.entries(params).filter(([, value]) => value !== '')
             );
             const searchParams = new URLSearchParams(filteredParams);
             searchParams.set('entity', entity);
 
-            const url = `${apiPrefix}/export?${searchParams.toString()}`;
-            const reqUrl = getAppUrl(url);
+            const prefix = apiPrefix.replace('/api', '');
+            const url = `${prefix}/export?${searchParams.toString()}`;
 
-            const res = await fetch(reqUrl, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            const res = await api.get(url, { responseType: 'blob' });
 
-            if (!res.ok) {
-                throw new Error('Failed to export data');
-            }
-
-            const blob = await res.blob();
+            const blob = new Blob([res.data]);
             const downloadUrl = window.URL.createObjectURL(blob);
             
             const a = document.createElement('a');
