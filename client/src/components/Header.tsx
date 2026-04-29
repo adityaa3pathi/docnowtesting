@@ -52,7 +52,7 @@ const callbackCities = Array.from(new Set([...metroCities.map((city) => city.nam
 
 // Desktop nav links (3 only — "Get a Callback" is rendered as a button separately)
 const desktopNavLinks = [
-    { label: 'Our Tests', href: '/search' },
+    { label: 'Search', href: '/search' },
     { label: 'About Us', href: '/about' },
 ];
 
@@ -81,6 +81,17 @@ export function Header() {
 
     // Mobile Drawer State
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    // Auto-open login dialog from URL param
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('login') === 'true') {
+                setIsAuthOpen(true);
+                window.history.replaceState({}, '', window.location.pathname);
+            }
+        }
+    }, []);
 
     // Close mobile menu on resize
     useEffect(() => {
@@ -582,7 +593,7 @@ export function Header() {
                             className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname === '/search' ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
                         >
                             <Search className="w-4 h-4 text-gray-400" />
-                            Our Tests
+                            Search
                         </Link>
                         <Link
                             href="/about"

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { UserData } from '@/types/admin';
+import api from '@/lib/api';
 
 export function useUserDetail(userId: string) {
     const [data, setData] = useState<UserData | null>(null);
@@ -14,25 +15,15 @@ export function useUserDetail(userId: string) {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const token = localStorage.getItem('docnow_auth_token');
-                const res = await fetch(`/api/admin/users/${userId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-
-                if (!res.ok) {
-                    if (res.status === 404) {
-                        setError('User not found');
-                    } else {
-                        throw new Error('Failed to fetch user');
-                    }
-                    return;
-                }
-
-                const userData = await res.json();
-                setData(userData);
-            } catch (err) {
+                const res = await api.get(`/admin/users/${userId}`);
+                setData(res.data);
+            } catch (err: any) {
                 console.error('Error fetching user:', err);
-                setError('Failed to load user data');
+                if (err.response?.status === 404) {
+                    setError('User not found');
+                } else {
+                    setError('Failed to load user data');
+                }
             } finally {
                 setLoading(false);
             }
@@ -53,17 +44,10 @@ export function useUserDetail(userId: string) {
 
         setActionLoading(true);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
-            const res = await fetch(`/api/admin/users/${userId}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ status: newStatus, reason: 'Admin action from user detail page' }),
+            await api.put(`/admin/users/${userId}/status`, {
+                status: newStatus,
+                reason: 'Admin action from user detail page'
             });
-
-            if (!res.ok) throw new Error('Failed to update user status');
 
             setData(prev => prev ? {
                 ...prev,

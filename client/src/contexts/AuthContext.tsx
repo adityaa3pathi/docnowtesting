@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
+import api, { setAccessToken } from '@/lib/api';
 
 interface User {
     id: string;
@@ -12,9 +13,9 @@ interface User {
 
 interface AuthContextType {
     user: User | null;
-    token: string | null;
-    login: (user: User, token: string) => void;
+    login: (user: User) => void;
     logout: () => void;
+    logoutAll: () => void;
     updateUser: (userData: Partial<User>) => void;
     isAuthenticated: boolean;
     isInitialized: boolean;
@@ -27,7 +28,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
 
     // Stable ref for the logout callback — avoids re-renders when CartContext registers.
@@ -37,51 +37,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logoutCallbackRef.current = cb;
     }, []);
 
+    // Bootstrap: try silent refresh on mount
     useEffect(() => {
-        const savedToken = localStorage.getItem('docnow_auth_token');
-        const savedUser = localStorage.getItem('docnow_user');
-
-        if (savedToken && savedUser) {
-            setToken(savedToken);
-            setUser(JSON.parse(savedUser));
-        }
-        setIsInitialized(true);
+        api.get('/auth/me')
+            .then(res => {
+                setUser(res.data.user);
+            })
+            .catch(() => {
+                // Not logged in — that's fine
+                setAccessToken(null);
+            })
+            .finally(() => setIsInitialized(true));
     }, []);
 
-    const login = (userData: User, authToken: string) => {
-        setToken(authToken);
+    const login = (userData: User) => {
+        // Server already set cookies. Just store user in state.
         setUser(userData);
-        localStorage.setItem('docnow_auth_token', authToken);
-        localStorage.setItem('docnow_user', JSON.stringify(userData));
     };
 
     const updateUser = (userData: Partial<User>) => {
         if (user) {
-            const updatedUser = { ...user, ...userData };
-            setUser(updatedUser);
-            localStorage.setItem('docnow_user', JSON.stringify(updatedUser));
+            setUser({ ...user, ...userData });
         }
     };
 
-    const logout = () => {
+    const logout = async () => {
         // Invoke registered callbacks (e.g. cart reset) synchronously
-        // BEFORE clearing auth state, so all state updates are batched
-        // into a single render cycle by React 18+.
         logoutCallbackRef.current?.();
-        setToken(null);
+        try { await api.post('/auth/logout'); } catch (err) { console.error('Logout failed:', err); }
+        setAccessToken(null);
         setUser(null);
-        localStorage.removeItem('docnow_auth_token');
-        localStorage.removeItem('docnow_user');
+    };
+
+    const logoutAll = async () => {
+        logoutCallbackRef.current?.();
+        try { await api.post('/auth/logout-all'); } catch (err) { console.error('Logout All failed:', err); }
+        setAccessToken(null);
+        setUser(null);
     };
 
     return (
         <AuthContext.Provider value={{
             user,
-            token,
             login,
             logout,
+            logoutAll,
             updateUser,
-            isAuthenticated: !!token,
+            isAuthenticated: !!user,
             isInitialized,
             onLogout
         }}>

@@ -1,11 +1,10 @@
 import express, { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { generateReferralCode } from '../utils/referralService';
+import { prisma } from '../db';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 const APP_BASE_URL = (process.env.APP_BASE_URL || 'http://localhost:3000').replace(/\/+$/g, '');
 
 async function ensureReferralCode(userId: string, name?: string | null, existingCode?: string | null) {

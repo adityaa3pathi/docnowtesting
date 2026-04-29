@@ -97,7 +97,6 @@ export default function OrdersPage() {
     const fetchOrders = useCallback(async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
             const params = new URLSearchParams({
                     page: pagination.page.toString(),
                     limit: pagination.limit.toString(),
@@ -108,15 +107,9 @@ export default function OrdersPage() {
             if (dateFrom) params.append('dateFrom', dateFrom);
             if (dateTo) params.append('dateTo', dateTo);
 
-            const res = await fetch(`/api/admin/orders?${params}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (!res.ok) throw new Error('Failed to fetch orders');
-
-            const data = await res.json();
-            setOrders(data.orders);
-            setPagination(data.pagination);
+            const res = await api.get(`/admin/orders?${params}`);
+            setOrders(res.data.orders);
+            setPagination(res.data.pagination);
         } catch (error) {
             console.error('Error fetching orders:', error);
         } finally {

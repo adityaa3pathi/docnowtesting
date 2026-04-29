@@ -1,10 +1,9 @@
-import { PrismaClient, PaymentStatus } from '@prisma/client';
+import { PaymentStatus } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { createHealthiansBooking } from './partnerBooking';
 import { sendDeadLetterAlert } from '../utils/slack';
 import { getRazorpay } from './razorpay';
-
-const prisma = new PrismaClient();
+import { prisma } from '../db';
 
 export async function finalizeBooking(bookingId: string) {
     const attemptId = randomUUID();

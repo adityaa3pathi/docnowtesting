@@ -381,8 +381,8 @@ export default function OrdersPage() {
                                             </td>
                                             <td className="px-6 py-4 align-top">
                                                 <div className="max-w-xs space-y-1">
-                                                    {order.testNames.slice(0, 3).map((name) => (
-                                                        <p key={`${order.id}-${name}`} className="text-sm text-gray-700">{name}</p>
+                                                    {order.testNames.slice(0, 3).map((name, index) => (
+                                                        <p key={`${order.id}-${name}-${index}`} className="text-sm text-gray-700">{name}</p>
                                                     ))}
                                                     {order.testNames.length > 3 && (
                                                         <p className="text-xs text-blue-600">+{order.testNames.length - 3} more</p>
@@ -544,8 +544,8 @@ export default function OrdersPage() {
                             <div>
                                 <p className="text-xs uppercase tracking-wide text-gray-500">Tests / Packages</p>
                                 <div className="mt-2 flex flex-wrap gap-2">
-                                    {selectedOrder.testNames.map((name) => (
-                                        <span key={`${selectedOrder.id}-${name}`} className="rounded-full bg-purple-50 px-3 py-1 text-xs text-purple-700">
+                                    {selectedOrder.testNames.map((name, index) => (
+                                        <span key={`${selectedOrder.id}-${name}-${index}`} className="rounded-full bg-purple-50 px-3 py-1 text-xs text-purple-700">
                                             {name}
                                         </span>
                                     ))}

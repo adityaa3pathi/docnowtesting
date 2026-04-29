@@ -111,6 +111,32 @@ model User {
   managerOrders           ManagerOrder[] @relation("ManagerOrders")
   customerOrders          ManagerOrder[] @relation("CustomerOrders")
   managerCreatedBookings  Booking[]      @relation("ManagerCreatedBookings")
+
+  // Session management
+  tokenVersion  Int        @default(0)   // Increment to force-logout all sessions
+  sessions      Session[]
+}
+
+model Session {
+  id               String    @id @default(uuid())
+  userId           String
+  refreshTokenHash String              // SHA-256 hash of the refresh token
+  familyId         String              // Groups tokens in a rotation chain
+  expiresAt        DateTime
+  revokedAt        DateTime?           // Non-null = revoked
+  replacedById     String?   @unique   // Points to next token in rotation chain
+  createdAt        DateTime  @default(now())
+  ipAddress        String?
+  userAgent        String?
+  clientType       String    @default("web") // "web" or "mobile"
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replacedBy       Session?  @relation("TokenRotation", fields: [replacedById], references: [id])
+  replacesSession  Session?  @relation("TokenRotation")
+
+  @@index([userId, revokedAt])
+  @@index([familyId])
+  @@index([expiresAt])
 }
 
 model OTP {
