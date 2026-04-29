@@ -45,9 +45,6 @@ export default function NewPromoPage() {
             console.error('Failed to create promo:', error);
             toast.error(error.response?.data?.error || 'Failed to create promo');
         } finally {
-            console.error('Failed to create promo:', error);
-            toast.error('Something went wrong. Please try again.');
-        } finally {
             setLoading(false);
         }
     };
