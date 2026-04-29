@@ -17,6 +17,7 @@ import { originalReportStorageKey, reportStorage, reportStorageKey } from './rep
 import { HealthiansAdapter } from '../adapters/healthians';
 import { sendReportReadyViaWhatsApp } from './reportNotifications';
 import { brandReportPdf } from './reportBrandingService';
+import { logAlert, logBusinessEvent, logger } from '../utils/logger';
 
 interface IngestReportOptions {
     forceRefresh?: boolean;
@@ -53,7 +54,7 @@ export async function ingestReport(reportId: string, options: IngestReportOption
     });
 
     if (!report) {
-        console.warn(`[ReportIngestion] Report ${reportId} not found. Skipping.`);
+        logger.warn({ reportId }, 'report_ingestion_report_not_found');
         return;
     }
 
@@ -61,14 +62,14 @@ export async function ingestReport(reportId: string, options: IngestReportOption
     if (!options.forceRefresh && report.fetchStatus === 'STORED' && report.storageKey) {
         const exists = await reportStorage.exists(report.storageKey).catch(() => false);
         if (exists) {
-            console.log(`[ReportIngestion] Report ${reportId} already STORED. Skipping.`);
+            logBusinessEvent('report_ingestion_already_stored', { reportId, bookingId: report.bookingId }, 'debug');
             return;
         }
-        console.warn(`[ReportIngestion] Report ${reportId} marked STORED but storage key ${report.storageKey} is missing. Re-ingesting...`);
+        logger.warn({ reportId, bookingId: report.bookingId }, 'report_ingestion_storage_key_missing');
     }
 
     if (options.forceRefresh) {
-        console.log(`[ReportIngestion] Force refresh requested for report ${reportId}.`);
+        logBusinessEvent('report_ingestion_force_refresh_requested', { reportId, bookingId: report.bookingId });
     }
 
     // If we were force-refreshing a stale STORED record, clear the stale state before retrying.
@@ -85,7 +86,12 @@ export async function ingestReport(reportId: string, options: IngestReportOption
         });
     }
 
-    console.log(`[ReportIngestion] Starting ingestion for report ${reportId}...`);
+    logBusinessEvent('report_ingestion_started', {
+        reportId,
+        bookingId: report.bookingId,
+        isFullReport: report.isFullReport,
+        forceRefresh: Boolean(options.forceRefresh),
+    });
 
     // Attempt 1: Download from the original sourceUrl
     let pdfBuffer = await downloadPdf(report.sourceUrl);
@@ -94,7 +100,7 @@ export async function ingestReport(reportId: string, options: IngestReportOption
     const activePartnerBookingId = report.booking?.rescheduledToId || report.booking?.partnerBookingId;
 
     if (!pdfBuffer && activePartnerBookingId) {
-        console.log(`[ReportIngestion] sourceUrl failed. Trying getCustomerReport_v2 fallback...`);
+        logger.warn({ reportId, bookingId: report.bookingId }, 'report_source_download_failed_trying_fallback');
         try {
             const adapter = HealthiansAdapter.getInstance();
             const freshReport = await adapter.getCustomerReport({
@@ -116,7 +122,7 @@ export async function ingestReport(reportId: string, options: IngestReportOption
                 pdfBuffer = await downloadPdf(freshUrl);
             }
         } catch (err: any) {
-            console.error(`[ReportIngestion] getCustomerReport_v2 fallback failed:`, err.message);
+            logger.warn({ error: err, reportId, bookingId: report.bookingId }, 'report_fallback_url_fetch_failed');
         }
     }
 
@@ -129,7 +135,7 @@ export async function ingestReport(reportId: string, options: IngestReportOption
                 fetchError: 'Failed to download PDF from sourceUrl and getCustomerReport_v2 fallback.',
             },
         });
-        console.error(`[ReportIngestion] FAILED for report ${reportId}. Marked for manual review.`);
+        logAlert('report_ingestion_failed', { reportId, bookingId: report.bookingId });
         return;
     }
 
@@ -143,7 +149,7 @@ export async function ingestReport(reportId: string, options: IngestReportOption
         try {
             customerPdfBuffer = await brandReportPdf(pdfBuffer);
         } catch (brandingError: any) {
-            console.error(`[ReportIngestion] Branding failed for report ${reportId}. Falling back to original PDF:`, brandingError.message);
+            logger.warn({ error: brandingError, reportId, bookingId: report.bookingId }, 'report_branding_failed_using_original');
         }
 
         await reportStorage.upload(originalKey, pdfBuffer, 'application/pdf');
@@ -160,9 +166,11 @@ export async function ingestReport(reportId: string, options: IngestReportOption
             },
         });
 
-        console.log(
-            `[ReportIngestion] SUCCESS: report ${reportId} stored as ${key} (${customerPdfBuffer.length} bytes)`
-        );
+        logBusinessEvent('report_stored', {
+            reportId,
+            bookingId: report.bookingId,
+            fileSize: customerPdfBuffer.length,
+        });
 
         if (shouldNotifyCustomer && report.booking?.user?.mobile) {
             const itemNames = report.booking.items.map((item) => item.testName).filter(Boolean);
@@ -179,11 +187,14 @@ export async function ingestReport(reportId: string, options: IngestReportOption
                     customerName: report.booking.user.name,
                     reportLabel,
                 });
-                console.log(
-                    `[ReportIngestion] Report-ready WhatsApp accepted for report ${reportId} | messageId=${notification.id} | status=${notification.status}`
-                );
+                logBusinessEvent('report_notification_sent', {
+                    reportId,
+                    bookingId: report.bookingId,
+                    notificationId: notification.id,
+                    notificationStatus: notification.status,
+                });
             } catch (notifyErr: any) {
-                console.error(`[ReportIngestion] Report-ready WhatsApp failed for ${reportId}:`, notifyErr.message);
+                logAlert('report_notification_failed', { error: notifyErr, reportId, bookingId: report.bookingId });
             }
         }
     } catch (err: any) {
@@ -194,7 +205,7 @@ export async function ingestReport(reportId: string, options: IngestReportOption
                 fetchError: `Storage upload failed: ${err.message}`,
             },
         });
-        console.error(`[ReportIngestion] Storage upload failed for report ${reportId}:`, err.message);
+        logAlert('report_storage_upload_failed', { error: err, reportId, bookingId: report.bookingId });
     }
 }
 
@@ -215,10 +226,10 @@ async function downloadPdf(url: string): Promise<Buffer | null> {
             return Buffer.from(response.data);
         }
 
-        console.warn(`[ReportIngestion] Download returned status ${response.status}`);
+        logger.warn({ statusCode: response.status }, 'report_download_unexpected_status');
         return null;
     } catch (err: any) {
-        console.warn(`[ReportIngestion] Download failed: ${err.message}`);
+        logger.warn({ error: err }, 'report_download_failed');
         return null;
     }
 }

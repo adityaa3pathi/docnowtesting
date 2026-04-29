@@ -7,7 +7,6 @@ validateEnv();
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 
 import { PrismaClient } from '@prisma/client';
@@ -32,6 +31,8 @@ import reportRoutes from './routes/reports';
 import invoiceRoutes from './routes/invoices';
 
 import { csrfProtection } from './middleware/csrfProtection';
+import { requestContextMiddleware } from './middleware/requestContext';
+import { logger } from './utils/logger';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -49,9 +50,9 @@ app.use(cors({
     credentials: true,
 }));
 
+app.use(requestContextMiddleware);
 app.use(cookieParser());
 app.use(helmet());
-app.use(morgan('dev'));
 
 // CRITICAL: Webhooks must be mounted BEFORE express.json() to get raw body
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), webhookHandler);
@@ -70,7 +71,6 @@ app.use('/api/profile/patients', patientRoutes);
 app.use('/api/profile/addresses', addressRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/slots', slotRoutes);
-console.log('Mounting /api/bookings. bookingRoutes type:', typeof bookingRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/manager', managerRoutes);
@@ -109,7 +109,13 @@ import { Request, Response, NextFunction } from 'express';
 
 // GLOBAL ERROR HANDLER FALLBACK
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-    console.error('Unhandled Global Error Encountered:', err);
+    logger.error({
+        error: err,
+        method: req.method,
+        path: req.originalUrl || req.url,
+        statusCode: err.status || 500,
+    }, 'unhandled_global_error');
+
     if (err.message === 'Not allowed by CORS') {
         return res.status(403).json({ error: 'CORS verification failed.' });
     }
@@ -121,6 +127,6 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 import { startReconciler } from './workers/reconciler';
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    logger.info({ port: PORT, nodeEnv: process.env.NODE_ENV }, 'server_started');
     startReconciler();
 });

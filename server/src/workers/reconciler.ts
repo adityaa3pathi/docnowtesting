@@ -14,6 +14,7 @@ import { assertTransition, canTransition } from '../utils/paymentStateMachine';
 import { sendDeadLetterAlert } from '../utils/slack';
 import { finalizeBooking, syncManagerOrder } from '../services/bookingFinalization';
 import { Redis } from '@upstash/redis';
+import { logAlert, logBusinessEvent, logger } from '../utils/logger';
 
 const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
     ? new Redis({
@@ -46,7 +47,7 @@ async function recoverStuckProcessing() {
     });
 
     if (stuck.count > 0) {
-        console.warn(`[Reconciler] Released ${stuck.count} stale PROCESSING leases (>10min)`);
+        logBusinessEvent('reconciler_stale_processing_released', { count: stuck.count }, 'warn');
     }
 }
 
@@ -77,15 +78,15 @@ async function expireAbandonedBookings() {
 
             if (result.count > 0) {
                 await rollbackInitiatedBooking(booking);
-                console.log(`[Reconciler] Expired abandoned booking: ${booking.id}`);
+                logBusinessEvent('booking_expired_abandoned_checkout', { bookingId: booking.id });
             }
         } catch (err) {
-            console.error(`[Reconciler] Failed to expire booking ${booking.id}:`, err);
+            logger.error({ error: err, bookingId: booking.id }, 'reconciler_expire_booking_failed');
         }
     }
 
     if (abandoned.length > 0) {
-        console.log(`[Reconciler] Processed ${abandoned.length} abandoned bookings`);
+        logger.info({ count: abandoned.length }, 'reconciler_abandoned_bookings_processed');
     }
 }
 
@@ -105,13 +106,13 @@ async function processStuckAuthorized() {
     });
 
     for (const booking of stuck) {
-        console.log(`[Reconciler] Processing stuck AUTHORIZED booking: ${booking.id}`);
+        logBusinessEvent('reconciler_stuck_authorized_processing_started', { bookingId: booking.id });
         // Let finalizeBooking handle the leased claim, partner call, and retry queueing
         await finalizeBooking(booking.id);
     }
 
     if (stuck.length > 0) {
-        console.log(`[Reconciler] Processed ${stuck.length} stuck AUTHORIZED bookings`);
+        logger.info({ count: stuck.length }, 'reconciler_stuck_authorized_processed');
     }
 }
 
@@ -131,7 +132,7 @@ async function retryPartnerBookings() {
     for (const retry of retries) {
         // Guard: Check if it already has a partnerBookingId (from a leaked attempt)
         if (retry.booking.partnerBookingId && retry.booking.paymentStatus === 'PARTNER_FAILED') {
-            console.warn(`[Reconciler] Booking ${retry.bookingId} already has partnerBookingId but is PARTNER_FAILED. Promoting to CONFIRMED.`);
+            logger.warn({ bookingId: retry.bookingId, partnerBookingId: retry.booking.partnerBookingId }, 'reconciler_partner_booking_exists_promoting_confirmed');
             await prisma.$transaction(async (tx) => {
                 await tx.booking.update({
                     where: { id: retry.bookingId },
@@ -145,7 +146,12 @@ async function retryPartnerBookings() {
 
         // Skip if max retries exhausted
         if (retry.attempts >= retry.maxAttempts) {
-            console.error(`[DLQ] Booking ${retry.bookingId} DEAD-LETTERED after ${retry.maxAttempts} attempts. Admin intervention required.`);
+            logAlert('partner_booking_dead_lettered', {
+                bookingId: retry.bookingId,
+                attempts: retry.attempts,
+                maxAttempts: retry.maxAttempts,
+                lastError: retry.lastError,
+            });
 
             const linkedMO = await prisma.managerOrder.findUnique({
                 where: { bookingId: retry.bookingId }
@@ -158,7 +164,7 @@ async function retryPartnerBookings() {
             if (canTransition(retry.booking.paymentStatus, 'REFUNDED')) {
                 if (linkedMO?.collectionMode && linkedMO.collectionMode !== 'RAZORPAY_LINK') {
                     // Offline payment — can't auto-refund. Alert admin only.
-                    console.warn(`[Reconciler] Skipping auto-refund for offline payment order ${linkedMO.id}`);
+                    logger.warn({ bookingId: retry.bookingId, managerOrderId: linkedMO.id }, 'reconciler_offline_order_auto_refund_skipped');
                 } else {
                     await prisma.booking.update({
                         where: { id: retry.bookingId },
@@ -175,12 +181,16 @@ async function retryPartnerBookings() {
             continue;
         }
 
-        console.log(`[Reconciler] Retrying partner booking (attempt ${retry.attempts + 1}/${retry.maxAttempts}): ${retry.bookingId}`);
+        logBusinessEvent('partner_booking_retry_started', {
+            bookingId: retry.bookingId,
+            attempt: retry.attempts + 1,
+            maxAttempts: retry.maxAttempts,
+        });
 
         const result = await finalizeBooking(retry.bookingId);
 
         if (result.status === 'success') {
-            console.log(`[Reconciler] Retry SUCCESS — Booking CONFIRMED: ${retry.bookingId}`);
+            logBusinessEvent('partner_booking_retry_succeeded', { bookingId: retry.bookingId });
             // finalizeBooking handles the ManagerOrder sync. We just need to clean up the retry queue.
             await prisma.partnerRetry.delete({ where: { id: retry.id } });
         } else if (result.status === 'already_confirmed') {
@@ -198,7 +208,13 @@ async function retryPartnerBookings() {
                 }
             });
 
-            console.warn(`[Reconciler] Retry FAILED (attempt ${retry.attempts + 1}), next retry in ${nextDelay}s: ${retry.bookingId}`);
+            logger.warn({
+                bookingId: retry.bookingId,
+                attempt: retry.attempts + 1,
+                maxAttempts: retry.maxAttempts,
+                nextDelaySeconds: nextDelay,
+                error: result.error,
+            }, 'partner_booking_retry_failed');
         }
     }
 }
@@ -208,11 +224,11 @@ async function retryPartnerBookings() {
  * Schedule: every 5 minutes.
  */
 export function startReconciler() {
-    console.log('[Reconciler] Starting payment reconciler (every 5 min)...');
+    logger.info({ schedule: '*/5 * * * *' }, 'reconciler_started');
 
     cron.schedule('*/5 * * * *', async () => {
         const start = Date.now();
-        console.log('[Reconciler] Running reconciliation cycle...');
+        logger.info({}, 'reconciler_cycle_started');
 
         const lockKey = 'reconciler:lock';
         if (redis) {
@@ -220,11 +236,11 @@ export function startReconciler() {
                 // Try to acquire lock for 4.5 minutes (270 seconds)
                 const acquired = await redis.set(lockKey, 'locked', { nx: true, ex: 270 });
                 if (!acquired) {
-                    console.log('[Reconciler] Another server instance is currently processing the reconciliation. Skipping tick safely.');
+                    logger.info({}, 'reconciler_cycle_skipped_lock_held');
                     return;
                 }
             } catch (err) {
-                console.error('[Reconciler] Redis lock error. Proceeding without lock:', err);
+                logger.error({ error: err }, 'reconciler_redis_lock_failed');
             }
         }
 
@@ -234,13 +250,13 @@ export function startReconciler() {
             await processStuckAuthorized();
             await retryPartnerBookings();
         } catch (err) {
-            console.error('[Reconciler] Unhandled error in reconciliation cycle:', err);
+            logAlert('reconciler_cycle_failed', { error: err });
         } finally {
             if (redis) {
                 try { await redis.del(lockKey); } catch (e) {}
             }
         }
 
-        console.log(`[Reconciler] Cycle complete in ${Date.now() - start}ms`);
+        logger.info({ durationMs: Date.now() - start }, 'reconciler_cycle_completed');
     });
 }

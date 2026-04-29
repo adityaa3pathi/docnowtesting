@@ -5,6 +5,7 @@ import { finalizeBooking } from '../../services/bookingFinalization';
 import { rollbackInitiatedBooking } from '../../services/rollback';
 import { assertTransition } from '../../utils/paymentStateMachine';
 import { tryAwardFirstOrderBonus } from '../../utils/referralService';
+import { logAlert, logBusinessEvent, logger } from '../../utils/logger';
 
 /**
  * POST /api/payments/webhook
@@ -26,23 +27,22 @@ export const webhookHandler = async (req: Request, res: Response) => {
     );
 
     if (!isValid) {
-        console.error('[Webhook] Invalid signature');
+        logAlert('razorpay_webhook_invalid_signature');
         return res.status(401).end();
     }
 
     const payload = JSON.parse(req.body.toString());
-    console.log('[Webhook] Full Payload:', JSON.stringify(payload, null, 2));
 
     // Prioritize header for event ID, fall back to payload
     const eventId = (req.headers['x-razorpay-event-id'] as string) || payload.event_id || payload.id;
     const event = payload.event;
 
     if (!eventId) {
-        console.error('[Webhook] Error: x-razorpay-event-id header missing in headers and payload');
+        logger.warn({ event }, 'razorpay_webhook_missing_event_id');
         return res.status(400).json({ error: 'event_id missing' });
     }
 
-    console.log('[Webhook] Received:', event, eventId);
+    logBusinessEvent('razorpay_webhook_received', { eventId, event });
 
     // 2. Dedup check using WebhookEvent
     try {
@@ -51,7 +51,7 @@ export const webhookHandler = async (req: Request, res: Response) => {
         });
     } catch (e: any) {
         if (e.code === 'P2002') {  // Unique constraint violation
-            console.log('[Webhook] Duplicate event ignored:', eventId);
+            logBusinessEvent('razorpay_webhook_duplicate', { eventId, event }, 'debug');
             return res.status(200).json({ status: 'duplicate' });
         }
         throw e;
@@ -67,7 +67,6 @@ export const webhookHandler = async (req: Request, res: Response) => {
         });
 
         if (booking && booking.paymentStatus === 'INITIATED') {
-            console.log('[Webhook] Processing payment for booking:', booking.id);
             assertTransition(booking.paymentStatus, 'AUTHORIZED');
             await prisma.booking.update({
                 where: { id: booking.id },
@@ -76,6 +75,12 @@ export const webhookHandler = async (req: Request, res: Response) => {
                     razorpayPaymentId: payment.id,
                     paidAt: new Date()
                 }
+            });
+            logBusinessEvent('payment_authorized', {
+                bookingId: booking.id,
+                razorpayOrderId: orderId,
+                razorpayPaymentId: payment.id,
+                source: 'webhook',
             });
 
             // Delayed partner booking fallback (60s timeout)
@@ -87,21 +92,24 @@ export const webhookHandler = async (req: Request, res: Response) => {
                         where: { id: bookingIdForDelay }
                     });
                     if (freshBooking && freshBooking.paymentStatus === 'AUTHORIZED' && !freshBooking.partnerBookingId) {
-                        console.log('[Webhook] /verify did not complete, triggering partner booking for:', bookingIdForDelay);
+                        logBusinessEvent('payment_verify_fallback_started', { bookingId: bookingIdForDelay });
 
                         const result = await finalizeBooking(bookingIdForDelay);
                         
                         if (result.status === 'success' || result.status === 'already_confirmed') {
                             await prisma.cartItem.deleteMany({ where: { cart: { userId: userIdForDelay } } });
-                            console.log('[Webhook] Delayed partner booking SUCCESS:', bookingIdForDelay);
+                            logBusinessEvent('partner_booking_confirmed', {
+                                bookingId: bookingIdForDelay,
+                                source: 'webhook_fallback',
+                            });
 
                             tryAwardFirstOrderBonus(userIdForDelay, bookingIdForDelay).catch(err =>
-                                console.error('[Webhook] First-order referral bonus failed:', err.message)
+                                logger.warn({ error: err, bookingId: bookingIdForDelay }, 'first_order_referral_bonus_failed')
                             );
                         }
                     }
                 } catch (delayErr: any) {
-                    console.error('[Webhook] Delayed partner booking failed:', delayErr.message);
+                    logAlert('payment_verify_fallback_failed', { error: delayErr, bookingId: bookingIdForDelay });
                 }
             }, 60_000);
         }
@@ -111,13 +119,17 @@ export const webhookHandler = async (req: Request, res: Response) => {
         });
 
         if (booking && booking.paymentStatus === 'INITIATED') {
-            console.log('[Webhook] Payment failed for booking:', booking.id);
             assertTransition(booking.paymentStatus, 'FAILED');
             await prisma.booking.update({
                 where: { id: booking.id },
                 data: { paymentStatus: 'FAILED' }
             });
             await rollbackInitiatedBooking(booking);
+            logBusinessEvent('payment_failed', {
+                bookingId: booking.id,
+                razorpayOrderId: orderId,
+                source: 'webhook',
+            }, 'warn');
         }
     } else if (event === 'payment_link.paid') {
         const plink = payload.payload.payment_link?.entity;
@@ -126,8 +138,6 @@ export const webhookHandler = async (req: Request, res: Response) => {
         const razorpayPaymentId = payload.payload.payment?.entity?.id;
 
         if (managerOrderId && bookingId) {
-            console.log('[Webhook] Processing payment_link.paid for ManagerOrder:', managerOrderId);
-            
             await prisma.managerOrder.updateMany({
                 where: { id: managerOrderId, status: 'SENT' },
                 data: { status: 'PAYMENT_RECEIVED' }
@@ -141,6 +151,11 @@ export const webhookHandler = async (req: Request, res: Response) => {
                 }
             });
             // Do NOT trigger partner booking here. Manager explicitly confirms it.
+            logBusinessEvent('manager_payment_link_paid', {
+                bookingId,
+                managerOrderId,
+                razorpayPaymentId,
+            });
         }
     }
 
