@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '@/lib/api';
 
 export default function NewPromoPage() {
     const router = useRouter();
@@ -37,24 +38,13 @@ export default function NewPromoPage() {
         setLoading(true);
 
         try {
-            const token = localStorage.getItem('docnow_auth_token');
-            const res = await fetch('/api/admin/promos', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify(formData)
-            });
-
-            if (res.ok) {
-                toast.success('Promo created successfully');
-                router.push('/super-admin/promos');
-            } else {
-                const data = await res.json();
-                toast.error(data.error || 'Failed to create promo');
-            }
-        } catch (error) {
+            await api.post('/admin/promos', formData);
+            toast.success('Promo created successfully');
+            router.push('/super-admin/promos');
+        } catch (error: any) {
+            console.error('Failed to create promo:', error);
+            toast.error(error.response?.data?.error || 'Failed to create promo');
+        } finally {
             console.error('Failed to create promo:', error);
             toast.error('Something went wrong. Please try again.');
         } finally {

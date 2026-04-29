@@ -29,86 +29,130 @@ function getFilenameFromDisposition(contentDisposition: string | null, fallback:
 }
 
 export async function downloadAuthenticatedFile(url: string, fallbackFilename = 'download.pdf') {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('docnow_auth_token') : null;
-    if (!token) {
-        throw new Error('Please sign in again to download this report.');
-    }
+    try {
+        let fetchUrl = url;
+        if (fetchUrl.startsWith('/') && fetchUrl.startsWith(API_BASE_URL)) {
+            fetchUrl = fetchUrl.substring(API_BASE_URL.length);
+        }
+        // Ensure fetchUrl starts with / if we just stripped the base url
+        if (!fetchUrl.startsWith('http') && !fetchUrl.startsWith('/')) {
+            fetchUrl = '/' + fetchUrl;
+        }
 
-    const response = await fetch(url, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
+        const response = await api.get(fetchUrl, { responseType: 'blob' });
+        
+        const blob = response.data;
+        const objectUrl = window.URL.createObjectURL(blob);
+        const filename = getFilenameFromDisposition(
+            response.headers['content-disposition'],
+            fallbackFilename
+        );
 
-    if (!response.ok) {
+        const anchor = document.createElement('a');
+        anchor.href = objectUrl;
+        anchor.download = filename;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+
+        window.setTimeout(() => {
+            window.URL.revokeObjectURL(objectUrl);
+        }, 1000);
+    } catch (error: any) {
         let message = 'Failed to download file.';
-        try {
-            const contentType = response.headers.get('content-type') || '';
-            if (contentType.includes('application/json')) {
-                const payload = await response.json();
+        if (error.response?.data instanceof Blob) {
+            try {
+                const text = await error.response.data.text();
+                const payload = JSON.parse(text);
                 message = payload.error || message;
-            } else {
-                const text = await response.text();
-                if (text) message = text;
-            }
-        } catch {
-            // ignore parsing failure and keep generic message
+            } catch { /* ignore */ }
+        } else if (error.response?.data?.error) {
+            message = error.response.data.error;
+        } else if (error.message) {
+            message = error.message;
         }
         throw new Error(message);
     }
-
-    const blob = await response.blob();
-    const objectUrl = window.URL.createObjectURL(blob);
-    const filename = getFilenameFromDisposition(
-        response.headers.get('content-disposition'),
-        fallbackFilename
-    );
-
-    const anchor = document.createElement('a');
-    anchor.href = objectUrl;
-    anchor.download = filename;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-
-    window.setTimeout(() => {
-        window.URL.revokeObjectURL(objectUrl);
-    }, 1000);
 }
+
+// --- In-memory token store ---
+let accessToken: string | null = null;
+export const getAccessToken = () => accessToken;
+export const setAccessToken = (t: string | null) => { accessToken = t; };
 
 const api = axios.create({
     baseURL: API_BASE_URL,
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
+        'X-Client-Type': 'web',
     },
 });
 
-// Add a request interceptor to attach the token
+// Request interceptor to attach token and CSRF
 api.interceptors.request.use((config) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('docnow_auth_token') : null;
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    
+    // CSRF protection for state-changing requests
+    if (config.method !== 'get' && typeof document !== 'undefined') {
+        const csrf = document.cookie.match(/docnow_csrf=([^;]+)/)?.[1];
+        if (csrf) {
+            config.headers['x-docnow-csrf'] = csrf;
+        }
     }
     return config;
 }, (error) => {
     return Promise.reject(error);
 });
 
-// Response interceptor — graceful handling of network errors
+// Response interceptor — graceful handling of network errors & silent refresh
+let refreshPromise: Promise<any> | null = null;
+
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
         if (!error.response) {
-            // Network error (server unreachable, DNS fail, CORS, etc.)
             console.warn('[API] Network error:', error.message || 'Server unreachable');
-            // Return a rejected promise with a clean error object
-            // so callers can handle it without Next.js showing the raw overlay
             return Promise.reject({
                 message: 'Unable to reach the server. Please check your connection.',
                 isNetworkError: true,
                 originalError: error,
             });
         }
+
+        // Silent refresh on 401
+        if (error.response.status === 401 && !error.config._retry && error.config.url !== '/auth/refresh') {
+            error.config._retry = true;
+
+            if (!refreshPromise) {
+                refreshPromise = api.post('/auth/refresh')
+                    .then(r => r.data)
+                    .catch(() => null)
+                    .finally(() => { refreshPromise = null; });
+            }
+
+            const data = await refreshPromise;
+            if (!data) {
+                accessToken = null;
+                if (typeof window !== 'undefined') {
+                    if (window.location.pathname !== '/') {
+                        window.location.href = '/?login=true';
+                    }
+                }
+                return Promise.reject(error);
+            }
+
+            if (data.accessToken) {
+                accessToken = data.accessToken;
+            }
+
+            // Retry original request
+            error.config.headers.Authorization = `Bearer ${accessToken}`;
+            return api(error.config);
+        }
+
         return Promise.reject(error);
     }
 );

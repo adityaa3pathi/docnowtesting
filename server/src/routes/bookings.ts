@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import {
-    createBooking,
     listBookings,
     getStatus,
     cancelBooking,
@@ -13,9 +12,6 @@ import {
 const router = Router();
 
 console.log('Bookings Router Loaded');
-
-// POST /api/bookings - Create Booking
-router.post('/', authMiddleware, createBooking);
 
 // GET /api/bookings - List User Bookings
 router.get('/', authMiddleware, listBookings);

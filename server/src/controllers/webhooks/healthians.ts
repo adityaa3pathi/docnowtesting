@@ -29,12 +29,37 @@ interface HealthiansWebhookPayload {
     data: any;
 }
 
+function getHeaderValue(value: string | string[] | undefined): string | undefined {
+    return Array.isArray(value) ? value[0] : value;
+}
+
+function isValidWebhookSecret(providedSecret: string | undefined) {
+    const expectedSecret = process.env.HEALTHIANS_WEBHOOK_SECRET;
+    if (!expectedSecret) {
+        console.warn('[HealthiansWebhook] HEALTHIANS_WEBHOOK_SECRET is not configured. Relying on network-level webhook controls.');
+        return true;
+    }
+
+    if (!providedSecret) return false;
+
+    const expected = Buffer.from(expectedSecret);
+    const provided = Buffer.from(providedSecret);
+    return expected.length === provided.length && crypto.timingSafeEqual(expected, provided);
+}
+
 export const healthiansWebhookHandler = async (req: Request, res: Response) => {
     // 1. Hash raw body BEFORE any parsing (req.body is a Buffer here)
     const rawBody = req.body as Buffer;
     const payloadHash = crypto.createHash('sha256').update(rawBody).digest('hex');
 
-    // 2. Parse JSON manually
+    // 2. Validate shared-secret header when configured.
+    const providedSecret = getHeaderValue(req.headers['x-healthians-secret']);
+    if (!isValidWebhookSecret(providedSecret)) {
+        console.warn(`[HealthiansWebhook] Unauthorized request rejected. hash=${payloadHash.slice(0, 12)}...`);
+        return res.status(401).json({ error: 'Unauthorized webhook' });
+    }
+
+    // 3. Parse JSON manually
     let payload: HealthiansWebhookPayload;
     try {
         payload = JSON.parse(rawBody.toString('utf-8'));
@@ -43,10 +68,6 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
         console.error(`[HealthiansWebhook] Malformed JSON received. Raw body: \n---\n${rawBody.toString('utf-8')}\n---`);
         return res.status(400).json({ error: 'Invalid JSON' });
     }
-
-    // 3. (REMOVED) Strict Shared-secret validation.
-    // The webhook docs do not mention x-healthians-secret. 
-    // Logging IP and Payload hash for future IP whitelisting.
 
     const clientIp = req.ip || req.socket.remoteAddress;
     console.log(

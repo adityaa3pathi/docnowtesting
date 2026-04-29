@@ -1,10 +1,14 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import { validateEnv } from './utils/envValidator';
+validateEnv();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 
 import { PrismaClient } from '@prisma/client';
 import locationRoutes from './routes/location';
@@ -26,10 +30,8 @@ import managerRoutes from './routes/manager';
 import promoRoutes from './routes/promos';
 import reportRoutes from './routes/reports';
 import invoiceRoutes from './routes/invoices';
-import healthiansProxyRoutes from './routes/healthiansProxy';
 
-
-
+import { csrfProtection } from './middleware/csrfProtection';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -46,6 +48,8 @@ app.use(cors({
     },
     credentials: true,
 }));
+
+app.use(cookieParser());
 app.use(helmet());
 app.use(morgan('dev'));
 
@@ -54,6 +58,7 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), web
 app.post('/api/webhooks/healthians', express.raw({ type: '*/*' }), healthiansWebhookHandler);
 
 app.use(express.json());
+app.use(csrfProtection);
 
 app.use('/api/location', locationRoutes);
 app.use('/api/catalog', catalogRoutes);
@@ -74,8 +79,6 @@ app.use('/api/promos', promoRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/invoices', invoiceRoutes);
 
-// Special proxy route to allow local dev environments to hit Healthians API via the EC2 IP
-app.use('/api/admin/proxy-healthians', healthiansProxyRoutes);
 
 app.get('/', (req, res) => {
     res.send('DOCNOW API is running');
@@ -83,6 +86,10 @@ app.get('/', (req, res) => {
 
 // TEMP: Debug endpoint for IP whitelisting
 app.get('/debug/ip', async (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(404).json({ error: 'Not found' });
+    }
+
     try {
         const response = await fetch('https://api.ipify.org?format=json');
         const data = await response.json();

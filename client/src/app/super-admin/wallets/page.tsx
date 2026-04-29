@@ -13,6 +13,7 @@ import {
     Download,
 } from 'lucide-react';
 import { useExport } from '@/hooks/useExport';
+import api from '@/lib/api';
 
 interface LedgerEntry {
     id: string;
@@ -51,7 +52,6 @@ export default function WalletsPage() {
     const fetchLedger = useCallback(async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
             const params = new URLSearchParams({
                 page: pagination.page.toString(),
                 limit: pagination.limit.toString(),
@@ -61,15 +61,9 @@ export default function WalletsPage() {
             if (searchTerm) params.append('search', searchTerm);
             if (createdDate) params.append('createdDate', createdDate);
 
-            const res = await fetch(`/api/admin/wallets/ledger?${params}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (!res.ok) throw new Error('Failed to fetch ledger');
-
-            const data = await res.json();
-            setLedger(data.ledger);
-            setPagination(data.pagination);
+            const res = await api.get(`/admin/wallets/ledger?${params}`);
+            setLedger(res.data.ledger);
+            setPagination(res.data.pagination);
         } catch (error) {
             console.error('Error fetching ledger:', error);
         } finally {

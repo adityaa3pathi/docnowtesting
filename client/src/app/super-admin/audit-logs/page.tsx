@@ -10,6 +10,7 @@ import {
     ShieldAlert,
     Clock
 } from 'lucide-react';
+import api from '@/lib/api';
 
 interface AuditLog {
     id: string;
@@ -41,7 +42,6 @@ export default function AuditLogsPage() {
     const fetchLogs = useCallback(async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
             const params = new URLSearchParams({
                 page: pagination.page.toString(),
                 limit: pagination.limit.toString(),
@@ -50,15 +50,9 @@ export default function AuditLogsPage() {
 
             if (searchTerm) params.append('search', searchTerm);
 
-            const res = await fetch(`/api/admin/audit-logs?${params}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (!res.ok) throw new Error('Failed to fetch audit logs');
-
-            const data = await res.json();
-            setLogs(data.logs);
-            setPagination(data.pagination);
+            const res = await api.get(`/admin/audit-logs?${params}`);
+            setLogs(res.data.logs);
+            setPagination(res.data.pagination);
         } catch (error) {
             console.error('Error fetching audit logs:', error);
         } finally {

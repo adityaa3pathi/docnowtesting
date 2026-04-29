@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { AdminUser } from '@/types/admin';
+import api from '@/lib/api';
 
 interface UseWalletAdjustOptions {
     onSuccess: (userId: string, newBalance: number) => void;
@@ -47,34 +48,21 @@ export function useWalletAdjust({ onSuccess }: UseWalletAdjustOptions) {
 
         setSubmitting(true);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
-            const res = await fetch('/api/admin/wallets/adjust', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    userId: selectedUser.id,
-                    type: walletAction === 'credit' ? 'CREDIT' : 'DEBIT',
-                    amount: amount,
-                    reason: walletReason,
-                }),
+            const res = await api.post('/admin/wallets/adjust', {
+                userId: selectedUser.id,
+                type: walletAction === 'credit' ? 'CREDIT' : 'DEBIT',
+                amount: amount,
+                reason: walletReason,
             });
 
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.error || 'Failed to adjust wallet');
-            }
-
-            const result = await res.json();
+            const result = res.data;
             toast.success(`Wallet adjusted successfully. New balance: ₹${result.newBalance}`);
 
             onSuccess(selectedUser.id, result.newBalance);
             closeModal();
         } catch (error: any) {
             console.error('Error adjusting wallet:', error);
-            toast.error(error.message || 'Failed to adjust wallet');
+            toast.error(error.response?.data?.error || error.message || 'Failed to adjust wallet');
         } finally {
             setSubmitting(false);
         }

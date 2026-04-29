@@ -1,10 +1,9 @@
 import express, { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { getGeodataFromPincode } from '../utils/geocoding';
+import { prisma } from '../db';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // GET /api/profile/addresses - Get all addresses
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {

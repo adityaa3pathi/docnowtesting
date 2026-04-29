@@ -23,10 +23,12 @@ import {
     Shield,
     PhoneCall,
     Building2,
+    AlertTriangle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { DocnowLogo } from '@/components/DocnowLogo';
+import api, { getAccessToken } from '@/lib/api';
 
 // Navigation items matching the design
 const navItems = [
@@ -40,6 +42,7 @@ const navItems = [
     { id: 'corporate-inquiries', label: 'Corporate Inquiries', icon: Building2, href: '/super-admin/corporate-inquiries' },
     { id: 'referrals', label: 'Referrals', icon: Gift, href: '/super-admin/referrals' },
     { id: 'settings', label: 'System Settings', icon: Settings, href: '/super-admin/settings' },
+    { id: 'failed-orders', label: 'Failed Orders', icon: AlertTriangle, href: '/super-admin/failed-orders' },
     { id: 'audit', label: 'Audit Logs', icon: FileText, href: '/super-admin/audit-logs' },
 ];
 
@@ -50,7 +53,7 @@ export default function SuperAdminLayout({
 }) {
     const router = useRouter();
     const pathname = usePathname();
-    const { logout } = useAuth();
+    const { logout, isInitialized } = useAuth();
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -58,41 +61,28 @@ export default function SuperAdminLayout({
 
     // Auth guard - check if user is SUPER_ADMIN
     useEffect(() => {
+        if (!isInitialized) return;
+
         const checkAuth = async () => {
             try {
-                const token = localStorage.getItem('docnow_auth_token');
-                if (!token) {
-                    console.log('[Admin] No token found, redirecting to home');
-                    router.push('/');
-                    return;
-                }
-
                 // Check admin access by calling health endpoint
-                const res = await fetch('/api/admin/health', {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-
+                const res = await api.get('/admin/health');
                 console.log('[Admin] Health check response:', res.status);
 
-                if (!res.ok) {
-                    const errorData = await res.json().catch(() => ({}));
-                    console.error('[Admin] Auth failed:', res.status, errorData);
-                    toast.error(`Admin access denied: ${errorData.error || 'Not authorized'}. Please login as SUPER_ADMIN.`);
-                    router.push('/');
-                    return;
-                }
-
-                const data = await res.json();
+                const data = res.data;
                 setAdminName(data.admin || 'Admin');
                 setIsLoading(false);
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Admin auth error:', error);
+                if (error.response && error.response.status !== 401) {
+                    toast.error(`Admin access denied: ${error.response.data?.error || 'Not authorized'}. Please login as SUPER_ADMIN.`);
+                }
                 router.push('/');
             }
         };
 
         checkAuth();
-    }, [router]);
+    }, [router, isInitialized]);
 
     // Close mobile menu on route change
     useEffect(() => {

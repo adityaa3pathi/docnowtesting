@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../../middleware/auth';
 import { prisma } from '../../db';
 import { getClientIP } from '../../utils/adminHelpers';
+import { revokeAllUserSessions } from '../../services/sessionService';
 
 /**
  * GET /api/admin/users — List all users (paginated)
@@ -193,6 +194,10 @@ export async function updateUserStatus(req: AuthRequest, res: Response) {
             })
         ]);
 
+        if (status === 'BLOCKED') {
+            await revokeAllUserSessions(userId);
+        }
+
         res.json({ success: true, message: `User ${status === 'BLOCKED' ? 'blocked' : 'unblocked'} successfully` });
     } catch (error) {
         console.error('[Admin] Error updating user status:', error);
@@ -251,6 +256,8 @@ export async function updateUserRole(req: AuthRequest, res: Response) {
                 }
             })
         ]);
+
+        await revokeAllUserSessions(userId);
 
         res.json({
             success: true,

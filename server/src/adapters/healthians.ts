@@ -23,18 +23,12 @@ export class HealthiansAdapter {
         
         const axiosConfig: any = {
             baseURL: `${baseUrl}/${partnerName}`,
+            timeout: parseInt(process.env.HEALTHIANS_TIMEOUT_MS || '15000', 10),
             headers: {
                 'Content-Type': 'application/json',
                 'User-Agent': 'DOCNOW-Server/1.0'
             },
         };
-
-        if (process.env.USE_LIVE_PROXY === 'true') {
-            console.log('[Healthians] Routing requests through LIVE EC2 proxy (api.docnow.in)');
-            const proxyBaseUrl = process.env.LIVE_PROXY_URL || 'https://api.docnow.in/api/admin/proxy-healthians';
-            axiosConfig.baseURL = `${proxyBaseUrl}/${partnerName}`;
-            axiosConfig.headers['x-proxy-secret'] = process.env.HEALTHIANS_PROXY_SECRET || 'docnow-dev-proxy-secret-123';
-        }
 
         this.client = axios.create(axiosConfig);
 
@@ -182,6 +176,24 @@ export class HealthiansAdapter {
         }
     }
 
+
+    /**
+     * Get Product Details (Constituents, reporting time, fasting, etc.)
+     * @param deal_type "package", "profile", or "parameter"
+     * @param deal_type_id The ID of the test unit
+     */
+    public async getProductDetails(deal_type: string, deal_type_id: string | number) {
+        try {
+            const response = await this.client.post('/getProductDetails', {
+                deal_type,
+                deal_type_id: Number(deal_type_id)
+            });
+            return response.data;
+        } catch (error) {
+            console.error('getProductDetails Error:', error);
+            throw error;
+        }
+    }
 
     /**
      * Get Active Zipcodes (Can be heavy, maybe cache this)

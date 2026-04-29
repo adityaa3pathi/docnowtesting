@@ -5,8 +5,8 @@ import { prisma } from '../../db';
 export async function exportAdminData(req: AuthRequest, res: Response) {
     try {
         const entity = req.query.entity as string;
-        if (!entity || !['users', 'orders', 'callbacks', 'corporate-inquiries', 'wallets'].includes(entity)) {
-            return res.status(400).json({ error: 'Invalid or missing entity for export. Must be "users", "orders", "callbacks", "corporate-inquiries", or "wallets".' });
+        if (!entity || !['users', 'orders', 'callbacks', 'corporate-inquiries', 'wallets', 'failed-orders'].includes(entity)) {
+            return res.status(400).json({ error: 'Invalid or missing entity for export. Must be "users", "orders", "callbacks", "corporate-inquiries", "wallets", or "failed-orders".' });
         }
 
         const search = (req.query.search as string) || '';
@@ -311,6 +311,71 @@ export async function exportAdminData(req: AuthRequest, res: Response) {
 
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader('Content-Disposition', 'attachment; filename="wallets-export.csv"');
+            return res.status(200).send(csvContent);
+        } else if (entity === 'failed-orders') {
+            const dateFrom = req.query.dateFrom as string;
+            const dateTo = req.query.dateTo as string;
+            const where: any = {
+                OR: [
+                    { paymentStatus: { in: ['FAILED', 'PARTNER_FAILED', 'REFUNDED'] } },
+                    { status: { in: ['CANCELLED', 'BOOKING_FAILED'] } }
+                ]
+            };
+
+            if (dateFrom || dateTo) {
+                where.createdAt = {};
+                if (dateFrom) {
+                    where.createdAt.gte = new Date(`${dateFrom}T00:00:00.000Z`);
+                }
+                if (dateTo) {
+                    const end = new Date(`${dateTo}T00:00:00.000Z`);
+                    end.setUTCDate(end.getUTCDate() + 1);
+                    where.createdAt.lt = end;
+                }
+            }
+
+            if (search) {
+                where.AND = [
+                    {
+                        OR: [
+                            { id: { contains: search, mode: 'insensitive' } },
+                            { partnerBookingId: { contains: search, mode: 'insensitive' } },
+                            { user: { name: { contains: search, mode: 'insensitive' } } },
+                            { user: { mobile: { contains: search } } },
+                            { items: { some: { patient: { name: { contains: search, mode: 'insensitive' } } } } },
+                        ]
+                    }
+                ];
+            }
+
+            const orders = await prisma.booking.findMany({
+                where,
+                take: limitToExport,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    user: { select: { name: true, mobile: true } },
+                    partnerRetry: true
+                }
+            });
+
+            const headers = ['Order ID', 'Healthians ID', 'Created At', 'Amount', 'Status', 'Payment Status', 'User Name', 'User Mobile', 'Partner Error', 'Retry Last Error'];
+            const rows = orders.map(order => [
+                order.id,
+                order.partnerBookingId || '',
+                order.createdAt.toISOString(),
+                order.totalAmount,
+                order.status,
+                order.paymentStatus,
+                `"${order.user.name || ''}"`,
+                order.user.mobile,
+                `"${(order.partnerError || '').replace(/"/g, '""')}"`,
+                `"${(order.partnerRetry?.lastError || '').replace(/"/g, '""')}"`
+            ]);
+
+            const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', 'attachment; filename="failed-orders-export.csv"');
             return res.status(200).send(csvContent);
         }
 

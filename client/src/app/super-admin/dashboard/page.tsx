@@ -85,6 +85,7 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from 'recharts';
+import api from '@/lib/api';
 
 function DashboardPage() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -96,32 +97,16 @@ function DashboardPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const token = localStorage.getItem('docnow_auth_token');
-                if (!token) return;
-
-                const headers = { Authorization: `Bearer ${token}` };
-
                 // Parallel fetch for stats, revenue, and high-value orders
                 const [statsRes, revenueRes, ordersRes] = await Promise.all([
-                    fetch('/api/admin/stats', { headers }),
-                    fetch('/api/admin/stats/revenue', { headers }),
-                    fetch('/api/admin/stats/high-value', { headers })
+                    api.get('/admin/stats'),
+                    api.get('/admin/stats/revenue'),
+                    api.get('/admin/stats/high-value')
                 ]);
 
-                if (statsRes.ok) {
-                    const data = await statsRes.json();
-                    setStats(data);
-                }
-
-                if (revenueRes.ok) {
-                    const data = await revenueRes.json();
-                    setRevenueData(data.chartData);
-                }
-
-                if (ordersRes.ok) {
-                    const data = await ordersRes.json();
-                    setHighValueOrders(data.orders);
-                }
+                setStats(statsRes.data);
+                setRevenueData(revenueRes.data.chartData);
+                setHighValueOrders(ordersRes.data.orders);
 
             } catch (err) {
                 console.error('Error fetching dashboard data:', err);

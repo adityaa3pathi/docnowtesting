@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import api from '@/lib/api';
 
 export type CorporateInquiryStatus = 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'CLOSED';
 
@@ -34,7 +35,6 @@ export function useCorporateInquiries(apiPrefix: '/api/admin' | '/api/manager' =
     const fetchInquiries = useCallback(async (params: { page: number; search?: string; status?: string; city?: string; requirementType?: string; companySize?: string; createdDate?: string }) => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
             const searchParams = new URLSearchParams({
                 page: params.page.toString(),
                 limit: '20',
@@ -47,15 +47,11 @@ export function useCorporateInquiries(apiPrefix: '/api/admin' | '/api/manager' =
             if (params.companySize && params.companySize !== 'All') searchParams.append('companySize', params.companySize);
             if (params.createdDate) searchParams.append('createdDate', params.createdDate);
 
-            const res = await fetch(`${apiPrefix}/corporate-inquiries?${searchParams.toString()}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const prefix = apiPrefix.replace('/api', '');
+            const res = await api.get(`${prefix}/corporate-inquiries?${searchParams.toString()}`);
 
-            if (!res.ok) throw new Error('Failed to fetch corporate inquiries');
-
-            const data = await res.json();
-            setInquiries(data.inquiries);
-            setPagination(data.pagination);
+            setInquiries(res.data.inquiries);
+            setPagination(res.data.pagination);
         } catch (error: any) {
             console.error('Error fetching corporate inquiries:', error);
             toast.error(error.message || 'Failed to fetch corporate inquiries');
@@ -67,28 +63,15 @@ export function useCorporateInquiries(apiPrefix: '/api/admin' | '/api/manager' =
     const updateStatus = async (id: string, newStatus: CorporateInquiryStatus, notes?: string) => {
         setActionLoading(id);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
-            const res = await fetch(`${apiPrefix}/corporate-inquiries/${id}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ status: newStatus, notes }),
-            });
+            const prefix = apiPrefix.replace('/api', '');
+            const res = await api.put(`${prefix}/corporate-inquiries/${id}/status`, { status: newStatus, notes });
 
-            if (!res.ok) {
-                const error = await res.json();
-                throw new Error(error.error || 'Failed to update corporate inquiry');
-            }
-
-            const data = await res.json();
-            setInquiries((prev) => prev.map((item) => item.id === id ? data.inquiry : item));
+            setInquiries((prev) => prev.map((item) => item.id === id ? res.data.inquiry : item));
             toast.success(`Inquiry marked as ${newStatus.toLowerCase()}`);
             return true;
         } catch (error: any) {
             console.error('Error updating corporate inquiry:', error);
-            toast.error(error.message || 'Failed to update corporate inquiry');
+            toast.error(error.response?.data?.error || error.message || 'Failed to update corporate inquiry');
             return false;
         } finally {
             setActionLoading(null);

@@ -1,10 +1,9 @@
 import express, { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
+import { prisma } from '../db';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 import { patientSchema } from '../utils/patientValidation';
 

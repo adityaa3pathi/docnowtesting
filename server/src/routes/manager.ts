@@ -770,14 +770,26 @@ router.post('/slots', ...mgr, async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ error: 'Could not determine zone for the selected address' });
         }
 
-        const testCodes = items
-            .map((i: any) => i?.testCode)
-            .filter((code: unknown): code is string => typeof code === 'string' && code.length > 0);
+        const packagesByPatient = new Map<string, string[]>();
+        items.forEach((item: any) => {
+            const patientKey = item.patientId || 'self';
+            if (!packagesByPatient.has(patientKey)) {
+                packagesByPatient.set(patientKey, []);
+            }
+            if (item.testCode) {
+                packagesByPatient.get(patientKey)!.push(item.testCode);
+            }
+        });
 
-        if (testCodes.length === 0) {
+        const packageArray = Array.from(packagesByPatient.values()).map(dealIds => ({
+            deal_id: dealIds
+        }));
+
+        if (packageArray.length === 0 || packageArray.every(p => p.deal_id.length === 0)) {
             return res.status(400).json({ error: 'No valid test codes found for slot lookup' });
         }
 
+        const testCodes = items.map((i: any) => i.testCode).filter(Boolean);
         const catalogItems = await prisma.catalogItem.findMany({
             where: { partnerCode: { in: testCodes } }
         });
@@ -794,7 +806,7 @@ router.post('/slots', ...mgr, async (req: AuthRequest, res: Response) => {
             zone_id: String(zoneId),
             slot_date: String(date),
             amount,
-            package: [{ deal_id: testCodes }],
+            package: packageArray,
             get_ppmc_slots: 0,
             has_female_patient: 0
         });

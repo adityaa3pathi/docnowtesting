@@ -13,6 +13,7 @@ import {
     UserPlus
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '@/lib/api';
 
 interface ReferralStats {
     totalReferrals: number;
@@ -54,31 +55,20 @@ export default function ReferralsPage() {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
-
             // Fetch Stats
-            const statsRes = await fetch('/api/admin/referrals/stats', {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (statsRes.ok) {
-                const data = await statsRes.json();
-                setStats(data.stats);
-                setLeaderboard(data.leaderboard);
-                setRecentActivity(data.recentActivity);
-            }
+            const statsRes = await api.get('/admin/referrals/stats');
+            setStats(statsRes.data.stats);
+            setLeaderboard(statsRes.data.leaderboard);
+            setRecentActivity(statsRes.data.recentActivity);
 
             // Fetch Config
-            const configRes = await fetch('/api/admin/config', {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (configRes.ok) {
-                const data = await configRes.json();
-                const referrerConfig = data.configs.find((c: any) => c.key === 'REFERRAL_BONUS_REFERRER');
-                const refereeConfig = data.configs.find((c: any) => c.key === 'REFERRAL_BONUS_REFEREE');
+            const configRes = await api.get('/admin/config');
+            const data = configRes.data;
+            const referrerConfig = data.configs.find((c: any) => c.key === 'REFERRAL_BONUS_REFERRER');
+            const refereeConfig = data.configs.find((c: any) => c.key === 'REFERRAL_BONUS_REFEREE');
 
-                if (referrerConfig) setReferrerBonus(referrerConfig.value);
-                if (refereeConfig) setRefereeBonus(refereeConfig.value);
-            }
+            if (referrerConfig) setReferrerBonus(referrerConfig.value);
+            if (refereeConfig) setRefereeBonus(refereeConfig.value);
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -93,25 +83,9 @@ export default function ReferralsPage() {
     const handleSaveConfig = async () => {
         setSaving(true);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
-
             await Promise.all([
-                fetch('/api/admin/config/REFERRAL_BONUS_REFERRER', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ value: referrerBonus, reason: 'Admin update from Referrals page' })
-                }),
-                fetch('/api/admin/config/REFERRAL_BONUS_REFEREE', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ value: refereeBonus, reason: 'Admin update from Referrals page' })
-                })
+                api.put('/admin/config/REFERRAL_BONUS_REFERRER', { value: referrerBonus, reason: 'Admin update from Referrals page' }),
+                api.put('/admin/config/REFERRAL_BONUS_REFEREE', { value: refereeBonus, reason: 'Admin update from Referrals page' })
             ]);
 
             toast.success('Configuration saved successfully');

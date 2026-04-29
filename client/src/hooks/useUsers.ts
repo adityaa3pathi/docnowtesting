@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { AdminUser, AdminPagination, StatusFilter, RoleFilter } from '@/types/admin';
+import api from '@/lib/api';
 
 export function useUsers() {
     const [users, setUsers] = useState<AdminUser[]>([]);
@@ -17,7 +18,6 @@ export function useUsers() {
     const fetchUsers = useCallback(async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
             const params = new URLSearchParams({
                 page: pagination.page.toString(),
                 limit: pagination.limit.toString(),
@@ -28,15 +28,9 @@ export function useUsers() {
             if (filterRole !== 'All') params.append('role', filterRole);
             if (createdDate) params.append('createdDate', createdDate);
 
-            const res = await fetch(`/api/admin/users?${params}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (!res.ok) throw new Error('Failed to fetch users');
-
-            const data = await res.json();
-            setUsers(data.users);
-            setPagination(data.pagination);
+            const res = await api.get(`/admin/users?${params}`);
+            setUsers(res.data.users);
+            setPagination(res.data.pagination);
         } catch (error) {
             console.error('Error fetching users:', error);
         } finally {
@@ -66,17 +60,10 @@ export function useUsers() {
 
         setActionLoading(user.id);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
-            const res = await fetch(`/api/admin/users/${user.id}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ status: newStatus, reason: 'Admin action' }),
+            await api.put(`/admin/users/${user.id}/status`, {
+                status: newStatus,
+                reason: 'Admin action'
             });
-
-            if (!res.ok) throw new Error('Failed to update user status');
 
             setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: newStatus } : u));
             toast.success(`User ${newStatus.toLowerCase()} successfully`);
@@ -97,23 +84,11 @@ export function useUsers() {
 
         setActionLoading(user.id);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
-            const res = await fetch(`/api/admin/users/${user.id}/role`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ role: newRole }),
+            const res = await api.put(`/admin/users/${user.id}/role`, {
+                role: newRole
             });
 
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.error || 'Failed to update role');
-            }
-
-            const result = await res.json();
-            toast.success(result.message);
+            toast.success(res.data.message);
 
             setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u));
         } catch (error: any) {

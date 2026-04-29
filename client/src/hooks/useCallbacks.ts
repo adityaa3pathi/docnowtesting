@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import api from '@/lib/api';
 
 export interface CallbackRequest {
     id: string;
@@ -27,7 +28,6 @@ export function useCallbacks(apiPrefix: '/api/admin' | '/api/manager' = '/api/ma
     const fetchCallbacks = useCallback(async (params: { page: number; search?: string; status?: string; createdDate?: string }) => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
             const searchParams = new URLSearchParams({
                 page: params.page.toString(),
                 limit: '20'
@@ -37,15 +37,11 @@ export function useCallbacks(apiPrefix: '/api/admin' | '/api/manager' = '/api/ma
             if (params.status && params.status !== 'All') searchParams.append('status', params.status);
             if (params.createdDate) searchParams.append('createdDate', params.createdDate);
 
-            const res = await fetch(`${apiPrefix}/callbacks?${searchParams.toString()}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const prefix = apiPrefix.replace('/api', '');
+            const res = await api.get(`${prefix}/callbacks?${searchParams.toString()}`);
 
-            if (!res.ok) throw new Error('Failed to fetch callbacks');
-
-            const data = await res.json();
-            setCallbacks(data.callbacks);
-            setPagination(data.pagination);
+            setCallbacks(res.data.callbacks);
+            setPagination(res.data.pagination);
         } catch (error: any) {
             console.error('Error fetching callbacks:', error);
             toast.error(error.message || 'Failed to fetch callbacks');
@@ -57,28 +53,15 @@ export function useCallbacks(apiPrefix: '/api/admin' | '/api/manager' = '/api/ma
     const updateStatus = async (id: string, newStatus: 'PENDING' | 'RESOLVED', notes?: string) => {
         setActionLoading(id);
         try {
-            const token = localStorage.getItem('docnow_auth_token');
-            const res = await fetch(`${apiPrefix}/callbacks/${id}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ status: newStatus, notes })
-            });
+            const prefix = apiPrefix.replace('/api', '');
+            const res = await api.put(`${prefix}/callbacks/${id}/status`, { status: newStatus, notes });
 
-            if (!res.ok) {
-                const error = await res.json();
-                throw new Error(error.error || 'Failed to update callback status');
-            }
-
-            const data = await res.json();
-            setCallbacks(prev => prev.map(cb => cb.id === id ? data.callback : cb));
+            setCallbacks(prev => prev.map(cb => cb.id === id ? res.data.callback : cb));
             toast.success(`Callback marked as ${newStatus.toLowerCase()}`);
             return true;
         } catch (error: any) {
             console.error('Error updating callback:', error);
-            toast.error(error.message);
+            toast.error(error.response?.data?.error || error.message || 'Failed to update callback status');
             return false;
         } finally {
             setActionLoading(null);

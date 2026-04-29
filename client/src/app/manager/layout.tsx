@@ -23,6 +23,7 @@ import {
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { DocnowLogo } from '@/components/DocnowLogo';
+import api, { getAccessToken } from '@/lib/api';
 
 type NavItem = {
     id: string;
@@ -46,7 +47,7 @@ const navItems: NavItem[] = [
 export default function ManagerLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
-    const { logout } = useAuth();
+    const { logout, isInitialized } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [managerName, setManagerName] = useState('Manager');
@@ -54,23 +55,14 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
 
     // Auth guard — check MANAGER or SUPER_ADMIN role
     useEffect(() => {
+        if (!isInitialized) return;
+
         const checkAuth = async () => {
             try {
-                const token = localStorage.getItem('docnow_auth_token');
-                if (!token) { router.push('/'); return; }
+                // Let api interceptor handle the token refresh if needed
+                const res = await api.get('/manager/health');
 
-                const res = await fetch('/api/manager/health', {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-
-                if (!res.ok) {
-                    const err = await res.json().catch(() => ({}));
-                    toast.error(`Manager access denied: ${err.error || 'Not authorized'}`);
-                    router.push('/');
-                    return;
-                }
-
-                const data = await res.json();
+                const data = res.data;
                 setManagerName(data.manager || 'Manager');
                 // Read role from localStorage for mode switching
                 try {
@@ -81,12 +73,13 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
                     }
                 } catch { /* ignore */ }
                 setIsLoading(false);
-            } catch {
+            } catch (err: any) {
+                toast.error(`Manager access denied: ${err.response?.data?.error || 'Not authorized'}`);
                 router.push('/');
             }
         };
         checkAuth();
-    }, [router]);
+    }, [router, isInitialized]);
 
     const handleLogout = () => {
         logout();
