@@ -1,3 +1,12 @@
+/**
+ * ==========================================
+ * GLOBAL API CLIENT
+ * ==========================================
+ * 
+ * Centralized Axios instance used by the entire frontend to communicate with the backend.
+ * Handles automatic token injection, CSRF protection, and silent token refreshing on 401 Unauthorized errors.
+ */
+
 import axios from 'axios';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
@@ -28,6 +37,13 @@ function getFilenameFromDisposition(contentDisposition: string | null, fallback:
     return plainMatch?.[1] || fallback;
 }
 
+/**
+ * Downloads a file from a protected route using the authenticated Axios instance.
+ * Extracts the filename from the 'content-disposition' header if available.
+ * 
+ * @param {string} url - The API endpoint to download the file from.
+ * @param {string} fallbackFilename - The filename to use if the header is missing.
+ */
 export async function downloadAuthenticatedFile(url: string, fallbackFilename = 'download.pdf') {
     try {
         let fetchUrl = url;

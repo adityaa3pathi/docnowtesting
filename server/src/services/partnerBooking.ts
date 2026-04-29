@@ -1,6 +1,7 @@
 import { prisma } from '../db';
 import { HealthiansAdapter } from '../adapters/healthians';
 import { normalizeGender } from '../utils/helpers';
+import { logBusinessEvent } from '../utils/logger';
 
 const healthians = HealthiansAdapter.getInstance();
 
@@ -103,10 +104,22 @@ export async function createHealthiansBooking(booking: any, userId: string, slot
         vendor_billing_user_id: user.id
     };
 
-    console.log('[Payments] Creating Healthians booking:', JSON.stringify(bookingPayload, null, 2));
+    // Keep partner-call observability without logging PHI-heavy payloads.
+    logBusinessEvent('partner_booking_payload_prepared', {
+        bookingId: booking.id,
+        userId,
+        patientCount: customersPayload.length,
+        packageCount: packagesPayload.length,
+        zipcode: address.pincode,
+    });
 
     const response = await healthians.createBooking(bookingPayload);
-    console.log('[Payments] Healthians Booking Response:', JSON.stringify(response, null, 2));
+    logBusinessEvent('partner_booking_response_received', {
+        bookingId: booking.id,
+        userId,
+        partnerBookingId: response.booking_id || response.data?.booking_id,
+        partnerStatus: response.status,
+    });
 
     if (!response.status) {
         throw new Error(response.message || 'Healthians booking failed');

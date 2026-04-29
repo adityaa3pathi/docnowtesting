@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../db';
+import { logger } from '../utils/logger';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -56,7 +57,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
         req.userId = user.id;
         next();
     } catch (error) {
-        console.error('JWT Verification Error:', error);
+        logger.warn({ error }, 'access_token_verification_failed');
         res.status(401).json({ error: 'Invalid or expired token' });
     }
 };

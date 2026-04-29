@@ -1,5 +1,16 @@
+/**
+ * ==========================================
+ * HEALTHIANS ADAPTER
+ * ==========================================
+ * 
+ * This module acts as the translation layer between our internal models 
+ * and the external Healthians API. It manages auth tokens, data normalization,
+ * and error handling specific to the vendor.
+ */
+
 import axios, { AxiosInstance } from 'axios';
 import { generateChecksum } from '../utils/security';
+import { logAlert, logBusinessEvent, logger } from '../utils/logger';
 
 
 // Re-evaluate the env inside methods rather than module-scope to fix dotenv initialization races
@@ -76,7 +87,7 @@ export class HealthiansAdapter {
             const partnerName = process.env.HEALTHIANS_PARTNER_NAME || 'docnow1';
 
             const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
-            console.log(`[Healthians] Authenticating with ${baseUrl}/${partnerName}/getAccessToken`);
+            logger.info({ baseUrl, partnerName }, 'healthians_auth_started');
 
             const response = await this.client.get<AccessTokenResponse>('/getAccessToken', {
                 headers: {
@@ -86,19 +97,23 @@ export class HealthiansAdapter {
                 }
             });
 
-            console.log('Healthians Auth Response Status:', response.status);
+            logger.debug({ statusCode: response.status }, 'healthians_auth_response_received');
 
             if (response.data.access_token) {
                 this.accessToken = response.data.access_token;
                 this.tokenExpiry = now + response.data.expires_in;
-                console.log('Healthians Access Token Refreshed');
+                logger.info({ expiresInSeconds: response.data.expires_in }, 'healthians_access_token_refreshed');
             } else {
                 throw new Error('Failed to retrieve access token');
             }
         } catch (error: any) {
-            console.error('Healthians Auth Error:', error.response?.status, error.response?.statusText);
+            logAlert('healthians_auth_failed', {
+                error,
+                statusCode: error.response?.status,
+                statusText: error.response?.statusText,
+            });
             if (error.response?.status === 403) {
-                console.error('NOTE: 403 Forbidden likely means IP address is not whitelisted by Healthians or WAF blocking.');
+                logger.warn({}, 'healthians_auth_forbidden_check_ip_whitelist');
             }
             throw error;
         }
@@ -119,7 +134,7 @@ export class HealthiansAdapter {
             });
             return response.data;
         } catch (error) {
-            console.error('checkServiceability Error:', error);
+            logger.error({ error, zipcode }, 'healthians_check_serviceability_failed');
             throw error;
         }
     }
@@ -138,7 +153,7 @@ export class HealthiansAdapter {
         try {
             for (const product_type of PRODUCT_TYPES) {
                 let start = 0;
-                console.log(`[Healthians] Fetching product_type=${product_type} for zipcode=${zipcode}`);
+                logger.debug({ productType: product_type, zipcode }, 'healthians_products_fetch_started');
 
                 while (true) {
                     const response = await this.client.post('/getPartnerProducts', {
@@ -151,7 +166,7 @@ export class HealthiansAdapter {
                     const items: any[] = page?.data || [];
                     const dataCount: number = page?.data_count ?? items.length;
 
-                    console.log(`[Healthians] product_type=${product_type} start=${start}: ${dataCount} items`);
+                    logger.debug({ productType: product_type, zipcode, start, dataCount }, 'healthians_products_page_received');
 
                     if (dataCount === 0 || items.length === 0) {
                         break;
@@ -162,16 +177,16 @@ export class HealthiansAdapter {
 
                     // Safety cap — avoid infinite loops
                     if (start > 50000) {
-                        console.warn(`[Healthians] Safety cap hit for product_type=${product_type}`);
+                        logger.warn({ productType: product_type, zipcode, start }, 'healthians_products_safety_cap_hit');
                         break;
                     }
                 }
             }
 
-            console.log(`[Healthians] getPartnerProducts total fetched: ${allProducts.length} (packages+profiles+parameters)`);
+            logger.info({ zipcode, productCount: allProducts.length }, 'healthians_products_fetch_completed');
             return { data: allProducts };
         } catch (error) {
-            console.error('getPartnerProducts Error:', error);
+            logger.error({ error, zipcode }, 'healthians_products_fetch_failed');
             throw error;
         }
     }
@@ -190,7 +205,7 @@ export class HealthiansAdapter {
             });
             return response.data;
         } catch (error) {
-            console.error('getProductDetails Error:', error);
+            logger.error({ error, dealType: deal_type, dealTypeId: deal_type_id }, 'healthians_product_details_failed');
             throw error;
         }
     }
@@ -203,7 +218,7 @@ export class HealthiansAdapter {
             const response = await this.client.get('/getActiveZipcodes');
             return response.data;
         } catch (error) {
-            console.error('getActiveZipcodes Error:', error);
+            logger.error({ error }, 'healthians_active_zipcodes_failed');
             throw error;
         }
     }
@@ -235,7 +250,7 @@ export class HealthiansAdapter {
             });
             return response.data;
         } catch (error) {
-            console.error('getSlotsByLocation Error:', error);
+            logger.error({ error, zipcode: params.zipcode, slotDate: params.slot_date }, 'healthians_slots_fetch_failed');
             throw error;
         }
     }
@@ -254,7 +269,7 @@ export class HealthiansAdapter {
             });
             return response.data;
         } catch (error) {
-            console.error('freezeSlot Error:', error);
+            logger.error({ error, slotId }, 'healthians_freeze_slot_failed');
             throw error;
         }
     }
@@ -272,8 +287,7 @@ export class HealthiansAdapter {
                 const dataString = JSON.stringify(bookingData);
                 const checkSum = generateChecksum(dataString, secretKey);
 
-                console.log('Generating X-Checksum for data string:', dataString);
-                console.log('Generated X-Checksum:', checkSum);
+                logger.debug({}, 'healthians_booking_checksum_generated');
 
                 config = {
                     headers: {
@@ -281,17 +295,23 @@ export class HealthiansAdapter {
                     }
                 };
             } else {
-                console.warn('HEALTHIANS_BOOKING_SECRET_KEY not set. Sending booking without X-Checksum header.');
+                logger.warn({}, 'healthians_booking_secret_key_missing');
             }
 
             const response = await this.client.post('/createBooking_v3', bookingData, config);
+            logBusinessEvent('healthians_create_booking_completed', {
+                vendorBookingId: bookingData.vendor_booking_id,
+                partnerBookingId: response.data?.booking_id || response.data?.data?.booking_id,
+                partnerStatus: response.data?.status,
+            });
             return response.data;
         } catch (error: any) {
-            console.error('createBooking Error:', error.message);
-            if (error.response) {
-                console.error('Healthians Error Response Data:', JSON.stringify(error.response.data, null, 2));
-                console.error('Healthians Error Status:', error.response.status);
-            }
+            logAlert('healthians_create_booking_failed', {
+                error,
+                vendorBookingId: bookingData.vendor_booking_id,
+                statusCode: error.response?.status,
+                partnerMessage: error.response?.data?.message,
+            });
             throw error;
         }
     }
@@ -306,7 +326,7 @@ export class HealthiansAdapter {
             });
             return response.data;
         } catch (error) {
-            console.error('getBookingStatus Error:', error);
+            logger.error({ error, bookingId }, 'healthians_booking_status_failed');
             throw error;
         }
     }
@@ -324,7 +344,7 @@ export class HealthiansAdapter {
             const response = await this.client.post('/cancelBooking', params);
             return response.data;
         } catch (error) {
-            console.error('cancelBooking Error:', error);
+            logger.error({ error, partnerBookingId: params.booking_id }, 'healthians_cancel_booking_failed');
             throw error;
         }
     }
@@ -339,7 +359,7 @@ export class HealthiansAdapter {
             });
             return response.data;
         } catch (error) {
-            console.error('getPhleboMaskNumber Error:', error);
+            logger.error({ error, bookingId }, 'healthians_phlebo_mask_number_failed');
             throw error;
         }
     }
@@ -370,10 +390,12 @@ export class HealthiansAdapter {
             const response = await this.client.post('/rescheduleBookingByCustomer_v1', params, config);
             return response.data;
         } catch (error: any) {
-            console.error('rescheduleBooking Error:', error.message);
-            if (error.response) {
-                console.error('Healthians rescheduleBooking Error Response Data:', JSON.stringify(error.response.data, null, 2));
-            }
+            logger.error({
+                error,
+                partnerBookingId: params.booking_id,
+                statusCode: error.response?.status,
+                partnerMessage: error.response?.data?.message,
+            }, 'healthians_reschedule_booking_failed');
             throw error;
         }
     }
@@ -395,10 +417,12 @@ export class HealthiansAdapter {
             const response = await this.client.post('/getCustomerReport_v2', params);
             return response.data;
         } catch (error: any) {
-            console.error('getCustomerReport Error:', error.message);
-            if (error.response) {
-                console.error('Healthians getCustomerReport Error Response:', JSON.stringify(error.response.data, null, 2));
-            }
+            logger.error({
+                error,
+                partnerBookingId: params.booking_id,
+                statusCode: error.response?.status,
+                partnerMessage: error.response?.data?.message,
+            }, 'healthians_customer_report_failed');
             throw error;
         }
     }

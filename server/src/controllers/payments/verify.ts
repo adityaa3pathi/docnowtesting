@@ -7,6 +7,7 @@ import { assertTransition } from '../../utils/paymentStateMachine';
 import { tryAwardFirstOrderBonus } from '../../utils/referralService';
 import { finalizeBooking } from '../../services/bookingFinalization';
 import crypto from 'crypto';
+import { logAlert, logBusinessEvent, logger } from '../../utils/logger';
 
 /**
  * POST /api/payments/verify
@@ -56,7 +57,11 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
                 .digest('hex');
 
             if (expectedSignature !== razorpay_signature) {
-                console.error('[Payments] SECURITY: Signature mismatch for booking:', bookingId);
+                logAlert('razorpay_payment_signature_mismatch', {
+                    bookingId,
+                    razorpayOrderId: razorpay_order_id,
+                    razorpayPaymentId: razorpay_payment_id,
+                });
                 assertTransition(booking.paymentStatus, 'FAILED');
                 await prisma.booking.update({
                     where: { id: bookingId },
@@ -72,7 +77,12 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
             // 7. Verify Amount (Critical)
             const paidAmount = rzpOrder.amount_paid ? Number(rzpOrder.amount_paid) / 100 : Number(rzpOrder.amount) / 100;
             if (Math.abs(paidAmount - booking.finalAmount) > 1) {
-                console.error(`[Payments] Amount mismatch: Paid ${paidAmount}, Expected ${booking.finalAmount}`);
+                logAlert('razorpay_payment_amount_mismatch', {
+                    bookingId,
+                    paidAmount,
+                    expectedAmount: booking.finalAmount,
+                    razorpayOrderId: razorpay_order_id,
+                });
                 assertTransition(booking.paymentStatus, 'FAILED');
                 await prisma.booking.update({
                     where: { id: bookingId },
@@ -84,7 +94,11 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
 
             // Notes check: warn only
             if (rzpOrder.notes?.bookingId && rzpOrder.notes.bookingId !== bookingId) {
-                console.warn('[Payments] WARN: Booking ID mismatch in order notes. Expected:', bookingId, 'Got:', rzpOrder.notes.bookingId);
+                logger.warn({
+                    bookingId,
+                    notesBookingId: rzpOrder.notes.bookingId,
+                    razorpayOrderId: razorpay_order_id,
+                }, 'razorpay_order_notes_booking_mismatch');
             }
 
             // 8. Mark as AUTHORIZED
@@ -98,9 +112,14 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
                 }
             });
 
-            console.log('[Payments] Payment AUTHORIZED for booking:', bookingId);
+            logBusinessEvent('payment_authorized', {
+                bookingId,
+                razorpayOrderId: razorpay_order_id,
+                razorpayPaymentId: razorpay_payment_id,
+                source: 'verify',
+            });
         } else {
-            console.log('[Payments] Booking already AUTHORIZED (webhook arrived first), proceeding to partner booking:', bookingId);
+            logBusinessEvent('payment_already_authorized', { bookingId, source: 'verify' }, 'debug');
         }
 
         // 9. Finalize booking safely through lease mechanism
@@ -109,22 +128,28 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
         if (result.status === 'success' || result.status === 'already_confirmed') {
             // Clear cart
             await prisma.cartItem.deleteMany({ where: { cart: { userId } } });
-            console.log('[Payments] Booking CONFIRMED via finish:', bookingId);
+            logBusinessEvent('partner_booking_confirmed', {
+                bookingId,
+                source: 'verify',
+                resultStatus: result.status,
+            });
 
             tryAwardFirstOrderBonus(userId, bookingId).catch(err =>
-                console.error('[Payments] First-order referral bonus failed:', err.message)
+                logger.warn({ error: err, bookingId }, 'first_order_referral_bonus_failed')
             );
 
             return res.json({ status: 'confirmed', bookingId });
         } else if (result.status === 'refunded_due_to_partner_error') {
             // Clear cart as payment was processed and booking inherently failed
             await prisma.cartItem.deleteMany({ where: { cart: { userId } } });
+            logAlert('partner_booking_failed_refund_started', { bookingId });
             return res.status(200).json({
                 status: 'refunded_due_to_partner_error',
                 bookingId,
                 message: 'Payment received but partner booking failed. An automated refund has been initiated.'
             });
         } else {
+            logger.warn({ bookingId, resultStatus: result.status }, 'partner_booking_pending_after_payment');
             return res.status(200).json({
                 status: 'payment_received_booking_pending',
                 bookingId,
@@ -133,7 +158,7 @@ export const verifyPayment = async (req: AuthRequest, res: Response) => {
         }
 
     } catch (error) {
-        console.error('[Payments] Verify error:', error);
+        logger.error({ error, bookingId }, 'payment_verify_failed');
         res.status(500).json({ error: 'Payment verification failed' });
     }
 };
