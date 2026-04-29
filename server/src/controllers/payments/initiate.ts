@@ -9,6 +9,7 @@ import { assertTransition } from '../../utils/paymentStateMachine';
 import { tryAwardFirstOrderBonus } from '../../utils/referralService';
 import { resolveOrCreateSelfPatient } from '../../utils/patientValidation';
 import { finalizeBooking } from '../../services/bookingFinalization';
+import { logAlert, logBusinessEvent, logger } from '../../utils/logger';
 
 /**
  * POST /api/payments/initiate
@@ -33,7 +34,10 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
                 where: { idempotencyKey }
             });
             if (existing && ['INITIATED', 'AUTHORIZED', 'CONFIRMED', 'PAID'].includes(existing.paymentStatus)) {
-                console.log('[Payments] Idempotent hit — returning existing booking:', existing.id);
+                logBusinessEvent('payment_initiate_idempotent_hit', {
+                    bookingId: existing.id,
+                    paymentStatus: existing.paymentStatus,
+                }, 'debug');
                 return res.json({
                     bookingId: existing.id,
                     razorpayOrderId: existing.razorpayOrderId,
@@ -124,7 +128,6 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
                     });
                 }
 
-                console.log('[Payments] Promo locked:', promo.code);
                 discountAmount = calculateDiscount(promo, totalAmount);
                 promoCodeId = promo.id;
             }
@@ -146,7 +149,6 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
 
                     if (result.count === 0) throw new Error('Insufficient wallet balance during processing');
                     walletAmount = amountToDeduct;
-                    console.log('[Payments] Wallet debited:', walletAmount);
                 }
             }
 
@@ -264,7 +266,11 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
                     data: { razorpayOrderId: razorpayOrder.id }
                 });
             } catch (rzpError: any) {
-                console.error('[Payments] Razorpay order creation failed:', rzpError.message);
+                logAlert('razorpay_order_creation_failed', {
+                    error: rzpError,
+                    bookingId: booking.id,
+                    amount: finalAmount,
+                });
                 assertTransition('INITIATED' as any, 'FAILED' as any);
                 await prisma.booking.update({
                     where: { id: booking.id },
@@ -273,6 +279,13 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
                 await rollbackInitiatedBooking(booking);
                 return res.status(500).json({ error: 'Payment gateway error. Please try again.' });
             }
+
+            logBusinessEvent('payment_initiated', {
+                bookingId: booking.id,
+                razorpayOrderId: razorpayOrder.id,
+                amount: finalAmount,
+                currency: 'INR',
+            });
 
             return res.json({
                 bookingId: booking.id,
@@ -285,14 +298,14 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
 
         // Handle Zero Amount - Instant Confirmation
         if (finalAmount === 0) {
-            console.log('[Payments] Zero amount booking, confirming immediately via finalizeBooking:', booking.id);
+            logBusinessEvent('zero_amount_booking_paid', { bookingId: booking.id });
             const result = await finalizeBooking(booking.id);
 
             await prisma.cartItem.deleteMany({ where: { cart: { userId } } });
 
             if (result.status === 'success') {
                 tryAwardFirstOrderBonus(userId, booking.id).catch(err =>
-                    console.error('[Payments] First-order referral bonus failed:', err.message)
+                    logger.warn({ error: err, bookingId: booking.id }, 'first_order_referral_bonus_failed')
                 );
                 return res.json({ bookingId: booking.id, status: 'confirmed', amount: 0 });
             } else {
@@ -303,7 +316,7 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
         return res.status(500).json({ error: 'Unexpected flow' });
 
     } catch (error: any) {
-        console.error('[Payments] Initiate Error:', error);
+        logger.error({ error, userId }, 'payment_initiate_failed');
 
         if (error.message?.startsWith('DISABLED_ITEMS:')) {
             const disabledItems = JSON.parse(error.message.replace('DISABLED_ITEMS:', ''));

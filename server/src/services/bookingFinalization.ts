@@ -1,10 +1,29 @@
+/**
+ * ==========================================
+ * BOOKING FINALIZATION SERVICE
+ * ==========================================
+ * 
+ * This module handles the critical transition of a booking from PAID to CONFIRMED.
+ * It manages distributed locking (lease) to prevent race conditions when communicating 
+ * with external APIs (Healthians), and automatically triggers refunds if the partner API fails.
+ */
+
 import { PaymentStatus } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { createHealthiansBooking } from './partnerBooking';
 import { sendDeadLetterAlert } from '../utils/slack';
 import { getRazorpay } from './razorpay';
 import { prisma } from '../db';
+import { logAlert, logBusinessEvent, logger } from '../utils/logger';
 
+/**
+ * Attempts to finalize a paid booking by creating it in the partner system (Healthians).
+ * Uses a DB-level lease mechanism (`processingAttemptId`) to prevent multiple workers
+ * from confirming the same booking simultaneously.
+ * 
+ * @param {string} bookingId - The internal DOCNOW booking UUID.
+ * @returns {Promise<{status: string, partnerBookingId?: string, error?: string}>} The result of the finalization attempt.
+ */
 export async function finalizeBooking(bookingId: string) {
     const attemptId = randomUUID();
 
@@ -41,7 +60,10 @@ export async function finalizeBooking(bookingId: string) {
 
     // Guard 1: Another actor already booked with Healthians
     if (booking.partnerBookingId) {
-        console.warn(`[Finalization] Booking ${bookingId} already has partnerBookingId=${booking.partnerBookingId}. Skipping Healthians call.`);
+        logBusinessEvent('partner_booking_already_exists', {
+            bookingId,
+            partnerBookingId: booking.partnerBookingId,
+        }, 'debug');
         await prisma.booking.updateMany({
             where: { id: bookingId, processingAttemptId: attemptId },
             data: { paymentStatus: 'CONFIRMED', processingAttemptId: null, processingStartedAt: null }
@@ -53,12 +75,13 @@ export async function finalizeBooking(bookingId: string) {
 
     // Guard 2: Lease was revoked before we even called
     if (booking.processingAttemptId !== attemptId) {
-        console.warn(`[Finalization] Lease revoked before partner call for ${bookingId}. Aborting.`);
+        logger.warn({ bookingId, attemptId }, 'partner_booking_lease_lost_before_call');
         return { status: 'lease_lost' };
     }
 
     // Layer 3: Call Healthians and write back
     try {
+        logBusinessEvent('partner_booking_started', { bookingId, attemptId });
         const partnerResult = await createHealthiansBooking(booking, booking.userId);
         const partnerBookingId = partnerResult.booking_id;
 
@@ -78,26 +101,35 @@ export async function finalizeBooking(bookingId: string) {
         });
 
         if (updated.count === 0) {
-            console.error(
-                `🚨 [ORPHAN ALERT] Lease lost for booking ${bookingId}, attempt ${attemptId}. ` +
-                `Healthians booking ${partnerBookingId} was created but cannot be saved. ` +
-                `Manual cancellation required on Healthians dashboard.`
-            );
+            logAlert('partner_booking_orphaned', {
+                bookingId,
+                attemptId,
+                partnerBookingId,
+            });
             await sendDeadLetterAlert(bookingId, attemptId, `Orphaned Healthians Booking ID: ${partnerBookingId}`);
             return { status: 'lease_lost' };
         }
 
         await syncManagerOrder(bookingId, 'CONFIRMED');
+        logBusinessEvent('partner_booking_confirmed', {
+            bookingId,
+            attemptId,
+            partnerBookingId,
+        });
         return { status: 'success', partnerBookingId };
     } catch (error: any) {
-        console.error(`[Finalization] Healthians failure for booking ${bookingId}:`, error.message);
+        logAlert('partner_booking_failed', { error, bookingId, attemptId });
 
         // Auto Refund Logic
         let statusToSet: 'PARTNER_FAILED' | 'REFUNDED' = 'PARTNER_FAILED';
         if (booking.razorpayPaymentId) {
             try {
                 // Initialize refund via Razorpay
-                console.log(`[Finalization] Auto-refunding payment ${booking.razorpayPaymentId} for booking ${bookingId}`);
+                logBusinessEvent('refund_started', {
+                    bookingId,
+                    razorpayPaymentId: booking.razorpayPaymentId,
+                    reason: 'partner_booking_failed',
+                });
                 await getRazorpay().payments.refund(booking.razorpayPaymentId, {
                     notes: {
                         reason: 'Healthians booking failed',
@@ -106,7 +138,11 @@ export async function finalizeBooking(bookingId: string) {
                 });
                 statusToSet = 'REFUNDED';
             } catch (refundError: any) {
-                console.error(`🚨 [Finalization] Failed to auto-refund booking ${bookingId}. Manual refund required!`, refundError);
+                logAlert('refund_failed_manual_required', {
+                    error: refundError,
+                    bookingId,
+                    razorpayPaymentId: booking.razorpayPaymentId,
+                });
             }
         } else {
              // For zero-amount bookings or other cases where payment isn't required but failed

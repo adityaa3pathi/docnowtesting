@@ -1,3 +1,12 @@
+/**
+ * ==========================================
+ * AUTH CONTEXT
+ * ==========================================
+ * 
+ * Global state manager for user authentication.
+ * Bootstraps on mount by fetching `/auth/me` and provides login/logout methods.
+ * Note: Actual JWTs are stored in HttpOnly cookies or memory; this context only stores the user metadata.
+ */
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
