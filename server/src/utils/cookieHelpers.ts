@@ -11,10 +11,18 @@ interface Tokens {
     csrfToken: string;
 }
 
+const getCookieDomain = () => {
+    if (process.env.NODE_ENV === 'production') {
+        return '.docnow.in';
+    }
+    return undefined;
+};
+
 const ACCESS_COOKIE_OPTS = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax' as const,
+    domain: getCookieDomain(),
     path: '/',
     maxAge: 15 * 60 * 1000 // 15 mins
 };
@@ -23,6 +31,7 @@ const REFRESH_COOKIE_OPTS = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax' as const,
+    domain: getCookieDomain(),
     path: '/api/auth', // Only sent to auth endpoints
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
 };
@@ -31,6 +40,7 @@ const CSRF_COOKIE_OPTS = {
     httpOnly: false, // JS needs to read this
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax' as const,
+    domain: getCookieDomain(),
     path: '/',
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
 };
