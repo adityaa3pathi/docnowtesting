@@ -6,17 +6,29 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
         return next();
     }
 
-    // 2. Skip for safe methods
+    // 2. Skip for safe (read-only) HTTP methods
     if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
         return next();
     }
 
-    // 3. Skip if request has no auth cookies at all (unauthenticated)
+    // 3. Skip ALL auth endpoints — these issue the CSRF token in the first place
+    //    Actual routes: /api/auth/login/password, /api/auth/signup/send-otp, /api/auth/refresh, etc.
+    const url = req.originalUrl.split('?')[0];
+    if (url.startsWith('/api/auth/')) {
+        return next();
+    }
+
+    // 4. Skip public form endpoints (callback requests, corporate inquiries)
+    if (url.startsWith('/api/callback') || url.startsWith('/api/corporate-inquiries')) {
+        return next();
+    }
+
+    // 5. Skip if request has no auth cookies at all (unauthenticated)
     if (!req.cookies?.docnow_access && !req.cookies?.docnow_refresh) {
         return next();
     }
 
-    // 4. Require CSRF token matching
+    // 6. Require CSRF token matching for authenticated, state-changing requests
     const cookieToken = req.cookies?.docnow_csrf;
     const headerToken = req.headers['x-docnow-csrf'];
 
