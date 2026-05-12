@@ -53,52 +53,60 @@ export function mapHealthiansResponseToViewModel(
 }
 
 /**
- * Generates a URL-friendly slug from product name and IDs
- * Format: name-slugified-dealTypeId
- * Example: "Anaemia Package-old" (dealTypeId: 94) -> "anaemia-package-old-94"
+ * Generates a URL-friendly slug from product name and partnerCode.
+ * Uses a '--' double-hyphen delimiter to separate the human-readable
+ * name portion from the machine-readable partnerCode.
+ * Example: "Torch-4 IgG" (partnerCode: "profile_16") -> "torch-4-igg--profile_16"
  */
-export function generateProductSlug(name: string, dealTypeId: string | number): string {
+export function generateProductSlug(name: string, partnerCode: string | number): string {
     const safeName = name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with hyphens
         .replace(/^-+|-+$/g, '');    // Trim hyphens from start/end
         
-    return `${safeName}-${dealTypeId}`;
+    return `${safeName}--${partnerCode}`;
 }
 
 /**
- * Parses a slug to extract the dealTypeId.
- * For now, partnerCode is assumed to be `<dealType>_<dealTypeId>`, but we don't have
- * dealType in the slug unless we infer it. 
- * Since the user will navigate from a list that already has the partnerCode, 
- * we just need to ensure the routing works.
+ * Parses a slug to extract the full partnerCode and infer the dealType/dealTypeId.
  * 
- * Our local DB stores `partnerCode` as `package_94`.
- * If we just have the slug `anaemia-package-old-94`, we extract `94`.
- * We can guess the dealType if the slug contains 'package' or 'profile', but 
- * it's better to pass it or rely on the local DB lookup.
+ * The slug format uses a '--' double-hyphen delimiter:
+ *   "torch-4-igg--profile_16" -> partnerCode = "profile_16"
  * 
- * Wait! To hit our local DB `/api/catalog/products/:code`, we need the full `partnerCode` (e.g. `package_94`).
- * If we extract `94`, how do we know if it's a `package_94` or `profile_94`?
- * We can look it up in the local DB by `partnerCode: { endsWith: '_94' }` but that might not be unique.
- * Or we can enforce the URL pattern to include the type: `/packages/anaemia-package-old-94` 
- * If they are in `/packages/[slug]`, the dealType is 'package'.
- * If they are in `/tests/[slug]`, it could be 'profile' or 'parameter'.
+ * The partnerCode encodes both the dealType and dealTypeId:
+ *   "package_94"   -> dealType = "package",   dealTypeId = "94"
+ *   "profile_16"   -> dealType = "profile",   dealTypeId = "16"
+ *   "parameter_2"  -> dealType = "parameter", dealTypeId = "2"
+ * 
+ * Falls back to legacy format (last hyphen-separated segment) for
+ * old URLs that don't contain the '--' delimiter.
  */
-export function parseSlug(slug: string, basePath: 'packages' | 'tests'): { dealTypeId: string, dealType: 'package' | 'profile' | 'parameter' | null } {
-    const parts = slug.split('-');
-    const dealTypeId = parts[parts.length - 1]; // The last part is the ID
-    
-    let dealType: 'package' | 'profile' | 'parameter' | null = null;
-    
-    if (basePath === 'packages') {
-        dealType = 'package';
-    } else if (basePath === 'tests') {
-        // We can't strictly know if it's profile or parameter just from the ID.
-        // We might need to try both or rely on the local DB to tell us.
-        // For now, we return null and let the page fetch the local DB first to get the true dealType.
-        dealType = null;
+export function parseSlug(slug: string, basePath: 'packages' | 'tests'): { dealTypeId: string, dealType: 'package' | 'profile' | 'parameter' | null, partnerCode: string } {
+    let partnerCode: string;
+
+    if (slug.includes('--')) {
+        // New format: everything after '--' is the raw partnerCode
+        partnerCode = slug.split('--').pop()!;
+    } else {
+        // Legacy format: last hyphen segment is the numeric ID, infer type from basePath
+        const parts = slug.split('-');
+        const numericId = parts[parts.length - 1];
+        const prefix = basePath === 'packages' ? 'package' : 'parameter';
+        partnerCode = `${prefix}_${numericId}`;
     }
 
-    return { dealTypeId, dealType };
+    // Extract dealType and dealTypeId from the partnerCode (e.g. "profile_16")
+    const underscoreIdx = partnerCode.indexOf('_');
+    let dealType: 'package' | 'profile' | 'parameter' | null = null;
+    let dealTypeId: string = partnerCode;
+
+    if (underscoreIdx !== -1) {
+        const prefix = partnerCode.substring(0, underscoreIdx);
+        dealTypeId = partnerCode.substring(underscoreIdx + 1);
+        if (['package', 'profile', 'parameter'].includes(prefix)) {
+            dealType = prefix as 'package' | 'profile' | 'parameter';
+        }
+    }
+
+    return { dealTypeId, dealType, partnerCode };
 }
