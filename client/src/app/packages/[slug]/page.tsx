@@ -43,20 +43,20 @@ export default function PackageDetailsPage(props: { params: Promise<{ slug: stri
   useEffect(() => {
     const fetchDetails = async () => {
       try {
-        const { dealTypeId } = parseSlug(params.slug, 'packages');
-        if (!dealTypeId) throw new Error('Invalid package URL');
-
-        const partnerCode = `package_${dealTypeId}`;
+        const { dealTypeId, dealType, partnerCode } = parseSlug(params.slug, 'packages');
+        if (!dealTypeId || !partnerCode) throw new Error('Invalid package URL');
 
         // 1. Fetch Local DB Data (for pricing, mrp, cart info)
         const localRes = await api.get(`/catalog/products/${partnerCode}`);
         setLocalData(localRes.data);
 
-        // 2. Fetch Healthians Rich Data
+        // 2. Fetch Healthians Rich Data using the correct dealType from the partnerCode
+        const richDealType = dealType || 'package';
+        const richItemType = richDealType === 'package' ? 'PACKAGE' : richDealType === 'profile' ? 'PROFILE' : 'PARAMETER';
         try {
-          const richRes = await api.get(`/catalog/product-details/package/${dealTypeId}`);
+          const richRes = await api.get(`/catalog/product-details/${richDealType}/${dealTypeId}`);
           if (richRes.data && richRes.data.status === true) {
-            setRichData(mapHealthiansResponseToViewModel(richRes.data.data, 'PACKAGE'));
+            setRichData(mapHealthiansResponseToViewModel(richRes.data.data, richItemType));
           }
         } catch (richErr) {
           console.warn('[Package Details] Failed to fetch rich data:', richErr);

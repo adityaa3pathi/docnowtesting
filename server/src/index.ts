@@ -39,14 +39,7 @@ const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = process.env.APP_BASE_URL ? [process.env.APP_BASE_URL, 'http://localhost:3000', 'https://docnow.in', 'https://www.docnow.in'] : ['http://localhost:3000', 'https://docnow.in', 'https://www.docnow.in'];
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: true,
     credentials: true,
 }));
 

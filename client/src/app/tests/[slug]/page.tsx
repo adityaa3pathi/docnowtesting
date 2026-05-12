@@ -41,59 +41,20 @@ export default function TestDetailsPage(props: { params: Promise<{ slug: string 
   useEffect(() => {
     const fetchDetails = async () => {
       try {
-        const { dealTypeId } = parseSlug(params.slug, 'tests');
-        if (!dealTypeId) throw new Error('Invalid test URL');
+        const { dealTypeId, dealType, partnerCode } = parseSlug(params.slug, 'tests');
+        if (!dealTypeId || !partnerCode) throw new Error('Invalid test URL');
 
-        // We don't know if it's a profile or parameter, but our local DB 
-        // /api/catalog/products/:code needs the full code.
-        // Wait, since we don't know the exact dealType string for partnerCode, 
-        // we might have a problem looking it up strictly by ID if we don't have the prefix.
-        // Let's assume the UI routing passes something like "vitamin-d-parameter_123" 
-        // Actually our slug gen uses `dealTypeId`. We might need to change `parseSlug` 
-        // to handle the full partner code or we just look it up by ID.
-        // Wait, the `/packages` page links to `/packages/[slug]`. 
-        // We will generate the slug like: `generateProductSlug(test.name, test.partnerCode)`
-        // If we use the full partnerCode (e.g. "parameter_123") in the URL instead of just the ID,
-        // it makes lookup easy!
-        // Let's adapt parseSlug here: the last part of slug is partnerCode? 
-        // Ah, if partnerCode has an underscore (e.g. `parameter_123`), the slug might be `name-parameter_123`.
-        
-        // Let's extract partnerCode from slug. It ends with `-type_id`.
-        // e.g. `vitamin-d-parameter_123` -> `parameter_123`.
-        // We'll split by `-` and take the last part if it contains `_`.
-        // If the user's local partnerCode is `parameter_123`, we use that!
-        
-        const slugParts = params.slug.split('-');
-        // Check if the last part is like package_123 or parameter_123 or profile_123
-        let partnerCode = slugParts[slugParts.length - 1]; 
-        
-        // If partnerCode doesn't have an underscore, maybe the slug generator was only passing ID.
-        // But let's assume we will pass the full partnerCode in the slug: `name-${partnerCode}`
-        if (!partnerCode.includes('_')) {
-            // fallback (maybe the slug format was just name-id and we assume profile or parameter)
-            // But we can't reliably guess. Let's just use what we have and hope the backend route 
-            // `products/:code` can handle it, or we fix the slug generator to include the full code.
-            // For now, if there is no underscore, let's assume it's just the ID and we need to search.
-            // Actually, we'll fix `generateProductSlug` to use `partnerCode` instead of just `dealTypeId` 
-            // in the next step. So `partnerCode` will be e.g. `parameter_123`
-            // Wait, in `mapProductDetails.ts`, I wrote `dealTypeId`. I will update the slug generator 
-            // to append the full partnerCode. So the last part might be `package_94`!
-            // Wait, `-` is the separator. So `name-package_94`. 
-            // `slugParts[slugParts.length - 1]` will be `package_94`.
-        }
-
+        // 1. Fetch Local DB Data (for pricing, mrp, cart info)
         const localRes = await api.get(`/catalog/products/${partnerCode}`);
         setLocalData(localRes.data);
 
-        // Extract dealType and dealTypeId from the partnerCode for the Healthians API
-        // partnerCode is like "package_94"
-        const [dealType, id] = partnerCode.split('_');
-
-        // 2. Fetch Healthians Rich Data
+        // 2. Fetch Healthians Rich Data using the correct dealType from the partnerCode
+        const richDealType = dealType || 'parameter';
+        const richItemType = richDealType === 'package' ? 'PACKAGE' : richDealType === 'profile' ? 'PROFILE' : 'PARAMETER';
         try {
-          const richRes = await api.get(`/catalog/product-details/${dealType}/${id}`);
+          const richRes = await api.get(`/catalog/product-details/${richDealType}/${dealTypeId}`);
           if (richRes.data && richRes.data.status === true) {
-            setRichData(mapHealthiansResponseToViewModel(richRes.data.data, dealType.toUpperCase() as any));
+            setRichData(mapHealthiansResponseToViewModel(richRes.data.data, richItemType));
           }
         } catch (richErr) {
           console.warn('[Test Details] Failed to fetch rich data:', richErr);
