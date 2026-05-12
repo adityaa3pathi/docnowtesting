@@ -44,7 +44,9 @@ const readSupportSource = cache(async () => {
         }
     }
 
-    throw new Error(`Unable to locate ${FAQ_SOURCE_FILE}.`);
+    // If the markdown file does not exist, return an empty string.
+    // The parsers below will handle an empty source gracefully.
+    return '';
 });
 
 function cleanInlineMarkdown(text: string) {
@@ -246,16 +248,38 @@ function parseFaqs(raw: string): SupportFaqItem[] {
 }
 
 export const getSupportFaqs = cache(async () => {
-    const source = await readSupportSource();
-    return parseFaqs(source);
+    try {
+        const source = await readSupportSource();
+        return parseFaqs(source);
+    } catch {
+        // If the source is missing, return an empty list.
+        return [] as SupportFaqItem[];
+    }
 });
 
 export const getHelpCenterContent = cache(async () => {
-    const source = await readSupportSource();
-    return parseSupportPage(source, 'DocNow Help Centre');
+    try {
+        const source = await readSupportSource();
+        return parseSupportPage(source, 'DocNow Help Centre');
+    } catch {
+        // Return a minimal structure if the source is missing.
+        return {
+            title: 'DocNow Help Centre',
+            intro: [],
+            sections: [],
+        } as SupportPageContent;
+    }
 });
 
 export const getContactPageContent = cache(async () => {
-    const source = await readSupportSource();
-    return parseSupportPage(source, 'Contact DocNow');
+    try {
+        const source = await readSupportSource();
+        return parseSupportPage(source, 'Contact DocNow');
+    } catch {
+        return {
+            title: 'Contact DocNow',
+            intro: [],
+            sections: [],
+        } as SupportPageContent;
+    }
 });
