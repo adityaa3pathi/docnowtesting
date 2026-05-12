@@ -20,6 +20,7 @@ to_be_implemented.md
 .vscode/
 .idea/
 *.log
+*.pem
 
 # Server Storage
 server/storage/
