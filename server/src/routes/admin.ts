@@ -16,7 +16,6 @@ import {
 import { exportAdminData } from '../controllers/admin/export';
 import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callbacks';
 import { listCorporateInquiries, updateCorporateInquiryStatus } from '../controllers/admin/corporateInquiries';
-import { listAbandonedCarts } from '../controllers/admin/abandonedCarts';
 import { listFailedOrders } from '../controllers/admin/failedOrders';
 
 const router = Router();
@@ -66,7 +65,7 @@ router.get('/failed-orders', ...admin, listFailedOrders);
 router.get('/audit-logs', ...admin, getAuditLogs);
 
 // ── Abandoned Carts ─────────────────────────────────────
-router.get('/abandoned-carts', ...admin, listAbandonedCarts);
+// Moved to manager routes
 
 // ── Callbacks ──────────────────────────────────────────
 router.get('/callbacks', ...admin, listCallbacks);
