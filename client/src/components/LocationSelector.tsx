@@ -35,21 +35,7 @@ export function LocationSelector({ onLocationVerified, variant = 'default' }: Lo
         }
     };
 
-    const handleDetectLocation = () => {
-        if (!navigator.geolocation) {
-            toast.error("Geolocation is not supported by your browser");
-            return;
-        }
 
-        navigator.geolocation.getCurrentPosition(
-            async () => {
-                toast.success("Location detected! (Reverse Geocoding to be implemented)");
-            },
-            () => {
-                toast.error("Unable to retrieve your location");
-            }
-        );
-    };
 
     const handleChangeLocation = () => {
         resetServiceability();
@@ -117,27 +103,7 @@ export function LocationSelector({ onLocationVerified, variant = 'default' }: Lo
                         </button>
                     </form>
 
-                    <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className={`w-full border-t ${isGlass ? 'border-white/10' : 'border-gray-200'}`}></div>
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                            <span className={`px-2 ${isGlass ? 'bg-transparent text-white/40' : 'bg-white text-gray-500'}`}>Or</span>
-                        </div>
-                    </div>
 
-                    <button
-                        type="button"
-                        onClick={handleDetectLocation}
-                        className={`mt-4 w-full flex items-center justify-center gap-2 font-medium py-2.5 rounded-xl transition-colors ${
-                            isGlass 
-                                ? 'text-purple-300 hover:bg-white/5' 
-                                : 'text-primary hover:bg-primary/5'
-                        }`}
-                    >
-                        <Navigation className="w-4 h-4" />
-                        Use Current Location
-                    </button>
 
                     {serviceabilityError && (
                         <div className="mt-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl text-center font-medium border border-red-100">
