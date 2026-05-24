@@ -7,6 +7,21 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useGlobalSearch, SearchResultItem } from '@/hooks/useGlobalSearch';
 import { generateProductSlug } from '@/lib/mapProductDetails';
 
+function SkeletonRow() {
+    return (
+        <li className="px-4 py-3 flex items-center justify-between gap-4 animate-pulse">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-gray-200 flex-shrink-0" />
+                <div className="flex-1 min-w-0 space-y-2">
+                    <div className="h-3.5 bg-gray-200 rounded-full w-3/4" />
+                    <div className="h-2.5 bg-gray-100 rounded-full w-1/3" />
+                </div>
+            </div>
+            <div className="w-12 h-4 bg-gray-200 rounded-full flex-shrink-0" />
+        </li>
+    );
+}
+
 export function GlobalSearch() {
     const [query, setQuery] = useState('');
     const debouncedQuery = useDebounce(query, 300);
@@ -73,7 +88,16 @@ export function GlobalSearch() {
         setIsOpen(false);
     };
 
-    const showDropdown = isOpen && (query.trim().length > 0);
+    // Only show dropdown when we have meaningful content:
+    // 1. Loading state (show skeletons) — but only after debounce has kicked in
+    // 2. Results are available
+    // 3. No results found (after search completed)
+    // 4. Error state
+    const hasQuery = query.trim().length > 0;
+    const hasDebouncedQuery = debouncedQuery.trim().length > 0;
+    const hasResults = results.length > 0;
+    const isNoResults = !isLoading && !isError && hasDebouncedQuery && results.length === 0 && debouncedQuery === query;
+    const showDropdown = isOpen && hasQuery && (isLoading || hasResults || isNoResults || isError);
 
     return (
         <div ref={wrapperRef} className="relative w-full">
@@ -88,11 +112,11 @@ export function GlobalSearch() {
                         setIsOpen(true);
                     }}
                     onKeyDown={handleKeyDown}
-                    onFocus={() => setIsOpen(true)}
+                    onFocus={() => { if (hasQuery) setIsOpen(true); }}
                     placeholder="Search for lab tests or health packages..."
                     className="w-full h-11 pl-12 pr-10 text-gray-900 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-shadow shadow-sm placeholder:text-gray-400"
                     role="combobox"
-                    aria-expanded={isOpen}
+                    aria-expanded={showDropdown}
                     aria-controls="search-dropdown"
                     aria-autocomplete="list"
                 />
@@ -117,21 +141,28 @@ export function GlobalSearch() {
             {showDropdown && (
                 <div 
                     id="search-dropdown"
-                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-50 max-h-[400px] overflow-y-auto custom-scrollbar"
+                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-50 max-h-[400px] overflow-y-auto"
                     role="listbox"
                 >
                     {isError ? (
                         <div className="p-4 text-center text-red-500 text-sm font-medium">
                             Failed to fetch search results. Please try again.
                         </div>
-                    ) : results.length === 0 && !isLoading && debouncedQuery === query ? (
+                    ) : isLoading && results.length === 0 ? (
+                        /* Skeleton loading — only when we have zero results yet */
+                        <ul className="py-1">
+                            <SkeletonRow />
+                            <SkeletonRow />
+                            <SkeletonRow />
+                        </ul>
+                    ) : isNoResults ? (
                         <div className="p-8 text-center text-gray-500">
                             <Search className="w-8 h-8 mx-auto text-gray-300 mb-3" />
-                            <p className="text-sm font-semibold text-gray-700">No results found for "{query}"</p>
+                            <p className="text-sm font-semibold text-gray-700">No results found for &ldquo;{query}&rdquo;</p>
                             <p className="text-xs mt-1 text-gray-400">Try checking for typos or using different keywords</p>
                         </div>
                     ) : (
-                        <ul className="py-2">
+                        <ul className="py-1">
                             {results.map((item, index) => {
                                 const isSelected = index === selectedIndex;
                                 const isPackage = item.type === 'PACKAGE' || item.type === 'PROFILE';
