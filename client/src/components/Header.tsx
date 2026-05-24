@@ -57,12 +57,10 @@ export function Header() {
 
     const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
     const [citySearch, setCitySearch] = useState('');
-    const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
     // Pincode Dialog State
     const [isPincodeDialogOpen, setIsPincodeDialogOpen] = useState(false);
     const [pincodeInput, setPincodeInput] = useState('');
-    const [isLoadingPincode, setIsLoadingPincode] = useState(false);
 
     // Callback Form State
     const [isCallbackOpen, setIsCallbackOpen] = useState(false);
@@ -133,55 +131,6 @@ export function Header() {
         updateCity(city);
         setIsLocationDialogOpen(false);
         setCitySearch('');
-    };
-
-    const detectUserLocation = () => {
-        if (!navigator.geolocation) {
-            toast.error("Geolocation is not supported by your browser");
-            return;
-        }
-        setIsLoadingLocation(true);
-        setIsLoadingPincode(true);
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                try {
-                    const { latitude, longitude } = position.coords;
-                    const response = await fetch(
-                        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-                    );
-                    const data = await response.json();
-                    const detectedCity = data.city || data.locality || data.principalSubdivision;
-                    let detectedPincode = data.postcode;
-                    if (!detectedPincode) {
-                        try {
-                            const nominatimRes = await fetch(
-                                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-                            );
-                            const nominatimData = await nominatimRes.json();
-                            if (nominatimData.address?.postcode) {
-                                detectedPincode = nominatimData.address.postcode;
-                            }
-                        } catch (err) {
-                            console.error("Nominatim fallback failed:", err);
-                        }
-                    }
-                    if (detectedCity) updateCity(`${detectedCity} (Detected)`);
-                    if (detectedPincode) {
-                        setPincodeInput(detectedPincode);
-                        updatePincode(detectedPincode);
-                    }
-                } catch (error) {
-                    console.error("Error detecting location:", error);
-                } finally {
-                    setIsLoadingLocation(false);
-                    setIsLoadingPincode(false);
-                }
-            },
-            () => {
-                setIsLoadingLocation(false);
-                setIsLoadingPincode(false);
-            }
-        );
     };
 
     const handlePincodeSubmit = async () => {
@@ -268,17 +217,7 @@ export function Header() {
                                             className="w-full pl-10"
                                         />
                                     </div>
-                                    <Button
-                                        variant="outline"
-                                        className="w-full justify-start border-border text-muted-foreground rounded-xl"
-                                        onClick={detectUserLocation}
-                                        disabled={isLoadingLocation}
-                                    >
-                                        {isLoadingLocation
-                                            ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" />
-                                            : <Navigation className="mr-2 h-4 w-4 text-primary" />}
-                                        {isLoadingLocation ? "Detecting..." : "Use Current Location"}
-                                    </Button>
+
                                     {!citySearch && (
                                         <div>
                                             <h3 className="mb-4 text-xs font-black uppercase tracking-widest text-muted-foreground">Metro Cities</h3>
@@ -346,17 +285,7 @@ export function Header() {
                                             className="flex-1 h-12 w-full rounded-xl border-2 border-primary/20 bg-muted/30 text-center text-2xl font-bold tracking-widest text-primary placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 transition-colors"
                                             autoComplete="off"
                                         />
-                                        <Button
-                                            variant="outline"
-                                            className="w-full justify-center border-border text-muted-foreground hover:text-primary hover:border-primary/50 rounded-xl"
-                                            onClick={detectUserLocation}
-                                            disabled={isLoadingPincode}
-                                        >
-                                            {isLoadingPincode
-                                                ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" />
-                                                : <Navigation className="mr-2 h-4 w-4 text-primary" />}
-                                            {isLoadingPincode ? "Detecting..." : "Detect my location"}
-                                        </Button>
+
                                     </div>
                                     <div className="grid grid-cols-3 gap-3">
                                         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
