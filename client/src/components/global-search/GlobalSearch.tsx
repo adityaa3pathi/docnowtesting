@@ -204,7 +204,7 @@ export function GlobalSearch() {
                                         <div className="text-right flex-shrink-0">
                                             <p className="text-sm font-bold text-gray-900">₹{item.price}</p>
                                             {item.mrp && item.mrp > item.price && (
-                                                <p className="text-[11px] font-semibold text-gray-400 line-through">₹{item.mrp}</p>
+                                                <p className="text-[13px] font-semibold text-gray-500 line-through">₹{item.mrp}</p>
                                             )}
                                         </div>
                                     </li>
