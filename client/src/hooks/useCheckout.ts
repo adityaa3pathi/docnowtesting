@@ -4,6 +4,12 @@ import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { SlotItem, AppliedPromo, Address } from '@/types/cart';
 
+export interface CartItemBase {
+    testCode: string;
+    testName: string;
+    patientId?: string | null;
+}
+
 interface CheckoutDeps {
     slots: SlotItem[];
     selectedTime: string;
@@ -15,6 +21,7 @@ interface CheckoutDeps {
     useWallet: boolean;
     billingPatientId: string;
     isSlotLocked: boolean;
+    cartItems: CartItemBase[];
     refreshCart: () => Promise<void>;
 }
 
@@ -29,6 +36,7 @@ export function useCheckout({
     useWallet,
     billingPatientId,
     isSlotLocked,
+    cartItems,
     refreshCart
 }: CheckoutDeps) {
     const router = useRouter();
@@ -46,6 +54,17 @@ export function useCheckout({
         if (!selectedDate || !selectedTime || !isSlotLocked) {
             toast.error('Please select and lock a collection slot before checkout');
             return;
+        }
+
+        if (cartItems && cartItems.length > 0) {
+            const duplicates = cartItems.filter((item, index, self) =>
+                self.findIndex(t => t.testCode === item.testCode && (t.patientId || 'self') === (item.patientId || 'self')) !== index
+            );
+
+            if (duplicates.length > 0) {
+                toast.error(`"${duplicates[0].testName}" is assigned multiple times to the same person. Please assign it to different members or remove the duplicates.`, { duration: 6000 });
+                return;
+            }
         }
 
         const slot = slots.find(s => s.slot_time === selectedTime);
