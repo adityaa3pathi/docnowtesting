@@ -215,7 +215,7 @@ export function Header() {
         <>
             {/* ─── Main Navbar ─── */}
             <nav
-                className="sticky top-0 z-50 w-full overflow-hidden"
+                className="sticky top-0 z-50 w-full"
                 style={{
                     background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)',
                 }}

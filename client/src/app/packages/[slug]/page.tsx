@@ -101,7 +101,7 @@ export default function PackageDetailsPage(props: { params: Promise<{ slug: stri
           <p className="text-gray-500 mb-6 text-center max-w-md">
             {error || 'The package you are looking for does not exist or is currently unavailable.'}
           </p>
-          <Button onClick={() => router.push('/packages')}>View All Packages</Button>
+          <Button onClick={() => router.push('/search?type=PACKAGE')}>View All Packages</Button>
         </div>
         <Footer />
       </main>
@@ -154,11 +154,11 @@ export default function PackageDetailsPage(props: { params: Promise<{ slug: stri
       <section className="bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 pt-8 pb-16">
         <div className="container mx-auto px-4 max-w-4xl">
           <button
-            onClick={() => router.push('/packages')}
+            onClick={() => router.push('/search?type=PACKAGE')}
             className="flex items-center gap-1.5 text-white/70 hover:text-white text-sm font-medium mb-8 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Packages
+            Back to All Packages
           </button>
 
           <div className="flex flex-col md:flex-row gap-6 md:items-start">

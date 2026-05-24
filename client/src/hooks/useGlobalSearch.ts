@@ -20,6 +20,7 @@ export function useGlobalSearch(query: string) {
     useEffect(() => {
         if (!query.trim()) {
             setResults([]);
+            setIsLoading(false);
             setIsError(false);
             return;
         }
