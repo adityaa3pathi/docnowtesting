@@ -1,6 +1,7 @@
 import { Router, Response, Request } from 'express';
 import { prisma } from '../db';
 import { HealthiansAdapter } from '../adapters/healthians';
+import { buildCatalogSearchWhere, rankSearchResults } from '../utils/searchUtils';
 
 const router = Router();
 
@@ -21,7 +22,10 @@ router.get('/products', async (req: Request, res: Response) => {
         const types = (type as string).split(',').map(t => t.trim().toUpperCase());
         where.type = types.length === 1 ? types[0] : { in: types };
     }
-    if (search) where.name = { contains: search as string, mode: 'insensitive' };
+    if (search) {
+        const searchClause = buildCatalogSearchWhere(search as string);
+        where.OR = searchClause.OR;
+    }
     if (category) {
         where.categories = {
             some: { category: { slug: category as string, isActive: true } }
@@ -46,7 +50,7 @@ router.get('/products', async (req: Request, res: Response) => {
             prisma.catalogItem.count({ where }),
         ]);
 
-        const formatted = items.map(item => ({
+        let formatted = items.map(item => ({
             id: item.id,
             partnerCode: item.partnerCode,
             name: item.name,
@@ -61,6 +65,11 @@ router.get('/products', async (req: Request, res: Response) => {
             mrp: item.discountedPrice ? item.displayPrice : null,
             categories: item.categories.map(c => c.category)
         }));
+
+        // Re-rank results by relevance when a search term is present
+        if (search) {
+            formatted = rankSearchResults(formatted, search as string);
+        }
 
         res.json({
             products: formatted,

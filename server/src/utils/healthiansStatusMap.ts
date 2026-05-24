@@ -95,3 +95,39 @@ export function resolveHealthiansStatus(bsCode: string): HealthiansStatusInfo {
         source: 'UNKNOWN — not in webhook or B2B API documentation',
     };
 }
+
+/**
+ * Customer-facing cancellation denial reasons by BS code.
+ * Maps raw partner status codes to professional, human-readable messages
+ * so end users never see internal codes like "BS0026".
+ */
+const CANCEL_DENIAL_MESSAGES: Record<string, string> = {
+    'BS007':  'Your sample has already been collected. Cancellation is no longer available.',
+    'BS008':  'Your sample has been received at the lab. Cancellation is no longer available.',
+    'BS003':  'This booking has already been cancelled.',
+    'BS0013': 'This booking has been rescheduled. Please manage the new booking instead.',
+    'BS0018': 'A resample has been requested for this booking. Please contact support for assistance.',
+    'BS018':  'A resample has been requested for this booking. Please contact support for assistance.',
+    'BS015':  'Your reports are being processed. Cancellation is no longer available.',
+};
+
+/**
+ * Get a professional, user-facing message explaining why a booking cannot be cancelled.
+ * Internal BS codes are never exposed to end users.
+ */
+export function getCancelDenialMessage(bsCode: string | null | undefined): string {
+    if (!bsCode) return 'This booking cannot be cancelled at this time. Please contact support for assistance.';
+
+    const friendly = CANCEL_DENIAL_MESSAGES[bsCode];
+    if (friendly) return friendly;
+
+    // For any unmapped code, log it but show a generic professional message
+    const mapped = HEALTHIANS_STATUS_MAP[bsCode];
+    if (mapped) {
+        return `This booking is currently in "${mapped.docnowStatus}" status and cannot be cancelled. Please contact support for assistance.`;
+    }
+
+    console.warn(`[StatusMap] No cancel-denial message for BS code: ${bsCode}`);
+    return 'This booking cannot be cancelled at this time. Please contact support for assistance.';
+}
+

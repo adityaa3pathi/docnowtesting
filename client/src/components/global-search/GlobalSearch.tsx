@@ -1,0 +1,188 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, X, Loader2, Package, TestTubes } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useGlobalSearch, SearchResultItem } from '@/hooks/useGlobalSearch';
+import { generateProductSlug } from '@/lib/mapProductDetails';
+
+export function GlobalSearch() {
+    const [query, setQuery] = useState('');
+    const debouncedQuery = useDebounce(query, 300);
+    const { results, isLoading, isError } = useGlobalSearch(debouncedQuery);
+    
+    const [isOpen, setIsOpen] = useState(false);
+    const [selectedIndex, setSelectedIndex] = useState(-1);
+    
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
+
+    // Reset selection when results change
+    useEffect(() => {
+        setSelectedIndex(-1);
+    }, [results]);
+
+    // Handle click outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    const handleSelect = (item: SearchResultItem) => {
+        setIsOpen(false);
+        setQuery('');
+        const slug = generateProductSlug(item.name, item.partnerCode);
+        const basePath = (item.type === 'PACKAGE' || item.type === 'PROFILE') ? 'packages' : 'tests';
+        router.push(`/${basePath}/${slug}`);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (!isOpen) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                setIsOpen(true);
+            }
+            return;
+        }
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setSelectedIndex(prev => (prev < results.length - 1 ? prev + 1 : prev));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setSelectedIndex(prev => (prev > 0 ? prev - 1 : 0));
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (selectedIndex >= 0 && selectedIndex < results.length) {
+                handleSelect(results[selectedIndex]);
+            }
+        } else if (e.key === 'Escape') {
+            setIsOpen(false);
+        }
+    };
+
+    const handleClear = () => {
+        setQuery('');
+        setIsOpen(false);
+    };
+
+    const showDropdown = isOpen && (query.trim().length > 0);
+
+    return (
+        <div ref={wrapperRef} className="relative w-full">
+            {/* Search Input */}
+            <div className="relative flex items-center w-full">
+                <Search className="absolute left-4 w-5 h-5 text-gray-400" />
+                <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => {
+                        setQuery(e.target.value);
+                        setIsOpen(true);
+                    }}
+                    onKeyDown={handleKeyDown}
+                    onFocus={() => setIsOpen(true)}
+                    placeholder="Search for lab tests or health packages..."
+                    className="w-full h-11 pl-12 pr-10 text-gray-900 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-shadow shadow-sm placeholder:text-gray-400"
+                    role="combobox"
+                    aria-expanded={isOpen}
+                    aria-controls="search-dropdown"
+                    aria-autocomplete="list"
+                />
+                
+                {/* Right side icons */}
+                <div className="absolute right-3 flex items-center">
+                    {isLoading ? (
+                        <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
+                    ) : query ? (
+                        <button 
+                            onClick={handleClear}
+                            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                            aria-label="Clear search"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    ) : null}
+                </div>
+            </div>
+
+            {/* Dropdown Results */}
+            {showDropdown && (
+                <div 
+                    id="search-dropdown"
+                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-50 max-h-[400px] overflow-y-auto custom-scrollbar"
+                    role="listbox"
+                >
+                    {isError ? (
+                        <div className="p-4 text-center text-red-500 text-sm font-medium">
+                            Failed to fetch search results. Please try again.
+                        </div>
+                    ) : results.length === 0 && !isLoading && debouncedQuery === query ? (
+                        <div className="p-8 text-center text-gray-500">
+                            <Search className="w-8 h-8 mx-auto text-gray-300 mb-3" />
+                            <p className="text-sm font-semibold text-gray-700">No results found for "{query}"</p>
+                            <p className="text-xs mt-1 text-gray-400">Try checking for typos or using different keywords</p>
+                        </div>
+                    ) : (
+                        <ul className="py-2">
+                            {results.map((item, index) => {
+                                const isSelected = index === selectedIndex;
+                                const isPackage = item.type === 'PACKAGE' || item.type === 'PROFILE';
+                                
+                                return (
+                                    <li 
+                                        key={item.partnerCode}
+                                        role="option"
+                                        aria-selected={isSelected}
+                                        onClick={() => handleSelect(item)}
+                                        onMouseEnter={() => setSelectedIndex(index)}
+                                        className={`px-4 py-3 cursor-pointer flex items-center justify-between gap-4 transition-colors ${
+                                            isSelected ? 'bg-purple-50' : 'hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className={`p-2.5 rounded-xl flex-shrink-0 ${isPackage ? 'bg-blue-100/50 text-blue-600' : 'bg-emerald-100/50 text-emerald-600'}`}>
+                                                {isPackage ? <Package className="w-5 h-5" /> : <TestTubes className="w-5 h-5" />}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-bold text-gray-900 truncate">
+                                                    {item.name}
+                                                </p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                                                        isPackage ? 'bg-blue-50 text-blue-700 border border-blue-200/50' : 'bg-emerald-50 text-emerald-700 border border-emerald-200/50'
+                                                    }`}>
+                                                        {isPackage ? 'PACKAGE' : 'TEST'}
+                                                    </span>
+                                                    {item.categories?.[0] && (
+                                                        <span className="text-[11px] font-medium text-gray-500 truncate">
+                                                            • {item.categories[0].name}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="text-right flex-shrink-0">
+                                            <p className="text-sm font-bold text-gray-900">₹{item.price}</p>
+                                            {item.mrp && item.mrp > item.price && (
+                                                <p className="text-[11px] font-semibold text-gray-400 line-through">₹{item.mrp}</p>
+                                            )}
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}

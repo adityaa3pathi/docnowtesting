@@ -71,7 +71,15 @@ export function setAuthResponse(req: Request, res: Response, tokens: Tokens, use
 }
 
 export function clearAuthCookies(res: Response) {
+    // Clear cookies with the current domain (.docnow.in)
     res.clearCookie('docnow_access', { ...ACCESS_COOKIE_OPTS, maxAge: 0 });
     res.clearCookie('docnow_refresh', { ...REFRESH_COOKIE_OPTS, maxAge: 0 });
     res.clearCookie('docnow_csrf', { ...CSRF_COOKIE_OPTS, maxAge: 0 });
+
+    // Also clear legacy cookies that were set WITHOUT a domain
+    // (from when NODE_ENV wasn't set to production). Cookie deletion
+    // requires matching the exact domain the cookie was set with.
+    res.clearCookie('docnow_access', { path: '/', maxAge: 0 });
+    res.clearCookie('docnow_refresh', { path: '/api/auth', maxAge: 0 });
+    res.clearCookie('docnow_csrf', { path: '/', maxAge: 0 });
 }

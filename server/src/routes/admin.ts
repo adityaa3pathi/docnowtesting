@@ -10,6 +10,8 @@ import {
     listOrders,
     getAuditLogs,
     listPromos, createPromo, updatePromo,
+    listFeaturedPackages, searchCatalogForFeaturing, addFeaturedPackage, removeFeaturedPackage, reorderFeaturedPackages, toggleFeaturedActive,
+    listFeaturedTests, searchTestsForFeaturing, addFeaturedTest, removeFeaturedTest, reorderFeaturedTests, toggleFeaturedTestActive
 } from '../controllers/admin';
 import { exportAdminData } from '../controllers/admin/export';
 import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callbacks';
@@ -81,5 +83,21 @@ router.get('/export', ...admin, exportAdminData);
 router.get('/promos', ...admin, listPromos);
 router.post('/promos', ...admin, createPromo);
 router.put('/promos/:id', ...admin, updatePromo);
+
+// ── Featured Packages ───────────────────────────────────
+router.get('/featured-packages', ...admin, listFeaturedPackages);
+router.get('/featured-packages/search', ...admin, searchCatalogForFeaturing);
+router.post('/featured-packages', ...admin, addFeaturedPackage);
+router.put('/featured-packages/reorder', ...admin, reorderFeaturedPackages);
+router.delete('/featured-packages/:id', ...admin, removeFeaturedPackage);
+router.put('/featured-packages/:id/toggle', ...admin, toggleFeaturedActive);
+
+// ── Featured Tests ──────────────────────────────────────
+router.get('/featured-tests', ...admin, listFeaturedTests);
+router.get('/featured-tests/search', ...admin, searchTestsForFeaturing);
+router.post('/featured-tests', ...admin, addFeaturedTest);
+router.put('/featured-tests/reorder', ...admin, reorderFeaturedTests);
+router.delete('/featured-tests/:id', ...admin, removeFeaturedTest);
+router.put('/featured-tests/:id/toggle', ...admin, toggleFeaturedTestActive);
 
 export default router;

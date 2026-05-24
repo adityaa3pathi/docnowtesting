@@ -21,6 +21,7 @@ import { sendInvoiceViaWhatsApp } from '../services/invoiceNotifications';
 import { getInvoiceLinkExpiryHours } from '../services/invoiceAccess';
 import { getReportLinkExpiryHours } from '../services/reportAccess';
 import { sendSpecificReportViaWhatsApp } from '../services/reportNotifications';
+import { buildCatalogSearchWhere, normalizeSearchTerm } from '../utils/searchUtils';
 
 const router = Router();
 const healthians = HealthiansAdapter.getInstance();
@@ -129,6 +130,7 @@ router.post('/catalog/sync', ...mgr, async (req: AuthRequest, res: Response) => 
                     data: toCreate.map(p => ({
                         partnerCode: p.partnerCode,
                         name: p.name,
+                        searchName: normalizeSearchTerm(p.name),
                         type: p.type,
                         partnerPrice: p.price,
                         displayPrice: p.price,
@@ -153,6 +155,7 @@ router.post('/catalog/sync', ...mgr, async (req: AuthRequest, res: Response) => 
                         data: {
                             partnerPrice: p.price,
                             name: p.name,
+                            searchName: normalizeSearchTerm(p.name),
                             type: p.type,
                             description: p.raw.description || undefined,
                             parameters: p.raw.parameters || p.raw.parameter_count?.toString() || undefined,
@@ -189,7 +192,10 @@ router.get('/catalog', ...mgr, async (req: AuthRequest, res: Response) => {
     const where: any = {};
     if (type) where.type = type;
     if (enabled !== undefined) where.isEnabled = enabled === 'true';
-    if (search) where.name = { contains: search as string, mode: 'insensitive' };
+    if (search) {
+        const searchClause = buildCatalogSearchWhere(search as string);
+        where.OR = searchClause.OR;
+    }
 
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
 
@@ -231,7 +237,10 @@ router.put('/catalog/:id', ...mgr, async (req: AuthRequest, res: Response) => {
         if (displayPrice !== undefined) data.displayPrice = parseFloat(displayPrice);
         if (discountedPrice !== undefined) data.discountedPrice = discountedPrice === null ? null : parseFloat(discountedPrice);
         if (isEnabled !== undefined) data.isEnabled = Boolean(isEnabled);
-        if (name !== undefined) data.name = name;
+        if (name !== undefined) {
+            data.name = name;
+            data.searchName = normalizeSearchTerm(name);
+        }
         if (description !== undefined) data.description = description;
         if (parameters !== undefined) data.parameters = parameters;
         if (sampleType !== undefined) data.sampleType = sampleType;
@@ -1048,6 +1057,8 @@ router.post('/orders/:id/cancel', ...mgr, async (req: AuthRequest, res: Response
             message.includes('already cancelled') ||
             message.includes('Cancellation not allowed') ||
             message.includes('cannot be cancelled') ||
+            message.includes('no longer available') ||
+            message.includes('contact support') ||
             message.includes('Partner Booking ID is missing') ||
             message.includes('No active customers found')
         ) {
@@ -1638,6 +1649,8 @@ router.post('/bookings/:id/cancel', ...mgr, async (req: AuthRequest, res: Respon
             message.includes('already cancelled') ||
             message.includes('Cancellation not allowed') ||
             message.includes('cannot be cancelled') ||
+            message.includes('no longer available') ||
+            message.includes('contact support') ||
             message.includes('Partner Booking ID is missing') ||
             message.includes('No active customers found')
         ) {
