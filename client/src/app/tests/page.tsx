@@ -20,6 +20,9 @@ import {
   ArrowLeft,
   X,
   Tag,
+  TestTube,
+  Microscope,
+  Dna,
 } from 'lucide-react';
 import { generateProductSlug } from '@/lib/mapProductDetails';
 import Link from 'next/link';
@@ -266,23 +269,38 @@ export default function TestsPage() {
               return (
                 <Link href={`/tests/${slug}`} key={test.id} className="block h-full">
                   <Card
-                    className="p-5 sm:p-6 bg-white border-gray-100 hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300 group h-full flex flex-col"
+                    className="p-0 bg-white border-gray-100 hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300 group h-full flex flex-col relative overflow-hidden"
                   >
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex flex-wrap gap-1.5">
-                      {test.categories.map((cat) => (
-                        <span
-                          key={cat.id}
-                          className="bg-blue-50 text-blue-700 text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full border border-blue-100"
-                        >
-                          {cat.name}
+                  {/* Top accent bar */}
+                  <div className="h-1 bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500" />
+
+                  <div className="p-5 sm:p-6 flex flex-col flex-1">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex flex-wrap gap-1.5">
+                        {test.categories.map((cat) => (
+                          <span
+                            key={cat.id}
+                            className="bg-blue-50 text-blue-700 text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full border border-blue-100"
+                          >
+                            {cat.name}
+                          </span>
+                        ))}
+                      </div>
+                      {discount > 0 && (
+                        <span className="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-md flex-shrink-0">
+                          {discount}% OFF
                         </span>
-                      ))}
+                      )}
                     </div>
-                    {discount > 0 && (
-                      <span className="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-md flex-shrink-0">
-                        {discount}% OFF
-                      </span>
+
+                  {/* Icon */}
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 group-hover:bg-blue-100 transition-colors">
+                    {test.id.charCodeAt(0) % 3 === 0 ? (
+                      <TestTube className="h-6 w-6 text-blue-600" />
+                    ) : test.id.charCodeAt(0) % 3 === 1 ? (
+                      <Microscope className="h-6 w-6 text-blue-600" />
+                    ) : (
+                      <Dna className="h-6 w-6 text-blue-600" />
                     )}
                   </div>
 
@@ -337,7 +355,8 @@ export default function TestsPage() {
                       </Button>
                     </div>
                   </div>
-                </Card>
+                </div>
+              </Card>
               </Link>
               );
             })}

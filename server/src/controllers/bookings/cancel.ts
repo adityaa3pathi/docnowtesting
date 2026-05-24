@@ -62,6 +62,8 @@ export async function cancelBooking(req: AuthRequest, res: Response) {
             message.includes('already cancelled') ||
             message.includes('Cancellation not allowed') ||
             message.includes('cannot be cancelled') ||
+            message.includes('no longer available') ||
+            message.includes('contact support') ||
             message.includes('Partner Booking ID is missing') ||
             message.includes('No active customers found')
         ) {

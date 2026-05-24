@@ -7,3 +7,19 @@ export { getReferralStats } from './referrals';
 export { listOrders } from './orders';
 export { getAuditLogs } from './audit';
 export { listPromos, createPromo, updatePromo } from './promos';
+export {
+    listFeaturedPackages,
+    searchCatalogForFeaturing,
+    addFeaturedPackage,
+    removeFeaturedPackage,
+    reorderFeaturedPackages,
+    toggleFeaturedActive
+} from './featuredPackages';
+export {
+    listFeaturedTests,
+    searchTestsForFeaturing,
+    addFeaturedTest,
+    removeFeaturedTest,
+    reorderFeaturedTests,
+    toggleFeaturedTestActive
+} from './featuredTests';

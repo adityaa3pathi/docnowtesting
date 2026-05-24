@@ -34,6 +34,9 @@ import {
   Star,
   Zap,
   Lock,
+  TestTube,
+  Microscope,
+  Dna,
 } from 'lucide-react';
 
 // ────────────────────── Types
@@ -305,7 +308,7 @@ export default function Home() {
                 return (
                   <Card
                     key={pkg.id}
-                    className="relative p-0 overflow-hidden hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 group border-gray-100"
+                    className="relative p-0 overflow-hidden hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 group border-gray-100 h-full flex flex-col"
                   >
                     {/* Discount badge */}
                     {discount > 0 && (
@@ -320,7 +323,7 @@ export default function Home() {
                     {/* Top accent bar */}
                     <div className="h-1.5 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500" />
 
-                    <div className="p-6 sm:p-8">
+                    <div className="p-6 sm:p-8 flex flex-col flex-1">
                       {/* Icon */}
                       <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-50 group-hover:bg-purple-100 transition-colors">
                         {idx % 3 === 0 ? (
@@ -506,27 +509,42 @@ export default function Home() {
                 return (
                   <Card
                     key={test.id}
-                    className="p-5 sm:p-6 bg-white border-gray-100 hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300 group"
+                    className="p-0 bg-white border-gray-100 hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300 group h-full flex flex-col relative overflow-hidden"
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex flex-wrap gap-1.5">
-                        {test.categories.map((cat) => (
-                          <span
-                            key={cat.id}
-                            className="bg-purple-50 text-purple-700 text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full border border-purple-100"
-                          >
-                            {cat.name}
+                    {/* Top accent bar */}
+                    <div className="h-1 bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500" />
+
+                    <div className="p-5 sm:p-6 flex flex-col flex-1">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex flex-wrap gap-1.5">
+                          {test.categories.map((cat) => (
+                            <span
+                              key={cat.id}
+                              className="bg-blue-50 text-blue-700 text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full border border-blue-100"
+                            >
+                              {cat.name}
+                            </span>
+                          ))}
+                        </div>
+                        {discount > 0 && (
+                          <span className="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-md flex-shrink-0">
+                            {discount}% OFF
                           </span>
-                        ))}
+                        )}
                       </div>
-                      {discount > 0 && (
-                        <span className="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-md flex-shrink-0">
-                          {discount}% OFF
-                        </span>
+
+                    {/* Icon */}
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 group-hover:bg-blue-100 transition-colors">
+                      {test.id.charCodeAt(0) % 3 === 0 ? (
+                        <TestTube className="h-6 w-6 text-blue-600" />
+                      ) : test.id.charCodeAt(0) % 3 === 1 ? (
+                        <Microscope className="h-6 w-6 text-blue-600" />
+                      ) : (
+                        <Dna className="h-6 w-6 text-blue-600" />
                       )}
                     </div>
 
-                    <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-1 line-clamp-2 group-hover:text-purple-700 transition-colors">
+                    <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors">
                       {test.name}
                     </h3>
 
@@ -544,7 +562,7 @@ export default function Home() {
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
                       <div className="flex items-center gap-2">
                         <span className="text-2xl font-black text-gray-900">₹{test.price}</span>
                         {test.mrp && test.mrp > test.price && (
@@ -569,7 +587,8 @@ export default function Home() {
                         )}
                       </Button>
                     </div>
-                  </Card>
+                  </div>
+                </Card>
                 );
               })}
             </div>

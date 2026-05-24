@@ -31,6 +31,7 @@ import reportRoutes from './routes/reports';
 import invoiceRoutes from './routes/invoices';
 
 import { csrfProtection } from './middleware/csrfProtection';
+import { legacyCookieCleanup } from './middleware/legacyCookieCleanup';
 import { requestContextMiddleware } from './middleware/requestContext';
 import { logger } from './utils/logger';
 
@@ -45,6 +46,7 @@ app.use(cors({
 
 app.use(requestContextMiddleware);
 app.use(cookieParser());
+app.use(legacyCookieCleanup);
 app.use(helmet());
 
 // CRITICAL: Webhooks must be mounted BEFORE express.json() to get raw body

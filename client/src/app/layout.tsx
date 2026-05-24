@@ -8,6 +8,8 @@ import { CartProvider } from "@/contexts/CartContext";
 import { Toaster } from "react-hot-toast";
 import { GlobalHeader } from "@/components/GlobalHeader";
 
+import { LegacyCookieCleanup } from "@/components/LegacyCookieCleanup";
+
 const inter = localFont({
   src: "./fonts/InterVariable.woff2",
   variable: "--font-inter",
@@ -32,6 +34,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <LegacyCookieCleanup />
         <AuthProvider>
           <CartProvider>
             <LocationProvider>

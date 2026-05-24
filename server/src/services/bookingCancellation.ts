@@ -5,6 +5,7 @@ import { getRazorpay } from './razorpay';
 import { BookingService } from './booking.service';
 import { assertTransition } from '../utils/paymentStateMachine';
 import { retryWithBackoff } from '../utils/helpers';
+import { getCancelDenialMessage } from '../utils/healthiansStatusMap';
 
 const healthians = HealthiansAdapter.getInstance();
 const PARTNER_CANCELABLE_STATUSES = new Set(['BS002', 'BS005']);
@@ -124,7 +125,7 @@ async function cancelWithPartner(partnerBookingId: string, actorUserId: string, 
     const { customers, bookingStatus } = await BookingService.getHealthiansCustomers(partnerBookingId);
 
     if (!PARTNER_CANCELABLE_STATUSES.has(bookingStatus || '')) {
-        throw new Error(`Cancellation not allowed. Current status is: ${bookingStatus || 'Unknown'}`);
+        throw new Error(getCancelDenialMessage(bookingStatus));
     }
 
     const cancellableCustomers = customers.filter((customer: any) => customer.customer_status !== 'BS0018');
@@ -388,7 +389,7 @@ export async function cancelCustomerBooking(params: {
     }
 
     if (booking.partnerStatus && !PARTNER_CANCELABLE_STATUSES.has(booking.partnerStatus)) {
-        throw new Error(`Cancellation not allowed. Current status is: ${booking.partnerStatus}`);
+        throw new Error(getCancelDenialMessage(booking.partnerStatus));
     }
 
     return runCancellation({

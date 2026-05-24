@@ -306,7 +306,7 @@ export default function PackagesPage() {
 
                   <div className="h-1.5 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500" />
 
-                  <div className="p-6 sm:p-8">
+                  <div className="p-6 sm:p-8 flex flex-col flex-1">
                     <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-50 group-hover:bg-purple-100 transition-colors">
                       {idx % 3 === 0 ? (
                         <Activity className="h-7 w-7 text-purple-600" />

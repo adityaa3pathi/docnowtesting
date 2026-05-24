@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getApiUrl } from '@/lib/api';
 import { DocnowLogo } from './DocnowLogo';
+import { GlobalSearch } from './global-search/GlobalSearch';
 
 const metroCities = [
     { name: 'Bengaluru', icon: '🏛️' },
@@ -52,7 +53,6 @@ const callbackCities = Array.from(new Set([...metroCities.map((city) => city.nam
 
 // Desktop nav links (3 only — "Get a Callback" is rendered as a button separately)
 const desktopNavLinks = [
-    { label: 'Search', href: '/search' },
     { label: 'About Us', href: '/about' },
 ];
 
@@ -225,6 +225,11 @@ export function Header() {
                     {/* Logo */}
                     <DocnowLogo href="/" noBackground priority width={120} height={47} />
 
+                    {/* Desktop Global Search */}
+                    <div className="hidden md:flex flex-1 max-w-xl mx-8 relative">
+                        <GlobalSearch />
+                    </div>
+
                     {/* Desktop Nav Links */}
                     <div className="hidden md:flex items-center gap-6 lg:gap-8">
                         {desktopNavLinks.map((link) => (
@@ -337,6 +342,12 @@ export function Header() {
                                             onChange={(e) => {
                                                 const val = e.target.value.replace(/\D/g, '').slice(0, 6);
                                                 setPincodeInput(val);
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handlePincodeSubmit();
+                                                }
                                             }}
                                             placeholder="______"
                                             className="flex-1 h-12 w-full rounded-xl border-2 border-primary/20 bg-muted/30 text-center text-2xl font-bold tracking-widest text-primary placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 transition-colors"
@@ -468,8 +479,15 @@ export function Header() {
                             <Menu className="h-6 w-6" />
                         </button>
                     </div>
+                </div>
 
-                    <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+                {/* Mobile Global Search - Always Visible */}
+                <div className="md:hidden px-4 pb-4">
+                    <GlobalSearch />
+                </div>
+
+
+            <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
 
                     {/* Callback Dialog */}
                     <Dialog open={isCallbackOpen} onOpenChange={setIsCallbackOpen}>
@@ -511,7 +529,6 @@ export function Header() {
                             </form>
                         </DialogContent>
                     </Dialog>
-                </div>
             </nav>
 
             {/* ─── Mobile Navigation Drawer ─── */}
