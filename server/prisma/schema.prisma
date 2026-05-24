@@ -522,6 +522,7 @@ model CatalogItem {
   id               String             @id @default(uuid())
   partnerCode      String             @unique   // Healthians deal_id — canonical key
   name             String
+  searchName       String             @default("")  // Lowercase, stripped of hyphens/spaces/special chars for fuzzy search
   type             CatalogItemType    @default(TEST)
   
   // Pricing: manager-set
@@ -550,6 +551,7 @@ model CatalogItem {
   @@index([isEnabled])
   @@index([type, isEnabled])
   @@index([isFeatured, type, featuredOrder])
+  @@index([searchName])
 }
 
 model Category {

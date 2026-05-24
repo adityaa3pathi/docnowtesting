@@ -24,6 +24,8 @@ import {
     PhoneCall,
     Building2,
     AlertTriangle,
+    Star,
+    TestTube,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,6 +40,8 @@ const navItems = [
     { id: 'abandoned-carts', label: 'Abandoned Carts', icon: ShoppingBag, href: '/super-admin/abandoned-carts' },
     { id: 'wallets', label: 'Wallets', icon: Wallet, href: '/super-admin/wallets' },
     { id: 'promos', label: 'Promo Codes', icon: Ticket, href: '/super-admin/promos' },
+    { id: 'featured-packages', label: 'Featured Packages', icon: Star, href: '/super-admin/featured-packages' },
+    { id: 'featured-tests', label: 'Featured Tests', icon: TestTube, href: '/super-admin/featured-tests' },
     { id: 'callbacks', label: 'Callbacks', icon: PhoneCall, href: '/super-admin/callbacks' },
     { id: 'corporate-inquiries', label: 'Corporate Inquiries', icon: Building2, href: '/super-admin/corporate-inquiries' },
     { id: 'referrals', label: 'Referrals', icon: Gift, href: '/super-admin/referrals' },
