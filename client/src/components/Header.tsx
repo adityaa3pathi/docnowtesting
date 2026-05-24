@@ -19,14 +19,7 @@ import { useLocation } from '@/contexts/LocationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { AuthDialog } from './AuthDialog';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import { getApiUrl } from '@/lib/api';
 import { DocnowLogo } from './DocnowLogo';
 import { GlobalSearch } from './global-search/GlobalSearch';
@@ -403,53 +396,9 @@ export function Header() {
 
                         {/* Auth */}
                         {isAuthenticated ? (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <button className="w-9 h-9 rounded-full bg-white text-[#4B0082] flex items-center justify-center text-sm font-black hover:bg-white/90 transition-colors">
-                                        {user?.name?.[0]?.toUpperCase() || 'U'}
-                                    </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56 rounded-2xl border-border shadow-2xl p-2">
-                                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem>
-                                        <Link href="/profile" className="flex items-center gap-2 w-full">
-                                            <User className="w-4 h-4" /> Profile
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/profile?tab=bookings" className="flex items-center gap-2 w-full">
-                                            <ShoppingCart className="w-4 h-4" /> My Bookings
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    {(user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN') && (
-                                        <>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem asChild>
-                                                <Link href="/manager" className="flex items-center gap-2 w-full cursor-pointer">
-                                                    <Shield className="w-4 h-4 text-teal-600" />
-                                                    <span className="font-medium text-teal-700">Manager Dashboard</span>
-                                                </Link>
-                                            </DropdownMenuItem>
-                                        </>
-                                    )}
-                                    {user?.role === 'SUPER_ADMIN' && (
-                                        <DropdownMenuItem asChild>
-                                            <Link href="/super-admin" className="flex items-center gap-2 w-full cursor-pointer">
-                                                <Shield className="w-4 h-4 text-purple-600" />
-                                                <span className="font-medium text-purple-700">Admin Panel</span>
-                                            </Link>
-                                        </DropdownMenuItem>
-                                    )}
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                        className="text-destructive focus:bg-destructive/5 focus:text-destructive"
-                                        onClick={() => logout()}
-                                    >
-                                        Log Out
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <Link href="/profile" className="w-9 h-9 rounded-full bg-white text-[#4B0082] flex items-center justify-center text-sm font-black hover:bg-white/90 transition-colors">
+                                {user?.name?.[0]?.toUpperCase() || 'U'}
+                            </Link>
                         ) : (
                             <button
                                 onClick={() => setIsAuthOpen(true)}

@@ -1,7 +1,7 @@
 "use client";
 
 import { WalletTab } from '@/components/profile/WalletTab';
-import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift } from 'lucide-react';
+import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,7 +16,7 @@ import Link from 'next/link';
 type Tab = 'profile' | 'family' | 'bookings' | 'reports' | 'wallet' | 'referrals';
 
 export default function ProfilePage() {
-    const { isAuthenticated, isInitialized, user } = useAuth();
+    const { isAuthenticated, isInitialized, user, logout } = useAuth();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<Tab>('profile');
 
@@ -111,6 +111,19 @@ export default function ProfilePage() {
                                     )}
                                 </div>
                             )}
+
+                            {/* Logout Button */}
+                            <div className="p-2 pt-0 border-t border-gray-100 mt-1 md:mt-2">
+                                <button
+                                    onClick={() => {
+                                        logout();
+                                    }}
+                                    className="flex items-center gap-2 md:gap-3 w-full px-3 md:px-4 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium transition-colors text-red-600 hover:bg-red-50"
+                                >
+                                    <LogOut className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                    Log Out
+                                </button>
+                            </div>
                         </div>
                     </div>
 
