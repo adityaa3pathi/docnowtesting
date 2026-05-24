@@ -77,7 +77,7 @@ export default function PrivacyPolicyPage() {
         <main className="flex flex-col min-h-screen">
 
             {/* ── Hero ────────────────────────────────────────────────── */}
-            <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary/80 text-white py-16 md:py-24">
+            <section className="relative overflow-hidden text-white py-16 md:py-24" style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}>
                 <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-white/5 blur-3xl" />
                 <div className="absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
 
@@ -385,7 +385,7 @@ export default function PrivacyPolicyPage() {
                             </PolicySection>
 
                             {/* ── Our Commitment Callout ─────────── */}
-                            <div className="mt-4 rounded-2xl bg-gradient-to-br from-primary to-primary/80 p-8 md:p-10 text-white text-center">
+                            <div className="mt-4 rounded-2xl p-8 md:p-10 text-white text-center" style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}>
                                 <div className="mb-4 flex justify-center">
                                     <div className="h-14 w-14 rounded-2xl bg-white/10 flex items-center justify-center border border-white/20">
                                         <Heart className="h-7 w-7 text-white" />

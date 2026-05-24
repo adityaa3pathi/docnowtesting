@@ -99,7 +99,7 @@ export default function AboutPage() {
         <main className="flex flex-col min-h-screen">
 
             {/* ── Hero Section ─────────────────────────────────────────── */}
-            <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary/80 text-white py-20 md:py-28">
+            <section className="relative overflow-hidden text-white py-20 md:py-28" style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}>
                 {/* decorative blobs */}
                 <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-white/5 blur-3xl" />
                 <div className="absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
@@ -300,7 +300,7 @@ export default function AboutPage() {
             </section>
 
             {/* ── The DocNow Promise ───────────────────────────────────── */}
-            <section className="py-16 md:py-24 bg-gradient-to-br from-primary to-primary/80 text-white">
+            <section className="py-16 md:py-24 text-white" style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}>
                 <div className="container mx-auto px-4 max-w-4xl text-center">
                     <div className="mb-8 flex justify-center">
                         <div className="h-20 w-20 rounded-3xl bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/20">

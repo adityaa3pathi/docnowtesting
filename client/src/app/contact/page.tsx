@@ -17,7 +17,7 @@ export default async function ContactPage() {
     return (
         <main className="flex min-h-screen flex-col bg-slate-50">
 
-            <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary/80 py-20 text-white md:py-24">
+            <section className="relative overflow-hidden py-20 text-white md:py-24" style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}>
                 <div className="absolute -top-20 left-10 h-60 w-60 rounded-full bg-white/10 blur-3xl" />
                 <div className="absolute -bottom-24 right-10 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
                 <div className="container relative z-10 mx-auto max-w-4xl px-4 text-center">
