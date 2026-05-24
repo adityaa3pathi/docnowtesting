@@ -81,7 +81,7 @@ export function CartItemCard({
 
                     <div className="flex items-center gap-2">
                         {item.mrp && item.mrp > item.price && (
-                            <span className="text-sm text-gray-500 font-medium line-through">₹{item.mrp}</span>
+                            <span className="text-base sm:text-lg text-gray-500 font-semibold line-through">₹{item.mrp}</span>
                         )}
                         <span className="font-bold text-primary text-base sm:text-lg">₹{item.price}</span>
                     </div>
