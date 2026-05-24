@@ -61,7 +61,7 @@ export default function AbandonedCartsPage() {
     const fetchAbandonedCarts = async () => {
         setLoading(true);
         try {
-            const res = await api.get(`/admin/abandoned-carts?threshold=${threshold}`);
+            const res = await api.get(`/manager/abandoned-carts?threshold=${threshold}`);
             setCarts(res.data);
         } catch (error) {
             console.error('Error fetching abandoned carts:', error);

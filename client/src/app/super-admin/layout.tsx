@@ -37,7 +37,6 @@ const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/super-admin/dashboard' },
     { id: 'users', label: 'Users', icon: Users, href: '/super-admin/users' },
     { id: 'orders', label: 'Orders', icon: ShoppingCart, href: '/super-admin/orders' },
-    { id: 'abandoned-carts', label: 'Abandoned Carts', icon: ShoppingBag, href: '/super-admin/abandoned-carts' },
     { id: 'wallets', label: 'Wallets', icon: Wallet, href: '/super-admin/wallets' },
     { id: 'promos', label: 'Promo Codes', icon: Ticket, href: '/super-admin/promos' },
     { id: 'featured-packages', label: 'Featured Packages', icon: Star, href: '/super-admin/featured-packages' },
