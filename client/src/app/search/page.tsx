@@ -397,7 +397,7 @@ function SearchPageContent() {
                         <div className="flex items-center gap-2">
                           <span className="text-xl font-black text-gray-900">₹{product.price}</span>
                           {product.mrp && product.mrp > product.price && (
-                            <span className="text-base text-gray-500 font-medium line-through">₹{product.mrp}</span>
+                            <span className="text-lg text-gray-500 font-semibold line-through">₹{product.mrp}</span>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
