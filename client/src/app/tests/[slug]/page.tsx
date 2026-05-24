@@ -98,7 +98,7 @@ export default function TestDetailsPage(props: { params: Promise<{ slug: string 
           <p className="text-gray-500 mb-6 text-center max-w-md">
             {error || 'The test you are looking for does not exist or is currently unavailable.'}
           </p>
-          <Button onClick={() => router.push('/tests')}>View All Tests</Button>
+          <Button onClick={() => router.push('/search?type=TEST')}>View All Tests</Button>
         </div>
         <Footer />
       </main>
@@ -151,11 +151,11 @@ export default function TestDetailsPage(props: { params: Promise<{ slug: string 
       <section className="bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 pt-8 pb-16">
         <div className="container mx-auto px-4 max-w-4xl">
           <button
-            onClick={() => router.push('/tests')}
+            onClick={() => router.push('/search?type=TEST')}
             className="flex items-center gap-1.5 text-white/70 hover:text-white text-sm font-medium mb-8 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Tests
+            Back to All Tests
           </button>
 
           <div className="flex flex-col md:flex-row gap-6 md:items-start">

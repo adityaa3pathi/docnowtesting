@@ -221,13 +221,13 @@ export default function Home() {
               {/* CTA Buttons */}
               <div className="flex flex-wrap gap-4 mb-10">
                 <button
-                  onClick={() => router.push('/tests')}
+                  onClick={() => router.push('/search?type=TEST')}
                   className="border border-white text-white font-inter font-semibold text-base px-6 py-3 rounded-lg hover:bg-white/10 transition-all whitespace-nowrap"
                 >
                   Book a Test Now
                 </button>
                 <button
-                  onClick={() => router.push('/packages')}
+                  onClick={() => router.push('/search?type=PACKAGE')}
                   className="border border-white text-white font-inter font-semibold text-base px-6 py-3 rounded-lg hover:bg-white/10 transition-all whitespace-nowrap"
                 >
                   View Health Packages
@@ -405,7 +405,7 @@ export default function Home() {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => router.push('/packages')}
+              onClick={() => router.push('/search?type=PACKAGE')}
               className="border-purple-200 text-purple-700 hover:bg-purple-50"
             >
               View All Packages
@@ -598,7 +598,7 @@ export default function Home() {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => router.push('/tests')}
+              onClick={() => router.push('/search?type=TEST')}
               className="border-gray-200 text-gray-700 hover:bg-gray-50"
             >
               View All Tests
