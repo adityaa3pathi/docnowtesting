@@ -76,6 +76,7 @@ export default function CartPage() {
         useWallet: promo.useWallet,
         billingPatientId,
         isSlotLocked,
+        cartItems: cart?.items || [],
         refreshCart
     });
 
