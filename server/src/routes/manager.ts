@@ -13,6 +13,7 @@ import { getClientIP } from '../utils/adminHelpers';
 import { getGeodataFromPincode } from '../utils/geocoding';
 import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callbacks';
 import { listCorporateInquiries, updateCorporateInquiryStatus } from '../controllers/admin/corporateInquiries';
+import { listAbandonedCarts } from '../controllers/admin/abandonedCarts';
 import { exportAdminData } from '../controllers/admin/export';
 import { OTP_EXPIRY_MINS, isValidMobile, persistAndSendOtp } from '../services/otp';
 import { BookingService } from '../services/booking.service';
@@ -58,6 +59,8 @@ router.get('/health', ...mgr, async (req: AuthRequest, res: Response) => {
 // ============================================
 // MANAGER DASHBOARD ADMIN ENDPOINTS
 // ============================================
+
+router.get('/abandoned-carts', ...mgr, listAbandonedCarts);
 
 router.get('/callbacks', ...mgr, listCallbacks);
 router.put('/callbacks/:id/status', ...mgr, updateCallbackStatus);
