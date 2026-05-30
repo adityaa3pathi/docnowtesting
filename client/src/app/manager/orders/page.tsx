@@ -84,7 +84,7 @@ interface ReportItem {
     vendorCustomerId: string | null;
 }
 
-const STATUS_FILTERS = ['All', 'Order Booked', 'Report Generated', 'Cancelled', 'Rescheduled'];
+const STATUS_FILTERS = ['All', 'Pending', 'Order Booked', 'Report Generated', 'Cancelled', 'Rescheduled'];
 
 function formatDate(dateStr?: string | null) {
     if (!dateStr) return 'NA';
