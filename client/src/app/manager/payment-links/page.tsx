@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Plus, Copy, ChevronRight, ChevronLeft, Search,
-    CheckCircle, X, User, MapPin, FlaskConical, Calendar,
+    CheckCircle, X, User, MapPin, FlaskConical, Calendar, Trash2,
     CreditCard, Smartphone, Banknote, ExternalLink, Loader2,
     AlertCircle, FileText,
 } from 'lucide-react';
@@ -473,12 +473,12 @@ function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
 // ─── Step 2: Patients & Address ────────────────────────────────────────────────
 
 function StepPatientsAddress({
-    user, selectedPatientId, selectedAddress, setSelectedPatientId, setSelectedAddress, onNext, onBack
+    user, selectedPatientIds, selectedAddress, setSelectedPatientIds, setSelectedAddress, onNext, onBack
 }: {
     user: UserResult;
-    selectedPatientId: string;
+    selectedPatientIds: string[];
     selectedAddress: Address | null;
-    setSelectedPatientId: (id: string) => void;
+    setSelectedPatientIds: (ids: string[]) => void;
     setSelectedAddress: (addr: Address | null) => void;
     onNext: () => void;
     onBack: () => void;
@@ -503,6 +503,14 @@ function StepPatientsAddress({
     }, [user.id]);
 
     useEffect(() => { refresh(); }, [refresh]);
+
+    const togglePatient = (id: string) => {
+        setSelectedPatientIds(
+            selectedPatientIds.includes(id)
+                ? selectedPatientIds.filter(p => p !== id)
+                : [...selectedPatientIds, id]
+        );
+    };
 
     const addPatient = async () => {
         setSaving(true);
@@ -531,7 +539,7 @@ function StepPatientsAddress({
         finally { setSaving(false); }
     };
 
-    const canProceed = (selectedPatientId === 'self' || selectedPatientId !== '') && selectedAddress !== null;
+    const canProceed = selectedPatientIds.length > 0 && selectedAddress !== null;
 
     return (
         <div className="space-y-6">
@@ -545,15 +553,16 @@ function StepPatientsAddress({
                 </div>
             </div>
 
-            {/* Patients */}
+            {/* Patients — Multi-select */}
             <div>
                 <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">Patient (for billing)</h3>
+                    <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">Select Patients</h3>
                     <button onClick={() => setShowAddPatient(v => !v)}
                         className="text-xs text-purple-700 font-medium flex items-center gap-1 hover:underline">
                         <Plus className="w-3 h-3" /> Add Patient
                     </button>
                 </div>
+                <p className="text-xs text-gray-400 mb-2">Select one or more patients who need tests. You'll assign tests to each patient in the next step.</p>
                 {showAddPatient && (
                     <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 mb-3 space-y-3">
                         <div className="grid grid-cols-2 gap-3">
@@ -586,11 +595,11 @@ function StepPatientsAddress({
                 <div className="space-y-2">
                     {/* Self option */}
                     <label className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors
-                        ${selectedPatientId === 'self' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}>
-                        <input type="radio" name="patient" value="self"
-                            checked={selectedPatientId === 'self'}
-                            onChange={() => setSelectedPatientId('self')}
-                            className="accent-purple-700" />
+                        ${selectedPatientIds.includes('self') ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}>
+                        <input type="checkbox" value="self"
+                            checked={selectedPatientIds.includes('self')}
+                            onChange={() => togglePatient('self')}
+                            className="accent-purple-700 w-4 h-4" />
                         <div>
                             <p className="font-medium text-sm">{user.name || 'Customer'}</p>
                             <p className="text-xs text-gray-500">Self</p>
@@ -598,11 +607,11 @@ function StepPatientsAddress({
                     </label>
                     {patients.map(p => (
                         <label key={p.id} className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors
-                            ${selectedPatientId === p.id ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}>
-                            <input type="radio" name="patient" value={p.id}
-                                checked={selectedPatientId === p.id}
-                                onChange={() => setSelectedPatientId(p.id)}
-                                className="accent-purple-700" />
+                            ${selectedPatientIds.includes(p.id) ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}>
+                            <input type="checkbox" value={p.id}
+                                checked={selectedPatientIds.includes(p.id)}
+                                onChange={() => togglePatient(p.id)}
+                                className="accent-purple-700 w-4 h-4" />
                             <div>
                                 <p className="font-medium text-sm">{p.name}</p>
                                 <p className="text-xs text-gray-500">{p.relation} · {p.age}y · {p.gender}</p>
@@ -682,15 +691,16 @@ function StepPatientsAddress({
 // ─── Step 3: Test Selection ────────────────────────────────────────────────────
 
 function StepTests({
-    patientId, user, cart, setCart, onNext, onBack
+    selectedPatientIds, user, cart, setCart, onNext, onBack
 }: {
-    patientId: string; user: UserResult;
+    selectedPatientIds: string[]; user: UserResult;
     cart: CartItem[]; setCart: (c: CartItem[]) => void;
     onNext: () => void; onBack: () => void;
 }) {
     const [query, setQuery] = useState('');
     const [items, setItems] = useState<CatalogItem[]>([]);
     const [loading, setLoading] = useState(false);
+    const [patients, setPatients] = useState<Patient[]>([]);
 
     const search = useCallback(async () => {
         setLoading(true);
@@ -703,15 +713,58 @@ function StepTests({
 
     useEffect(() => { search(); }, []); // load all on mount
 
-    const inCart = (code: string) => cart.some(c => c.testCode === code);
+    // Fetch patients for dropdown labels
+    useEffect(() => {
+        api.get(`/manager/users/${user.id}/patients`)
+            .then(res => setPatients(res.data))
+            .catch(() => {});
+    }, [user.id]);
 
-    const addToCart = (item: CatalogItem) => {
-        if (inCart(item.partnerCode)) {
-            setCart(cart.filter(c => c.testCode !== item.partnerCode));
-        } else {
-            setCart([...cart, { testCode: item.partnerCode, testName: item.name, price: item.price, patientId }]);
+    // Helper: get display name for a patientId
+    const getPatientLabel = useCallback((pid: string) => {
+        if (pid === 'self') return user.name || 'Self';
+        const p = patients.find(pt => pt.id === pid);
+        return p ? `${p.name} (${p.relation})` : pid.slice(0, 8);
+    }, [patients, user.name]);
+
+    // Check if a specific testCode+patientId combo exists in cart
+    const hasDuplicate = useCallback((testCode: string, patientId: string) => {
+        return cart.some(c => c.testCode === testCode && c.patientId === patientId);
+    }, [cart]);
+
+    // Add test for ALL selected patients (skip existing combos)
+    const addForAllPatients = (item: CatalogItem) => {
+        const newRows: CartItem[] = [];
+        for (const pid of selectedPatientIds) {
+            if (!hasDuplicate(item.partnerCode, pid)) {
+                newRows.push({ testCode: item.partnerCode, testName: item.name, price: item.price, patientId: pid });
+            }
         }
+        if (newRows.length === 0) {
+            toast.error(`"${item.name}" is already assigned to all selected patients`);
+            return;
+        }
+        setCart([...cart, ...newRows]);
+        toast.success(`Added "${item.name}" for ${newRows.length} patient${newRows.length > 1 ? 's' : ''}`);
     };
+
+    // Remove a specific cart row by index
+    const removeRow = (index: number) => {
+        setCart(cart.filter((_, i) => i !== index));
+    };
+
+    // Change patient for a cart row (with duplicate check)
+    const changeRowPatient = (index: number, newPatientId: string) => {
+        const row = cart[index];
+        if (hasDuplicate(row.testCode, newPatientId)) {
+            toast.error(`"${row.testName}" is already assigned to ${getPatientLabel(newPatientId)}`);
+            return;
+        }
+        setCart(cart.map((c, i) => i === index ? { ...c, patientId: newPatientId } : c));
+    };
+
+    // Count how many of this test are already in cart
+    const countInCart = (code: string) => cart.filter(c => c.testCode === code).length;
 
     const total = cart.reduce((s, c) => s + c.price, 0);
 
@@ -731,23 +784,35 @@ function StepTests({
             </div>
 
             <div className="max-h-72 overflow-y-auto space-y-1 border border-gray-200 rounded-lg p-2">
-                {items.map(item => (
-                    <label key={item.id} className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors
-                        ${inCart(item.partnerCode) ? 'bg-purple-50 border border-purple-200' : 'hover:bg-gray-50'}`}>
-                        <div className="flex items-center gap-3">
-                            <input type="checkbox" checked={inCart(item.partnerCode)} onChange={() => addToCart(item)}
-                                className="accent-purple-700 w-4 h-4" />
-                            <div>
+                {items.map(item => {
+                    const inCartCount = countInCart(item.partnerCode);
+                    return (
+                        <div key={item.id} className={`flex items-center justify-between p-3 rounded-lg transition-colors
+                            ${inCartCount > 0 ? 'bg-purple-50 border border-purple-200' : 'hover:bg-gray-50'}`}>
+                            <div className="flex-1">
                                 <p className="text-sm font-medium text-gray-900">{item.name}</p>
                                 <p className="text-xs text-gray-400 uppercase">{item.type}</p>
                             </div>
+                            <div className="flex items-center gap-3">
+                                <div className="text-right">
+                                    <p className="text-sm font-semibold text-purple-700">₹{item.price}</p>
+                                    {item.mrp && <p className="text-xs text-gray-400 line-through">₹{item.mrp}</p>}
+                                </div>
+                                <button
+                                    onClick={() => addForAllPatients(item)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                        inCartCount >= selectedPatientIds.length
+                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                            : 'bg-[#4b2192] text-white hover:bg-purple-900'
+                                    }`}
+                                    disabled={inCartCount >= selectedPatientIds.length}
+                                >
+                                    {inCartCount > 0 ? `Added (${inCartCount})` : '+ Add'}
+                                </button>
+                            </div>
                         </div>
-                        <div className="text-right">
-                            <p className="text-sm font-semibold text-purple-700">₹{item.price}</p>
-                            {item.mrp && <p className="text-xs text-gray-400 line-through">₹{item.mrp}</p>}
-                        </div>
-                    </label>
-                ))}
+                    );
+                })}
                 {items.length === 0 && !loading && (
                     <p className="text-sm text-gray-400 text-center py-4">No items found.</p>
                 )}
@@ -755,14 +820,33 @@ function StepTests({
 
             {cart.length > 0 && (
                 <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
-                    <h4 className="text-sm font-semibold text-purple-800 mb-2">Selected ({cart.length})</h4>
-                    {cart.map(c => (
-                        <div key={c.testCode} className="flex justify-between text-sm py-0.5">
-                            <span className="text-gray-700">{c.testName}</span>
-                            <span className="font-medium">₹{c.price}</span>
-                        </div>
-                    ))}
-                    <div className="border-t border-purple-200 mt-2 pt-2 flex justify-between font-bold text-purple-900">
+                    <h4 className="text-sm font-semibold text-purple-800 mb-3">Cart ({cart.length} items)</h4>
+                    <div className="space-y-2">
+                        {cart.map((c, idx) => (
+                            <div key={`${c.testCode}-${c.patientId}-${idx}`}
+                                className="flex items-center gap-2 bg-white border border-purple-100 rounded-lg p-2.5">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 truncate">{c.testName}</p>
+                                    <p className="text-xs text-gray-400">₹{c.price}</p>
+                                </div>
+                                <select
+                                    value={c.patientId}
+                                    onChange={e => changeRowPatient(idx, e.target.value)}
+                                    className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-purple-300 outline-none max-w-[140px]"
+                                >
+                                    {selectedPatientIds.map(pid => (
+                                        <option key={pid} value={pid}>{getPatientLabel(pid)}</option>
+                                    ))}
+                                </select>
+                                <button onClick={() => removeRow(idx)}
+                                    className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Remove">
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="border-t border-purple-200 mt-3 pt-2 flex justify-between font-bold text-purple-900">
                         <span>Total</span>
                         <span>₹{total}</span>
                     </div>
@@ -873,13 +957,60 @@ function StepSlot({
     );
 }
 
+// ─── Cart Summary grouped by patient ──────────────────────────────────────────
+
+function CartSummaryByPatient({ cart, userId, userName }: { cart: CartItem[]; userId: string; userName: string | null }) {
+    const [patients, setPatients] = useState<Patient[]>([]);
+
+    useEffect(() => {
+        api.get(`/manager/users/${userId}/patients`)
+            .then(res => setPatients(res.data))
+            .catch(() => {});
+    }, [userId]);
+
+    const getLabel = (pid: string) => {
+        if (pid === 'self') return userName || 'Self';
+        const p = patients.find(pt => pt.id === pid);
+        return p ? `${p.name} (${p.relation})` : pid.slice(0, 8);
+    };
+
+    // Group cart items by patientId
+    const grouped = useMemo(() => {
+        const map = new Map<string, CartItem[]>();
+        for (const item of cart) {
+            const existing = map.get(item.patientId) || [];
+            existing.push(item);
+            map.set(item.patientId, existing);
+        }
+        return Array.from(map.entries());
+    }, [cart]);
+
+    return (
+        <>
+            {grouped.map(([pid, items]) => (
+                <div key={pid}>
+                    <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-1">
+                        {getLabel(pid)}
+                    </p>
+                    {items.map((c, i) => (
+                        <div key={`${c.testCode}-${i}`} className="flex justify-between text-sm pl-2">
+                            <span className="text-gray-700">{c.testName}</span>
+                            <span className="font-medium">₹{c.price}</span>
+                        </div>
+                    ))}
+                </div>
+            ))}
+        </>
+    );
+}
+
 // ─── Step 5: Confirm & Pay ────────────────────────────────────────────────────
 
 function StepConfirm({
-    user, address, cart, slotDate, slotTime, onBack, onSuccess
+    user, address, cart, slotDate, slotTime, selectedPatientIds, onBack, onSuccess
 }: {
     user: UserResult; address: Address; cart: CartItem[];
-    slotDate: string; slotTime: string;
+    slotDate: string; slotTime: string; selectedPatientIds: string[];
     onBack: () => void; onSuccess: () => void;
 }) {
     const [creating, setCreating] = useState(false);
@@ -951,13 +1082,8 @@ function StepConfirm({
                     <span className="text-gray-500">Slot</span>
                     <span className="font-medium">{slotDate} · {slotTime}</span>
                 </div>
-                <div className="px-4 py-3 space-y-1">
-                    {cart.map(c => (
-                        <div key={c.testCode} className="flex justify-between text-sm">
-                            <span className="text-gray-700">{c.testName}</span>
-                            <span className="font-medium">₹{c.price}</span>
-                        </div>
-                    ))}
+                <div className="px-4 py-3 space-y-3">
+                    <CartSummaryByPatient cart={cart} userId={user.id} userName={user.name} />
                 </div>
                 <div className="px-4 py-3 flex justify-between font-bold text-purple-900">
                     <span>Total</span>
@@ -1203,14 +1329,14 @@ export default function PaymentLinksPage() {
 
     // Wizard state
     const [selectedUser, setSelectedUser] = useState<UserResult | null>(null);
-    const [selectedPatientId, setSelectedPatientId] = useState('');
+    const [selectedPatientIds, setSelectedPatientIds] = useState<string[]>([]);
     const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [slotDate, setSlotDate] = useState('');
     const [slotTime, setSlotTime] = useState('');
 
     const resetWizard = () => {
-        setStep(0); setSelectedUser(null); setSelectedPatientId('');
+        setStep(0); setSelectedUser(null); setSelectedPatientIds([]);
         setSelectedAddress(null); setCart([]); setSlotDate(''); setSlotTime('');
         setShowWizard(false);
     };
@@ -1273,7 +1399,7 @@ export default function PaymentLinksPage() {
                                                 </div>
                                             </div>
                                             <button
-                                                onClick={() => { setSelectedUser(null); setSelectedPatientId(''); setSelectedAddress(null); setCart([]); setSlotDate(''); setSlotTime(''); }}
+                                                onClick={() => { setSelectedUser(null); setSelectedPatientIds([]); setSelectedAddress(null); setCart([]); setSlotDate(''); setSlotTime(''); }}
                                                 className="text-sm text-purple-700 hover:text-purple-900 font-medium px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors"
                                             >
                                                 Change
@@ -1291,9 +1417,9 @@ export default function PaymentLinksPage() {
                             {step === 1 && selectedUser && (
                                 <StepPatientsAddress
                                     user={selectedUser}
-                                    selectedPatientId={selectedPatientId}
+                                    selectedPatientIds={selectedPatientIds}
                                     selectedAddress={selectedAddress}
-                                    setSelectedPatientId={setSelectedPatientId}
+                                    setSelectedPatientIds={setSelectedPatientIds}
                                     setSelectedAddress={setSelectedAddress}
                                     onNext={() => setStep(2)}
                                     onBack={() => setStep(0)}
@@ -1301,7 +1427,7 @@ export default function PaymentLinksPage() {
                             )}
                             {step === 2 && selectedUser && (
                                 <StepTests
-                                    patientId={selectedPatientId}
+                                    selectedPatientIds={selectedPatientIds}
                                     user={selectedUser}
                                     cart={cart}
                                     setCart={setCart}
@@ -1328,6 +1454,7 @@ export default function PaymentLinksPage() {
                                     cart={cart}
                                     slotDate={slotDate}
                                     slotTime={slotTime}
+                                    selectedPatientIds={selectedPatientIds}
                                     onBack={() => setStep(3)}
                                     onSuccess={handleSuccess}
                                 />
