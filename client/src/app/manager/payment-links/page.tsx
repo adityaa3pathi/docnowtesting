@@ -936,13 +936,6 @@ function StepSlot({
                 </div>
             )}
 
-            {/* Fallback: manual slot entry */}
-            <div>
-                <label className="text-sm font-medium text-gray-500 block mb-1">Or enter slot manually</label>
-                <input value={slotTime} onChange={e => setSlotTime(e.target.value)}
-                    placeholder="e.g. 07:00 AM - 09:00 AM"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-200 outline-none" />
-            </div>
 
             <div className="flex gap-3 pt-2">
                 <button onClick={onBack} className="btn-ghost flex items-center gap-1">
