@@ -11,9 +11,13 @@ import {
     ChevronLeft,
     ChevronRight,
     Star,
+    Download,
+    Upload,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
+import { useExport } from '@/hooks/useExport';
+import { CatalogImportDialog } from '@/components/manager/CatalogImportDialog';
 
 interface CatalogItem {
     id: string;
@@ -38,6 +42,8 @@ export default function CatalogManagement() {
     const [statusFilter, setStatusFilter] = useState('all');
     const [page, setPage] = useState(1);
     const limit = 20;
+    const [importDialogOpen, setImportDialogOpen] = useState(false);
+    const { exporting, exportCsv } = useExport();
 
     // Inline editing state
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -138,15 +144,36 @@ export default function CatalogManagement() {
                     <h1 className="text-3xl font-semibold text-gray-900">Catalog Management</h1>
                     <p className="text-gray-600 mt-1">Manage tests, packages, and pricing</p>
                 </div>
-                <button
-                    onClick={handleSync}
-                    disabled={syncing}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-medium disabled:opacity-60 transition-colors w-full sm:w-auto"
-                    style={{ backgroundColor: '#4b2192' }}
-                >
-                    <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-                    {syncing ? 'Syncing...' : 'Sync from Healthians'}
-                </button>
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        onClick={() => setImportDialogOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        <Upload className="h-4 w-4" />
+                        Import CSV
+                    </button>
+                    <button
+                        onClick={() => exportCsv('catalog', {
+                            type: typeFilter,
+                            enabled: statusFilter !== 'all' ? (statusFilter === 'enabled' ? 'true' : 'false') : '',
+                            search: searchTerm,
+                        }, '/api/manager')}
+                        disabled={exporting}
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                        Export CSV
+                    </button>
+                    <button
+                        onClick={handleSync}
+                        disabled={syncing}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-medium disabled:opacity-60 transition-colors"
+                        style={{ backgroundColor: '#4b2192' }}
+                    >
+                        <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+                        {syncing ? 'Syncing...' : 'Sync from Healthians'}
+                    </button>
+                </div>
             </div>
 
             {/* Filters */}
@@ -341,6 +368,12 @@ export default function CatalogManagement() {
                     </div>
                 )}
             </div>
+
+            <CatalogImportDialog
+                open={importDialogOpen}
+                onOpenChange={setImportDialogOpen}
+                onSuccess={fetchCatalog}
+            />
         </div>
     );
 }

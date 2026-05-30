@@ -15,6 +15,7 @@ import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callba
 import { listCorporateInquiries, updateCorporateInquiryStatus } from '../controllers/admin/corporateInquiries';
 import { listAbandonedCarts } from '../controllers/admin/abandonedCarts';
 import { exportAdminData } from '../controllers/admin/export';
+import { validateCatalogImport, executeCatalogImport } from '../controllers/manager/catalogBulk';
 import { OTP_EXPIRY_MINS, isValidMobile, persistAndSendOtp } from '../services/otp';
 import { BookingService } from '../services/booking.service';
 import { validationSchemas } from '../utils/helpers';
@@ -314,6 +315,10 @@ router.put('/catalog/:id/feature', ...mgr, async (req: AuthRequest, res: Respons
         res.status(500).json({ error: 'Failed to update featured status', details: error.message });
     }
 });
+
+// ── Catalog Bulk Import ─────────────────────────────────
+router.post('/catalog/import/validate', ...mgr, validateCatalogImport);
+router.post('/catalog/import/execute', ...mgr, executeCatalogImport);
 
 // ============================================
 // CATEGORY CRUD
