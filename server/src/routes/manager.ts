@@ -868,6 +868,18 @@ router.post('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
             });
         }
 
+        // Duplicate validation: same test + same patient = rejected
+        const seen = new Set<string>();
+        for (const item of finalItems) {
+            const key = `${item.testCode}::${item.patientId}`;
+            if (seen.has(key)) {
+                return res.status(400).json({
+                    error: `Duplicate: "${item.testName}" is assigned multiple times to the same patient`
+                });
+            }
+            seen.add(key);
+        }
+
         const result = await prisma.$transaction(async (tx) => {
             const resolvedItems: Array<any> = [];
             for (const item of finalItems) {
