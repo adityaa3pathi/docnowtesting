@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
     DollarSign,
     Users,
@@ -287,34 +288,34 @@ function DashboardPage() {
                         Quick Actions
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <button className="p-4 border border-gray-200 rounded-xl hover:bg-purple-50 hover:border-purple-200 transition-colors group text-left">
+                        <Link href="/super-admin/users" className="p-4 border border-gray-200 rounded-xl hover:bg-purple-50 hover:border-purple-200 transition-colors group text-left">
                             <div className="bg-purple-100 w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:bg-purple-200 transition-colors">
                                 <Users size={20} className="text-purple-600" />
                             </div>
                             <p className="font-medium text-gray-900">Add User</p>
                             <p className="text-xs text-gray-500 mt-1">Create new account</p>
-                        </button>
-                        <button className="p-4 border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-colors group text-left">
+                        </Link>
+                        <Link href="/super-admin/wallets" className="p-4 border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-colors group text-left">
                             <div className="bg-blue-100 w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:bg-blue-200 transition-colors">
                                 <Wallet size={20} className="text-blue-600" />
                             </div>
                             <p className="font-medium text-gray-900">Refund</p>
                             <p className="text-xs text-gray-500 mt-1">Process wallet refund</p>
-                        </button>
-                        <button className="p-4 border border-gray-200 rounded-xl hover:bg-green-50 hover:border-green-200 transition-colors group text-left">
+                        </Link>
+                        <Link href="/super-admin/referrals" className="p-4 border border-gray-200 rounded-xl hover:bg-green-50 hover:border-green-200 transition-colors group text-left">
                             <div className="bg-green-100 w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:bg-green-200 transition-colors">
                                 <Gift size={20} className="text-green-600" />
                             </div>
                             <p className="font-medium text-gray-900">Rewards</p>
                             <p className="text-xs text-gray-500 mt-1">Config referral bonus</p>
-                        </button>
-                        <button className="p-4 border border-gray-200 rounded-xl hover:bg-orange-50 hover:border-orange-200 transition-colors group text-left">
+                        </Link>
+                        <Link href="/super-admin/orders" className="p-4 border border-gray-200 rounded-xl hover:bg-orange-50 hover:border-orange-200 transition-colors group text-left">
                             <div className="bg-orange-100 w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:bg-orange-200 transition-colors">
                                 <FileText size={20} className="text-orange-600" />
                             </div>
                             <p className="font-medium text-gray-900">Exports</p>
                             <p className="text-xs text-gray-500 mt-1">Download reports</p>
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </div>
