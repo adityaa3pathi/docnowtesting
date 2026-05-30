@@ -1089,7 +1089,11 @@ router.get('/bookings', ...mgr, async (req: AuthRequest, res: Response) => {
         const where: any = {};
 
         if (status && status !== 'All') {
-            where.status = status;
+            if (status === 'Pending') {
+                where.paymentStatus = { in: ['INITIATED', 'EXPIRED'] };
+            } else {
+                where.status = status;
+            }
         }
 
         if (dateFrom || dateTo) {
