@@ -1,12 +1,13 @@
 import { Response } from 'express';
 import { AuthRequest } from '../../middleware/auth';
 import { prisma } from '../../db';
+import { buildCatalogSearchWhere } from '../../utils/searchUtils';
 
 export async function exportAdminData(req: AuthRequest, res: Response) {
     try {
         const entity = req.query.entity as string;
-        if (!entity || !['users', 'orders', 'callbacks', 'corporate-inquiries', 'wallets', 'failed-orders'].includes(entity)) {
-            return res.status(400).json({ error: 'Invalid or missing entity for export. Must be "users", "orders", "callbacks", "corporate-inquiries", "wallets", or "failed-orders".' });
+        if (!entity || !['users', 'orders', 'callbacks', 'corporate-inquiries', 'wallets', 'failed-orders', 'catalog'].includes(entity)) {
+            return res.status(400).json({ error: 'Invalid or missing entity for export. Must be "users", "orders", "callbacks", "corporate-inquiries", "wallets", "failed-orders", or "catalog".' });
         }
 
         const search = (req.query.search as string) || '';
@@ -376,6 +377,55 @@ export async function exportAdminData(req: AuthRequest, res: Response) {
             
             res.setHeader('Content-Type', 'text/csv');
             res.setHeader('Content-Disposition', 'attachment; filename="failed-orders-export.csv"');
+            return res.status(200).send(csvContent);
+        } else if (entity === 'catalog') {
+            const type = req.query.type as string;
+            const enabled = req.query.enabled as string;
+
+            const where: any = {};
+            if (type && type !== 'all') where.type = type;
+            if (enabled !== undefined && enabled !== 'all') where.isEnabled = enabled === 'true';
+            if (search) {
+                const searchClause = buildCatalogSearchWhere(search);
+                where.OR = searchClause.OR;
+            }
+
+            const items = await prisma.catalogItem.findMany({
+                where,
+                take: limitToExport,
+                orderBy: { name: 'asc' },
+                select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                    partnerCode: true,
+                    partnerPrice: true,
+                    displayPrice: true,
+                    discountedPrice: true,
+                    isEnabled: true,
+                    isFeatured: true,
+                    updatedAt: true,
+                },
+            });
+
+            const headers = ['Product ID', 'Product Name', 'Product Type', 'Healthians Deal ID', 'Base Price', 'Display Price', 'Discounted Price', 'Status', 'Featured', 'Last Updated'];
+            const rows = items.map(item => [
+                item.id,
+                `"${(item.name || '').replace(/"/g, '""')}"`,
+                item.type,
+                item.partnerCode,
+                item.partnerPrice,
+                item.displayPrice,
+                item.discountedPrice ?? '',
+                item.isEnabled ? 'Enabled' : 'Disabled',
+                item.isFeatured ? 'Yes' : 'No',
+                item.updatedAt.toISOString(),
+            ]);
+
+            const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', 'attachment; filename="catalog-export.csv"');
             return res.status(200).send(csvContent);
         }
 
