@@ -143,6 +143,7 @@ function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
     const [results, setResults] = useState<UserResult[]>([]);
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
     const [mode, setMode] = useState<'search' | 'create' | 'otp'>('search');
     const [submitting, setSubmitting] = useState(false);
     const [resendTimer, setResendTimer] = useState(0);
@@ -155,15 +156,27 @@ function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
         otp: '',
     });
 
-    const search = useCallback(async () => {
-        if (query.length < 3) return;
-        setLoading(true);
-        try {
-            const res = await api.get('/manager/users/search', { params: { mobile: query } });
-            setResults(res.data);
-            setSearched(true);
-        } catch { toast.error('Search failed'); }
-        finally { setLoading(false); }
+    // Debounced search — fires automatically when user types 3+ digits
+    useEffect(() => {
+        if (query.length < 3) {
+            setResults([]);
+            setSearched(false);
+            setShowDropdown(false);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setLoading(true);
+            try {
+                const res = await api.get('/manager/users/search', { params: { mobile: query } });
+                setResults(res.data);
+                setSearched(true);
+                setShowDropdown(true);
+            } catch { toast.error('Search failed'); }
+            finally { setLoading(false); }
+        }, 350);
+
+        return () => clearTimeout(timer);
     }, [query]);
 
     useEffect(() => {
@@ -176,7 +189,13 @@ function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
 
     const isValidMobile = /^\d{10}$/.test(query);
 
+    const handleSelect = (user: UserResult) => {
+        setShowDropdown(false);
+        onNext(user);
+    };
+
     const openCreateFlow = () => {
+        setShowDropdown(false);
         setMode('create');
         setForm({
             mobile: query,
@@ -271,50 +290,68 @@ function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
             {mode === 'search' && (
                 <>
                     <h2 className="text-lg font-semibold text-gray-800">Search Customer</h2>
-                    <div className="flex gap-2">
-                        <div className="relative flex-1">
+                    <div className="relative">
+                        <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                             <input
                                 value={query}
-                                onChange={e => { setQuery(e.target.value); setSearched(false); setResults([]); }}
-                                onKeyDown={e => e.key === 'Enter' && search()}
-                                placeholder="Search by mobile number…"
+                                onChange={e => { setQuery(e.target.value.replace(/\D/g, '').slice(0, 10)); }}
+                                onFocus={() => { if (results.length > 0 || (searched && results.length === 0)) setShowDropdown(true); }}
+                                placeholder="Enter mobile number…"
                                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-300 outline-none"
+                                autoComplete="off"
                             />
+                            {loading && (
+                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-purple-500" />
+                            )}
                         </div>
-                        <button onClick={search} disabled={loading}
-                            className="px-4 py-2.5 rounded-lg text-white text-sm font-medium bg-[#4b2192] hover:bg-purple-900 disabled:opacity-60 flex items-center gap-2">
-                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
-                        </button>
+
+                        {/* Dropdown results */}
+                        {showDropdown && searched && (
+                            <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden max-h-64 overflow-y-auto">
+                                {results.length > 0 ? (
+                                    results.map(u => (
+                                        <button key={u.id} onClick={() => handleSelect(u)}
+                                            className="w-full text-left px-4 py-3 hover:bg-purple-50 transition-colors flex items-center justify-between border-b border-gray-100 last:border-b-0">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold text-xs">
+                                                    {(u.name || 'U')[0].toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-gray-900 text-sm">{u.name || 'Unnamed'}</p>
+                                                    <p className="text-xs text-gray-500">{u.mobile}</p>
+                                                </div>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                                        No customers found for "{query}"
+                                    </div>
+                                )}
+
+                                {/* Create new user option */}
+                                {isValidMobile && results.length === 0 && (
+                                    <button
+                                        onClick={openCreateFlow}
+                                        className="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 transition-colors flex items-center gap-3 border-t border-purple-100"
+                                    >
+                                        <div className="w-8 h-8 rounded-full bg-purple-200 flex items-center justify-center text-purple-800">
+                                            <Plus className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-semibold text-purple-900">Create new user</p>
+                                            <p className="text-xs text-purple-700">Register {query} with OTP verification</p>
+                                        </div>
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
 
-                    {results.length > 0 && (
-                        <div className="divide-y border border-gray-200 rounded-lg overflow-hidden">
-                            {results.map(u => (
-                                <button key={u.id} onClick={() => onNext(u)}
-                                    className="w-full text-left px-4 py-3 hover:bg-purple-50 transition-colors flex items-center justify-between">
-                                    <div>
-                                        <p className="font-medium text-gray-900">{u.name || 'Unnamed'}</p>
-                                        <p className="text-sm text-gray-500">{u.mobile}</p>
-                                    </div>
-                                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                    {searched && results.length === 0 && !loading && (
-                        <p className="text-sm text-gray-500 text-center py-2">No customers found for this number.</p>
-                    )}
-
-                    {isValidMobile && searched && results.length === 0 && !loading && (
-                        <button
-                            onClick={openCreateFlow}
-                            className="w-full rounded-xl border border-dashed border-purple-300 bg-purple-50 px-4 py-4 text-left hover:border-purple-400 hover:bg-purple-100/60 transition-colors"
-                        >
-                            <p className="text-sm font-semibold text-purple-900">Create new user</p>
-                            <p className="text-xs text-purple-700 mt-1">Use {query} and verify the customer with OTP on call.</p>
-                        </button>
+                    {query.length > 0 && query.length < 3 && (
+                        <p className="text-xs text-gray-400">Type at least 3 digits to search</p>
                     )}
                 </>
             )}
