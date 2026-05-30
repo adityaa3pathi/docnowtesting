@@ -8,7 +8,7 @@ import { retryWithBackoff } from '../utils/helpers';
 import { getCancelDenialMessage } from '../utils/healthiansStatusMap';
 
 const healthians = HealthiansAdapter.getInstance();
-const PARTNER_CANCELABLE_STATUSES = new Set(['BS002', 'BS005']);
+export const PARTNER_CANCELABLE_STATUSES = new Set(['BS002', 'BS005']);
 const MANAGER_CANCELABLE_STATUSES = new Set<ManagerOrderStatus>([
     'CREATED',
     'SENT',
@@ -298,8 +298,7 @@ async function runCancellation(params: {
     const needsPartnerCancellation = Boolean(
         booking.partnerBookingId &&
         (
-            managerOrder?.status === 'CONFIRMED' ||
-            (!managerOrder && !allowPendingLocalCancel)
+            managerOrder ? managerOrder.status === 'CONFIRMED' : true
         )
     );
 
@@ -416,6 +415,10 @@ export async function cancelGlobalBookingAsManager(params: {
     const booking = await loadGlobalBookingById(params.bookingId);
     if (!booking) {
         throw new Error('Booking not found');
+    }
+
+    if (booking.partnerStatus && !PARTNER_CANCELABLE_STATUSES.has(booking.partnerStatus)) {
+        throw new Error(getCancelDenialMessage(booking.partnerStatus));
     }
 
     return runCancellation({
