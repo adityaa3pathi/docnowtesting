@@ -7,7 +7,7 @@ import { HealthiansAdapter } from '../adapters/healthians';
 import { resolveOrCreateSelfPatient, patientSchema } from '../utils/patientValidation';
 import { getRazorpay } from '../services/razorpay';
 import { finalizeBooking } from '../services/bookingFinalization';
-import { cancelGlobalBookingAsManager, cancelManagerOrder } from '../services/bookingCancellation';
+import { cancelGlobalBookingAsManager, cancelManagerOrder, PARTNER_CANCELABLE_STATUSES } from '../services/bookingCancellation';
 import { generateReferralCode } from '../utils/referralService';
 import { getClientIP } from '../utils/adminHelpers';
 import { getGeodataFromPincode } from '../utils/geocoding';
@@ -1188,7 +1188,10 @@ router.get('/bookings', ...mgr, async (req: AuthRequest, res: Response) => {
                 const latestReport = order.reports[0] || null;
                 const canCancel = order.managerOrder
                     ? MANAGER_GLOBAL_CANCELABLE_STATUSES.has(order.managerOrder.status)
-                    : order.status !== 'Cancelled' && order.paymentStatus !== 'CANCELLED' && order.paymentStatus !== 'REFUNDED';
+                    : order.status !== 'Cancelled' &&
+                      order.paymentStatus !== 'CANCELLED' &&
+                      order.paymentStatus !== 'REFUNDED' &&
+                      (!order.partnerStatus || PARTNER_CANCELABLE_STATUSES.has(order.partnerStatus));
                 const canReschedule = Boolean(order.partnerBookingId) && !NON_RESCHEDULABLE_STATUSES.includes(order.status);
                 const canSendInvoice = canSendInvoiceForBooking(order);
                 const invoiceSentAt = invoiceAuditByBookingId.get(order.id) || null;
