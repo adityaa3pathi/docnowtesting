@@ -96,6 +96,7 @@ router.get('/products', async (req: Request, res: Response) => {
             };
         }, { route: 'catalog_products', hasSearch: Boolean(search) });
 
+        res.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=60');
         res.json(payload);
     } catch (error: any) {
         console.error('[Catalog] Error fetching products:', error.message);
@@ -158,6 +159,7 @@ router.get('/featured', async (req: Request, res: Response) => {
             return { products: formatted };
         }, { route: 'catalog_featured' });
 
+        res.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=60');
         res.json(payload);
     } catch (error: any) {
         console.error('[Catalog] Error fetching featured:', error.message);
@@ -199,6 +201,7 @@ router.get('/products/:code', async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Product not found' });
         }
 
+        res.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=60');
         res.json(payload);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to fetch product' });
@@ -233,6 +236,7 @@ router.get('/product-details/:dealType/:dealTypeId', async (req: Request, res: R
              return res.status(404).json({ error: details.message || 'Product details not found' });
         }
 
+        res.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=3600');
         res.json(details);
     } catch (error: any) {
         console.error('[Catalog] Error fetching product details:', error.message);
@@ -289,6 +293,7 @@ router.get('/categories', async (req: Request, res: Response) => {
             return { categories: formatted };
         }, { route: 'catalog_categories' });
 
+        res.set('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=120');
         res.json(payload);
     } catch (error: any) {
         console.error('[Catalog] Error fetching categories:', error.message);

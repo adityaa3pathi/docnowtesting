@@ -19,19 +19,19 @@ function BentoCard({ title, icon, value, subtitle, children, className, gradient
     const cardContent = (
         <div 
             onClick={!children ? onClick : undefined}
-            className={`relative overflow-hidden rounded-3xl p-5 shadow-sm border border-gray-100 flex flex-col transition-all active:scale-[0.98] cursor-pointer hover:shadow-md h-full bg-white group ${className}`}
+            className={`relative overflow-hidden rounded-3xl p-4 sm:p-5 shadow-sm border border-gray-100 flex flex-col transition-all active:scale-[0.98] cursor-pointer hover:shadow-md h-full bg-white group ${className}`}
         >
-            {gradient && <div className={`absolute inset-0 opacity-10 bg-gradient-to-br ${gradient}`} />}
-            <div className="relative z-10 flex items-center justify-between mb-3 text-gray-500 group-hover:text-gray-700 transition-colors">
-                <div className="flex items-center gap-2">
+            {gradient && <div className={`absolute inset-0 opacity-[0.07] bg-gradient-to-br ${gradient}`} />}
+            <div className="relative z-10 flex items-center justify-between mb-1.5 sm:mb-3 text-gray-500 group-hover:text-gray-700 transition-colors">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                     {icon}
-                    <span className="font-semibold text-sm">{title}</span>
+                    <span className="font-semibold text-xs sm:text-sm">{title}</span>
                 </div>
                 <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0" />
             </div>
-            <div className="relative z-10 flex-1 flex flex-col justify-end">
-                {value && <div className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">{value}</div>}
-                {subtitle && <div className="text-xs text-gray-500 mt-1 line-clamp-2">{subtitle}</div>}
+            <div className="relative z-10 flex-1 flex flex-col justify-end min-h-0">
+                {value && <div className="text-xl sm:text-3xl font-bold text-gray-900 truncate">{value}</div>}
+                {subtitle && <div className="text-[11px] sm:text-xs text-gray-600 font-medium mt-0.5 sm:mt-1 truncate">{subtitle}</div>}
             </div>
         </div>
     );
@@ -107,7 +107,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Grid Layout strictly fills remaining height */}
-                <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 grid-rows-4 sm:grid-rows-3 gap-3 sm:gap-4 h-full min-h-0">
+                <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 grid-rows-3 sm:grid-rows-3 gap-3 sm:gap-4 h-full min-h-0">
                     
                     {/* User Identity - Large Top Left */}
                     <BentoCard 
@@ -179,9 +179,9 @@ export default function ProfilePage() {
                         <ReferralTab />
                     </BentoCard>
 
-                    {/* Manager/Admin Area - Bottom full width */}
+                    {/* Manager/Admin Area - Desktop only */}
                     {(isManager || isSuperAdmin) && (
-                        <div className="col-span-2 sm:col-span-4 row-span-1 flex gap-3 min-h-0">
+                        <div className="hidden sm:flex col-span-4 row-span-1 gap-3 min-h-0">
                             <Link href="/manager" className="flex-1 group">
                                 <div className="h-full relative overflow-hidden rounded-3xl p-5 shadow-sm border-none bg-gradient-to-r from-teal-600 to-emerald-600 text-white flex flex-col justify-center items-center transition-transform active:scale-[0.98] hover:shadow-lg">
                                     <Shield className="w-6 h-6 mb-2 opacity-80 group-hover:scale-110 transition-transform" />
