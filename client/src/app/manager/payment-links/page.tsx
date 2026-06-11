@@ -5,7 +5,7 @@ import {
     Plus, Copy, ChevronRight, ChevronLeft, Search,
     CheckCircle, X, User, MapPin, FlaskConical, Calendar, Trash2,
     CreditCard, Smartphone, Banknote, ExternalLink, Loader2,
-    AlertCircle, FileText,
+    AlertCircle, FileText, MessageCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -1011,6 +1011,7 @@ function StepConfirm({
     const [linkUrl, setLinkUrl] = useState<string | null>(null);
     const [generating, setGenerating] = useState(false);
     const [confirming, setConfirming] = useState(false);
+    const [whatsappSending, setWhatsappSending] = useState(false);
     const [payMode, setPayMode] = useState<'RAZORPAY_LINK' | 'OFFLINE_CASH' | 'OFFLINE_UPI' | null>(null);
 
     const total = cart.reduce((s, c) => s + c.price, 0);
@@ -1057,6 +1058,19 @@ function StepConfirm({
 
     const copyLink = () => {
         if (linkUrl) { navigator.clipboard.writeText(linkUrl); toast.success('Copied!'); }
+    };
+
+    const sendWhatsApp = async () => {
+        if (!result) return;
+        setWhatsappSending(true);
+        try {
+            const res = await api.post(`/manager/orders/${result.orderId}/send-whatsapp-link`);
+            toast.success(res.data.message || 'Payment link sent via WhatsApp!');
+        } catch (e: any) {
+            toast.error(e?.response?.data?.error || 'Failed to send WhatsApp message');
+        } finally {
+            setWhatsappSending(false);
+        }
     };
 
     return (
@@ -1109,12 +1123,22 @@ function StepConfirm({
                             <h4 className="font-semibold text-sm text-gray-800">Send Razorpay Payment Link</h4>
                         </div>
                         {linkUrl ? (
-                            <div className="flex gap-2">
-                                <input value={linkUrl} readOnly className="flex-1 text-sm px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 font-mono" />
-                                <button onClick={copyLink} className="px-3 py-2 border rounded-lg hover:bg-gray-50"><Copy className="w-4 h-4" /></button>
-                                <a href={linkUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-2 border rounded-lg hover:bg-gray-50">
-                                    <ExternalLink className="w-4 h-4" />
-                                </a>
+                            <div className="space-y-2">
+                                <div className="flex gap-2">
+                                    <input value={linkUrl} readOnly className="flex-1 text-sm px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 font-mono" />
+                                    <button onClick={copyLink} className="px-3 py-2 border rounded-lg hover:bg-gray-50"><Copy className="w-4 h-4" /></button>
+                                    <a href={linkUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-2 border rounded-lg hover:bg-gray-50">
+                                        <ExternalLink className="w-4 h-4" />
+                                    </a>
+                                </div>
+                                <button
+                                    onClick={sendWhatsApp}
+                                    disabled={whatsappSending}
+                                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-colors disabled:opacity-60"
+                                >
+                                    {whatsappSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
+                                    {whatsappSending ? 'Sending...' : 'Send Payment Link via WhatsApp'}
+                                </button>
                             </div>
                         ) : (
                             <button onClick={generateLink} disabled={generating}
@@ -1173,6 +1197,10 @@ function OrderList({ refresh }: { refresh: boolean }) {
     const [generating, setGenerating] = useState<string | null>(null);
     const [invoiceSendingId, setInvoiceSendingId] = useState<string | null>(null);
     const [reportSendingId, setReportSendingId] = useState<string | null>(null);
+    const [whatsappSendingId, setWhatsappSendingId] = useState<string | null>(null);
+    const [paymentModal, setPaymentModal] = useState<ManagerOrder | null>(null);
+    const [payMode, setPayMode] = useState<'OFFLINE_CASH' | 'OFFLINE_UPI' | null>(null);
+    const [confirming, setConfirming] = useState(false);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -1226,6 +1254,35 @@ function OrderList({ refresh }: { refresh: boolean }) {
         }
     };
 
+    const sendWhatsAppLink = async (order: ManagerOrder) => {
+        setWhatsappSendingId(order.id);
+        try {
+            const res = await api.post(`/manager/orders/${order.id}/send-whatsapp-link`);
+            toast.success(res.data.message || 'Payment link sent via WhatsApp');
+            await load();
+        } catch (e: any) {
+            toast.error(e?.response?.data?.error || 'Failed to send WhatsApp message');
+        } finally {
+            setWhatsappSendingId(null);
+        }
+    };
+
+    const confirmOfflinePayment = async () => {
+        if (!paymentModal || !payMode) return;
+        setConfirming(true);
+        try {
+            await api.post(`/manager/orders/${paymentModal.id}/confirm-payment`, { collectionMode: payMode });
+            toast.success('Payment confirmed & booking finalized!');
+            setPaymentModal(null);
+            setPayMode(null);
+            await load();
+        } catch (e: any) {
+            toast.error(e?.response?.data?.error || 'Failed to confirm payment');
+        } finally {
+            setConfirming(false);
+        }
+    };
+
     if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-purple-500" /></div>;
     if (orders.length === 0) return (
         <div className="text-center py-12 text-gray-400">
@@ -1275,6 +1332,16 @@ function OrderList({ refresh }: { refresh: boolean }) {
                                             {order.status === 'SENT' ? 'Resend' : 'Send'} Link
                                         </button>
                                     )}
+                                    {['CREATED', 'SENT'].includes(order.status) && (
+                                        <button
+                                            onClick={() => sendWhatsAppLink(order)}
+                                            disabled={whatsappSendingId === order.id}
+                                            className="text-xs px-3 py-1.5 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-60 flex items-center gap-1"
+                                        >
+                                            {whatsappSendingId === order.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <MessageCircle className="w-3 h-3" />}
+                                            {whatsappSendingId === order.id ? 'Sending...' : 'Send WhatsApp'}
+                                        </button>
+                                    )}
                                     {order.canSendInvoice && (
                                         <button
                                             onClick={() => sendInvoice(order)}
@@ -1303,12 +1370,74 @@ function OrderList({ refresh }: { refresh: boolean }) {
                                                     : 'Send Report'}
                                         </button>
                                     )}
+                                    {['CREATED', 'SENT'].includes(order.status) && (
+                                        <button
+                                            onClick={() => { setPaymentModal(order); setPayMode(null); }}
+                                            className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 flex items-center gap-1"
+                                        >
+                                            <Banknote className="w-3 h-3" />
+                                            Record Payment
+                                        </button>
+                                    )}
                                 </div>
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
+
+            {/* Offline Payment Confirmation Modal */}
+            {paymentModal && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+                        <div className="px-6 pt-6 pb-4 border-b border-gray-100 flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-gray-900">Record Offline Payment</h3>
+                            <button onClick={() => { setPaymentModal(null); setPayMode(null); }} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                                <X className="w-5 h-5 text-gray-600" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-500">Customer</span>
+                                    <span className="font-medium">{paymentModal.customer.name || paymentModal.customer.mobile}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-500">Amount</span>
+                                    <span className="font-bold text-purple-900">₹{paymentModal.totalAmount.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-500">Status</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[paymentModal.status] || 'bg-gray-100 text-gray-700'}`}>
+                                        {paymentModal.status.replace(/_/g, ' ')}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-sm font-medium text-gray-700 mb-2">Select payment method collected:</p>
+                                <div className="flex gap-2">
+                                    {(['OFFLINE_CASH', 'OFFLINE_UPI'] as const).map(m => (
+                                        <button key={m} onClick={() => setPayMode(m)}
+                                            className={`flex-1 text-sm py-2.5 px-3 rounded-lg border font-medium transition-colors
+                                                ${payMode === m ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50'}`}>
+                                            {m === 'OFFLINE_CASH' ? '💵 Cash' : '📱 UPI'}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {payMode && (
+                                <button onClick={confirmOfflinePayment} disabled={confirming}
+                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60">
+                                    {confirming ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                                    Confirm {payMode === 'OFFLINE_CASH' ? 'Cash' : 'UPI'} Payment & Finalize
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

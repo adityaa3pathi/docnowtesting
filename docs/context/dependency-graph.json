@@ -1,0 +1,2066 @@
+{
+    "$schema": "docnow-dependency-graph-v1",
+    "generatedAt": "2026-02-24T22:15:15+05:30",
+    "workspaceConfig": {
+        "type": "co-located-monorepo",
+        "root": ".",
+        "packages": [
+            "client",
+            "server"
+        ],
+        "packageManager": "npm",
+        "sharedNpmDependencies": [
+            "axios",
+            "typescript"
+        ],
+        "crossPackageProtocol": "HTTP/REST",
+        "notes": "No npm workspaces config. Each package has independent node_modules and builds. Client connects to server via API rewrites in next.config.ts."
+    },
+    "rootConfigInfluence": [
+        {
+            "file": ".gitignore",
+            "influences": [
+                "client",
+                "server"
+            ],
+            "type": "version-control",
+            "description": "Root .gitignore excludes design docs, reference materials, and IDE configs for both packages"
+        },
+        {
+            "file": "client/tsconfig.json",
+            "influences": [
+                "client"
+            ],
+            "type": "compiler-config",
+            "description": "Target ES2017, module esnext+bundler, path alias @/* → ./src/*. Determines all client import resolution."
+        },
+        {
+            "file": "server/tsconfig.json",
+            "influences": [
+                "server"
+            ],
+            "type": "compiler-config",
+            "description": "Target es2020, module commonjs, outDir ./dist. Relative import resolution only."
+        },
+        {
+            "file": "client/next.config.ts",
+            "influences": [
+                "client",
+                "server"
+            ],
+            "type": "runtime-config",
+            "description": "Defines /api/:path* rewrite → NEXT_PUBLIC_API_URL. This is the sole cross-package bridge (client→server)."
+        },
+        {
+            "file": "server/nodemon.json",
+            "influences": [
+                "server"
+            ],
+            "type": "dev-tooling",
+            "description": "Nodemon config for server hot-reload during development."
+        },
+        {
+            "file": "server/prisma/schema.prisma",
+            "influences": [
+                "server"
+            ],
+            "type": "schema",
+            "description": "Prisma schema generates @prisma/client used throughout all server modules."
+        },
+        {
+            "file": "client/postcss.config.mjs",
+            "influences": [
+                "client"
+            ],
+            "type": "build-config",
+            "description": "PostCSS config for TailwindCSS 4 processing."
+        },
+        {
+            "file": "client/eslint.config.mjs",
+            "influences": [
+                "client"
+            ],
+            "type": "linting",
+            "description": "ESLint config for Next.js client code quality."
+        }
+    ],
+    "workspaceBoundaries": [
+        {
+            "package": "client",
+            "path": "client/",
+            "entryPoint": "client/src/app/layout.tsx",
+            "buildCommand": "next build",
+            "devCommand": "next dev",
+            "internalAliases": {
+                "@/*": "client/src/*"
+            },
+            "externalDependencies": {
+                "npm": [
+                    "next",
+                    "react",
+                    "react-dom",
+                    "axios",
+                    "framer-motion",
+                    "lucide-react",
+                    "recharts",
+                    "react-hot-toast",
+                    "react-slick",
+                    "slick-carousel",
+                    "clsx",
+                    "tailwind-merge",
+                    "@radix-ui/react-dialog",
+                    "@radix-ui/react-dropdown-menu",
+                    "@radix-ui/react-separator",
+                    "@radix-ui/react-slot"
+                ],
+                "runtime": [
+                    {
+                        "target": "server",
+                        "protocol": "HTTP/REST",
+                        "bridge": "client/next.config.ts (rewrites)"
+                    }
+                ]
+            }
+        },
+        {
+            "package": "server",
+            "path": "server/",
+            "entryPoint": "server/src/index.ts",
+            "buildCommand": "tsc",
+            "devCommand": "nodemon src/index.ts",
+            "internalAliases": {},
+            "externalDependencies": {
+                "npm": [
+                    "express",
+                    "@prisma/client",
+                    "jsonwebtoken",
+                    "bcryptjs",
+                    "cors",
+                    "helmet",
+                    "morgan",
+                    "dotenv",
+                    "axios",
+                    "razorpay",
+                    "zod",
+                    "nanoid",
+                    "node-cron",
+                    "node-fetch",
+                    "@upstash/ratelimit",
+                    "@upstash/redis"
+                ],
+                "runtime": [
+                    {
+                        "target": "Healthians API",
+                        "protocol": "HTTP/REST",
+                        "bridge": "server/src/adapters/healthians.ts"
+                    },
+                    {
+                        "target": "Razorpay API",
+                        "protocol": "HTTP/REST",
+                        "bridge": "server/src/services/razorpay.ts"
+                    },
+                    {
+                        "target": "Google Maps API",
+                        "protocol": "HTTP/REST",
+                        "bridge": "server/src/utils/geocoding.ts"
+                    }
+                ]
+            }
+        }
+    ],
+    "nodes": [
+        {
+            "id": "server/src/index.ts",
+            "type": "entrypoint",
+            "package": "server",
+            "label": "Server Entry"
+        },
+        {
+            "id": "server/src/db.ts",
+            "type": "core",
+            "package": "server",
+            "label": "Prisma Client"
+        },
+        {
+            "id": "server/prisma/schema.prisma",
+            "type": "schema",
+            "package": "server",
+            "label": "Database Schema"
+        },
+        {
+            "id": "server/src/adapters/healthians.ts",
+            "type": "adapter",
+            "package": "server",
+            "label": "Healthians Adapter"
+        },
+        {
+            "id": "server/src/routes/addresses.ts",
+            "type": "route",
+            "package": "server",
+            "label": "Addresses Routes"
+        },
+        {
+            "id": "server/src/routes/admin.ts",
+            "type": "route",
+            "package": "server",
+            "label": "Admin Routes"
+        },
+        {
+            "id": "server/src/routes/auth.ts",
+            "type": "route",
+            "package": "server",
+            "label": "Auth Routes"
+        },
+        {
+            "id": "server/src/routes/bookings.ts",
+            "type": "route",
+            "package": "server",
+            "label": "Bookings Routes"
+        },
+        {
+            "id": "server/src/routes/callback.ts",
+            "type": "route",
+            "package": "server",
+            "label": "Callback Routes"
+        },
+        {
+            "id": "server/src/routes/cart.ts",
+            "type": "route",
+            "package": "server",
+            "label": "Cart Routes"
+        },
+        {
+            "id": "server/src/routes/catalog.ts",
+            "type": "route",
+            "package": "server",
+            "label": "Catalog Routes"
+        },
+        {
+            "id": "server/src/routes/location.ts",
+            "type": "route",
+            "package": "server",
+            "label": "Location Routes"
+        },
+        {
+            "id": "server/src/routes/manager.ts",
+            "type": "route",
+            "package": "server",
+            "label": "Manager Routes"
+        },
+        {
+            "id": "server/src/routes/patients.ts",
+            "type": "route",
+            "package": "server",
+            "label": "Patients Routes"
+        },
+        {
+            "id": "server/src/routes/payments.ts",
+            "type": "route",
+            "package": "server",
+            "label": "Payments Routes"
+        },
+        {
+            "id": "server/src/routes/profile.ts",
+            "type": "route",
+            "package": "server",
+            "label": "Profile Routes"
+        },
+        {
+            "id": "server/src/routes/promos.ts",
+            "type": "route",
+            "package": "server",
+            "label": "Promos Routes"
+        },
+        {
+            "id": "server/src/routes/slots.ts",
+            "type": "route",
+            "package": "server",
+            "label": "Slots Routes"
+        },
+        {
+            "id": "server/src/routes/user.ts",
+            "type": "route",
+            "package": "server",
+            "label": "User Routes"
+        },
+        {
+            "id": "server/src/controllers/admin/index.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Admin Controllers"
+        },
+        {
+            "id": "server/src/controllers/admin/audit.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Audit Controller"
+        },
+        {
+            "id": "server/src/controllers/admin/config.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Config Controller"
+        },
+        {
+            "id": "server/src/controllers/admin/orders.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Admin Orders Controller"
+        },
+        {
+            "id": "server/src/controllers/admin/promos.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Admin Promos Controller"
+        },
+        {
+            "id": "server/src/controllers/admin/referrals.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Referrals Controller"
+        },
+        {
+            "id": "server/src/controllers/admin/stats.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Stats Controller"
+        },
+        {
+            "id": "server/src/controllers/admin/users.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Admin Users Controller"
+        },
+        {
+            "id": "server/src/controllers/admin/wallets.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Admin Wallets Controller"
+        },
+        {
+            "id": "server/src/controllers/bookings/index.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Bookings Controllers"
+        },
+        {
+            "id": "server/src/controllers/bookings/cancel.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Cancel Booking Controller"
+        },
+        {
+            "id": "server/src/controllers/bookings/create.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Create Booking Controller"
+        },
+        {
+            "id": "server/src/controllers/bookings/list.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "List Bookings Controller"
+        },
+        {
+            "id": "server/src/controllers/bookings/phlebo.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Phlebo Controller"
+        },
+        {
+            "id": "server/src/controllers/bookings/reschedule.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Reschedule Controller"
+        },
+        {
+            "id": "server/src/controllers/bookings/slots.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Booking Slots Controller"
+        },
+        {
+            "id": "server/src/controllers/bookings/status.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Booking Status Controller"
+        },
+        {
+            "id": "server/src/controllers/payments/index.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Payments Controllers"
+        },
+        {
+            "id": "server/src/controllers/payments/initiate.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Initiate Payment Controller"
+        },
+        {
+            "id": "server/src/controllers/payments/verify.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Verify Payment Controller"
+        },
+        {
+            "id": "server/src/controllers/payments/webhook.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Webhook Controller"
+        },
+        {
+            "id": "server/src/middleware/auth.ts",
+            "type": "middleware",
+            "package": "server",
+            "label": "Auth Middleware"
+        },
+        {
+            "id": "server/src/middleware/adminAuth.ts",
+            "type": "middleware",
+            "package": "server",
+            "label": "Admin Auth Middleware"
+        },
+        {
+            "id": "server/src/middleware/rateLimiter.ts",
+            "type": "middleware",
+            "package": "server",
+            "label": "Rate Limiter"
+        },
+        {
+            "id": "server/src/middleware/requireManager.ts",
+            "type": "middleware",
+            "package": "server",
+            "label": "Require Manager Middleware"
+        },
+        {
+            "id": "server/src/services/booking.service.ts",
+            "type": "service",
+            "package": "server",
+            "label": "Booking Service"
+        },
+        {
+            "id": "server/src/services/partnerBooking.ts",
+            "type": "service",
+            "package": "server",
+            "label": "Partner Booking Service"
+        },
+        {
+            "id": "server/src/services/razorpay.ts",
+            "type": "service",
+            "package": "server",
+            "label": "Razorpay Service"
+        },
+        {
+            "id": "server/src/services/rollback.ts",
+            "type": "service",
+            "package": "server",
+            "label": "Rollback Service"
+        },
+        {
+            "id": "server/src/utils/adminHelpers.ts",
+            "type": "util",
+            "package": "server",
+            "label": "Admin Helpers"
+        },
+        {
+            "id": "server/src/utils/geocoding.ts",
+            "type": "util",
+            "package": "server",
+            "label": "Geocoding Util"
+        },
+        {
+            "id": "server/src/utils/helpers.ts",
+            "type": "util",
+            "package": "server",
+            "label": "Common Helpers"
+        },
+        {
+            "id": "server/src/utils/paymentStateMachine.ts",
+            "type": "util",
+            "package": "server",
+            "label": "Payment State Machine"
+        },
+        {
+            "id": "server/src/utils/promoHelper.ts",
+            "type": "util",
+            "package": "server",
+            "label": "Promo Helper"
+        },
+        {
+            "id": "server/src/utils/rateLimit.ts",
+            "type": "util",
+            "package": "server",
+            "label": "Rate Limit (Redis)"
+        },
+        {
+            "id": "server/src/utils/referralService.ts",
+            "type": "util",
+            "package": "server",
+            "label": "Referral Service"
+        },
+        {
+            "id": "server/src/utils/security.ts",
+            "type": "util",
+            "package": "server",
+            "label": "Security Utils"
+        },
+        {
+            "id": "server/src/workers/reconciler.ts",
+            "type": "worker",
+            "package": "server",
+            "label": "Reconciliation Worker"
+        },
+        {
+            "id": "client/src/app/layout.tsx",
+            "type": "entrypoint",
+            "package": "client",
+            "label": "Client Root Layout"
+        },
+        {
+            "id": "client/src/app/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Home Page"
+        },
+        {
+            "id": "client/src/app/about/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "About Page"
+        },
+        {
+            "id": "client/src/app/cart/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Cart Page"
+        },
+        {
+            "id": "client/src/app/privacy/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Privacy Page"
+        },
+        {
+            "id": "client/src/app/profile/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Profile Page"
+        },
+        {
+            "id": "client/src/app/search/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Search Page"
+        },
+        {
+            "id": "client/src/app/terms/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Terms Page"
+        },
+        {
+            "id": "client/src/app/manager/layout.tsx",
+            "type": "layout",
+            "package": "client",
+            "label": "Manager Layout"
+        },
+        {
+            "id": "client/src/app/manager/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Manager Page"
+        },
+        {
+            "id": "client/src/app/manager/catalog/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Manager Catalog Page"
+        },
+        {
+            "id": "client/src/app/manager/categories/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Manager Categories Page"
+        },
+        {
+            "id": "client/src/app/manager/dashboard/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Manager Dashboard Page"
+        },
+        {
+            "id": "client/src/app/manager/orders/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Manager Orders Page"
+        },
+        {
+            "id": "client/src/app/manager/payment-links/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Manager Payment Links Page"
+        },
+        {
+            "id": "client/src/app/manager/settings/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Manager Settings Page"
+        },
+        {
+            "id": "client/src/app/super-admin/layout.tsx",
+            "type": "layout",
+            "package": "client",
+            "label": "Super Admin Layout"
+        },
+        {
+            "id": "client/src/app/super-admin/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Super Admin Page"
+        },
+        {
+            "id": "client/src/app/super-admin/audit-logs/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Audit Logs Page"
+        },
+        {
+            "id": "client/src/app/super-admin/dashboard/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Admin Dashboard Page"
+        },
+        {
+            "id": "client/src/app/super-admin/orders/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Admin Orders Page"
+        },
+        {
+            "id": "client/src/app/super-admin/promos/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Promos Page"
+        },
+        {
+            "id": "client/src/app/super-admin/promos/new/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "New Promo Page"
+        },
+        {
+            "id": "client/src/app/super-admin/referrals/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Referrals Page"
+        },
+        {
+            "id": "client/src/app/super-admin/settings/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Admin Settings Page"
+        },
+        {
+            "id": "client/src/app/super-admin/users/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Users Page"
+        },
+        {
+            "id": "client/src/app/super-admin/users/[id]/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "User Detail Page"
+        },
+        {
+            "id": "client/src/app/super-admin/wallets/page.tsx",
+            "type": "page",
+            "package": "client",
+            "label": "Wallets Page"
+        },
+        {
+            "id": "client/src/lib/api.ts",
+            "type": "core",
+            "package": "client",
+            "label": "Axios API Client"
+        },
+        {
+            "id": "client/src/lib/utils.ts",
+            "type": "util",
+            "package": "client",
+            "label": "Client Utilities (cn)"
+        },
+        {
+            "id": "client/src/contexts/AuthContext.tsx",
+            "type": "context",
+            "package": "client",
+            "label": "Auth Context"
+        },
+        {
+            "id": "client/src/contexts/CartContext.tsx",
+            "type": "context",
+            "package": "client",
+            "label": "Cart Context"
+        },
+        {
+            "id": "client/src/contexts/LocationContext.tsx",
+            "type": "context",
+            "package": "client",
+            "label": "Location Context"
+        },
+        {
+            "id": "client/src/hooks/useCheckout.ts",
+            "type": "hook",
+            "package": "client",
+            "label": "Checkout Hook"
+        },
+        {
+            "id": "client/src/hooks/usePromo.ts",
+            "type": "hook",
+            "package": "client",
+            "label": "Promo Hook"
+        },
+        {
+            "id": "client/src/hooks/useSlots.ts",
+            "type": "hook",
+            "package": "client",
+            "label": "Slots Hook"
+        },
+        {
+            "id": "client/src/hooks/useUserDetail.ts",
+            "type": "hook",
+            "package": "client",
+            "label": "User Detail Hook"
+        },
+        {
+            "id": "client/src/hooks/useUsers.ts",
+            "type": "hook",
+            "package": "client",
+            "label": "Users Hook"
+        },
+        {
+            "id": "client/src/hooks/useWalletAdjust.ts",
+            "type": "hook",
+            "package": "client",
+            "label": "Wallet Adjust Hook"
+        },
+        {
+            "id": "client/src/types/admin.ts",
+            "type": "types",
+            "package": "client",
+            "label": "Admin Types"
+        },
+        {
+            "id": "client/src/types/cart.ts",
+            "type": "types",
+            "package": "client",
+            "label": "Cart Types"
+        },
+        {
+            "id": "client/src/utils/formatters.ts",
+            "type": "util",
+            "package": "client",
+            "label": "Formatters"
+        },
+        {
+            "id": "client/src/components/ui.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "UI Primitives (Button, Card, Input)"
+        },
+        {
+            "id": "client/src/components/ui/dialog.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Dialog Component"
+        },
+        {
+            "id": "client/src/components/Header.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Header"
+        },
+        {
+            "id": "client/src/components/Footer.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Footer"
+        },
+        {
+            "id": "client/src/components/AuthDialog.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Auth Dialog"
+        },
+        {
+            "id": "client/src/components/LocationSelector.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Location Selector"
+        },
+        {
+            "id": "client/src/components/cart/SlotSelector.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Slot Selector"
+        },
+        {
+            "id": "client/src/components/cart/AddressSelector.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Address Selector"
+        },
+        {
+            "id": "client/src/components/cart/CartItemCard.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Cart Item Card"
+        },
+        {
+            "id": "client/src/components/cart/PromoSection.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Promo Section"
+        },
+        {
+            "id": "client/src/components/cart/OrderSummary.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Order Summary"
+        },
+        {
+            "id": "client/src/components/cart/MobileCheckoutBar.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Mobile Checkout Bar"
+        },
+        {
+            "id": "client/src/components/profile/ProfileTab.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Profile Tab"
+        },
+        {
+            "id": "client/src/components/profile/FamilyTab.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Family Tab"
+        },
+        {
+            "id": "client/src/components/profile/BookingsTab.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Bookings Tab"
+        },
+        {
+            "id": "client/src/components/profile/WalletTab.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Wallet Tab"
+        },
+        {
+            "id": "client/src/components/profile/ReportsTab.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Reports Tab"
+        },
+        {
+            "id": "client/src/components/profile/AddFamilyMemberDialog.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Add Family Member Dialog"
+        },
+        {
+            "id": "client/src/components/profile/ProfileCompletionDialog.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Profile Completion Dialog"
+        },
+        {
+            "id": "client/src/components/profile/bookings/BookingCard.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Booking Card"
+        },
+        {
+            "id": "client/src/components/profile/bookings/CancelDialog.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Cancel Dialog"
+        },
+        {
+            "id": "client/src/components/profile/bookings/RescheduleDialog.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Reschedule Dialog"
+        },
+        {
+            "id": "client/src/components/profile/bookings/TrackStatusDialog.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Track Status Dialog"
+        },
+        {
+            "id": "client/src/components/profile/bookings/useBookings.ts",
+            "type": "hook",
+            "package": "client",
+            "label": "Bookings Hook (component-local)"
+        },
+        {
+            "id": "client/src/components/profile/bookings/types.ts",
+            "type": "types",
+            "package": "client",
+            "label": "Booking Types"
+        },
+        {
+            "id": "client/src/components/admin/UsersFilters.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Users Filters"
+        },
+        {
+            "id": "client/src/components/admin/UsersTable.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Users Table"
+        },
+        {
+            "id": "client/src/components/admin/UserPagination.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "User Pagination"
+        },
+        {
+            "id": "client/src/components/admin/WalletModal.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Wallet Modal"
+        },
+        {
+            "id": "client/src/components/admin/WalletLedger.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Wallet Ledger"
+        },
+        {
+            "id": "client/src/components/admin/OrderHistory.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "Order History"
+        },
+        {
+            "id": "client/src/components/admin/UserInfoCards.tsx",
+            "type": "component",
+            "package": "client",
+            "label": "User Info Cards"
+        },
+        {
+            "id": "server/src/routes/webhooks.ts",
+            "type": "route",
+            "package": "server",
+            "label": "Webhooks Route"
+        },
+        {
+            "id": "server/src/controllers/webhooks/index.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Webhooks Controllers"
+        },
+        {
+            "id": "server/src/controllers/webhooks/healthians.ts",
+            "type": "controller",
+            "package": "server",
+            "label": "Healthians Webhook Controller"
+        },
+        {
+            "id": "server/src/services/healthiansWebhook.ts",
+            "type": "service",
+            "package": "server",
+            "label": "Healthians Webhook Service"
+        },
+        {
+            "id": "server/src/utils/healthiansStatusMap.ts",
+            "type": "util",
+            "package": "server",
+            "label": "Healthians Status Map"
+        }
+    ],
+    "edges": [
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/routes/location.ts",
+            "type": "mounts",
+            "label": "/api/location"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/routes/catalog.ts",
+            "type": "mounts",
+            "label": "/api/catalog"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/routes/user.ts",
+            "type": "mounts",
+            "label": "/api/users"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/routes/callback.ts",
+            "type": "mounts",
+            "label": "/api/callback"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/routes/auth.ts",
+            "type": "mounts",
+            "label": "/api/auth"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/routes/profile.ts",
+            "type": "mounts",
+            "label": "/api/profile"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/routes/patients.ts",
+            "type": "mounts",
+            "label": "/api/profile/patients"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/routes/addresses.ts",
+            "type": "mounts",
+            "label": "/api/profile/addresses"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/routes/cart.ts",
+            "type": "mounts",
+            "label": "/api/cart"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/routes/slots.ts",
+            "type": "mounts",
+            "label": "/api/slots"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/routes/bookings.ts",
+            "type": "mounts",
+            "label": "/api/bookings"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/routes/admin.ts",
+            "type": "mounts",
+            "label": "/api/admin"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/routes/manager.ts",
+            "type": "mounts",
+            "label": "/api/manager"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/routes/payments.ts",
+            "type": "mounts",
+            "label": "/api/payments"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/controllers/payments/webhook.ts",
+            "type": "import",
+            "label": "webhookHandler (pre-json)"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/workers/reconciler.ts",
+            "type": "import",
+            "label": "startReconciler"
+        },
+        {
+            "from": "server/src/routes/bookings.ts",
+            "to": "server/src/controllers/bookings/index.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/bookings.ts",
+            "to": "server/src/middleware/auth.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/payments.ts",
+            "to": "server/src/controllers/payments/index.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/payments.ts",
+            "to": "server/src/middleware/auth.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/payments.ts",
+            "to": "server/src/middleware/rateLimiter.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/admin.ts",
+            "to": "server/src/controllers/admin/index.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/admin.ts",
+            "to": "server/src/middleware/auth.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/admin.ts",
+            "to": "server/src/middleware/adminAuth.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/manager.ts",
+            "to": "server/src/middleware/auth.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/manager.ts",
+            "to": "server/src/middleware/requireManager.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/manager.ts",
+            "to": "server/src/db.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/manager.ts",
+            "to": "server/src/adapters/healthians.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/auth.ts",
+            "to": "server/src/db.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/catalog.ts",
+            "to": "server/src/db.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/cart.ts",
+            "to": "server/src/db.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/cart.ts",
+            "to": "server/src/middleware/auth.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/profile.ts",
+            "to": "server/src/middleware/auth.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/patients.ts",
+            "to": "server/src/middleware/auth.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/addresses.ts",
+            "to": "server/src/middleware/auth.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/addresses.ts",
+            "to": "server/src/utils/geocoding.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/promos.ts",
+            "to": "server/src/db.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/promos.ts",
+            "to": "server/src/middleware/auth.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/promos.ts",
+            "to": "server/src/utils/promoHelper.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/slots.ts",
+            "to": "server/src/adapters/healthians.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/slots.ts",
+            "to": "server/src/middleware/auth.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/slots.ts",
+            "to": "server/src/db.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/location.ts",
+            "to": "server/src/adapters/healthians.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/location.ts",
+            "to": "server/src/utils/geocoding.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/routes/user.ts",
+            "to": "server/src/db.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/controllers/admin/index.ts",
+            "to": "server/src/controllers/admin/stats.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/admin/index.ts",
+            "to": "server/src/controllers/admin/users.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/admin/index.ts",
+            "to": "server/src/controllers/admin/config.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/admin/index.ts",
+            "to": "server/src/controllers/admin/wallets.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/admin/index.ts",
+            "to": "server/src/controllers/admin/referrals.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/admin/index.ts",
+            "to": "server/src/controllers/admin/orders.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/admin/index.ts",
+            "to": "server/src/controllers/admin/audit.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/admin/index.ts",
+            "to": "server/src/controllers/admin/promos.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/bookings/index.ts",
+            "to": "server/src/controllers/bookings/create.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/bookings/index.ts",
+            "to": "server/src/controllers/bookings/list.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/bookings/index.ts",
+            "to": "server/src/controllers/bookings/status.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/bookings/index.ts",
+            "to": "server/src/controllers/bookings/cancel.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/bookings/index.ts",
+            "to": "server/src/controllers/bookings/reschedule.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/bookings/index.ts",
+            "to": "server/src/controllers/bookings/slots.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/bookings/index.ts",
+            "to": "server/src/controllers/bookings/phlebo.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/payments/index.ts",
+            "to": "server/src/controllers/payments/initiate.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/payments/index.ts",
+            "to": "server/src/controllers/payments/verify.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/payments/index.ts",
+            "to": "server/src/controllers/payments/webhook.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/middleware/adminAuth.ts",
+            "to": "server/src/middleware/auth.ts",
+            "type": "import",
+            "label": "AuthRequest"
+        },
+        {
+            "from": "server/src/middleware/adminAuth.ts",
+            "to": "server/src/db.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/middleware/requireManager.ts",
+            "to": "server/src/middleware/auth.ts",
+            "type": "import",
+            "label": "AuthRequest"
+        },
+        {
+            "from": "server/src/middleware/requireManager.ts",
+            "to": "server/src/db.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/services/booking.service.ts",
+            "to": "server/src/db.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/services/booking.service.ts",
+            "to": "server/src/adapters/healthians.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/services/partnerBooking.ts",
+            "to": "server/src/db.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/services/partnerBooking.ts",
+            "to": "server/src/adapters/healthians.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/services/partnerBooking.ts",
+            "to": "server/src/utils/helpers.ts",
+            "type": "import",
+            "label": "normalizeGender"
+        },
+        {
+            "from": "server/src/services/rollback.ts",
+            "to": "server/src/db.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/adapters/healthians.ts",
+            "to": "server/src/utils/security.ts",
+            "type": "import",
+            "label": "generateChecksum"
+        },
+        {
+            "from": "server/src/workers/reconciler.ts",
+            "to": "server/src/db.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/workers/reconciler.ts",
+            "to": "server/src/services/partnerBooking.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/workers/reconciler.ts",
+            "to": "server/src/services/rollback.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/workers/reconciler.ts",
+            "to": "server/src/utils/paymentStateMachine.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/utils/adminHelpers.ts",
+            "to": "server/src/middleware/auth.ts",
+            "type": "import",
+            "label": "AuthRequest"
+        },
+        {
+            "from": "client/src/lib/api.ts",
+            "to": "server/src/index.ts",
+            "type": "cross-package-http",
+            "label": "REST API via Axios (bridged by next.config.ts rewrites)",
+            "protocol": "HTTP"
+        },
+        {
+            "from": "client/src/app/layout.tsx",
+            "to": "client/src/lib/utils.ts",
+            "type": "import",
+            "label": "cn"
+        },
+        {
+            "from": "client/src/app/layout.tsx",
+            "to": "client/src/contexts/LocationContext.tsx",
+            "type": "import",
+            "label": "LocationProvider"
+        },
+        {
+            "from": "client/src/app/layout.tsx",
+            "to": "client/src/contexts/AuthContext.tsx",
+            "type": "import",
+            "label": "AuthProvider"
+        },
+        {
+            "from": "client/src/app/layout.tsx",
+            "to": "client/src/contexts/CartContext.tsx",
+            "type": "import",
+            "label": "CartProvider"
+        },
+        {
+            "from": "client/src/app/page.tsx",
+            "to": "client/src/components/Header.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/page.tsx",
+            "to": "client/src/components/Footer.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/page.tsx",
+            "to": "client/src/components/ui.tsx",
+            "type": "import",
+            "label": "Button, Card, Input"
+        },
+        {
+            "from": "client/src/app/page.tsx",
+            "to": "client/src/components/LocationSelector.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/cart/page.tsx",
+            "to": "client/src/components/Header.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/cart/page.tsx",
+            "to": "client/src/contexts/CartContext.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/cart/page.tsx",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/cart/page.tsx",
+            "to": "client/src/components/cart/SlotSelector.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/cart/page.tsx",
+            "to": "client/src/components/cart/AddressSelector.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/cart/page.tsx",
+            "to": "client/src/components/cart/CartItemCard.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/cart/page.tsx",
+            "to": "client/src/components/cart/PromoSection.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/cart/page.tsx",
+            "to": "client/src/components/cart/OrderSummary.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/cart/page.tsx",
+            "to": "client/src/components/cart/MobileCheckoutBar.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/cart/page.tsx",
+            "to": "client/src/components/profile/ProfileCompletionDialog.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/cart/page.tsx",
+            "to": "client/src/components/profile/AddFamilyMemberDialog.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/cart/page.tsx",
+            "to": "client/src/hooks/useSlots.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/cart/page.tsx",
+            "to": "client/src/hooks/usePromo.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/cart/page.tsx",
+            "to": "client/src/hooks/useCheckout.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/cart/page.tsx",
+            "to": "client/src/types/cart.ts",
+            "type": "import",
+            "label": "Patient, Address"
+        },
+        {
+            "from": "client/src/app/search/page.tsx",
+            "to": "client/src/components/Header.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/search/page.tsx",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/search/page.tsx",
+            "to": "client/src/contexts/LocationContext.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/search/page.tsx",
+            "to": "client/src/contexts/AuthContext.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/search/page.tsx",
+            "to": "client/src/contexts/CartContext.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/profile/page.tsx",
+            "to": "client/src/components/Header.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/profile/page.tsx",
+            "to": "client/src/components/profile/WalletTab.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/profile/page.tsx",
+            "to": "client/src/components/profile/ProfileTab.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/profile/page.tsx",
+            "to": "client/src/components/profile/FamilyTab.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/profile/page.tsx",
+            "to": "client/src/components/profile/BookingsTab.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/profile/page.tsx",
+            "to": "client/src/components/profile/ReportsTab.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/profile/page.tsx",
+            "to": "client/src/lib/utils.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/profile/page.tsx",
+            "to": "client/src/contexts/AuthContext.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/super-admin/users/page.tsx",
+            "to": "client/src/hooks/useUsers.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/super-admin/users/page.tsx",
+            "to": "client/src/hooks/useWalletAdjust.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/super-admin/users/page.tsx",
+            "to": "client/src/components/admin/UsersFilters.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/super-admin/users/page.tsx",
+            "to": "client/src/components/admin/UsersTable.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/super-admin/users/page.tsx",
+            "to": "client/src/components/admin/UserPagination.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/super-admin/users/page.tsx",
+            "to": "client/src/components/admin/WalletModal.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/about/page.tsx",
+            "to": "client/src/components/Header.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/about/page.tsx",
+            "to": "client/src/components/Footer.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/about/page.tsx",
+            "to": "client/src/components/ui.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/privacy/page.tsx",
+            "to": "client/src/components/Header.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/privacy/page.tsx",
+            "to": "client/src/components/Footer.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/privacy/page.tsx",
+            "to": "client/src/components/ui.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/terms/page.tsx",
+            "to": "client/src/components/Header.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/terms/page.tsx",
+            "to": "client/src/components/Footer.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/app/terms/page.tsx",
+            "to": "client/src/components/ui.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/contexts/CartContext.tsx",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/contexts/CartContext.tsx",
+            "to": "client/src/contexts/AuthContext.tsx",
+            "type": "import",
+            "label": "useAuth"
+        },
+        {
+            "from": "client/src/hooks/useCheckout.ts",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/hooks/useCheckout.ts",
+            "to": "client/src/types/cart.ts",
+            "type": "import",
+            "label": "SlotItem, AppliedPromo"
+        },
+        {
+            "from": "client/src/hooks/usePromo.ts",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/hooks/usePromo.ts",
+            "to": "client/src/types/cart.ts",
+            "type": "import",
+            "label": "AppliedPromo, AvailablePromo"
+        },
+        {
+            "from": "client/src/hooks/useSlots.ts",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/hooks/useSlots.ts",
+            "to": "client/src/types/cart.ts",
+            "type": "import",
+            "label": "Address, SlotItem"
+        },
+        {
+            "from": "client/src/hooks/useUserDetail.ts",
+            "to": "client/src/types/admin.ts",
+            "type": "import",
+            "label": "UserData"
+        },
+        {
+            "from": "client/src/hooks/useUsers.ts",
+            "to": "client/src/types/admin.ts",
+            "type": "import",
+            "label": "AdminUser, AdminPagination, StatusFilter, RoleFilter"
+        },
+        {
+            "from": "client/src/hooks/useWalletAdjust.ts",
+            "to": "client/src/types/admin.ts",
+            "type": "import",
+            "label": "AdminUser"
+        },
+        {
+            "from": "client/src/components/ui.tsx",
+            "to": "client/src/lib/utils.ts",
+            "type": "import",
+            "label": "cn"
+        },
+        {
+            "from": "client/src/components/ui/dialog.tsx",
+            "to": "client/src/lib/utils.ts",
+            "type": "import",
+            "label": "cn"
+        },
+        {
+            "from": "client/src/components/Header.tsx",
+            "to": "client/src/components/ui.tsx",
+            "type": "import",
+            "label": "Button, Input"
+        },
+        {
+            "from": "client/src/components/Header.tsx",
+            "to": "client/src/contexts/LocationContext.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/Header.tsx",
+            "to": "client/src/contexts/AuthContext.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/Header.tsx",
+            "to": "client/src/contexts/CartContext.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/Header.tsx",
+            "to": "client/src/components/AuthDialog.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/AuthDialog.tsx",
+            "to": "client/src/components/ui.tsx",
+            "type": "import",
+            "label": "Button, Input"
+        },
+        {
+            "from": "client/src/components/AuthDialog.tsx",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/AuthDialog.tsx",
+            "to": "client/src/contexts/AuthContext.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/AuthDialog.tsx",
+            "to": "client/src/lib/utils.ts",
+            "type": "import",
+            "label": "cn"
+        },
+        {
+            "from": "client/src/components/LocationSelector.tsx",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/LocationSelector.tsx",
+            "to": "client/src/lib/utils.ts",
+            "type": "import",
+            "label": "cn"
+        },
+        {
+            "from": "client/src/components/LocationSelector.tsx",
+            "to": "client/src/contexts/LocationContext.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/ProfileTab.tsx",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/ProfileTab.tsx",
+            "to": "client/src/components/ui/dialog.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/ProfileTab.tsx",
+            "to": "client/src/components/ui.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/FamilyTab.tsx",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/FamilyTab.tsx",
+            "to": "client/src/components/ui/dialog.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/FamilyTab.tsx",
+            "to": "client/src/components/ui.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/WalletTab.tsx",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/AddFamilyMemberDialog.tsx",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/AddFamilyMemberDialog.tsx",
+            "to": "client/src/components/ui/dialog.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/AddFamilyMemberDialog.tsx",
+            "to": "client/src/components/ui.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/ProfileCompletionDialog.tsx",
+            "to": "client/src/components/ui/dialog.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/ProfileCompletionDialog.tsx",
+            "to": "client/src/components/ui.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/ProfileCompletionDialog.tsx",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/BookingsTab.tsx",
+            "to": "client/src/components/ui.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/BookingsTab.tsx",
+            "to": "client/src/components/profile/bookings/useBookings.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/BookingsTab.tsx",
+            "to": "client/src/components/profile/bookings/BookingCard.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/BookingsTab.tsx",
+            "to": "client/src/components/profile/bookings/types.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/BookingsTab.tsx",
+            "to": "client/src/components/profile/bookings/TrackStatusDialog.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/BookingsTab.tsx",
+            "to": "client/src/components/profile/bookings/CancelDialog.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/BookingsTab.tsx",
+            "to": "client/src/components/profile/bookings/RescheduleDialog.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/useBookings.ts",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/useBookings.ts",
+            "to": "client/src/components/profile/bookings/types.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/BookingCard.tsx",
+            "to": "client/src/components/ui.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/BookingCard.tsx",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/BookingCard.tsx",
+            "to": "client/src/components/profile/bookings/types.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/CancelDialog.tsx",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/CancelDialog.tsx",
+            "to": "client/src/components/ui/dialog.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/CancelDialog.tsx",
+            "to": "client/src/components/ui.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/RescheduleDialog.tsx",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/RescheduleDialog.tsx",
+            "to": "client/src/components/ui/dialog.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/RescheduleDialog.tsx",
+            "to": "client/src/components/ui.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/RescheduleDialog.tsx",
+            "to": "client/src/components/profile/bookings/types.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/TrackStatusDialog.tsx",
+            "to": "client/src/lib/api.ts",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/TrackStatusDialog.tsx",
+            "to": "client/src/components/ui/dialog.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/TrackStatusDialog.tsx",
+            "to": "client/src/components/ui.tsx",
+            "type": "import"
+        },
+        {
+            "from": "client/src/components/profile/bookings/TrackStatusDialog.tsx",
+            "to": "client/src/components/profile/bookings/types.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/index.ts",
+            "to": "server/src/controllers/webhooks/index.ts",
+            "type": "import",
+            "label": "healthiansWebhookHandler (pre-json)"
+        },
+        {
+            "from": "server/src/routes/webhooks.ts",
+            "to": "server/src/controllers/webhooks/index.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/controllers/webhooks/index.ts",
+            "to": "server/src/controllers/webhooks/healthians.ts",
+            "type": "re-export"
+        },
+        {
+            "from": "server/src/controllers/webhooks/healthians.ts",
+            "to": "server/src/services/healthiansWebhook.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/controllers/webhooks/healthians.ts",
+            "to": "server/src/db.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/services/healthiansWebhook.ts",
+            "to": "server/src/db.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/services/healthiansWebhook.ts",
+            "to": "server/src/utils/healthiansStatusMap.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/services/healthiansWebhook.ts",
+            "to": "server/src/utils/paymentStateMachine.ts",
+            "type": "import"
+        },
+        {
+            "from": "server/src/services/healthiansWebhook.ts",
+            "to": "server/src/services/rollback.ts",
+            "type": "import"
+        }
+    ],
+    "crossPackageSummary": {
+        "totalCrossPackageEdges": 1,
+        "bridges": [
+            {
+                "from": "client",
+                "to": "server",
+                "type": "cross-package-http",
+                "mechanism": "Next.js API rewrites (client/next.config.ts) proxy /api/* → server Express routes",
+                "sharedContract": "REST API endpoints defined in server/src/routes/*",
+                "envVar": "NEXT_PUBLIC_API_URL"
+            }
+        ],
+        "sharedSourceCode": [],
+        "sharedNpmDeps": [
+            {
+                "name": "axios",
+                "clientVersion": "^1.13.4",
+                "serverVersion": "^1.13.4"
+            },
+            {
+                "name": "typescript",
+                "clientVersion": "^5",
+                "serverVersion": "^5.9.3"
+            }
+        ],
+        "notes": "No shared source packages — client and server are isolated. All cross-package communication is via HTTP. Type definitions are NOT shared; client maintains its own types in client/src/types/."
+    }
+}

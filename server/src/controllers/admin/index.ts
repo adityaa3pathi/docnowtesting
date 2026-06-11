@@ -5,8 +5,10 @@ export { getConfigs, updateConfig } from './config';
 export { adjustWallet, getWalletLedger } from './wallets';
 export { getReferralStats } from './referrals';
 export { listOrders } from './orders';
+export { getSalesReport } from './salesReport';
+export { getSettlementReport } from './settlementReport';
 export { getAuditLogs } from './audit';
-export { listPromos, createPromo, updatePromo } from './promos';
+export { listPromos, createPromo, updatePromo, deletePromo } from './promos';
 export {
     listFeaturedPackages,
     searchCatalogForFeaturing,

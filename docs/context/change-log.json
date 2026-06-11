@@ -1,0 +1,59 @@
+{
+  "changes": [
+    {
+      "timestamp": "2026-06-10T11:18:00.000Z",
+      "commit": "Pending",
+      "filesModified": [
+        "server/src/controllers/bookings/phlebo.ts",
+        "server/src/controllers/bookings/reschedule.ts",
+        "server/src/services/bookingCancellation.ts"
+      ],
+      "impactSummary": "Updated customer-facing error messages to be more professional and removed technical jargon (like 'Booking ID').",
+      "contextUpdated": true
+    },
+    {
+      "timestamp": "2026-06-09T12:05:00.000Z",
+      "commit": "Pending",
+      "filesModified": [
+        "client/src/components/profile/bookings/RescheduleDialog.tsx",
+        "server/src/controllers/bookings/phlebo.ts"
+      ],
+      "impactSummary": "Fixed Reschedule Dialog UI overflow clipping footer buttons. Fixed Phlebotomist contact API to support rescheduled bookings by prioritizing the new active partner booking ID.",
+      "contextUpdated": true
+    },
+    {
+      "timestamp": "2026-06-06T20:16:00.000Z",
+      "commit": "Pending",
+      "filesModified": [
+        "client/src/components/Footer.tsx"
+      ],
+      "impactSummary": "Updated social media links (Instagram, LinkedIn, Facebook) and removed Twitter icon in Footer",
+      "contextUpdated": true
+    },
+    {
+      "timestamp": "2026-05-24T20:45:20.512Z",
+      "commit": "Pending",
+      "filesModified": [
+        "client/src/components/Header.tsx",
+        "client/src/components/global-search/GlobalSearch.tsx",
+        "client/src/hooks/useDebounce.ts",
+        "client/src/hooks/useGlobalSearch.ts"
+      ],
+      "impactSummary": "Implemented GlobalSearch bar in Header",
+      "contextUpdated": true
+    },
+    {
+      "timestamp": "2026-05-24T21:33:12.209Z",
+      "commit": "Pending",
+      "filesModified": [
+        "client/src/app/page.tsx",
+        "client/src/app/tests/page.tsx",
+        "client/src/app/packages/page.tsx",
+        "client/src/app/tests/[slug]/page.tsx",
+        "client/src/app/packages/[slug]/page.tsx"
+      ],
+      "impactSummary": "Redirected /tests and /packages catalog pages to unified /search page with category type filter parameters",
+      "contextUpdated": true
+    }
+  ]
+}

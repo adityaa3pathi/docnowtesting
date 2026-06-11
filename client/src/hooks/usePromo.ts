@@ -39,8 +39,8 @@ export function usePromo(cartTotal: number) {
         }
     };
 
-    const applyPromo = async (codeOverride?: string) => {
-        const codeToApply = codeOverride || promoCode;
+    const applyPromo = async (codeOverride?: string | any) => {
+        const codeToApply = typeof codeOverride === 'string' ? codeOverride : promoCode;
         if (!codeToApply) return;
 
         setVerifyingPromo(true);

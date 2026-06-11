@@ -1,0 +1,47 @@
+{
+    "$schema": "docnow-context-v1",
+    "generatedAt": "2026-02-24T23:09:48+05:30",
+    "project": {
+        "name": "DOCNOW",
+        "description": "Full-stack healthcare diagnostics booking platform with Next.js frontend and Express/Prisma backend",
+        "architecture": "co-located-monorepo",
+        "packages": [
+            "client",
+            "server"
+        ]
+    },
+    "moduleIndex": {
+        "description": "Load per-module files instead of parsing this entire blob. Each module file is self-contained.",
+        "modules": {
+            "auth": {
+                "file": "modules/auth.json",
+                "scope": "Authentication, authorization, RBAC middleware, JWT, OTP"
+            },
+            "api": {
+                "file": "modules/api.json",
+                "scope": "All 81 API route definitions, controller barrels, Express route mounts"
+            },
+            "shared": {
+                "file": "modules/shared.json",
+                "scope": "Prisma models/enums, adapters, services, utilities, workers, env vars, client modules"
+            }
+        }
+    },
+    "quickRef": {
+        "serverEntry": "server/src/index.ts",
+        "clientEntry": "client/src/app/layout.tsx",
+        "database": "PostgreSQL via Prisma 5",
+        "serverFramework": "Express 5 + TypeScript",
+        "clientFramework": "Next.js 16 + TailwindCSS 4",
+        "totalApiRoutes": 81,
+        "totalModels": 22,
+        "totalEnums": 8,
+        "totalEnvVars": {
+            "serverRequired": 11,
+            "serverOptional": 5,
+            "client": 1
+        },
+        "crossPackageBridge": "HTTP/REST via next.config.ts rewrites → Express",
+        "dependencyGraph": "dependency-graph.json"
+    }
+}

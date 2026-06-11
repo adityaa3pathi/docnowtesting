@@ -50,7 +50,7 @@ export async function rescheduleBooking(req: AuthRequest, res: Response) {
         });
 
         if (!booking) {
-            return res.status(404).json({ error: 'Booking not found' });
+            return res.status(404).json({ error: 'We could not find the details for this appointment. Please contact support if the issue persists.' });
         }
 
         if (NON_RESCHEDULABLE_STATUSES.includes(booking.status)) {
@@ -58,7 +58,7 @@ export async function rescheduleBooking(req: AuthRequest, res: Response) {
         }
 
         if (!booking.partnerBookingId) {
-            return res.status(400).json({ error: 'Partner booking ID not found' });
+            return res.status(400).json({ error: 'Your appointment details are still being processed by our lab partner. Please try again shortly.' });
         }
 
         if (!slot_id) {

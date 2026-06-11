@@ -21,7 +21,7 @@ export async function getPhleboContact(req: AuthRequest, res: Response) {
         // 1. Validation
         const parse = validationSchemas.uuid.safeParse(bookingId);
         if (!parse.success) {
-            return res.status(400).json({ error: 'Invalid Booking ID format' });
+            return res.status(400).json({ error: 'We could not process this request. Please refresh the page and try again.' });
         }
 
         // 2. Check Cache
@@ -35,25 +35,23 @@ export async function getPhleboContact(req: AuthRequest, res: Response) {
         const booking = await BookingService.getBookingWithAuth(bookingId, userId);
 
         if (!booking) {
-            return res.status(404).json({ error: 'Booking not found' });
+            return res.status(404).json({ error: 'We could not find the details for this appointment. Please contact support if the issue persists.' });
         }
 
-        if (!booking.partnerBookingId) {
-            return res.status(400).json({ error: 'Partner Booking ID missing for this order' });
+        const activePartnerBookingId = booking.rescheduledToId || booking.partnerBookingId;
+
+        if (!activePartnerBookingId) {
+            return res.status(400).json({ error: 'Your appointment details are still being processed by our lab partner. Please try again shortly.' });
         }
 
-        // 4. Verify Status (BS005 = Sample Collector Assigned)
-        const { bookingStatus } = await BookingService.getHealthiansCustomers(booking.partnerBookingId);
-
-        if (bookingStatus !== 'BS005') {
-            return res.status(400).json({
-                error: 'Phlebotomist contact is only available once assigned and before collection.',
-                currentStatus: bookingStatus
-            });
-        }
+        // 4. Call Healthians getPhleboMaskNumber directly.
+        //    The Healthians API itself enforces availability rules:
+        //    ✅ Phlebo must be assigned  ✅ Sample must NOT be collected yet
+        //    We don't pre-flight check BS codes — that's fragile and breaks
+        //    on unmapped intermediate statuses (e.g. BS006 = Phlebo Reached Home).
 
         // 5. Call Healthians API
-        const phleboResponse = await healthians.getPhleboMaskNumber(booking.partnerBookingId);
+        const phleboResponse = await healthians.getPhleboMaskNumber(activePartnerBookingId);
 
         if (phleboResponse.status && phleboResponse.data) {
             const result = {

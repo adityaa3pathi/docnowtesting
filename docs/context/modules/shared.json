@@ -1,0 +1,675 @@
+{
+    "$module": "shared",
+    "$schema": "docnow-module-v1",
+    "generatedAt": "2026-02-24T23:09:48+05:30",
+    "description": "Shared infrastructure: Prisma models, enums, adapters, services, utilities, workers, env vars, and client modules",
+    "database": {
+        "provider": "PostgreSQL (Aiven Cloud)",
+        "orm": "Prisma 5",
+        "schemaFile": "server/prisma/schema.prisma",
+        "models": [
+            {
+                "name": "User",
+                "relations": [
+                    "Address[]",
+                    "Booking[]",
+                    "Patient[]",
+                    "Cart?",
+                    "Wallet?",
+                    "User?(Referrals)",
+                    "User[](Referrals)",
+                    "ReferralReward[]",
+                    "AdminAuditLog[]",
+                    "PromoRedemption[]"
+                ]
+            },
+            {
+                "name": "OTP",
+                "relations": []
+            },
+            {
+                "name": "Patient",
+                "relations": [
+                    "User",
+                    "BookingItem[]",
+                    "CartItem[]"
+                ]
+            },
+            {
+                "name": "Address",
+                "relations": [
+                    "User",
+                    "Booking[]"
+                ]
+            },
+            {
+                "name": "Booking",
+                "relations": [
+                    "Address?",
+                    "User",
+                    "BookingItem[]",
+                    "Report[]",
+                    "PartnerRetry?",
+                    "PromoCode?",
+                    "PromoRedemption?"
+                ]
+            },
+            {
+                "name": "BookingItem",
+                "relations": [
+                    "Booking",
+                    "Patient"
+                ]
+            },
+            {
+                "name": "Report",
+                "relations": [
+                    "Booking"
+                ]
+            },
+            {
+                "name": "CallbackRequest",
+                "relations": []
+            },
+            {
+                "name": "Cart",
+                "relations": [
+                    "User",
+                    "CartItem[]"
+                ]
+            },
+            {
+                "name": "CartItem",
+                "relations": [
+                    "Cart",
+                    "Patient?"
+                ]
+            },
+            {
+                "name": "Wallet",
+                "relations": [
+                    "User",
+                    "WalletLedger[]"
+                ]
+            },
+            {
+                "name": "WalletLedger",
+                "relations": [
+                    "Wallet"
+                ]
+            },
+            {
+                "name": "ReferralReward",
+                "relations": [
+                    "User(ReferrerRewards)"
+                ]
+            },
+            {
+                "name": "SystemConfig",
+                "relations": []
+            },
+            {
+                "name": "AdminAuditLog",
+                "relations": [
+                    "User"
+                ]
+            },
+            {
+                "name": "WebhookEvent",
+                "relations": []
+            },
+            {
+                "name": "WebhookEventV2",
+                "relations": [],
+                "note": "Multi-source dedup with SHA-256 payloadHash, rawPayload for replay, processed flag for dead-letter detection"
+            },
+            {
+                "name": "PromoCode",
+                "relations": [
+                    "PromoRedemption[]",
+                    "Booking[]"
+                ]
+            },
+            {
+                "name": "PromoRedemption",
+                "relations": [
+                    "User",
+                    "PromoCode",
+                    "Booking?"
+                ]
+            },
+            {
+                "name": "PartnerRetry",
+                "relations": [
+                    "Booking"
+                ]
+            },
+            {
+                "name": "CatalogItem",
+                "relations": [
+                    "CatalogItemCategory[]"
+                ]
+            },
+            {
+                "name": "Category",
+                "relations": [
+                    "CatalogItemCategory[]"
+                ]
+            },
+            {
+                "name": "CatalogItemCategory",
+                "relations": [
+                    "CatalogItem",
+                    "Category"
+                ]
+            }
+        ],
+        "enums": [
+            {
+                "name": "Role",
+                "values": [
+                    "USER",
+                    "MANAGER",
+                    "SUPER_ADMIN"
+                ]
+            },
+            {
+                "name": "UserStatus",
+                "values": [
+                    "ACTIVE",
+                    "BLOCKED"
+                ]
+            },
+            {
+                "name": "LedgerType",
+                "values": [
+                    "CREDIT",
+                    "DEBIT"
+                ]
+            },
+            {
+                "name": "RewardType",
+                "values": [
+                    "REFEREE_SIGNUP",
+                    "REFERRER_ORDER"
+                ]
+            },
+            {
+                "name": "RewardStatus",
+                "values": [
+                    "PENDING",
+                    "PROCESSED",
+                    "FAILED"
+                ]
+            },
+            {
+                "name": "PaymentStatus",
+                "values": [
+                    "INITIATED",
+                    "AUTHORIZED",
+                    "PAID",
+                    "CONFIRMED",
+                    "PARTNER_FAILED",
+                    "FAILED",
+                    "CANCELLED",
+                    "EXPIRED",
+                    "REFUNDED"
+                ]
+            },
+            {
+                "name": "DiscountType",
+                "values": [
+                    "PERCENTAGE",
+                    "FLAT"
+                ]
+            },
+            {
+                "name": "CatalogItemType",
+                "values": [
+                    "TEST",
+                    "PACKAGE",
+                    "PROFILE"
+                ]
+            }
+        ]
+    },
+    "adapters": [
+        {
+            "name": "HealthiansAdapter",
+            "file": "server/src/adapters/healthians.ts",
+            "pattern": "Singleton",
+            "exports": [
+                "HealthiansAdapter",
+                "MOCK_PRODUCTS"
+            ],
+            "methods": [
+                "getInstance",
+                "ensureAuthenticated",
+                "checkServiceability",
+                "getPartnerProducts",
+                "getActiveZipcodes",
+                "getSlotsByLocation",
+                "freezeSlot",
+                "createBooking",
+                "getBookingStatus",
+                "cancelBooking",
+                "getPhleboMaskNumber",
+                "rescheduleBooking"
+            ],
+            "imports": [
+                "utils/security.ts → generateChecksum"
+            ],
+            "envVars": [
+                "HEALTHIANS_CLIENT_ID",
+                "HEALTHIANS_CLIENT_SECRET",
+                "HEALTHIANS_BASE_URL",
+                "HEALTHIANS_PARTNER_NAME",
+                "HEALTHIANS_BOOKING_SECRET_KEY"
+            ]
+        }
+    ],
+    "services": [
+        {
+            "name": "BookingService",
+            "file": "server/src/services/booking.service.ts",
+            "pattern": "Static Service",
+            "exports": [
+                "BookingService",
+                "bookingService"
+            ],
+            "methods": [
+                "getBookingWithAuth",
+                "getBookingWithDetails",
+                "getHealthiansCustomers",
+                "checkServiceability",
+                "getZoneId",
+                "getUserAddresses",
+                "getUserPatients",
+                "buildPatientMap"
+            ],
+            "imports": [
+                "db.ts",
+                "adapters/healthians.ts"
+            ]
+        },
+        {
+            "name": "partnerBooking",
+            "file": "server/src/services/partnerBooking.ts",
+            "exports": [
+                "createHealthiansBooking"
+            ],
+            "imports": [
+                "db.ts",
+                "adapters/healthians.ts",
+                "utils/helpers.ts → normalizeGender"
+            ]
+        },
+        {
+            "name": "razorpay",
+            "file": "server/src/services/razorpay.ts",
+            "exports": [
+                "getRazorpay"
+            ],
+            "envVars": [
+                "RAZORPAY_KEY_ID",
+                "RAZORPAY_KEY_SECRET"
+            ]
+        },
+        {
+            "name": "rollback",
+            "file": "server/src/services/rollback.ts",
+            "exports": [
+                "rollbackInitiatedBooking"
+            ],
+            "imports": [
+                "db.ts"
+            ],
+            "description": "Rolls back INITIATED bookings: restores promo usage + wallet balance in a transaction"
+        },
+        {
+            "name": "healthiansWebhook",
+            "file": "server/src/services/healthiansWebhook.ts",
+            "exports": [
+                "handleStatusUpdate",
+                "handleReportUploaded",
+                "handlePhleboEvent"
+            ],
+            "imports": [
+                "db.ts",
+                "utils/healthiansStatusMap.ts"
+            ],
+            "description": "Business logic for processing Healthians webhook events: status sync, report upsert, phlebo tracking"
+        }
+    ],
+    "utils": [
+        {
+            "file": "server/src/utils/adminHelpers.ts",
+            "exports": [
+                "getClientIP"
+            ],
+            "imports": [
+                "middleware/auth.ts → AuthRequest"
+            ]
+        },
+        {
+            "file": "server/src/utils/geocoding.ts",
+            "exports": [
+                "getGeodataFromPincode"
+            ],
+            "envVars": [
+                "GOOGLE_MAPS_API_KEY"
+            ]
+        },
+        {
+            "file": "server/src/utils/helpers.ts",
+            "exports": [
+                "retryWithBackoff",
+                "validationSchemas",
+                "normalizeGender",
+                "maskPhoneNumber"
+            ]
+        },
+        {
+            "file": "server/src/utils/paymentStateMachine.ts",
+            "exports": [
+                "assertTransition",
+                "canTransition",
+                "buildConditionalUpdate"
+            ]
+        },
+        {
+            "file": "server/src/utils/promoHelper.ts",
+            "exports": [
+                "calculateDiscount"
+            ]
+        },
+        {
+            "file": "server/src/utils/rateLimit.ts",
+            "exports": [
+                "redis"
+            ],
+            "envVars": [
+                "UPSTASH_REDIS_REST_URL",
+                "UPSTASH_REDIS_REST_TOKEN"
+            ]
+        },
+        {
+            "file": "server/src/utils/referralService.ts",
+            "exports": [
+                "generateReferralCode",
+                "awardSignupBonus",
+                "tryAwardFirstOrderBonus"
+            ]
+        },
+        {
+            "file": "server/src/utils/security.ts",
+            "exports": [
+                "generateChecksum"
+            ]
+        },
+        {
+            "file": "server/src/utils/healthiansStatusMap.ts",
+            "exports": [
+                "HEALTHIANS_STATUS_MAP",
+                "resolveHealthiansStatus"
+            ],
+            "description": "BS code → DocNow status mapping. 4 confirmed codes (BS002, BS003, BS008, BS0013). Unknown codes logged with fallback."
+        }
+    ],
+    "workers": [
+        {
+            "name": "reconciler",
+            "file": "server/src/workers/reconciler.ts",
+            "schedule": "Every 5 minutes (node-cron)",
+            "exports": [
+                "startReconciler"
+            ],
+            "functions": [
+                "sendDeadLetterAlert",
+                "expireAbandonedBookings",
+                "processStuckAuthorized",
+                "retryPartnerBookings"
+            ],
+            "imports": [
+                "db.ts",
+                "services/partnerBooking.ts",
+                "services/rollback.ts",
+                "utils/paymentStateMachine.ts"
+            ],
+            "envVars": [
+                "SLACK_WEBHOOK_URL"
+            ],
+            "description": "Self-heals payment system: expires abandoned INITIATED (>30min), processes stuck AUTHORIZED (>5min), retries PARTNER_FAILED with exponential backoff (1m/5m/15m)"
+        }
+    ],
+    "core": [
+        {
+            "file": "server/src/db.ts",
+            "exports": [
+                "prisma"
+            ],
+            "description": "Singleton PrismaClient instance"
+        }
+    ],
+    "envVars": {
+        "server": [
+            {
+                "name": "PORT",
+                "required": true,
+                "default": "5000"
+            },
+            {
+                "name": "DATABASE_URL",
+                "required": true,
+                "default": null
+            },
+            {
+                "name": "JWT_SECRET",
+                "required": true,
+                "default": "fallback_secret_for_dev_only"
+            },
+            {
+                "name": "HEALTHIANS_CLIENT_ID",
+                "required": true,
+                "default": null
+            },
+            {
+                "name": "HEALTHIANS_CLIENT_SECRET",
+                "required": true,
+                "default": null
+            },
+            {
+                "name": "HEALTHIANS_BASE_URL",
+                "required": true,
+                "default": "https://t25crm.healthians.co.in/api"
+            },
+            {
+                "name": "HEALTHIANS_PARTNER_NAME",
+                "required": true,
+                "default": "docnow1"
+            },
+            {
+                "name": "HEALTHIANS_BOOKING_SECRET_KEY",
+                "required": true,
+                "default": null
+            },
+            {
+                "name": "RAZORPAY_KEY_ID",
+                "required": true,
+                "default": null
+            },
+            {
+                "name": "RAZORPAY_KEY_SECRET",
+                "required": true,
+                "default": null
+            },
+            {
+                "name": "GOOGLE_MAPS_API_KEY",
+                "required": true,
+                "default": null
+            },
+            {
+                "name": "NODE_ENV",
+                "required": false,
+                "default": null
+            },
+            {
+                "name": "UPSTASH_REDIS_REST_URL",
+                "required": false,
+                "default": null
+            },
+            {
+                "name": "UPSTASH_REDIS_REST_TOKEN",
+                "required": false,
+                "default": null
+            },
+            {
+                "name": "RAZORPAY_WEBHOOK_SECRET",
+                "required": false,
+                "default": null
+            },
+            {
+                "name": "SLACK_WEBHOOK_URL",
+                "required": false,
+                "default": null
+            },
+            {
+                "name": "HEALTHIANS_WEBHOOK_SECRET",
+                "required": true,
+                "default": null
+            }
+        ],
+        "client": [
+            {
+                "name": "NEXT_PUBLIC_API_URL",
+                "required": true,
+                "default": "http://localhost:5000/api"
+            }
+        ]
+    },
+    "client": {
+        "framework": "Next.js 16",
+        "styling": "TailwindCSS 4",
+        "entryPoint": "client/src/app/layout.tsx",
+        "pathAlias": {
+            "@/*": "client/src/*"
+        },
+        "contexts": [
+            {
+                "name": "AuthContext",
+                "file": "client/src/contexts/AuthContext.tsx"
+            },
+            {
+                "name": "CartContext",
+                "file": "client/src/contexts/CartContext.tsx",
+                "imports": [
+                    "lib/api",
+                    "contexts/AuthContext"
+                ]
+            },
+            {
+                "name": "LocationContext",
+                "file": "client/src/contexts/LocationContext.tsx"
+            }
+        ],
+        "hooks": [
+            {
+                "name": "useCheckout",
+                "file": "client/src/hooks/useCheckout.ts",
+                "imports": [
+                    "lib/api",
+                    "types/cart"
+                ]
+            },
+            {
+                "name": "usePromo",
+                "file": "client/src/hooks/usePromo.ts",
+                "imports": [
+                    "lib/api",
+                    "types/cart"
+                ]
+            },
+            {
+                "name": "useSlots",
+                "file": "client/src/hooks/useSlots.ts",
+                "imports": [
+                    "lib/api",
+                    "types/cart"
+                ]
+            },
+            {
+                "name": "useUserDetail",
+                "file": "client/src/hooks/useUserDetail.ts",
+                "imports": [
+                    "types/admin"
+                ]
+            },
+            {
+                "name": "useUsers",
+                "file": "client/src/hooks/useUsers.ts",
+                "imports": [
+                    "types/admin"
+                ]
+            },
+            {
+                "name": "useWalletAdjust",
+                "file": "client/src/hooks/useWalletAdjust.ts",
+                "imports": [
+                    "types/admin"
+                ]
+            }
+        ],
+        "lib": [
+            {
+                "name": "api",
+                "file": "client/src/lib/api.ts",
+                "description": "Axios instance, base URL from NEXT_PUBLIC_API_URL"
+            },
+            {
+                "name": "utils",
+                "file": "client/src/lib/utils.ts",
+                "exports": [
+                    "cn"
+                ],
+                "description": "clsx + tailwind-merge utility"
+            }
+        ],
+        "types": [
+            {
+                "file": "client/src/types/admin.ts",
+                "description": "AdminUser, UserData, AdminPagination, StatusFilter, RoleFilter"
+            },
+            {
+                "file": "client/src/types/cart.ts",
+                "description": "Patient, Address, SlotItem, AppliedPromo, AvailablePromo"
+            }
+        ],
+        "pages": [
+            "/",
+            "/about",
+            "/cart",
+            "/privacy",
+            "/profile",
+            "/search",
+            "/terms",
+            "/manager",
+            "/manager/catalog",
+            "/manager/categories",
+            "/manager/dashboard",
+            "/manager/orders",
+            "/manager/payment-links",
+            "/manager/settings",
+            "/super-admin",
+            "/super-admin/audit-logs",
+            "/super-admin/dashboard",
+            "/super-admin/orders",
+            "/super-admin/promos",
+            "/super-admin/promos/new",
+            "/super-admin/referrals",
+            "/super-admin/settings",
+            "/super-admin/users",
+            "/super-admin/users/[id]",
+            "/super-admin/wallets"
+        ]
+    }
+}

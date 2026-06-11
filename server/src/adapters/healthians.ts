@@ -11,6 +11,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { generateChecksum } from '../utils/security';
 import { logAlert, logBusinessEvent, logger } from '../utils/logger';
+import { getOrSetJsonCache, hashCacheValue, normalizeCoordinateForCache } from '../utils/cache';
 
 
 // Re-evaluate the env inside methods rather than module-scope to fix dotenv initialization races
@@ -125,7 +126,14 @@ export class HealthiansAdapter {
      * Check if a location is serviceable.
      */
     public async checkServiceability(lat: string, long: string, zipcode: string) {
-        try {
+        const cacheKey = [
+            'healthians:serviceability:v1',
+            String(zipcode).trim(),
+            normalizeCoordinateForCache(lat),
+            normalizeCoordinateForCache(long),
+        ].join(':');
+
+        return getOrSetJsonCache(cacheKey, 60 * 60, async () => {
             const response = await this.client.post('/checkServiceabilityByLocation_v2', {
                 lat,
                 long,
@@ -133,10 +141,10 @@ export class HealthiansAdapter {
                 is_ppmc_booking: 0,
             });
             return response.data;
-        } catch (error) {
+        }, { partner: 'healthians', operation: 'serviceability', zipcode }).catch((error) => {
             logger.error({ error, zipcode }, 'healthians_check_serviceability_failed');
             throw error;
-        }
+        });
     }
 
     /**
@@ -214,13 +222,13 @@ export class HealthiansAdapter {
      * Get Active Zipcodes (Can be heavy, maybe cache this)
      */
     public async getActiveZipcodes() {
-        try {
+        return getOrSetJsonCache('healthians:active-zipcodes:v1', 24 * 60 * 60, async () => {
             const response = await this.client.get('/getActiveZipcodes');
             return response.data;
-        } catch (error) {
+        }, { partner: 'healthians', operation: 'active_zipcodes' }).catch((error) => {
             logger.error({ error }, 'healthians_active_zipcodes_failed');
             throw error;
-        }
+        });
     }
     /**
      * Get available slots by location.
@@ -236,7 +244,23 @@ export class HealthiansAdapter {
         get_ppmc_slots?: number;
         has_female_patient?: number;
     }) {
-        try {
+        const sortedPackages = params.package
+            .map((item) => ({ deal_id: [...item.deal_id].sort() }))
+            .sort((a, b) => a.deal_id.join(',').localeCompare(b.deal_id.join(',')));
+        const cacheKey = [
+            'healthians:slots:v1',
+            String(params.zipcode).trim(),
+            normalizeCoordinateForCache(params.lat),
+            normalizeCoordinateForCache(params.long),
+            params.zone_id,
+            params.slot_date,
+            Math.round(params.amount),
+            params.get_ppmc_slots || 0,
+            params.has_female_patient || 0,
+            hashCacheValue(sortedPackages),
+        ].join(':');
+
+        return getOrSetJsonCache(cacheKey, 90, async () => {
             const response = await this.client.post('/getSlotsByLocation', {
                 lat: params.lat,
                 long: params.long,
@@ -249,10 +273,15 @@ export class HealthiansAdapter {
                 has_female_patient: params.has_female_patient || 0,
             });
             return response.data;
-        } catch (error) {
+        }, {
+            partner: 'healthians',
+            operation: 'slots',
+            zipcode: params.zipcode,
+            slotDate: params.slot_date,
+        }).catch((error) => {
             logger.error({ error, zipcode: params.zipcode, slotDate: params.slot_date }, 'healthians_slots_fetch_failed');
             throw error;
-        }
+        });
     }
 
     /**

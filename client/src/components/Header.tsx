@@ -156,16 +156,11 @@ export function Header() {
     return (
         <>
             {/* ─── Main Navbar ─── */}
-            <nav
-                className="sticky top-0 z-50 w-full"
-                style={{
-                    background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)',
-                }}
-            >
-                <div className="mx-auto flex h-16 max-w-[1380px] items-center justify-between px-6 lg:px-10">
+            <nav className="sticky top-0 z-50 w-full bg-white shadow-sm border-b border-gray-100">
+                <div className="mx-auto flex h-16 max-w-[1380px] items-center justify-between gap-4 lg:gap-6 px-6 lg:px-10">
 
                     {/* Logo */}
-                    <DocnowLogo href="/" noBackground priority width={120} height={47} />
+                    <DocnowLogo href="/" priority width={120} height={47} />
 
                     {/* Desktop Global Search */}
                     <div className="hidden md:flex flex-1 max-w-xl mx-8 relative">
@@ -178,7 +173,7 @@ export function Header() {
                             <Link
                                 key={link.href}
                                 href={link.href}
-                                className={`text-white font-semibold text-base leading-none transition-opacity hover:opacity-80 ${pathname === link.href ? 'underline underline-offset-4' : ''
+                                className={`text-gray-700 font-semibold text-base leading-none transition-colors hover:text-primary ${pathname === link.href ? 'text-primary underline underline-offset-4' : ''
                                     }`}
                             >
                                 {link.label}
@@ -187,7 +182,7 @@ export function Header() {
                         {/* Get a Callback — styled as outlined pill */}
                         <button
                             onClick={() => setIsCallbackOpen(true)}
-                            className="border border-white text-white font-semibold text-base px-5 py-2 rounded-[7px] hover:bg-white/10 transition-all whitespace-nowrap"
+                            className="border border-primary text-primary font-semibold text-base px-5 py-2 rounded-[7px] hover:bg-primary/5 transition-all whitespace-nowrap"
                         >
                             Get a Callback
                         </button>
@@ -199,8 +194,8 @@ export function Header() {
                         {/* Select City */}
                         <Dialog open={isLocationDialogOpen} onOpenChange={setIsLocationDialogOpen}>
                             <DialogTrigger asChild>
-                                <button className="flex items-center gap-1.5 text-white/90 text-sm font-semibold px-3 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition-all min-w-[130px] truncate">
-                                    <MapPin className="h-4 w-4 text-white flex-shrink-0" />
+                                <button className="flex items-center gap-1.5 text-gray-700 text-sm font-semibold px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-all min-w-[130px] truncate">
+                                    <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
                                     <span className="truncate">{selectedCity}</span>
                                 </button>
                             </DialogTrigger>
@@ -256,8 +251,8 @@ export function Header() {
                         {/* Select Pincode */}
                         <Dialog open={isPincodeDialogOpen} onOpenChange={setIsPincodeDialogOpen}>
                             <DialogTrigger asChild>
-                                <button className="flex items-center gap-1.5 text-white/90 text-sm font-semibold px-3 py-2 rounded-lg border border-white/30 hover:bg-white/10 transition-all min-w-[120px] truncate">
-                                    <MapPin className="h-4 w-4 text-white flex-shrink-0" />
+                                <button className="flex items-center gap-1.5 text-gray-700 text-sm font-semibold px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-all min-w-[120px] truncate">
+                                    <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
                                     <span className="truncate">{selectedPincode}</span>
                                 </button>
                             </DialogTrigger>
@@ -314,10 +309,10 @@ export function Header() {
                         </Dialog>
 
                         {/* Cart */}
-                        <Link href="/cart" className="relative p-2 text-white hover:text-white/80 transition-colors">
+                        <Link href="/cart" className="relative p-2 text-gray-700 hover:text-primary transition-colors">
                             <ShoppingCart className="w-5 h-5" />
                             {cartCount > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-white text-[#4B0082] text-xs font-black rounded-full h-5 w-5 flex items-center justify-center">
+                                <span className="absolute -top-1 -right-1 bg-primary text-white text-xs font-black rounded-full h-5 w-5 flex items-center justify-center">
                                     {cartCount}
                                 </span>
                             )}
@@ -325,13 +320,13 @@ export function Header() {
 
                         {/* Auth */}
                         {isAuthenticated ? (
-                            <Link href="/profile" className="w-9 h-9 rounded-full bg-white text-[#4B0082] flex items-center justify-center text-sm font-black hover:bg-white/90 transition-colors">
+                            <Link href="/profile" className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-black hover:bg-primary/90 transition-colors">
                                 {user?.name?.[0]?.toUpperCase() || 'U'}
                             </Link>
                         ) : (
                             <button
                                 onClick={() => setIsAuthOpen(true)}
-                                className="border border-white text-white font-semibold text-sm px-5 py-2 rounded-[7px] hover:bg-white/10 transition-all flex items-center gap-2"
+                                className="border border-primary text-primary font-semibold text-sm px-5 py-2 rounded-[7px] hover:bg-primary/5 transition-all flex items-center gap-2"
                             >
                                 <User className="h-4 w-4" />
                                 Sign In
@@ -341,16 +336,16 @@ export function Header() {
 
                     {/* ─── Mobile: Cart + Hamburger ─── */}
                     <div className="flex md:hidden items-center gap-2">
-                        <Link href="/cart" className="relative p-2 text-white hover:text-white/80 transition-colors">
+                        <Link href="/cart" className="relative p-2 text-gray-700 hover:text-primary transition-colors">
                             <ShoppingCart className="w-5 h-5" />
                             {cartCount > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-white text-[#4B0082] text-[10px] font-black rounded-full h-4 w-4 flex items-center justify-center">
+                                <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-black rounded-full h-4 w-4 flex items-center justify-center">
                                     {cartCount}
                                 </span>
                             )}
                         </Link>
                         <button
-                            className="p-2 text-white hover:text-white/80 transition-colors"
+                            className="p-2 text-gray-700 hover:text-primary transition-colors"
                             onClick={() => setIsMobileMenuOpen(true)}
                             aria-label="Open navigation menu"
                         >
@@ -421,11 +416,10 @@ export function Header() {
                 className={`fixed top-0 left-0 h-full w-[280px] bg-white z-[70] shadow-2xl transform transition-transform duration-300 ease-out md:hidden flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
                 {/* Drawer Header */}
-                <div className="flex items-center justify-end px-5 h-16 border-b border-gray-100 flex-shrink-0 overflow-hidden"
-                    style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}>
+                <div className="flex items-center justify-end px-5 h-16 border-b border-gray-100 flex-shrink-0 overflow-hidden bg-white">
                     <button
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                         aria-label="Close menu"
                     >
                         <X className="h-5 w-5" />

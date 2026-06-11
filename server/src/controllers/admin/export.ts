@@ -2,16 +2,36 @@ import { Response } from 'express';
 import { AuthRequest } from '../../middleware/auth';
 import { prisma } from '../../db';
 import { buildCatalogSearchWhere } from '../../utils/searchUtils';
+import { buildSalesReportRows, salesReportRowsToCsv } from './salesReport';
+import { buildSettlementRows, settlementRowsToCsv } from './settlementReport';
 
 export async function exportAdminData(req: AuthRequest, res: Response) {
     try {
         const entity = req.query.entity as string;
-        if (!entity || !['users', 'orders', 'callbacks', 'corporate-inquiries', 'wallets', 'failed-orders', 'catalog'].includes(entity)) {
-            return res.status(400).json({ error: 'Invalid or missing entity for export. Must be "users", "orders", "callbacks", "corporate-inquiries", "wallets", "failed-orders", or "catalog".' });
+        if (!entity || !['users', 'orders', 'callbacks', 'corporate-inquiries', 'wallets', 'failed-orders', 'catalog', 'sales-report', 'settlement-report'].includes(entity)) {
+            return res.status(400).json({ error: 'Invalid or missing entity for export. Must be "users", "orders", "callbacks", "corporate-inquiries", "wallets", "failed-orders", "catalog", "sales-report", or "settlement-report".' });
         }
 
         const search = (req.query.search as string) || '';
         const limitToExport = 10000; // Hard limit for safety
+
+        if (entity === 'sales-report') {
+            const rows = await buildSalesReportRows(req.query);
+            const csvContent = salesReportRowsToCsv(rows);
+
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', 'attachment; filename="sales-report-export.csv"');
+            return res.status(200).send(csvContent);
+        }
+
+        if (entity === 'settlement-report') {
+            const rows = await buildSettlementRows(req.query);
+            const csvContent = settlementRowsToCsv(rows);
+
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', 'attachment; filename="settlement-report-export.csv"');
+            return res.status(200).send(csvContent);
+        }
 
         if (entity === 'users') {
             const roleFilter = req.query.role as string;

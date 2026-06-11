@@ -5,8 +5,6 @@ healthians_api_doc.md
 healthians_webhook_doc.md
 parameters/
 
-docs
-
 Manager Dashboard UI Design
 B2B API Integration doc.pdf
 test1.out
@@ -25,3 +23,6 @@ to_be_implemented.md
 # Server Storage
 server/storage/
 whatsapp-integration-artifact.md*.pem.pub
+
+# Local testing scripts
+scripts/

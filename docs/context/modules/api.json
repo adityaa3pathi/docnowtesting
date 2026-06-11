@@ -1,0 +1,613 @@
+{
+    "$module": "api",
+    "$schema": "docnow-module-v1",
+    "generatedAt": "2026-02-24T23:09:48+05:30",
+    "description": "All API route definitions, controller barrel exports, and Express route mounts",
+    "server": {
+        "framework": "Express 5",
+        "entryPoint": "server/src/index.ts",
+        "globalMiddleware": [
+            "cors",
+            "helmet",
+            "morgan",
+            "express.json()"
+        ],
+        "specialMounts": [
+            {
+                "path": "/api/payments/webhook",
+                "note": "Mounted BEFORE express.json() with express.raw() for Razorpay signature verification"
+            },
+            {
+                "path": "/api/webhooks/healthians",
+                "note": "Mounted BEFORE express.json() with express.raw({ type: '*/*' }) for SHA-256 body hashing"
+            }
+        ]
+    },
+    "routeMounts": [
+        {
+            "prefix": "/api/location",
+            "file": "server/src/routes/location.ts",
+            "auth": false
+        },
+        {
+            "prefix": "/api/catalog",
+            "file": "server/src/routes/catalog.ts",
+            "auth": false
+        },
+        {
+            "prefix": "/api/users",
+            "file": "server/src/routes/user.ts",
+            "auth": false
+        },
+        {
+            "prefix": "/api/callback",
+            "file": "server/src/routes/callback.ts",
+            "auth": false
+        },
+        {
+            "prefix": "/api/auth",
+            "file": "server/src/routes/auth.ts",
+            "auth": false
+        },
+        {
+            "prefix": "/api/profile",
+            "file": "server/src/routes/profile.ts",
+            "auth": true
+        },
+        {
+            "prefix": "/api/profile/patients",
+            "file": "server/src/routes/patients.ts",
+            "auth": true
+        },
+        {
+            "prefix": "/api/profile/addresses",
+            "file": "server/src/routes/addresses.ts",
+            "auth": true
+        },
+        {
+            "prefix": "/api/cart",
+            "file": "server/src/routes/cart.ts",
+            "auth": true
+        },
+        {
+            "prefix": "/api/slots",
+            "file": "server/src/routes/slots.ts",
+            "auth": true
+        },
+        {
+            "prefix": "/api/bookings",
+            "file": "server/src/routes/bookings.ts",
+            "auth": true
+        },
+        {
+            "prefix": "/api/admin",
+            "file": "server/src/routes/admin.ts",
+            "auth": true,
+            "role": "SUPER_ADMIN"
+        },
+        {
+            "prefix": "/api/manager",
+            "file": "server/src/routes/manager.ts",
+            "auth": true,
+            "role": "MANAGER|SUPER_ADMIN"
+        },
+        {
+            "prefix": "/api/payments",
+            "file": "server/src/routes/payments.ts",
+            "auth": true
+        },
+        {
+            "prefix": "/api/webhooks",
+            "file": "server/src/routes/webhooks.ts",
+            "auth": false,
+            "note": "Shared-secret validation, not JWT. Healthians handler mounted directly in index.ts for raw body."
+        }
+    ],
+    "controllers": {
+        "admin": {
+            "barrel": "server/src/controllers/admin/index.ts",
+            "files": [
+                "audit.ts",
+                "config.ts",
+                "orders.ts",
+                "promos.ts",
+                "referrals.ts",
+                "stats.ts",
+                "users.ts",
+                "wallets.ts"
+            ],
+            "exports": [
+                "getDashboardStats",
+                "getRevenueTrend",
+                "getHighValueOrders",
+                "listUsers",
+                "getUserDetails",
+                "updateUserStatus",
+                "updateUserRole",
+                "getConfigs",
+                "updateConfig",
+                "adjustWallet",
+                "getWalletLedger",
+                "getReferralStats",
+                "listOrders",
+                "getAuditLogs",
+                "listPromos",
+                "createPromo",
+                "updatePromo"
+            ]
+        },
+        "bookings": {
+            "barrel": "server/src/controllers/bookings/index.ts",
+            "files": [
+                "cancel.ts",
+                "create.ts",
+                "list.ts",
+                "phlebo.ts",
+                "reschedule.ts",
+                "slots.ts",
+                "status.ts"
+            ],
+            "exports": [
+                "createBooking",
+                "listBookings",
+                "getStatus",
+                "cancelBooking",
+                "rescheduleBooking",
+                "getReschedulableSlots",
+                "getPhleboContact"
+            ]
+        },
+        "payments": {
+            "barrel": "server/src/controllers/payments/index.ts",
+            "files": [
+                "initiate.ts",
+                "verify.ts",
+                "webhook.ts"
+            ],
+            "exports": [
+                "initiatePayment",
+                "verifyPayment",
+                "webhookHandler"
+            ]
+        },
+        "webhooks": {
+            "barrel": "server/src/controllers/webhooks/index.ts",
+            "files": [
+                "healthians.ts"
+            ],
+            "exports": [
+                "healthiansWebhookHandler"
+            ]
+        }
+    },
+    "routes": {
+        "webhooks": [
+            {
+                "method": "POST",
+                "path": "/api/webhooks/healthians",
+                "auth": false,
+                "handler": "healthiansWebhookHandler",
+                "note": "Raw body, pre-json, shared-secret auth"
+            }
+        ],
+        "location": [
+            {
+                "method": "GET",
+                "path": "/api/location/serviceability",
+                "auth": false
+            },
+            {
+                "method": "GET",
+                "path": "/api/location/active-zipcodes",
+                "auth": false
+            },
+            {
+                "method": "GET",
+                "path": "/api/location/geocode",
+                "auth": false
+            }
+        ],
+        "catalog": [
+            {
+                "method": "GET",
+                "path": "/api/catalog/products",
+                "auth": false
+            },
+            {
+                "method": "GET",
+                "path": "/api/catalog/products/:code",
+                "auth": false
+            },
+            {
+                "method": "GET",
+                "path": "/api/catalog/categories",
+                "auth": false
+            }
+        ],
+        "users": [
+            {
+                "method": "POST",
+                "path": "/api/users/login",
+                "auth": false
+            },
+            {
+                "method": "PUT",
+                "path": "/api/users/:id",
+                "auth": false
+            },
+            {
+                "method": "GET",
+                "path": "/api/users/:userId/patients",
+                "auth": false
+            },
+            {
+                "method": "POST",
+                "path": "/api/users/:userId/patients",
+                "auth": false
+            },
+            {
+                "method": "PUT",
+                "path": "/api/users/patients/:patientId",
+                "auth": false
+            },
+            {
+                "method": "DELETE",
+                "path": "/api/users/patients/:patientId",
+                "auth": false
+            }
+        ],
+        "callback": [
+            {
+                "method": "POST",
+                "path": "/api/callback/request",
+                "auth": false
+            }
+        ],
+        "profile": [
+            {
+                "method": "GET",
+                "path": "/api/profile",
+                "auth": true
+            },
+            {
+                "method": "PUT",
+                "path": "/api/profile",
+                "auth": true
+            },
+            {
+                "method": "GET",
+                "path": "/api/profile/wallet",
+                "auth": true
+            }
+        ],
+        "patients": [
+            {
+                "method": "GET",
+                "path": "/api/profile/patients",
+                "auth": true
+            },
+            {
+                "method": "POST",
+                "path": "/api/profile/patients",
+                "auth": true
+            },
+            {
+                "method": "PUT",
+                "path": "/api/profile/patients/:id",
+                "auth": true
+            },
+            {
+                "method": "DELETE",
+                "path": "/api/profile/patients/:id",
+                "auth": true
+            }
+        ],
+        "addresses": [
+            {
+                "method": "GET",
+                "path": "/api/profile/addresses",
+                "auth": true
+            },
+            {
+                "method": "POST",
+                "path": "/api/profile/addresses",
+                "auth": true
+            },
+            {
+                "method": "PUT",
+                "path": "/api/profile/addresses/:id",
+                "auth": true
+            },
+            {
+                "method": "DELETE",
+                "path": "/api/profile/addresses/:id",
+                "auth": true
+            }
+        ],
+        "cart": [
+            {
+                "method": "GET",
+                "path": "/api/cart",
+                "auth": true
+            },
+            {
+                "method": "POST",
+                "path": "/api/cart/items",
+                "auth": true
+            },
+            {
+                "method": "PUT",
+                "path": "/api/cart/items/:id",
+                "auth": true
+            },
+            {
+                "method": "DELETE",
+                "path": "/api/cart/items/:id",
+                "auth": true
+            },
+            {
+                "method": "DELETE",
+                "path": "/api/cart",
+                "auth": true
+            }
+        ],
+        "slots": [
+            {
+                "method": "GET",
+                "path": "/api/slots",
+                "auth": true
+            },
+            {
+                "method": "POST",
+                "path": "/api/slots/freeze",
+                "auth": true
+            }
+        ],
+        "bookings": [
+            {
+                "method": "POST",
+                "path": "/api/bookings",
+                "auth": true,
+                "handler": "createBooking"
+            },
+            {
+                "method": "GET",
+                "path": "/api/bookings",
+                "auth": true,
+                "handler": "listBookings"
+            },
+            {
+                "method": "GET",
+                "path": "/api/bookings/:id/status",
+                "auth": true,
+                "handler": "getStatus"
+            },
+            {
+                "method": "POST",
+                "path": "/api/bookings/:id/cancel",
+                "auth": true,
+                "handler": "cancelBooking"
+            },
+            {
+                "method": "POST",
+                "path": "/api/bookings/:id/reschedule",
+                "auth": true,
+                "handler": "rescheduleBooking"
+            },
+            {
+                "method": "GET",
+                "path": "/api/bookings/:id/reschedulable-slots",
+                "auth": true,
+                "handler": "getReschedulableSlots"
+            },
+            {
+                "method": "GET",
+                "path": "/api/bookings/:id/phlebo-contact",
+                "auth": true,
+                "handler": "getPhleboContact"
+            }
+        ],
+        "payments": [
+            {
+                "method": "POST",
+                "path": "/api/payments/initiate",
+                "auth": true,
+                "handler": "initiatePayment",
+                "middleware": [
+                    "rateLimiter(1,10)"
+                ]
+            },
+            {
+                "method": "POST",
+                "path": "/api/payments/verify",
+                "auth": true,
+                "handler": "verifyPayment"
+            },
+            {
+                "method": "POST",
+                "path": "/api/payments/webhook",
+                "auth": false,
+                "handler": "webhookHandler",
+                "note": "Raw body, pre-json"
+            }
+        ],
+        "promos": [
+            {
+                "method": "GET",
+                "path": "/api/promos/available",
+                "auth": true
+            },
+            {
+                "method": "POST",
+                "path": "/api/promos/validate",
+                "auth": true
+            }
+        ],
+        "admin": [
+            {
+                "method": "GET",
+                "path": "/api/admin/health",
+                "role": "SUPER_ADMIN"
+            },
+            {
+                "method": "GET",
+                "path": "/api/admin/stats",
+                "role": "SUPER_ADMIN",
+                "handler": "getDashboardStats"
+            },
+            {
+                "method": "GET",
+                "path": "/api/admin/stats/revenue",
+                "role": "SUPER_ADMIN",
+                "handler": "getRevenueTrend"
+            },
+            {
+                "method": "GET",
+                "path": "/api/admin/stats/high-value",
+                "role": "SUPER_ADMIN",
+                "handler": "getHighValueOrders"
+            },
+            {
+                "method": "GET",
+                "path": "/api/admin/users",
+                "role": "SUPER_ADMIN",
+                "handler": "listUsers"
+            },
+            {
+                "method": "GET",
+                "path": "/api/admin/users/:id",
+                "role": "SUPER_ADMIN",
+                "handler": "getUserDetails"
+            },
+            {
+                "method": "PUT",
+                "path": "/api/admin/users/:id/status",
+                "role": "SUPER_ADMIN",
+                "handler": "updateUserStatus"
+            },
+            {
+                "method": "PUT",
+                "path": "/api/admin/users/:id/role",
+                "role": "SUPER_ADMIN",
+                "handler": "updateUserRole"
+            },
+            {
+                "method": "GET",
+                "path": "/api/admin/config",
+                "role": "SUPER_ADMIN",
+                "handler": "getConfigs"
+            },
+            {
+                "method": "PUT",
+                "path": "/api/admin/config/:key",
+                "role": "SUPER_ADMIN",
+                "handler": "updateConfig"
+            },
+            {
+                "method": "POST",
+                "path": "/api/admin/wallets/adjust",
+                "role": "SUPER_ADMIN",
+                "handler": "adjustWallet"
+            },
+            {
+                "method": "GET",
+                "path": "/api/admin/wallets/ledger",
+                "role": "SUPER_ADMIN",
+                "handler": "getWalletLedger"
+            },
+            {
+                "method": "GET",
+                "path": "/api/admin/referrals/stats",
+                "role": "SUPER_ADMIN",
+                "handler": "getReferralStats"
+            },
+            {
+                "method": "GET",
+                "path": "/api/admin/orders",
+                "role": "SUPER_ADMIN",
+                "handler": "listOrders"
+            },
+            {
+                "method": "GET",
+                "path": "/api/admin/audit-logs",
+                "role": "SUPER_ADMIN",
+                "handler": "getAuditLogs"
+            },
+            {
+                "method": "GET",
+                "path": "/api/admin/promos",
+                "role": "SUPER_ADMIN",
+                "handler": "listPromos"
+            },
+            {
+                "method": "POST",
+                "path": "/api/admin/promos",
+                "role": "SUPER_ADMIN",
+                "handler": "createPromo"
+            },
+            {
+                "method": "PUT",
+                "path": "/api/admin/promos/:id",
+                "role": "SUPER_ADMIN",
+                "handler": "updatePromo"
+            }
+        ],
+        "manager": [
+            {
+                "method": "GET",
+                "path": "/api/manager/health",
+                "role": "MANAGER|SUPER_ADMIN"
+            },
+            {
+                "method": "POST",
+                "path": "/api/manager/catalog/sync",
+                "role": "MANAGER|SUPER_ADMIN"
+            },
+            {
+                "method": "GET",
+                "path": "/api/manager/catalog",
+                "role": "MANAGER|SUPER_ADMIN"
+            },
+            {
+                "method": "PUT",
+                "path": "/api/manager/catalog/:id",
+                "role": "MANAGER|SUPER_ADMIN"
+            },
+            {
+                "method": "PUT",
+                "path": "/api/manager/catalog/:id/toggle",
+                "role": "MANAGER|SUPER_ADMIN"
+            },
+            {
+                "method": "POST",
+                "path": "/api/manager/categories",
+                "role": "MANAGER|SUPER_ADMIN"
+            },
+            {
+                "method": "GET",
+                "path": "/api/manager/categories",
+                "role": "MANAGER|SUPER_ADMIN"
+            },
+            {
+                "method": "PUT",
+                "path": "/api/manager/categories/:id",
+                "role": "MANAGER|SUPER_ADMIN"
+            },
+            {
+                "method": "DELETE",
+                "path": "/api/manager/categories/:id",
+                "role": "MANAGER|SUPER_ADMIN"
+            },
+            {
+                "method": "POST",
+                "path": "/api/manager/categories/:id/items",
+                "role": "MANAGER|SUPER_ADMIN"
+            },
+            {
+                "method": "DELETE",
+                "path": "/api/manager/categories/:id/items",
+                "role": "MANAGER|SUPER_ADMIN"
+            }
+        ]
+    }
+}

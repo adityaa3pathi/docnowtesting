@@ -1,38 +1,87 @@
 "use client";
 
-import { WalletTab } from '@/components/profile/WalletTab';
-import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut, ChevronRight, IndianRupee } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { ProfileTab } from '@/components/profile/ProfileTab';
 import { FamilyTab } from '@/components/profile/FamilyTab';
 import { BookingsTab } from '@/components/profile/BookingsTab';
-import { ReportsTab } from '@/components/profile/ReportsTab';
+import { WalletTab } from '@/components/profile/WalletTab';
 import { ReferralTab } from '@/components/profile/ReferralTab';
+import { ReportsTab } from '@/components/profile/ReportsTab';
 import Link from 'next/link';
+import api from '@/lib/api';
 
-type Tab = 'profile' | 'family' | 'bookings' | 'reports' | 'wallet' | 'referrals';
+// --- BENTO BOX COMPONENT ---
+function BentoCard({ title, icon, value, subtitle, children, className, gradient, onClick, isLink }: any) {
+    const cardContent = (
+        <div 
+            onClick={!children ? onClick : undefined}
+            className={`relative overflow-hidden rounded-3xl p-5 shadow-sm border border-gray-100 flex flex-col transition-all active:scale-[0.98] cursor-pointer hover:shadow-md h-full bg-white group ${className}`}
+        >
+            {gradient && <div className={`absolute inset-0 opacity-10 bg-gradient-to-br ${gradient}`} />}
+            <div className="relative z-10 flex items-center justify-between mb-3 text-gray-500 group-hover:text-gray-700 transition-colors">
+                <div className="flex items-center gap-2">
+                    {icon}
+                    <span className="font-semibold text-sm">{title}</span>
+                </div>
+                <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0" />
+            </div>
+            <div className="relative z-10 flex-1 flex flex-col justify-end">
+                {value && <div className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">{value}</div>}
+                {subtitle && <div className="text-xs text-gray-500 mt-1 line-clamp-2">{subtitle}</div>}
+            </div>
+        </div>
+    );
+
+    if (isLink) {
+        return cardContent;
+    }
+
+    if (!children) return cardContent;
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                {cardContent}
+            </DialogTrigger>
+            <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 bg-white sm:bg-gray-50 !rounded-3xl">
+                <div className="bg-white sm:rounded-2xl sm:shadow-sm sm:p-6">
+                    {children}
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 export default function ProfilePage() {
     const { isAuthenticated, isInitialized, user, logout } = useAuth();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<Tab>('profile');
-
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const tab = params.get('tab');
-        if (tab && ['profile', 'family', 'bookings', 'reports', 'wallet', 'referrals'].includes(tab)) {
-            setActiveTab(tab as Tab);
-        }
-    }, []);
+    
+    const [walletBalance, setWalletBalance] = useState<number | null>(null);
+    const [familyCount, setFamilyCount] = useState<number | null>(null);
+    const [activeBookingsCount, setActiveBookingsCount] = useState<number | null>(null);
 
     useEffect(() => {
         if (isInitialized && !isAuthenticated) {
             router.push('/');
         }
     }, [isAuthenticated, isInitialized, router]);
+
+    useEffect(() => {
+        if (!isAuthenticated) return;
+        
+        // Fetch summaries
+        api.get('/profile/wallet').then(res => setWalletBalance(res.data.balance || 0)).catch(() => {});
+        api.get('/profile/patients').then(res => setFamilyCount(res.data.length || 0)).catch(() => {});
+        api.get('/bookings').then(res => {
+            const bookings = res.data || [];
+            const active = bookings.filter((b: any) => !b.superseded && b.status !== 'Cancelled' && b.status !== 'Completed').length;
+            setActiveBookingsCount(active);
+        }).catch(() => {});
+    }, [isAuthenticated]);
 
     if (!isInitialized || !isAuthenticated) {
         return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
@@ -42,119 +91,115 @@ export default function ProfilePage() {
     const isManager = user?.role === 'MANAGER';
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="bg-gray-100 flex flex-col" style={{ height: 'calc(100dvh - 73px)', overflow: 'hidden' }}>
+            <div className="flex-1 w-full max-w-5xl mx-auto px-4 py-4 sm:py-6 flex flex-col gap-4 overflow-hidden">
+                
+                {/* Header Section */}
+                <div className="flex justify-between items-center px-1 flex-shrink-0">
+                    <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+                    <button 
+                        onClick={logout}
+                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-red-100 text-red-600 hover:bg-red-50 text-sm font-medium transition-colors shadow-sm"
+                    >
+                        <LogOut className="w-4 h-4" />
+                        <span className="hidden sm:inline">Log Out</span>
+                    </button>
+                </div>
 
-            <div className="container mx-auto px-4 py-8">
-                <h1 className="text-3xl font-bold text-slate-900 mb-8">My Account</h1>
+                {/* Grid Layout strictly fills remaining height */}
+                <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 grid-rows-4 sm:grid-rows-3 gap-3 sm:gap-4 h-full min-h-0">
+                    
+                    {/* User Identity - Large Top Left */}
+                    <BentoCard 
+                        className="col-span-2 row-span-1 sm:row-span-1 border-none shadow-md"
+                        gradient="from-blue-600 to-indigo-600"
+                        title="Profile" 
+                        icon={<User className="w-4 h-4" />}
+                        value={user?.name || 'User'}
+                        subtitle={`${user?.email} • ${user?.mobile || 'No phone'}`}
+                    >
+                        <ProfileTab />
+                    </BentoCard>
 
-                <div className="grid md:grid-cols-4 gap-6 md:gap-8">
-                    {/* Sidebar Navigation — horizontal tabs on mobile, vertical sidebar on desktop */}
-                    <div className="md:col-span-1">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden md:sticky md:top-20">
-                            <nav className="p-2 flex md:flex-col gap-1 overflow-x-auto md:overflow-x-visible scrollbar-hide">
-                                <NavButton
-                                    icon={<User className="w-4 h-4" />}
-                                    label="Profile"
-                                    active={activeTab === 'profile'}
-                                    onClick={() => setActiveTab('profile')}
-                                />
-                                <NavButton
-                                    icon={<Users className="w-4 h-4" />}
-                                    label="Family"
-                                    active={activeTab === 'family'}
-                                    onClick={() => setActiveTab('family')}
-                                />
-                                <NavButton
-                                    icon={<Calendar className="w-4 h-4" />}
-                                    label="Bookings"
-                                    active={activeTab === 'bookings'}
-                                    onClick={() => setActiveTab('bookings')}
-                                />
-                                <NavButton
-                                    icon={<Wallet className="w-4 h-4" />}
-                                    label="Wallet"
-                                    active={activeTab === 'wallet'}
-                                    onClick={() => setActiveTab('wallet')}
-                                />
-                                <NavButton
-                                    icon={<Gift className="w-4 h-4" />}
-                                    label="Referrals"
-                                    active={activeTab === 'referrals'}
-                                    onClick={() => setActiveTab('referrals')}
-                                />
-                                <NavButton
-                                    icon={<FileText className="w-4 h-4" />}
-                                    label="Reports"
-                                    active={activeTab === 'reports'}
-                                    onClick={() => setActiveTab('reports')}
-                                />
-                            </nav>
+                    {/* Wallet - Square */}
+                    <BentoCard 
+                        className="col-span-1 row-span-1 sm:col-span-1 sm:row-span-1 border-none shadow-md"
+                        gradient="from-[#4b2192] to-[#6d3fcf]"
+                        title="Wallet" 
+                        icon={<Wallet className="w-4 h-4" />}
+                        value={walletBalance !== null ? `₹${walletBalance.toLocaleString('en-IN')}` : '...'}
+                        subtitle="Available balance"
+                    >
+                        <WalletTab />
+                    </BentoCard>
 
-                            {/* Manager / Admin Panel Links */}
-                            {(isManager || isSuperAdmin) && (
-                                <div className="p-2 pt-0 border-t border-gray-100 mt-1 md:mt-2 flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible scrollbar-hide">
-                                    <Link
-                                        href="/manager"
-                                        className="flex items-center gap-2 md:gap-3 flex-shrink-0 md:w-full px-3 md:px-4 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium transition-colors bg-gradient-to-r from-teal-600 to-emerald-600 text-white hover:from-teal-700 hover:to-emerald-700 whitespace-nowrap"
-                                    >
-                                        <Shield className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                        Manager
-                                    </Link>
-                                    {isSuperAdmin && (
-                                        <Link
-                                            href="/super-admin"
-                                            className="flex items-center gap-2 md:gap-3 flex-shrink-0 md:w-full px-3 md:px-4 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium transition-colors bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 whitespace-nowrap"
-                                        >
-                                            <Shield className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                            Admin
-                                        </Link>
-                                    )}
+                    {/* Bookings - Square */}
+                    <BentoCard 
+                        className="col-span-1 row-span-1 sm:col-span-1 sm:row-span-1 border-none shadow-md"
+                        gradient="from-emerald-600 to-teal-600"
+                        title="Bookings" 
+                        icon={<Calendar className="w-4 h-4" />}
+                        value={activeBookingsCount !== null ? activeBookingsCount : '...'}
+                        subtitle="Active appointments"
+                    >
+                        <BookingsTab />
+                    </BentoCard>
+
+                    {/* Family - Wide bottom left */}
+                    <BentoCard 
+                        className="col-span-2 row-span-1 sm:col-span-2 sm:row-span-1 border-none shadow-md"
+                        gradient="from-orange-500 to-amber-500"
+                        title="Family Members" 
+                        icon={<Users className="w-4 h-4" />}
+                        value={familyCount !== null ? `${familyCount} Members` : '...'}
+                        subtitle="Manage your family profiles"
+                    >
+                        <FamilyTab />
+                    </BentoCard>
+
+                    {/* Reports - Small */}
+                    <BentoCard 
+                        className="col-span-1 row-span-1 sm:col-span-1 sm:row-span-1 border-none shadow-md"
+                        gradient="from-rose-500 to-pink-500"
+                        title="Reports" 
+                        icon={<FileText className="w-4 h-4" />}
+                        subtitle="View health records"
+                    >
+                        <ReportsTab />
+                    </BentoCard>
+
+                    {/* Referrals - Small */}
+                    <BentoCard 
+                        className="col-span-1 row-span-1 sm:col-span-1 sm:row-span-1 border-none shadow-md"
+                        gradient="from-violet-500 to-fuchsia-500"
+                        title="Referrals" 
+                        icon={<Gift className="w-4 h-4" />}
+                        subtitle="Invite & earn rewards"
+                    >
+                        <ReferralTab />
+                    </BentoCard>
+
+                    {/* Manager/Admin Area - Bottom full width */}
+                    {(isManager || isSuperAdmin) && (
+                        <div className="col-span-2 sm:col-span-4 row-span-1 flex gap-3 min-h-0">
+                            <Link href="/manager" className="flex-1 group">
+                                <div className="h-full relative overflow-hidden rounded-3xl p-5 shadow-sm border-none bg-gradient-to-r from-teal-600 to-emerald-600 text-white flex flex-col justify-center items-center transition-transform active:scale-[0.98] hover:shadow-lg">
+                                    <Shield className="w-6 h-6 mb-2 opacity-80 group-hover:scale-110 transition-transform" />
+                                    <span className="font-bold text-sm">Manager Portal</span>
                                 </div>
+                            </Link>
+                            {isSuperAdmin && (
+                                <Link href="/super-admin" className="flex-1 group">
+                                    <div className="h-full relative overflow-hidden rounded-3xl p-5 shadow-sm border-none bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex flex-col justify-center items-center transition-transform active:scale-[0.98] hover:shadow-lg">
+                                        <Shield className="w-6 h-6 mb-2 opacity-80 group-hover:scale-110 transition-transform" />
+                                        <span className="font-bold text-sm">Admin Portal</span>
+                                    </div>
+                                </Link>
                             )}
-
-                            {/* Logout Button */}
-                            <div className="p-2 pt-0 border-t border-gray-100 mt-1 md:mt-2">
-                                <button
-                                    onClick={() => {
-                                        logout();
-                                    }}
-                                    className="flex items-center gap-2 md:gap-3 w-full px-3 md:px-4 py-2 md:py-3 rounded-lg text-xs md:text-sm font-medium transition-colors text-red-600 hover:bg-red-50"
-                                >
-                                    <LogOut className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                    Log Out
-                                </button>
-                            </div>
                         </div>
-                    </div>
-
-                    {/* Main Content Area */}
-                    <div className="md:col-span-3">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 min-h-[500px]">
-                            {activeTab === 'profile' && <ProfileTab />}
-                            {activeTab === 'family' && <FamilyTab />}
-                            {activeTab === 'bookings' && <BookingsTab />}
-                            {activeTab === 'wallet' && <WalletTab />}
-                            {activeTab === 'referrals' && <ReferralTab />}
-                            {activeTab === 'reports' && <ReportsTab />}
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>
     );
-}
-
-function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
-    return (
-        <button
-            onClick={onClick}
-            className={cn(
-                "flex items-center gap-2 md:gap-3 flex-shrink-0 px-3 py-2 md:px-4 md:py-3 md:w-full rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap",
-                active ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-50"
-            )}
-        >
-            {icon}
-            {label}
-        </button>
-    )
 }

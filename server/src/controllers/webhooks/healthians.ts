@@ -23,6 +23,7 @@ import {
 } from '../../services/healthiansWebhook';
 import { ingestReport } from '../../services/reportIngestion';
 import { logAlert, logBusinessEvent, logger } from '../../utils/logger';
+import { addObservabilityBreadcrumb } from '../../utils/sentry';
 
 interface HealthiansWebhookPayload {
     type: 'status_updated' | 'report_uploaded' | 'phlebo_assigned' | 'phlebo_reassigned';
@@ -56,6 +57,10 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
     // 2. Validate shared-secret header when configured.
     const providedSecret = getHeaderValue(req.headers['x-healthians-secret']);
     if (!isValidWebhookSecret(providedSecret)) {
+        addObservabilityBreadcrumb('healthians_webhook_unauthorized', {
+            source: 'healthians',
+            payloadHash: payloadHash.slice(0, 12),
+        });
         logAlert('healthians_webhook_unauthorized', { payloadHash: payloadHash.slice(0, 12) });
         return res.status(401).json({ error: 'Unauthorized webhook' });
     }
@@ -65,11 +70,21 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
     try {
         payload = JSON.parse(rawBody.toString('utf-8'));
     } catch (error) {
+        addObservabilityBreadcrumb('healthians_webhook_malformed_json', {
+            source: 'healthians',
+            payloadHash: payloadHash.slice(0, 12),
+        });
         logger.warn({ error, payloadHash: payloadHash.slice(0, 12) }, 'healthians_webhook_malformed_json');
         return res.status(400).json({ error: 'Invalid JSON' });
     }
 
     const clientIp = req.ip || req.socket.remoteAddress;
+    addObservabilityBreadcrumb('healthians_webhook_received', {
+        source: 'healthians',
+        eventType: payload.type,
+        partnerBookingId: payload.booking_id,
+        payloadHash: payloadHash.slice(0, 12),
+    });
     logBusinessEvent('healthians_webhook_received', {
         sourceIp: clientIp,
         eventType: payload.type,
@@ -107,6 +122,12 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
             });
 
             if (!booking) {
+                addObservabilityBreadcrumb('healthians_webhook_booking_not_found', {
+                    source: 'healthians',
+                    eventType: payload.type,
+                    partnerBookingId: payload.booking_id,
+                    payloadHash: payloadHash.slice(0, 12),
+                });
                 logger.warn({
                     eventType: payload.type,
                     partnerBookingId: payload.booking_id,
@@ -122,6 +143,12 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
             // Step C: Dispatch by event type
             switch (payload.type) {
                 case 'status_updated':
+                    addObservabilityBreadcrumb('healthians_status_webhook_processing', {
+                        source: 'healthians',
+                        eventType: payload.type,
+                        bookingId: booking.id,
+                        partnerBookingId: payload.booking_id,
+                    });
                     await handleStatusUpdate(tx, booking, payload.data);
                     logBusinessEvent('healthians_status_webhook_processed', {
                         bookingId: booking.id,
@@ -131,6 +158,12 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
                     break;
 
                 case 'report_uploaded':
+                    addObservabilityBreadcrumb('healthians_report_webhook_processing', {
+                        source: 'healthians',
+                        eventType: payload.type,
+                        bookingId: booking.id,
+                        partnerBookingId: payload.booking_id,
+                    });
                     reportIdToIngest = await handleReportUploaded(tx, booking, payload.data);
                     logBusinessEvent('report_webhook_processed', {
                         bookingId: booking.id,
@@ -142,6 +175,12 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
 
                 case 'phlebo_assigned':
                 case 'phlebo_reassigned':
+                    addObservabilityBreadcrumb('healthians_phlebo_webhook_processing', {
+                        source: 'healthians',
+                        eventType: payload.type,
+                        bookingId: booking.id,
+                        partnerBookingId: payload.booking_id,
+                    });
                     await handlePhleboEvent(tx, booking, payload.data);
                     logBusinessEvent('phlebo_webhook_processed', {
                         bookingId: booking.id,
@@ -164,20 +203,43 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
         // Step E: Trigger background report ingestion AFTER transaction commits
         // This runs outside the transaction so download failures don't roll back persistence
         if (reportIdToIngest) {
+            addObservabilityBreadcrumb('healthians_report_ingestion_triggered', {
+                source: 'healthians',
+                reportId: reportIdToIngest,
+                partnerBookingId: payload.booking_id,
+            });
             ingestReport(reportIdToIngest).catch((err) =>
                 logAlert('report_background_ingestion_failed', { error: err, reportId: reportIdToIngest })
             );
         }
 
+        addObservabilityBreadcrumb('healthians_webhook_processed', {
+            source: 'healthians',
+            eventType: payload.type,
+            partnerBookingId: payload.booking_id,
+            payloadHash: payloadHash.slice(0, 12),
+        });
         return res.status(200).json({ status: 'ok' });
     } catch (e: any) {
         // Duplicate detection: P2002 = unique constraint violation on payloadHash
         if (e.code === 'P2002') {
+            addObservabilityBreadcrumb('healthians_webhook_duplicate', {
+                source: 'healthians',
+                eventType: payload.type,
+                partnerBookingId: payload.booking_id,
+                payloadHash: payloadHash.slice(0, 12),
+            });
             logBusinessEvent('healthians_webhook_duplicate', { payloadHash: payloadHash.slice(0, 12) }, 'debug');
             return res.status(200).json({ status: 'duplicate' });
         }
 
         // All other errors: log but still return 200 to prevent Healthians retry storms
+        addObservabilityBreadcrumb('healthians_webhook_processing_error', {
+            source: 'healthians',
+            eventType: payload.type,
+            partnerBookingId: payload.booking_id,
+            payloadHash: payloadHash.slice(0, 12),
+        });
         logAlert('healthians_webhook_processing_error', { error: e, payloadHash: payloadHash.slice(0, 12) });
         return res.status(200).json({ status: 'error_logged' });
     }

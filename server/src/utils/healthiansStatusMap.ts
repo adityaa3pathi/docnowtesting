@@ -17,10 +17,11 @@ export interface HealthiansStatusInfo {
 }
 
 /**
- * Complete BS code mapping from both the webhook doc and B2B API doc.
+ * Complete BS code mapping from the official Healthians documentation.
  *
  * [WEBHOOK]  = Confirmed from healthians_webhook_doc.md payload samples
  * [B2B-API]  = Confirmed from healthians_api_doc.md (cancelBooking, getBookingStatus, setSlotForBooking)
+ * [OFFICIAL] = From official Healthians BS code table (2026-06)
  */
 export const HEALTHIANS_STATUS_MAP: Record<string, HealthiansStatusInfo> = {
     // ── Booking Lifecycle ─────────────────────────────────────────────────
@@ -28,25 +29,56 @@ export const HEALTHIANS_STATUS_MAP: Record<string, HealthiansStatusInfo> = {
         docnowStatus: 'Order Booked',
         isFinal: false,
         action: 'update',
-        source: '[B2B-API] cancelBooking: "Order Booked (BS002)" — cancellable state',
+        source: '[OFFICIAL] "Order Booked" — cancellable state',
     },
     'BS005': {
         docnowStatus: 'Sample Collector Assigned',
         isFinal: false,
         action: 'update',
-        source: '[B2B-API] cancelBooking: "Sample Collector Assigned (BS005)" — cancellable state',
+        source: '[OFFICIAL] "Pickup Scheduled — Booking is verified" — cancellable state',
+    },
+    'BS006': {
+        docnowStatus: 'Sample Collector Reached',
+        isFinal: false,
+        action: 'update',
+        source: '[OFFICIAL] "Sample Collector Reached Home" — phlebo on site, sample not yet collected',
     },
     'BS007': {
         docnowStatus: 'Sample Collected',
         isFinal: false,
         action: 'update',
-        source: '[B2B-API] getBookingStatus response shows BS007 for active customer/test statuses',
+        source: '[OFFICIAL] "Sample Collected"',
     },
     'BS008': {
         docnowStatus: 'Sample Received at Lab',
         isFinal: false,
         action: 'update',
-        source: '[WEBHOOK] "booking goes to sample received at merchant" — booking_status BS008',
+        source: '[OFFICIAL] "Sample Received at Lab"',
+    },
+    'BS009': {
+        docnowStatus: 'Report Generated',
+        isFinal: false,
+        action: 'update',
+        source: '[OFFICIAL] "Report Generated from the Lab but pending for verification"',
+    },
+    'BS0012': {
+        docnowStatus: 'Health Counselling Done',
+        isFinal: false,
+        action: 'update',
+        source: '[OFFICIAL] "Doctor Consultation Done"',
+    },
+    'BS015': {
+        docnowStatus: 'Report Available',
+        isFinal: true,
+        action: 'update',
+        source: '[OFFICIAL] "Report is available and send to customer"',
+    },
+    'BS0015': {
+        // Variant with leading zero — Healthians actually sends this format
+        docnowStatus: 'Report Available',
+        isFinal: true,
+        action: 'update',
+        source: '[OFFICIAL] "Report is available and send to customer" (variant of BS015)',
     },
 
     // ── Terminal / Branching States ────────────────────────────────────────
@@ -54,13 +86,13 @@ export const HEALTHIANS_STATUS_MAP: Record<string, HealthiansStatusInfo> = {
         docnowStatus: 'Cancelled',
         isFinal: true,
         action: 'cancel',
-        source: '[WEBHOOK] "booking goes cancel" — remark: CUSTOMER_CANCELLED. [B2B-API] getBookingStatus confirms BS003 for cancelled customers.',
+        source: '[OFFICIAL] "Order Cancelled"',
     },
     'BS0013': {
         docnowStatus: 'Rescheduled',
         isFinal: false,
         action: 'reschedule',
-        source: '[WEBHOOK] "booking goes to reschedule" — ref_booking_id contains new booking. booking_status BS0013.',
+        source: '[OFFICIAL] "Booking Reschedule" — ref_booking_id contains new booking',
     },
 
     // ── Lab Rejection / Resample ──────────────────────────────────────────
@@ -68,14 +100,46 @@ export const HEALTHIANS_STATUS_MAP: Record<string, HealthiansStatusInfo> = {
         docnowStatus: 'Resample Required',
         isFinal: false,
         action: 'resample',
-        source: '[B2B-API] setSlotForBooking: "rejected booking will contain ref_booking_id... status should be BS0018"',
+        source: '[OFFICIAL] "Resampling Process Initiated" — ref_booking_id provided',
     },
     'BS018': {
         // Variant without leading zero — map identically
         docnowStatus: 'Resample Required',
         isFinal: false,
         action: 'resample',
-        source: '[B2B-API] setSlotForBooking webhook reference: "BS018" (variant of BS0018)',
+        source: '[OFFICIAL] "Resampling Process Initiated" (variant of BS0018)',
+    },
+
+    // ── Edge Cases ────────────────────────────────────────────────────────
+    'BS0021': {
+        docnowStatus: 'Missed Doctor Consultation',
+        isFinal: false,
+        action: 'update',
+        source: '[OFFICIAL] "Doctor Consultation Call Missed"',
+    },
+    'BS0023': {
+        docnowStatus: 'Sample Rejected',
+        isFinal: false,
+        action: 'update',
+        source: '[OFFICIAL] "Sample got Reject due to some reason" — ref_booking_id provided',
+    },
+    'BS0026': {
+        docnowStatus: 'Call Not Picked',
+        isFinal: false,
+        action: 'update',
+        source: '[OFFICIAL] "Sample Collector\'s Call Not Picked" — remarks provided',
+    },
+    'BS026': {
+        docnowStatus: 'Call Not Picked',
+        isFinal: false,
+        action: 'update',
+        source: '[OFFICIAL] "Sample Collector\'s Call Not Picked" (variant of BS0026)',
+    },
+    'BS0027': {
+        docnowStatus: 'Payment Hold',
+        isFinal: false,
+        action: 'update',
+        source: '[OFFICIAL] "Booking is on-hold due to Payment Issue" — remarks provided',
     },
 };
 
@@ -109,6 +173,7 @@ const CANCEL_DENIAL_MESSAGES: Record<string, string> = {
     'BS0018': 'A resample has been requested for this booking. Please contact support for assistance.',
     'BS018':  'A resample has been requested for this booking. Please contact support for assistance.',
     'BS015':  'Your reports are being processed. Cancellation is no longer available.',
+    'BS0015': 'Your reports are being processed. Cancellation is no longer available.',
 };
 
 /**

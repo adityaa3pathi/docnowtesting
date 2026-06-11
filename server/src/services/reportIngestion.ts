@@ -15,7 +15,7 @@ import axios from 'axios';
 import { prisma } from '../db';
 import { originalReportStorageKey, reportStorage, reportStorageKey } from './reportStorage';
 import { HealthiansAdapter } from '../adapters/healthians';
-import { sendReportReadyViaWhatsApp } from './reportNotifications';
+import { sendSpecificReportViaWhatsApp } from './reportNotifications';
 import { brandReportPdf } from './reportBrandingService';
 import { logAlert, logBusinessEvent, logger } from '../utils/logger';
 
@@ -182,16 +182,18 @@ export async function ingestReport(reportId: string, options: IngestReportOption
                         : `${itemNames[0]} + ${itemNames.length - 1} more test${itemNames.length - 1 > 1 ? 's' : ''}`;
 
             try {
-                const notification = await sendReportReadyViaWhatsApp({
+                const notification = await sendSpecificReportViaWhatsApp({
                     mobile: report.booking.user.mobile,
                     customerName: report.booking.user.name,
                     reportLabel,
+                    reportId,
                 });
                 logBusinessEvent('report_notification_sent', {
                     reportId,
                     bookingId: report.bookingId,
                     notificationId: notification.id,
                     notificationStatus: notification.status,
+                    reportLink: notification.reportLink,
                 });
             } catch (notifyErr: any) {
                 logAlert('report_notification_failed', { error: notifyErr, reportId, bookingId: report.bookingId });

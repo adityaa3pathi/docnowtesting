@@ -124,8 +124,8 @@ export function RescheduleDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
-                <DialogHeader className="p-8 bg-gradient-to-br from-primary/5 to-secondary/5 border-b border-primary/10">
+            <DialogContent className="sm:max-w-[500px] p-0 flex flex-col max-h-[90vh]">
+                <DialogHeader className="p-8 bg-gradient-to-br from-primary/5 to-secondary/5 border-b border-primary/10 shrink-0">
                     <DialogTitle className="text-2xl font-black text-slate-900 flex items-center gap-3">
                         <div className="bg-primary p-2 rounded-xl text-white shadow-lg shadow-primary/20">
                             <Calendar className="w-6 h-6" />
@@ -134,7 +134,7 @@ export function RescheduleDialog({
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="p-8 space-y-6">
+                <div className="p-8 space-y-6 overflow-y-auto flex-1 min-h-0">
                     <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 mb-4">
                         <p className="text-sm text-blue-700 font-medium leading-relaxed">
                             Pick a new date and time for your sample collection. We'll handle the rest!
@@ -224,7 +224,7 @@ export function RescheduleDialog({
                     </div>
                 </div>
 
-                <div className="p-8 bg-slate-50 flex items-center justify-end gap-3 border-t border-slate-100">
+                <div className="p-8 bg-slate-50 flex items-center justify-end gap-3 border-t border-slate-100 shrink-0">
                     <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl px-6 font-bold h-11 border-slate-200 text-slate-600 hover:bg-white hover:text-slate-900 transition-all">
                         Keep Current
                     </Button>

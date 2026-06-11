@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
     LayoutDashboard,
+    BarChart3,
     Users,
     ShoppingCart,
     ShoppingBag,
@@ -12,6 +13,7 @@ import {
     Gift,
     Settings,
     FileText,
+    FileSpreadsheet,
     ChevronLeft,
     ChevronRight,
     LogOut,
@@ -35,6 +37,8 @@ import api, { getAccessToken } from '@/lib/api';
 // Navigation items matching the design
 const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/super-admin/dashboard' },
+    { id: 'sales-report', label: 'Sales Report', icon: BarChart3, href: '/super-admin/sales-report' },
+    { id: 'settlement-report', label: 'Settlement Report', icon: FileSpreadsheet, href: '/super-admin/settlement-report' },
     { id: 'users', label: 'Users', icon: Users, href: '/super-admin/users' },
     { id: 'orders', label: 'Orders', icon: ShoppingCart, href: '/super-admin/orders' },
     { id: 'wallets', label: 'Wallets', icon: Wallet, href: '/super-admin/wallets' },

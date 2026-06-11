@@ -23,6 +23,7 @@ import { sendInvoiceViaWhatsApp } from '../services/invoiceNotifications';
 import { getInvoiceLinkExpiryHours } from '../services/invoiceAccess';
 import { getReportLinkExpiryHours } from '../services/reportAccess';
 import { sendSpecificReportViaWhatsApp } from '../services/reportNotifications';
+import { sendPaymentLinkViaWhatsApp } from '../services/paymentNotifications';
 import { buildCatalogSearchWhere, normalizeSearchTerm } from '../utils/searchUtils';
 
 const router = Router();
@@ -763,6 +764,7 @@ router.post('/slots', ...mgr, async (req: AuthRequest, res: Response) => {
     const { lat, long, zipcode, date, items } = req.body;
     try {
         if (!zipcode || !date || !Array.isArray(items) || items.length === 0) {
+            console.log('[Manager Slots] Missing required fields:', { zipcode, date, itemsIsArray: Array.isArray(items), itemsLen: items?.length });
             return res.status(400).json({ error: 'zipcode, date, and items are required' });
         }
 
@@ -770,22 +772,31 @@ router.post('/slots', ...mgr, async (req: AuthRequest, res: Response) => {
         let finalLong = typeof long === 'string' ? long : '';
 
         if (!finalLat || !finalLong || finalLat === '0' || finalLong === '0') {
+            console.log('[Manager Slots] Lat/long missing or zero, geocoding pincode:', zipcode);
             const geodata = await getGeodataFromPincode(String(zipcode));
             if (geodata) {
                 finalLat = geodata.lat;
                 finalLong = geodata.long;
+                console.log('[Manager Slots] Geocoded:', { finalLat, finalLong });
+            } else {
+                console.log('[Manager Slots] Geocoding returned null for pincode:', zipcode);
             }
         }
 
         if (!finalLat || !finalLong || finalLat === '0' || finalLong === '0') {
+            console.log('[Manager Slots] Coordinates still invalid after geocoding:', { finalLat, finalLong });
             return res.status(400).json({ error: 'Address is missing valid coordinates. Please update the address with latitude and longitude or try a different pincode.' });
         }
 
+        console.log('[Manager Slots] Checking serviceability:', { finalLat, finalLong, zipcode });
         const serviceability = await healthians.checkServiceability(finalLat, finalLong, String(zipcode));
+        console.log('[Manager Slots] Serviceability response:', JSON.stringify(serviceability).slice(0, 500));
         const zoneId = serviceability?.data?.zone_id;
         if (!zoneId) {
+            console.log('[Manager Slots] No zone_id found in serviceability response');
             return res.status(400).json({ error: 'Could not determine zone for the selected address' });
         }
+        console.log('[Manager Slots] Zone ID:', zoneId);
 
         const packagesByPatient = new Map<string, string[]>();
         items.forEach((item: any) => {
@@ -972,6 +983,59 @@ router.post('/orders/:id/payment-link', ...mgr, async (req: AuthRequest, res: Re
     } catch (error: any) {
         console.error('[Manager] Create payment link error:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// F2. Send Payment Link via WhatsApp
+router.post('/orders/:id/send-whatsapp-link', ...mgr, async (req: AuthRequest, res: Response) => {
+    const id = req.params.id as string;
+    try {
+        const order = await prisma.managerOrder.findUnique({
+            where: { id },
+            include: { customer: true }
+        });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+
+        if (!order.razorpayLinkUrl) {
+            return res.status(400).json({ error: 'Payment link has not been generated yet. Generate the link first.' });
+        }
+
+        const delivery = await sendPaymentLinkViaWhatsApp({
+            mobile: order.customer.mobile,
+            customerName: order.customer.name,
+            bookingId: order.bookingId,
+            amount: order.totalAmount,
+            paymentLink: order.razorpayLinkUrl,
+        });
+
+        await prisma.adminAuditLog.create({
+            data: {
+                adminId: req.adminId!,
+                adminName: req.adminName || 'Manager',
+                action: 'MANAGER_PAYMENT_LINK_SENT_WA',
+                entity: 'ManagerOrder',
+                targetId: order.id,
+                newValue: {
+                    mobile: order.customer.mobile,
+                    bookingId: order.bookingId,
+                    paymentLink: order.razorpayLinkUrl,
+                    providerMessageId: delivery.id,
+                    providerStatus: delivery.status,
+                },
+                ipAddress: getClientIP(req),
+                isDestructive: false,
+            }
+        });
+
+        res.json({
+            success: true,
+            message: 'Payment link sent via WhatsApp',
+            mobile: order.customer.mobile,
+            sentAt: new Date().toISOString(),
+        });
+    } catch (error: any) {
+        console.error('[Manager] Send WhatsApp payment link error:', error);
+        res.status(500).json({ error: error.message || 'Failed to send payment link via WhatsApp' });
     }
 });
 

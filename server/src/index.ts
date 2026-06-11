@@ -3,6 +3,8 @@ dotenv.config();
 
 import { validateEnv } from './utils/envValidator';
 validateEnv();
+import { captureObservabilityError, initSentry } from './utils/sentry';
+initSentry();
 
 import express from 'express';
 import cors from 'cors';
@@ -29,6 +31,7 @@ import managerRoutes from './routes/manager';
 import promoRoutes from './routes/promos';
 import reportRoutes from './routes/reports';
 import invoiceRoutes from './routes/invoices';
+import healthRoutes from './routes/health';
 
 import { csrfProtection } from './middleware/csrfProtection';
 import { legacyCookieCleanup } from './middleware/legacyCookieCleanup';
@@ -38,9 +41,34 @@ import { logger } from './utils/logger';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const allowedOrigins = process.env.APP_BASE_URL ? [process.env.APP_BASE_URL, 'http://localhost:3000', 'https://docnow.in', 'https://www.docnow.in'] : ['http://localhost:3000', 'https://docnow.in', 'https://www.docnow.in'];
+function parseAllowedOrigins() {
+    const configured = process.env.CORS_ALLOWED_ORIGINS;
+    const defaults = [
+        'http://localhost:3000',
+        'https://docnow.in',
+        'https://www.docnow.in',
+    ];
+
+    const origins = configured
+        ? configured.split(',').map(origin => origin.trim()).filter(Boolean)
+        : defaults;
+
+    if (process.env.APP_BASE_URL) {
+        origins.push(process.env.APP_BASE_URL);
+    }
+
+    return [...new Set(origins)];
+}
+
+const allowedOrigins = parseAllowedOrigins();
 app.use(cors({
-    origin: true,
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
 }));
 
@@ -56,6 +84,7 @@ app.post('/api/webhooks/healthians', express.raw({ type: '*/*' }), healthiansWeb
 app.use(express.json());
 app.use(csrfProtection);
 
+app.use('/health', healthRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/catalog', catalogRoutes);
 app.use('/api/callback', callbackRoutes);
@@ -102,19 +131,34 @@ app.get('/debug/ip', async (req, res) => {
 
 import { Request, Response, NextFunction } from 'express';
 
+type RequestWithContext = Request & {
+    requestId?: string;
+    userId?: string;
+};
+
 // GLOBAL ERROR HANDLER FALLBACK
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+app.use((err: any, req: RequestWithContext, res: Response, next: NextFunction) => {
+    const statusCode = err.status || 500;
     logger.error({
         error: err,
         method: req.method,
         path: req.originalUrl || req.url,
-        statusCode: err.status || 500,
+        statusCode,
     }, 'unhandled_global_error');
+
+    captureObservabilityError(err, {
+        requestId: req.requestId,
+        userId: req.userId,
+        method: req.method,
+        route: req.route?.path,
+        path: req.originalUrl || req.url,
+        statusCode,
+    });
 
     if (err.message === 'Not allowed by CORS') {
         return res.status(403).json({ error: 'CORS verification failed.' });
     }
-    res.status(err.status || 500).json({
+    res.status(statusCode).json({
         error: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message
     });
 });

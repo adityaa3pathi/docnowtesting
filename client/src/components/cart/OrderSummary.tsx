@@ -4,6 +4,7 @@ import { Address, Patient } from '@/types/cart';
 interface OrderSummaryProps {
     cartItemsCount: number;
     total: number;
+    collectionFee: number;
     discountAmount: number;
     walletDeduction: number;
     finalPayable: number;
@@ -23,6 +24,7 @@ interface OrderSummaryProps {
 export function OrderSummary({
     cartItemsCount,
     total,
+    collectionFee,
     discountAmount,
     walletDeduction,
     finalPayable,
@@ -49,8 +51,17 @@ export function OrderSummary({
                 </div>
                 <div className="flex justify-between">
                     <span className="text-gray-500">Sample Collection</span>
-                    <span className="text-green-600 font-medium">FREE</span>
+                    {collectionFee > 0 ? (
+                        <span className="text-orange-600 font-medium">₹{collectionFee}</span>
+                    ) : (
+                        <span className="text-green-600 font-medium">FREE</span>
+                    )}
                 </div>
+                {collectionFee > 0 && (
+                    <p className="text-[10px] text-orange-500 mt-0.5">
+                        Free collection on orders above ₹500
+                    </p>
+                )}
                 {discountAmount > 0 && (
                     <div className="flex justify-between text-green-600">
                         <span>Coupon Discount</span>

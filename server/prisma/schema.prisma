@@ -536,6 +536,10 @@ model CatalogItem {
   sampleType       String?            // e.g. "Blood"
   reportTime       String?            // e.g. "24-48 hours"
   partnerData      Json?              // Raw Healthians response for reference
+  detailsData      Json?              // Cached normalized Healthians detail metadata for cards/detail pages
+  detailsFetchedAt DateTime?
+  detailsFetchStatus String?
+  detailsFetchError  String?
   
   isEnabled        Boolean            @default(true)
   

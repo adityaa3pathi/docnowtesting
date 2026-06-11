@@ -6,6 +6,8 @@ import { validationSchemas } from '../../utils/helpers';
 import { BookingService } from '../../services/booking.service';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
+import { ingestReport } from '../../services/reportIngestion';
+import { logger } from '../../utils/logger';
 
 const healthians = HealthiansAdapter.getInstance();
 
@@ -18,6 +20,77 @@ const statusRateLimit = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTAS
     }) : null;
 
 import { resolveHealthiansStatus } from '../../utils/healthiansStatusMap';
+
+const REPORT_AVAILABLE_CODES = new Set(['BS015', 'BS0015']);
+
+/**
+ * Fallback report ingestion triggered by status polling.
+ * Called when Healthians status shows reports are ready but
+ * the report_uploaded webhook was never received.
+ *
+ * For each unique patient in the booking, calls getCustomerReport_v2,
+ * creates a Report row (PENDING), then fires background ingestion.
+ */
+async function triggerReportIngestionFallback(
+    bookingId: string,
+    partnerBookingId: string,
+    userId: string,
+    patientIds: string[],
+): Promise<void> {
+    // Check if any reports already exist to avoid duplicate ingestion
+    const existingCount = await prisma.report.count({ where: { bookingId } });
+    if (existingCount > 0) {
+        logger.debug({ bookingId }, 'status_poll_report_ingestion_skipped_already_exists');
+        return;
+    }
+
+    logger.warn({ bookingId, partnerBookingId }, 'status_poll_report_ingestion_fallback_triggered');
+
+    const uniquePatientIds = [...new Set(patientIds)];
+    const ingestionIds: string[] = [];
+
+    for (const patientId of uniquePatientIds) {
+        try {
+            // Fetch fresh signed URL from Healthians
+            const reportData = await healthians.getCustomerReport({
+                booking_id: partnerBookingId,
+                vendor_billing_user_id: userId,
+                vendor_customer_id: patientId,
+                allow_partial_report: 0, // full report only
+            });
+
+            const reportUrl = reportData?.data?.report_url?.trim();
+            if (!reportUrl) {
+                logger.warn({ bookingId, patientId }, 'status_poll_report_fallback_no_url');
+                continue;
+            }
+
+            // Create Report row
+            const report = await prisma.report.create({
+                data: {
+                    bookingId,
+                    vendorCustomerId: patientId,
+                    sourceUrl: reportUrl,
+                    isFullReport: true,
+                    fetchStatus: 'PENDING',
+                },
+            });
+
+            ingestionIds.push(report.id);
+        } catch (err: any) {
+            logger.warn({ error: err, bookingId, patientId }, 'status_poll_report_fallback_patient_failed');
+        }
+    }
+
+    // Fire ingestion in background — do not await
+    for (const reportId of ingestionIds) {
+        ingestReport(reportId).catch((err) =>
+            logger.warn({ error: err, reportId, bookingId }, 'status_poll_report_ingestion_fire_failed')
+        );
+    }
+
+    logger.warn({ bookingId, partnerBookingId, count: ingestionIds.length }, 'status_poll_report_ingestion_fallback_fired');
+}
 
 /**
  * GET /api/bookings/:id/status - Track Booking Status
@@ -86,6 +159,24 @@ export async function getStatus(req: AuthRequest, res: Response) {
                 }
             });
             console.log(`Synced booking ${bookingId} status to: ${effectiveStatus}`);
+
+            // If reports are ready but no webhook was ever received, trigger fallback ingestion
+            if (REPORT_AVAILABLE_CODES.has(healthiansStatus)) {
+                const activePartnerBookingId = effectiveRescheduledToId || booking.partnerBookingId;
+                const patientIds = booking.items
+                    .map((item: any) => item.patient?.id)
+                    .filter(Boolean) as string[];
+                if (activePartnerBookingId && patientIds.length > 0) {
+                    triggerReportIngestionFallback(
+                        bookingId,
+                        activePartnerBookingId,
+                        userId,
+                        patientIds,
+                    ).catch((err) =>
+                        logger.warn({ error: err, bookingId }, 'status_poll_report_ingestion_fallback_error')
+                    );
+                }
+            }
         }
 
         const effectiveCurrentPartnerBookingId = effectiveRescheduledToId || booking.partnerBookingId;

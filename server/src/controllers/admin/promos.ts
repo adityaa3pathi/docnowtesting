@@ -118,3 +118,39 @@ export async function updatePromo(req: AuthRequest, res: Response) {
         res.status(500).json({ error: 'Failed to update promo' });
     }
 }
+
+/**
+ * DELETE /api/admin/promos/:id — Delete promo
+ */
+export async function deletePromo(req: AuthRequest, res: Response) {
+    try {
+        const id = req.params.id as string;
+
+        try {
+            await prisma.promoCode.delete({ where: { id } });
+
+            // Audit Log
+            await prisma.adminAuditLog.create({
+                data: {
+                    adminId: req.userId!,
+                    adminName: req.adminName!,
+                    action: 'DELETE',
+                    entity: 'PromoCode',
+                    targetId: id,
+                    isDestructive: true
+                }
+            });
+
+            res.json({ success: true });
+        } catch (error: any) {
+            if (error.code === 'P2003') {
+                return res.status(400).json({ error: 'Cannot delete this promo code because it has already been used. Please deactivate it instead.' });
+            }
+            throw error;
+        }
+    } catch (error) {
+        console.error('[Admin] Error deleting promo:', error);
+        res.status(500).json({ error: 'Failed to delete promo' });
+    }
+}
+

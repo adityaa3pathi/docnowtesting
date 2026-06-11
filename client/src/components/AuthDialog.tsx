@@ -8,7 +8,7 @@ import {
     DialogTitle
 } from '@/components/ui/dialog';
 import { Button, Input } from '@/components/ui'; // Imports from components/ui.tsx
-import { Loader2, ArrowLeft, ShieldCheck, Mail, Smartphone, Lock, User as UserIcon, Calendar, Gift, KeyRound, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Loader2, ArrowLeft, ShieldCheck, Mail, Smartphone, Lock, User as UserIcon, Calendar, Gift, KeyRound, RefreshCw, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -56,6 +56,9 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
     const [forgotOtp, setForgotOtp] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
+
+    // UI State
+    const [showPassword, setShowPassword] = useState(false);
 
     // Timers
     const [resendTimer, setResendTimer] = useState(0);
@@ -304,13 +307,20 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                             <div className="relative">
                                 <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                                 <Input
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     placeholder="Password"
                                     value={loginPassword}
                                     onChange={(e) => setLoginPassword(e.target.value)}
-                                    className="pl-10"
+                                    className="pl-10 pr-10"
                                     required
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+                                >
+                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </button>
                             </div>
                         )}
                     </div>
@@ -448,24 +458,38 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                         <div className="relative">
                             <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                             <Input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 placeholder="Password"
                                 value={signupData.password}
                                 onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                                className="pl-10"
+                                className="pl-10 pr-10"
                                 required
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+                            >
+                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
                         </div>
                         <div className="relative">
                             <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                             <Input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 placeholder="Confirm"
                                 value={signupData.confirmPassword}
                                 onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
-                                className="pl-10"
+                                className="pl-10 pr-10"
                                 required
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+                            >
+                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
                         </div>
                     </div>
 
@@ -610,26 +634,40 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                         <div className="relative">
                             <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                             <Input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 placeholder="New Password"
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
-                                className="pl-10"
+                                className="pl-10 pr-10"
                                 required
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+                            >
+                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
                         </div>
 
                         {/* Confirm Password */}
                         <div className="relative">
                             <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                             <Input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 placeholder="Confirm New Password"
                                 value={confirmNewPassword}
                                 onChange={(e) => setConfirmNewPassword(e.target.value)}
-                                className="pl-10"
+                                className="pl-10 pr-10"
                                 required
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+                            >
+                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
                         </div>
 
                         {/* Password hint */}

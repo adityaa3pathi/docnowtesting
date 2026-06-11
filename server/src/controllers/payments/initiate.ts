@@ -10,6 +10,7 @@ import { tryAwardFirstOrderBonus } from '../../utils/referralService';
 import { resolveOrCreateSelfPatient } from '../../utils/patientValidation';
 import { finalizeBooking } from '../../services/bookingFinalization';
 import { logAlert, logBusinessEvent, logger } from '../../utils/logger';
+import { getCollectionFee } from '../../utils/collectionFee';
 
 /**
  * POST /api/payments/initiate
@@ -91,7 +92,9 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
             }
 
             // B. Calculate Base Total
-            const totalAmount = cart.items.reduce((sum, item) => sum + item.price, 0);
+            const itemsTotal = cart.items.reduce((sum, item) => sum + item.price, 0);
+            const collectionFee = getCollectionFee(itemsTotal);
+            const totalAmount = itemsTotal + collectionFee;
             let discountAmount = 0;
             let walletAmount = 0;
             let promoCodeId: string | null = null;
@@ -103,7 +106,7 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
                 if (!promo || !promo.isActive) throw new Error('Invalid or inactive promo code');
                 if (promo.expiresAt && new Date() > promo.expiresAt) throw new Error('Promo code expired');
                 if (new Date() < promo.startsAt) throw new Error('Promo code not yet active');
-                if (totalAmount < promo.minOrderValue) throw new Error(`Minimum order value of ₹${promo.minOrderValue} required`);
+                if (itemsTotal < promo.minOrderValue) throw new Error(`Minimum order value of ₹${promo.minOrderValue} required`);
 
                 // Per-user limit check
                 const existingRedemption = await tx.promoRedemption.findFirst({
