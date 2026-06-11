@@ -31,11 +31,14 @@ type CancellationActor =
 
 type CancelBookingRecord = {
     id: string;
+    userId: string;
     status: string;
     paymentStatus: PaymentStatus;
     partnerBookingId: string | null;
     partnerStatus: string | null;
     razorpayPaymentId: string | null;
+    walletAmount: number;
+    promoCodeId: string | null;
 };
 
 type CancelManagerOrderRecord = {
@@ -244,6 +247,57 @@ async function applyCancellationUpdates(params: {
             });
         }
 
+        // ── Wallet Rollback ───────────────────────────────────────────────────
+        // Restore wallet balance if the booking consumed wallet credits.
+        // Guard with idempotency check: skip if a REFUND ledger entry already exists.
+        if (booking.walletAmount > 0 && booking.userId) {
+            const existingRefund = await tx.walletLedger.findFirst({
+                where: { referenceId: booking.id, referenceType: 'REFUND' }
+            });
+
+            if (!existingRefund) {
+                const userWallet = await tx.wallet.findUnique({ where: { userId: booking.userId } });
+                if (userWallet) {
+                    await tx.wallet.update({
+                        where: { id: userWallet.id },
+                        data: { balance: { increment: booking.walletAmount } }
+                    });
+                    await tx.walletLedger.create({
+                        data: {
+                            walletId: userWallet.id,
+                            type: 'CREDIT',
+                            amount: booking.walletAmount,
+                            balanceAfter: userWallet.balance + booking.walletAmount,
+                            description: `Cancellation refund for booking #${booking.id.slice(0, 8)}`,
+                            referenceType: 'REFUND',
+                            referenceId: booking.id,
+                        }
+                    });
+                    console.log(`[Cancellation] Wallet refund of ₹${booking.walletAmount} credited for booking ${booking.id}`);
+                }
+            }
+        }
+
+        // ── Promo Rollback ────────────────────────────────────────────────────
+        // Delete the PromoRedemption record and decrement the global usage counter.
+        if (booking.promoCodeId) {
+            const redemption = await tx.promoRedemption.findUnique({
+                where: { bookingId: booking.id }
+            });
+            if (redemption) {
+                await tx.promoRedemption.delete({ where: { id: redemption.id } });
+                const updateResult = await tx.promoCode.updateMany({
+                    where: { id: booking.promoCodeId, redeemedCount: { gt: 0 } },
+                    data: { redeemedCount: { decrement: 1 } }
+                });
+                if (updateResult.count > 0) {
+                    console.log(`[Cancellation] Promo usage rolled back for booking ${booking.id}`);
+                } else {
+                    console.warn(`[Cancellation] Promo redeemedCount was already 0 for booking ${booking.id}, skipped decrement`);
+                }
+            }
+        }
+
         if (actor.type === 'manager') {
             await tx.adminAuditLog.create({
                 data: {
@@ -310,7 +364,7 @@ async function runCancellation(params: {
         );
         partnerCancellation = 'cancelled';
     } else if (!allowPendingLocalCancel && !booking.partnerBookingId) {
-        throw new Error('Internal record error: Partner Booking ID is missing');
+        throw new Error('Your appointment details are still being processed. Please try again shortly or contact support.');
     }
 
     const refundAttempt = enableRefunds

@@ -33,8 +33,8 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
     const canTrack = !isAwaitingPayment && !!activePartnerBookingId && !['Superseded', 'Refunded', 'Cancelled'].includes(statusInfo.label);
     const canReschedule = ['Order Booked', 'Sample Collector Assigned', 'Fresh Sample Needed', 'Rescheduled'].includes(statusInfo.label);
     const canCancel = !['Cancelled', 'Sample Collected', 'Sample Received at Lab', 'Report Ready', 'Completed', 'Superseded', 'Refunded'].includes(statusInfo.label);
-    const showPhleboContact = ['Sample Collector Assigned', 'Sample Collected'].includes(statusInfo.label);
-    const canContactPhlebo = statusInfo.label === 'Sample Collector Assigned';
+    const showPhleboContact = ['Sample Collector Assigned', 'Sample Collector Reached', 'Sample Collected'].includes(statusInfo.label);
+    const canContactPhlebo = ['Sample Collector Assigned', 'Sample Collector Reached'].includes(statusInfo.label);
 
     const handleFetchPhlebo = async () => {
         setPhleboLoading(true);

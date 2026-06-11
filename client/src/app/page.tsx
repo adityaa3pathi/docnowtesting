@@ -1,21 +1,20 @@
 "use client";
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 import { Footer } from '@/components/Footer';
 import { Button, Card, Input } from '@/components/ui';
+import { ProductMarketingCard, ProductDetailsSummary } from '@/components/catalog/ProductMarketingCard';
 
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
+import { generateProductSlug } from '@/lib/mapProductDetails';
 import toast from 'react-hot-toast';
 import {
   Search,
-  ShoppingCart,
   ArrowRight,
-  Activity,
-  Heart,
   Award,
   Clock,
   Shield,
@@ -28,15 +27,9 @@ import {
   FileCheck,
   Loader2,
   ChevronRight,
-  TestTubes,
   FlaskConical,
-  BadgePercent,
   Star,
-  Zap,
   Lock,
-  TestTube,
-  Microscope,
-  Dna,
 } from 'lucide-react';
 
 // ────────────────────── Types
@@ -50,10 +43,19 @@ interface CatalogProduct {
   displayPrice: number;
   discountedPrice: number | null;
   description: string | null;
-  parameters: number | null;
+  parameters: string | null;
   sampleType: string | null;
   reportTime: string | null;
   categories: { id: string; name: string; slug: string }[];
+  detailsSummary?: ProductDetailsSummary | null;
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isNetworkError(error: unknown) {
+  return typeof error === 'object' && error !== null && 'isNetworkError' in error;
 }
 
 // ────────────────────── Component
@@ -79,12 +81,6 @@ export default function Home() {
   const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set());
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  // ── Fetch catalog data
-  useEffect(() => {
-    fetchPackages();
-    fetchTests();
-  }, []);
-
   // ── Intersection observer for reveal animations
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -105,41 +101,52 @@ export default function Home() {
     return () => observer.disconnect();
   }, [loadingPackages, loadingTests]);
 
-  const fetchPackages = async (retries = 2) => {
+  const fetchPackages = useCallback(async (retries = 2) => {
     try {
-      const res = await api.get('/catalog/featured', { params: { type: 'PACKAGE,PROFILE', limit: 6 } });
+      const res = await api.get('/catalog/featured', { params: { type: 'PACKAGE', limit: 6 } });
       setPackages(res.data.products || []);
-    } catch (err: any) {
-      if (retries > 0 && err?.isNetworkError) {
+    } catch (err: unknown) {
+      if (retries > 0 && isNetworkError(err)) {
         await new Promise(r => setTimeout(r, 1500));
         return fetchPackages(retries - 1);
       }
-      console.warn('[Home] Could not load packages:', err?.message || err);
+      console.warn('[Home] Could not load packages:', getErrorMessage(err));
     } finally {
       setLoadingPackages(false);
     }
-  };
+  }, []);
 
-  const fetchTests = async (retries = 2) => {
+  const fetchTests = useCallback(async (retries = 2) => {
     try {
-      const res = await api.get('/catalog/featured', { params: { type: 'TEST', limit: 9 } });
+      const res = await api.get('/catalog/featured', { params: { type: 'TEST,PROFILE', limit: 9 } });
       setTests(res.data.products || []);
-    } catch (err: any) {
-      if (retries > 0 && err?.isNetworkError) {
+    } catch (err: unknown) {
+      if (retries > 0 && isNetworkError(err)) {
         await new Promise(r => setTimeout(r, 1500));
         return fetchTests(retries - 1);
       }
-      console.warn('[Home] Could not load tests:', err?.message || err);
+      console.warn('[Home] Could not load tests:', getErrorMessage(err));
     } finally {
       setLoadingTests(false);
     }
-  };
+  }, []);
 
-  const handleAddToCart = async (product: CatalogProduct) => {
+  // ── Fetch catalog data
+  useEffect(() => {
+    fetchPackages();
+    fetchTests();
+  }, [fetchPackages, fetchTests]);
+
+  const handleBookNow = async (product: CatalogProduct) => {
     if (!isAuthenticated) {
-      toast.error('Please log in to add items to your cart');
+      toast.error('Please log in to book this test');
       return;
     }
+    if (isInCart(product.partnerCode)) {
+      router.push('/cart');
+      return;
+    }
+
     setAddingToCart(product.partnerCode);
     const success = await addToCart(
       product.partnerCode,
@@ -147,8 +154,8 @@ export default function Home() {
       product.price,
       product.mrp ?? undefined
     );
-    if (success) toast.success(`${product.name} added to cart`);
     setAddingToCart(null);
+    if (success) router.push('/cart');
   };
 
   const isInCart = (code: string) =>
@@ -172,16 +179,11 @@ export default function Home() {
       });
       setCallbackSent(true);
       toast.success('Callback request submitted! We\'ll call you shortly.');
-    } catch (err) {
+    } catch {
       toast.error('Something went wrong. Please try again.');
     } finally {
       setSubmittingCallback(false);
     }
-  };
-
-  const discountPercent = (price: number, mrp: number | null) => {
-    if (!mrp || mrp <= price) return 0;
-    return Math.round(((mrp - price) / mrp) * 100);
   };
 
   const setSectionRef = (id: string) => (el: HTMLElement | null) => {
@@ -301,101 +303,19 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {packages.slice(0, 6).map((pkg, idx) => {
-                const discount = discountPercent(pkg.price, pkg.mrp);
-                const inCart = isInCart(pkg.partnerCode);
+              {packages.slice(0, 6).map((pkg) => {
+                const slug = generateProductSlug(pkg.name, pkg.partnerCode);
+                const pkgBasePath = pkg.type === 'PROFILE' ? 'profiles' : 'packages';
 
                 return (
-                  <Card
+                  <ProductMarketingCard
                     key={pkg.id}
-                    className="relative p-0 overflow-hidden hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 group border-gray-100 h-full flex flex-col"
-                  >
-                    {/* Discount badge */}
-                    {discount > 0 && (
-                      <div className="absolute top-4 right-4 z-10">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-green-500 text-white text-xs font-bold shadow-lg shadow-green-500/30">
-                          <BadgePercent className="w-3 h-3" />
-                          {discount}% OFF
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Top accent bar */}
-                    <div className="h-1.5 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500" />
-
-                    <div className="p-6 sm:p-8 flex flex-col flex-1">
-                      {/* Icon */}
-                      <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-50 group-hover:bg-purple-100 transition-colors">
-                        {idx % 3 === 0 ? (
-                          <Activity className="h-7 w-7 text-purple-600" />
-                        ) : idx % 3 === 1 ? (
-                          <Heart className="h-7 w-7 text-purple-600" />
-                        ) : (
-                          <Zap className="h-7 w-7 text-purple-600" />
-                        )}
-                      </div>
-
-                      {/* Name & Description */}
-                      <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-purple-700 transition-colors">
-                        {pkg.name}
-                      </h3>
-                      {pkg.description && (
-                        <p className="text-sm text-gray-500 mb-4 line-clamp-2">{pkg.description}</p>
-                      )}
-
-                      {/* Meta badges */}
-                      <div className="flex flex-wrap gap-2 mb-6">
-                        {pkg.parameters && (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg">
-                            <TestTubes className="w-3 h-3" />
-                            {pkg.parameters} Parameters
-                          </span>
-                        )}
-                        {pkg.reportTime && (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg">
-                            <Clock className="w-3 h-3" />
-                            {pkg.reportTime}
-                          </span>
-                        )}
-                        {pkg.sampleType && (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg">
-                            <Beaker className="w-3 h-3" />
-                            {pkg.sampleType}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Price & CTA */}
-                      <div className="flex items-end justify-between mt-auto pt-4 border-t border-gray-100">
-                        <div>
-                          <div className="text-3xl font-black text-gray-900">₹{pkg.price}</div>
-                          {pkg.mrp && pkg.mrp > pkg.price && (
-                            <div className="text-sm text-gray-400 line-through">₹{pkg.mrp}</div>
-                          )}
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={() => inCart ? router.push('/cart') : handleAddToCart(pkg)}
-                          disabled={addingToCart === pkg.partnerCode}
-                          className={inCart ? 'bg-green-600 hover:bg-green-700 shadow-green-600/20' : ''}
-                        >
-                          {addingToCart === pkg.partnerCode ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : inCart ? (
-                            <>
-                              <CheckCircle2 className="w-4 h-4 mr-1" />
-                              In Cart
-                            </>
-                          ) : (
-                            <>
-                              <ShoppingCart className="w-4 h-4 mr-1" />
-                              Add
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
+                    product={pkg}
+                    detailHref={`/${pkgBasePath}/${slug}`}
+                    onBookNow={handleBookNow}
+                    isBooking={addingToCart === pkg.partnerCode}
+                    inCartCount={cart?.items.filter(i => i.testCode === pkg.partnerCode).length || 0}
+                  />
                 );
               })}
             </div>
@@ -484,7 +404,7 @@ export default function Home() {
               <span className="text-sm font-bold text-blue-700">Comprehensive Testing</span>
             </div>
             <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-4">
-              Individual Lab Tests
+              Lab Tests & Profiles
             </h2>
             <p className="text-lg text-gray-500 font-medium max-w-2xl mx-auto">
               Precisely targeted diagnostics for specific health concerns
@@ -503,92 +423,18 @@ export default function Home() {
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {tests.map((test) => {
-                const discount = discountPercent(test.price, test.mrp);
-                const inCart = isInCart(test.partnerCode);
+                const slug = generateProductSlug(test.name, test.partnerCode);
+                const testBasePath = test.type === 'PROFILE' ? 'profiles' : 'tests';
 
                 return (
-                  <Card
+                  <ProductMarketingCard
                     key={test.id}
-                    className="p-0 bg-white border-gray-100 hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300 group h-full flex flex-col relative overflow-hidden"
-                  >
-                    {/* Top accent bar */}
-                    <div className="h-1 bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500" />
-
-                    <div className="p-5 sm:p-6 flex flex-col flex-1">
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex flex-wrap gap-1.5">
-                          {test.categories.map((cat) => (
-                            <span
-                              key={cat.id}
-                              className="bg-blue-50 text-blue-700 text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full border border-blue-100"
-                            >
-                              {cat.name}
-                            </span>
-                          ))}
-                        </div>
-                        {discount > 0 && (
-                          <span className="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-md flex-shrink-0">
-                            {discount}% OFF
-                          </span>
-                        )}
-                      </div>
-
-                    {/* Icon */}
-                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 group-hover:bg-blue-100 transition-colors">
-                      {test.id.charCodeAt(0) % 3 === 0 ? (
-                        <TestTube className="h-6 w-6 text-blue-600" />
-                      ) : test.id.charCodeAt(0) % 3 === 1 ? (
-                        <Microscope className="h-6 w-6 text-blue-600" />
-                      ) : (
-                        <Dna className="h-6 w-6 text-blue-600" />
-                      )}
-                    </div>
-
-                    <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-700 transition-colors">
-                      {test.name}
-                    </h3>
-
-                    {/* Meta row */}
-                    <div className="flex flex-wrap gap-3 mt-2 mb-5 text-xs text-gray-400 font-medium">
-                      {test.reportTime && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> {test.reportTime}
-                        </span>
-                      )}
-                      {test.sampleType && (
-                        <span className="flex items-center gap-1">
-                          <Beaker className="w-3 h-3" /> {test.sampleType}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl font-black text-gray-900">₹{test.price}</span>
-                        {test.mrp && test.mrp > test.price && (
-                          <span className="text-sm text-gray-400 line-through">₹{test.mrp}</span>
-                        )}
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => inCart ? router.push('/cart') : handleAddToCart(test)}
-                        disabled={addingToCart === test.partnerCode}
-                        className={inCart ? 'bg-green-600 hover:bg-green-700 shadow-green-600/20' : ''}
-                      >
-                        {addingToCart === test.partnerCode ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : inCart ? (
-                          <>
-                            <CheckCircle2 className="w-4 h-4 mr-1" />
-                            In Cart
-                          </>
-                        ) : (
-                          'Add'
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
+                    product={test}
+                    detailHref={`/${testBasePath}/${slug}`}
+                    onBookNow={handleBookNow}
+                    isBooking={addingToCart === test.partnerCode}
+                    inCartCount={cart?.items.filter(i => i.testCode === test.partnerCode).length || 0}
+                  />
                 );
               })}
             </div>

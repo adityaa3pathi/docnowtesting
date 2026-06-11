@@ -8,8 +8,10 @@ import {
     adjustWallet, getWalletLedger,
     getReferralStats,
     listOrders,
+    getSalesReport,
+    getSettlementReport,
     getAuditLogs,
-    listPromos, createPromo, updatePromo,
+    listPromos, createPromo, updatePromo, deletePromo,
     listFeaturedPackages, searchCatalogForFeaturing, addFeaturedPackage, removeFeaturedPackage, reorderFeaturedPackages, toggleFeaturedActive,
     listFeaturedTests, searchTestsForFeaturing, addFeaturedTest, removeFeaturedTest, reorderFeaturedTests, toggleFeaturedTestActive
 } from '../controllers/admin';
@@ -59,6 +61,8 @@ router.get('/referrals/stats', ...admin, getReferralStats);
 
 // ── Orders ─────────────────────────────────────────────
 router.get('/orders', ...admin, listOrders);
+router.get('/sales-report', ...admin, getSalesReport);
+router.get('/settlement-report', ...admin, getSettlementReport);
 router.get('/failed-orders', ...admin, listFailedOrders);
 
 // ── Audit Logs ─────────────────────────────────────────
@@ -82,6 +86,7 @@ router.get('/export', ...admin, exportAdminData);
 router.get('/promos', ...admin, listPromos);
 router.post('/promos', ...admin, createPromo);
 router.put('/promos/:id', ...admin, updatePromo);
+router.delete('/promos/:id', ...admin, deletePromo);
 
 // ── Featured Packages ───────────────────────────────────
 router.get('/featured-packages', ...admin, listFeaturedPackages);

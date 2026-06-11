@@ -9,6 +9,7 @@ import {
     Loader2,
     X,
     Check,
+    Search,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -47,6 +48,11 @@ export default function CategoryManagement() {
     const [assignCatId, setAssignCatId] = useState('');
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
     const [assigning, setAssigning] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredItems = allItems.filter(item => 
+        item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     useEffect(() => { fetchData(); }, []);
 
@@ -306,8 +312,18 @@ export default function CategoryManagement() {
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700 block mb-1">Select Products</label>
+                                <div className="relative mb-2">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search products..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-colors"
+                                    />
+                                </div>
                                 <div className="border border-gray-300 rounded-lg p-3 max-h-52 overflow-y-auto space-y-2">
-                                    {allItems.map(item => (
+                                    {filteredItems.map(item => (
                                         <label key={item.id} className="flex items-center gap-2 cursor-pointer py-1">
                                             <input
                                                 type="checkbox"
@@ -320,6 +336,7 @@ export default function CategoryManagement() {
                                         </label>
                                     ))}
                                     {allItems.length === 0 && <p className="text-sm text-gray-500 text-center py-4">No products available. Sync from Healthians first.</p>}
+                                    {allItems.length > 0 && filteredItems.length === 0 && <p className="text-sm text-gray-500 text-center py-4">No products match your search.</p>}
                                 </div>
                                 <p className="text-xs text-gray-500 mt-1">{selectedItems.length} product(s) selected</p>
                             </div>

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import { getCollectionFee } from '@/lib/collectionFee';
 
 // Extracted Components
 import { SlotSelector } from '@/components/cart/SlotSelector';
@@ -132,8 +133,9 @@ export default function CartPage() {
     }
 
     // Calculation shortcuts
+    const collectionFee = getCollectionFee(total);
     const discountAmount = promo.appliedPromo ? promo.appliedPromo.discountAmount : 0;
-    const payableAfterDiscount = Math.max(0, total - discountAmount);
+    const payableAfterDiscount = Math.max(0, total + collectionFee - discountAmount);
     const walletDeduction = promo.useWallet ? Math.min(promo.walletBalance, payableAfterDiscount) : 0;
     const finalPayable = Math.max(0, payableAfterDiscount - walletDeduction);
 
@@ -230,6 +232,7 @@ export default function CartPage() {
                             <OrderSummary
                                 cartItemsCount={cart.items.length}
                                 total={total}
+                                collectionFee={collectionFee}
                                 discountAmount={discountAmount}
                                 walletDeduction={walletDeduction}
                                 finalPayable={finalPayable}

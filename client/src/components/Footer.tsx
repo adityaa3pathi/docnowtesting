@@ -1,4 +1,4 @@
-import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
+import { Facebook, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { DocnowLogo } from './DocnowLogo';
 import {
@@ -119,16 +119,28 @@ export function Footer() {
                             © 2026 DOCNOW Healthcare. All rights reserved.
                         </p>
                         <div className="flex space-x-6">
-                            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                            <a
+                                href="https://www.facebook.com/watch/?v=1810258263472338&vanity=61582166162822"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-muted-foreground hover:text-primary transition-colors"
+                            >
                                 <Facebook className="h-5 w-5" />
                             </a>
-                            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                                <Twitter className="h-5 w-5" />
-                            </a>
-                            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                            <a
+                                href="https://www.instagram.com/docnow.in?igsh=aGtybGhxdXFvOHc="
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-muted-foreground hover:text-primary transition-colors"
+                            >
                                 <Instagram className="h-5 w-5" />
                             </a>
-                            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                            <a
+                                href="https://www.linkedin.com/company/docnow-healthcare/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-muted-foreground hover:text-primary transition-colors"
+                            >
                                 <Linkedin className="h-5 w-5" />
                             </a>
                         </div>

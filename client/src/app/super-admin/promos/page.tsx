@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Tag, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Search, Tag, Loader2, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import api from '@/lib/api';
 
 interface PromoCode {
@@ -48,6 +48,19 @@ export default function PromosPage() {
             fetchPromos();
         } catch (error) {
             console.error('Failed to toggle status', error);
+        }
+    };
+
+    const deletePromo = async (id: string) => {
+        if (!window.confirm('Are you sure you want to delete this promo code? This action cannot be undone.')) {
+            return;
+        }
+        try {
+            await api.delete(`/admin/promos/${id}`);
+            fetchPromos();
+        } catch (error: any) {
+            console.error('Failed to delete promo', error);
+            alert(error.response?.data?.error || 'Failed to delete promo code. It may have already been used.');
         }
     };
 
@@ -143,7 +156,13 @@ export default function PromosPage() {
                                             </button>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            {/* Edit Button Could Go Here */}
+                                            <button
+                                                onClick={() => deletePromo(promo.id)}
+                                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Delete Promo"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}

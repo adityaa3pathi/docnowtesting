@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Edit2, Trash2, Loader2, Lock } from 'lucide-react';
+import { MapPin, Edit2, Trash2, Loader2, Lock, Eye, EyeOff } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -38,6 +38,7 @@ export function ProfileTab() {
     const [passwordLoading, setPasswordLoading] = useState(false);
     const [editingAddress, setEditingAddress] = useState<Address | null>(null);
     const [addressForm, setAddressForm] = useState({ line1: '', city: '', pincode: '' });
+    const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
         fetchProfile();
@@ -304,30 +305,60 @@ export function ProfileTab() {
                     <div className="space-y-4 mt-4">
                         <div>
                             <label className="block text-sm font-medium mb-1">Current Password</label>
-                            <Input
-                                type="password"
-                                value={passwordForm.currentPassword}
-                                onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                                placeholder="Enter current password"
-                            />
+                            <div className="relative">
+                                <Input
+                                    type={showPassword ? "text" : "password"}
+                                    value={passwordForm.currentPassword}
+                                    onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                                    placeholder="Enter current password"
+                                    className="pr-10"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+                                >
+                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </button>
+                            </div>
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">New Password</label>
-                            <Input
-                                type="password"
-                                value={passwordForm.newPassword}
-                                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                                placeholder="At least 6 characters, 1 letter, 1 number"
-                            />
+                            <div className="relative">
+                                <Input
+                                    type={showPassword ? "text" : "password"}
+                                    value={passwordForm.newPassword}
+                                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                                    placeholder="At least 6 characters, 1 letter, 1 number"
+                                    className="pr-10"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+                                >
+                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </button>
+                            </div>
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">Confirm New Password</label>
-                            <Input
-                                type="password"
-                                value={passwordForm.confirmPassword}
-                                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                                placeholder="Confirm new password"
-                            />
+                            <div className="relative">
+                                <Input
+                                    type={showPassword ? "text" : "password"}
+                                    value={passwordForm.confirmPassword}
+                                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                                    placeholder="Confirm new password"
+                                    className="pr-10"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+                                >
+                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </button>
+                            </div>
                         </div>
                         <Button onClick={handleChangePassword} disabled={passwordLoading} className="w-full mt-2">
                             {passwordLoading ? <Loader2 className="animate-spin" /> : 'Update Password'}

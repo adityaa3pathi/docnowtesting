@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Loader2, Package, TestTubes } from 'lucide-react';
+import { Search, X, Loader2, Package, TestTubes, Activity } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useGlobalSearch, SearchResultItem } from '@/hooks/useGlobalSearch';
@@ -55,7 +55,7 @@ export function GlobalSearch() {
         setIsOpen(false);
         setQuery('');
         const slug = generateProductSlug(item.name, item.partnerCode);
-        const basePath = (item.type === 'PACKAGE' || item.type === 'PROFILE') ? 'packages' : 'tests';
+        const basePath = item.type === 'PROFILE' ? 'profiles' : item.type === 'PACKAGE' ? 'packages' : 'tests';
         router.push(`/${basePath}/${slug}`);
     };
 
@@ -113,7 +113,7 @@ export function GlobalSearch() {
                     }}
                     onKeyDown={handleKeyDown}
                     onFocus={() => { if (hasQuery) setIsOpen(true); }}
-                    placeholder="Search for lab tests or health packages..."
+                    placeholder="Search"
                     className="w-full h-11 pl-12 pr-10 text-gray-900 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-shadow shadow-sm placeholder:text-gray-400"
                     role="combobox"
                     aria-expanded={showDropdown}
@@ -165,7 +165,8 @@ export function GlobalSearch() {
                         <ul className="py-1">
                             {results.map((item, index) => {
                                 const isSelected = index === selectedIndex;
-                                const isPackage = item.type === 'PACKAGE' || item.type === 'PROFILE';
+                                const isPackage = item.type === 'PACKAGE';
+                                const isProfile = item.type === 'PROFILE';
                                 
                                 return (
                                     <li 
@@ -179,8 +180,8 @@ export function GlobalSearch() {
                                         }`}
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
-                                            <div className={`p-2.5 rounded-xl flex-shrink-0 ${isPackage ? 'bg-blue-100/50 text-blue-600' : 'bg-emerald-100/50 text-emerald-600'}`}>
-                                                {isPackage ? <Package className="w-5 h-5" /> : <TestTubes className="w-5 h-5" />}
+                                            <div className={`p-2.5 rounded-xl flex-shrink-0 ${isPackage ? 'bg-blue-100/50 text-blue-600' : isProfile ? 'bg-teal-100/50 text-teal-600' : 'bg-emerald-100/50 text-emerald-600'}`}>
+                                                {isPackage ? <Package className="w-5 h-5" /> : isProfile ? <Activity className="w-5 h-5" /> : <TestTubes className="w-5 h-5" />}
                                             </div>
                                             <div className="min-w-0">
                                                 <p className="text-sm font-bold text-gray-900 truncate">
@@ -188,9 +189,9 @@ export function GlobalSearch() {
                                                 </p>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
-                                                        isPackage ? 'bg-blue-50 text-blue-700 border border-blue-200/50' : 'bg-emerald-50 text-emerald-700 border border-emerald-200/50'
+                                                        isPackage ? 'bg-blue-50 text-blue-700 border border-blue-200/50' : isProfile ? 'bg-teal-50 text-teal-700 border border-teal-200/50' : 'bg-emerald-50 text-emerald-700 border border-emerald-200/50'
                                                     }`}>
-                                                        {isPackage ? 'PACKAGE' : 'TEST'}
+                                                        {isPackage ? 'PACKAGE' : isProfile ? 'PROFILE' : 'TEST'}
                                                     </span>
                                                     {item.categories?.[0] && (
                                                         <span className="text-[11px] font-medium text-gray-500 truncate">

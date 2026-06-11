@@ -1,61 +1,61 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { PDFDocument, rgb } from 'pdf-lib';
+import { PDFDocument } from 'pdf-lib';
 
-const HEADER_BAND_HEIGHT = 56;
-const HEADER_BAND_RATIO = 0.65;
-const FOOTER_BAND_HEIGHT = 24;
+/**
+ * Report Branding Service — Banner Overlay Approach
+ *
+ * Instead of drawing rectangles + computing logo coordinates per page,
+ * we pre-design header & footer banners at the exact dimensions and
+ * stamp them onto each page. This gives pixel-perfect design control
+ * and makes future branding updates a simple asset swap — zero code changes.
+ *
+ * Banner assets:
+ *   server/assets/docnow-header-banner.png  (1024×107px)
+ *   server/assets/docnow-footer-banner.png  (1024×53px)
+ *
+ * The banners are scaled to fill the full page width, preserving
+ * their aspect ratio to derive the on-page height automatically.
+ */
 
-const DOCNOW_BAND = rgb(88 / 255, 5 / 255, 125 / 255); // #58057d
+// Aspect ratios derived from the source images.
+// Header: 1024×107  → ratio = 107/1024 ≈ 0.10449
+// Footer: 1024×53   → ratio = 53/1024  ≈ 0.05176
+const HEADER_ASPECT_RATIO = 107 / 1024;
+const FOOTER_ASPECT_RATIO = 53 / 1024;
 
-let cachedLogoBytes: Buffer | null = null;
+let cachedHeaderBytes: Buffer | null = null;
+let cachedFooterBytes: Buffer | null = null;
 
 export async function brandReportPdf(originalPdf: Buffer): Promise<Buffer> {
     const pdfDoc = await PDFDocument.load(originalPdf);
-    const logoBytes = await loadLogoBytes();
-    const logo = await pdfDoc.embedPng(logoBytes);
-    const logoAspectRatio = logo.height / logo.width;
+    const headerBytes = await loadAsset('docnow-header-banner.png', 'header');
+    const footerBytes = await loadAsset('docnow-footer-banner.png', 'footer');
+
+    const headerImage = await pdfDoc.embedPng(headerBytes);
+    const footerImage = await pdfDoc.embedPng(footerBytes);
 
     for (const page of pdfDoc.getPages()) {
         const { width, height } = page.getSize();
-        const bandStartX = Math.floor(width * (1 - HEADER_BAND_RATIO));
-        const headerBandWidth = width - bandStartX + 1;
-        const logoZoneWidth = bandStartX;
-        const maxLogoWidth = Math.min(126, logoZoneWidth - 28);
-        const logoWidth = Math.max(98, maxLogoWidth);
-        const logoHeight = logoWidth * logoAspectRatio;
-        const logoX = Math.max(14, (logoZoneWidth - logoWidth) / 2);
-        const logoY = height - HEADER_BAND_HEIGHT + Math.max(5, (HEADER_BAND_HEIGHT - logoHeight) / 2);
 
-        page.drawRectangle({
+        // Scale banners to full page width, derive height from aspect ratio
+        const headerHeight = width * HEADER_ASPECT_RATIO;
+        const footerHeight = width * FOOTER_ASPECT_RATIO;
+
+        // Header — anchored to top edge
+        page.drawImage(headerImage, {
             x: 0,
-            y: height - HEADER_BAND_HEIGHT,
-            width: logoZoneWidth,
-            height: HEADER_BAND_HEIGHT,
-            color: rgb(1, 1, 1),
+            y: height - headerHeight,
+            width,
+            height: headerHeight,
         });
 
-        page.drawRectangle({
-            x: bandStartX,
-            y: height - HEADER_BAND_HEIGHT,
-            width: headerBandWidth,
-            height: HEADER_BAND_HEIGHT,
-            color: DOCNOW_BAND,
-        });
-
-        page.drawImage(logo, {
-            x: logoX,
-            y: logoY,
-            width: logoWidth,
-            height: logoHeight,
-        });
-
-        page.drawRectangle({
+        // Footer — anchored to bottom edge
+        page.drawImage(footerImage, {
             x: 0,
             y: 0,
             width,
-            height: FOOTER_BAND_HEIGHT,
-            color: DOCNOW_BAND,
+            height: footerHeight,
         });
     }
 
@@ -63,24 +63,29 @@ export async function brandReportPdf(originalPdf: Buffer): Promise<Buffer> {
     return Buffer.from(brandedBytes);
 }
 
-async function loadLogoBytes(): Promise<Buffer> {
-    if (cachedLogoBytes) {
-        return cachedLogoBytes;
-    }
+// ─── Asset Loader ───────────────────────────────────────────────────────────
+
+async function loadAsset(filename: string, label: string): Promise<Buffer> {
+    // Return from cache if available
+    if (label === 'header' && cachedHeaderBytes) return cachedHeaderBytes;
+    if (label === 'footer' && cachedFooterBytes) return cachedFooterBytes;
 
     const candidatePaths = [
-        path.resolve(process.cwd(), 'assets', 'docnow-logo.png'),
-        path.resolve(__dirname, '../../assets/docnow-logo.png'),
+        path.resolve(process.cwd(), 'assets', filename),
+        path.resolve(__dirname, '../../assets', filename),
     ];
 
     for (const candidatePath of candidatePaths) {
         try {
-            cachedLogoBytes = await fs.readFile(candidatePath);
-            return cachedLogoBytes;
+            const bytes = await fs.readFile(candidatePath);
+            // Cache for future calls
+            if (label === 'header') cachedHeaderBytes = bytes;
+            if (label === 'footer') cachedFooterBytes = bytes;
+            return bytes;
         } catch {
             // Try next path
         }
     }
 
-    throw new Error('[ReportBranding] DOCNOW logo asset not found at server/assets/docnow-logo.png');
+    throw new Error(`[ReportBranding] ${label} banner asset not found: ${filename}`);
 }

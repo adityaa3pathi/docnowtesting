@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import {
-  Search, Filter, Loader2, ShoppingCart, Info, Check, Tag, X,
-  ChevronLeft, ChevronRight, Clock, Beaker, SlidersHorizontal,
-  CheckCircle2, Package, TestTubes, FlaskConical, ArrowLeft
+  Search, Loader2, Tag, X,
+  ChevronLeft, ChevronRight, SlidersHorizontal,
+  Package, TestTubes, ArrowLeft, Activity
 } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,9 +13,8 @@ import { useCart } from '@/contexts/CartContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { generateProductSlug } from '@/lib/mapProductDetails';
-import Link from 'next/link';
 import { Footer } from '@/components/Footer';
-import { Button, Card } from '@/components/ui';
+import { ProductMarketingCard, ProductDetailsSummary } from '@/components/catalog/ProductMarketingCard';
 
 interface Product {
   id: string;
@@ -30,6 +30,7 @@ interface Product {
   sampleType?: string | null;
   reportTime?: string | null;
   categories: { id: string; name: string; slug: string }[];
+  detailsSummary?: ProductDetailsSummary | null;
 }
 
 interface Category {
@@ -62,7 +63,8 @@ function SearchPageContent() {
   // Data
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true); // Skeleton only on first load
+  const [fetching, setFetching] = useState(false); // Subtle indicator for subsequent loads
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
 
@@ -78,7 +80,11 @@ function SearchPageContent() {
   const [totalCount, setTotalCount] = useState(0);
   const limit = 12;
 
-  // Read URL params on mount
+  // Refs for initialization gate and request cancellation
+  const initialized = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Read URL params on mount — batch all state before marking initialized
   useEffect(() => {
     const cat = searchParams.get('category');
     const type = searchParams.get('type');
@@ -88,6 +94,8 @@ function SearchPageContent() {
       setTypeFilter(type.toUpperCase() as TypeFilter);
     }
     if (q) { setSearchInput(q); setSearchTerm(q); }
+    // Mark initialized after URL params are parsed — this gates the first fetch
+    initialized.current = true;
   }, [searchParams]);
 
   // Fetch categories once
@@ -111,51 +119,78 @@ function SearchPageContent() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Fetch products
+  // Fetch products — with AbortController to cancel stale requests
   const fetchProducts = useCallback(async () => {
-    setLoading(true);
+    // Don't fetch until URL params have been parsed
+    if (!initialized.current) return;
+
+    // Cancel any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    // Only show full skeleton on the very first load
+    if (products.length === 0) {
+      setInitialLoading(true);
+    }
+    setFetching(true);
+
     try {
-      const params: any = { page, limit };
+      const params: Record<string, string | number> = { page, limit };
       if (typeFilter === 'ALL') {
         // Don't send type — get everything
-      } else if (typeFilter === 'PACKAGE') {
-        params.type = 'PACKAGE,PROFILE';
+      } else if (typeFilter === 'TEST') {
+        params.type = 'TEST,PROFILE';
       } else {
         params.type = typeFilter;
       }
       if (searchTerm.trim()) params.search = searchTerm.trim();
       if (selectedCategory) params.category = selectedCategory;
 
-      const res = await api.get('/catalog/products', { params });
-      setProducts(res.data.products || []);
-      setTotalPages(res.data.totalPages || 1);
-      setTotalCount(res.data.totalCount || 0);
-    } catch (err) {
-      console.error('[Search] Error:', err);
+      const res = await api.get('/catalog/products', { params, signal: controller.signal });
+
+      // Only apply results if this request wasn't cancelled
+      if (!controller.signal.aborted) {
+        setProducts(res.data.products || []);
+        setTotalPages(res.data.totalPages || 1);
+        setTotalCount(res.data.totalCount || 0);
+      }
+    } catch (err: any) {
+      // Ignore aborted requests — they're expected
+      if (err?.name !== 'CanceledError' && err?.code !== 'ERR_CANCELED') {
+        console.error('[Search] Error:', err);
+      }
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setInitialLoading(false);
+        setFetching(false);
+      }
     }
   }, [page, searchTerm, selectedCategory, typeFilter]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   // Helpers
-  const handleAddToCart = async (product: Product) => {
-    if (!isAuthenticated) { toast.error('Please log in to add items to your cart'); return; }
+  const handleBookNow = async (product: Product) => {
+    if (!isAuthenticated) { toast.error('Please log in to book this test'); return; }
+    if (isInCart(product.partnerCode)) {
+      router.push('/cart');
+      return;
+    }
+
     setAddingToCart(product.partnerCode);
     const offerPrice = product.price || product.displayPrice || 0;
     const mrpPrice = product.mrp || product.displayPrice || 0;
     const success = await addToCart(product.partnerCode, product.name, offerPrice, mrpPrice > offerPrice ? mrpPrice : undefined);
-    if (success) toast.success(`${product.name} added to cart`);
     setAddingToCart(null);
+    if (success) {
+      router.push('/cart');
+    }
   };
 
   const isInCart = (code: string) => cart?.items?.some((i) => i.testCode === code) ?? false;
-  const discountPercent = (price: number, mrp?: number | null) => {
-    if (!mrp || mrp <= price) return 0;
-    return Math.round(((mrp - price) / mrp) * 100);
-  };
-
   const handleCategorySelect = (slug: string) => {
     setSelectedCategory(slug === selectedCategory ? '' : slug);
     setPage(1);
@@ -173,9 +208,10 @@ function SearchPageContent() {
 
   const hasActiveFilters = searchTerm || selectedCategory || typeFilter !== 'ALL';
 
-  const typeOptions: { label: string; value: TypeFilter; icon: any }[] = [
+  const typeOptions: { label: string; value: TypeFilter; icon: LucideIcon }[] = [
     { label: 'All', value: 'ALL', icon: SlidersHorizontal },
     { label: 'Packages', value: 'PACKAGE', icon: Package },
+    { label: 'Profiles', value: 'PROFILE', icon: Activity },
     { label: 'Tests', value: 'TEST', icon: TestTubes },
   ];
 
@@ -313,17 +349,24 @@ function SearchPageContent() {
 
       {/* Results */}
       <section className="container mx-auto px-4 max-w-7xl py-6 flex-1">
+        {/* Subtle loading bar for subsequent fetches */}
+        {fetching && !initialLoading && (
+          <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden mb-2">
+            <div className="h-full bg-purple-500 rounded-full animate-pulse" style={{ width: '60%' }} />
+          </div>
+        )}
+
         <div className="mb-4 flex items-center justify-between">
           <p className="text-sm text-gray-500 font-medium">
-            {loading ? 'Searching...' : `${totalCount} result${totalCount !== 1 ? 's' : ''} found`}
+            {initialLoading ? 'Searching...' : `${totalCount} result${totalCount !== 1 ? 's' : ''} found`}
           </p>
-          {!loading && totalCount > 0 && (
+          {!initialLoading && totalCount > 0 && (
             <p className="text-xs text-gray-400">Page {page} of {totalPages}</p>
           )}
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        {initialLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="bg-white rounded-2xl border border-gray-100 p-6 animate-pulse">
                 <div className="flex gap-2 mb-4"><div className="h-5 w-16 bg-gray-200 rounded-full" /><div className="h-5 w-12 bg-gray-200 rounded-full" /></div>
@@ -350,90 +393,27 @@ function SearchPageContent() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-200 ${fetching ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
             {products.map((product) => {
-              const discount = discountPercent(product.price, product.mrp);
-              const inCart = isInCart(product.partnerCode);
               const slug = generateProductSlug(product.name, product.partnerCode);
-              const basePath = (product.type === 'TEST' || product.type === 'PARAMETER') ? 'tests' : 'packages';
+              const basePath = product.type === 'PROFILE' ? 'profiles' : (product.type === 'TEST' || product.type === 'PARAMETER') ? 'tests' : 'packages';
 
               return (
-                <Link href={`/${basePath}/${slug}`} key={product.id} className="block h-full">
-                  <Card className="relative p-0 overflow-hidden hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300 group border-gray-100 h-full flex flex-col">
-                    {discount > 0 && (
-                      <div className="absolute top-3 right-3 z-10">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-500 text-white text-[10px] font-bold shadow-lg shadow-green-500/30">
-                          {discount}% OFF
-                        </span>
-                      </div>
-                    )}
-                    <div className={`h-1 ${product.type === 'TEST' || product.type === 'PARAMETER' ? 'bg-gradient-to-r from-blue-600 to-teal-500' : 'bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500'}`} />
-                    <div className="p-5 flex flex-col flex-1">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className={`text-[10px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full ${
-                          product.type === 'PACKAGE' ? 'bg-purple-50 text-purple-600 border border-purple-100' :
-                          product.type === 'PROFILE' ? 'bg-fuchsia-50 text-fuchsia-600 border border-fuchsia-100' :
-                          'bg-blue-50 text-blue-600 border border-blue-100'
-                        }`}>
-                          {product.type}
-                        </span>
-                        {product.categories?.slice(0, 1).map(cat => (
-                          <span key={cat.id} className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{cat.name}</span>
-                        ))}
-                      </div>
-                      <h3 className="font-bold text-gray-900 text-base mb-2 line-clamp-2 min-h-[2.5rem] group-hover:text-purple-700 transition-colors leading-snug">
-                        {product.name}
-                      </h3>
-                      <div className="flex flex-wrap gap-2 mb-4 text-xs text-gray-400 font-medium">
-                        {product.reportTime && (
-                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {product.reportTime}</span>
-                        )}
-                        {product.sampleType && (
-                          <span className="flex items-center gap-1"><Beaker className="w-3 h-3" /> {product.sampleType}</span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl font-black text-gray-900">₹{product.price}</span>
-                          {product.mrp && product.mrp > product.price && (
-                            <span className="text-lg text-gray-500 font-semibold line-through">₹{product.mrp}</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {inCart && (
-                            <div className="flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-green-200">
-                              <CheckCircle2 className="w-3 h-3" />
-                              {cart?.items.filter(i => i.testCode === product.partnerCode).length}
-                            </div>
-                          )}
-                          <Button
-                            size="sm"
-                            onClick={(e) => { e.preventDefault(); handleAddToCart(product); }}
-                            disabled={addingToCart === product.partnerCode}
-                            className={inCart ? 'bg-slate-900 hover:bg-slate-800 text-white' : ''}
-                          >
-                            {addingToCart === product.partnerCode ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <div className="flex items-center gap-1">
-                                <ShoppingCart className="w-4 h-4" />
-                                {inCart ? '+1' : 'Add'}
-                              </div>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </Link>
+                <ProductMarketingCard
+                  key={product.id}
+                  product={product}
+                  detailHref={`/${basePath}/${slug}`}
+                  onBookNow={handleBookNow}
+                  isBooking={addingToCart === product.partnerCode}
+                  inCartCount={cart?.items.filter(i => i.testCode === product.partnerCode).length || 0}
+                />
               );
             })}
           </div>
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && !loading && (
+        {totalPages > 1 && !initialLoading && (
           <div className="mt-10 flex items-center justify-center gap-2">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}

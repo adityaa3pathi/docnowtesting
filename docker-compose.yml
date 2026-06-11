@@ -1,0 +1,88 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: docnow
+      POSTGRES_PASSWORD: docnow
+      POSTGRES_DB: docnow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docnow -d docnow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis-http:
+    image: hiett/serverless-redis-http:latest
+    environment:
+      SRH_MODE: env
+      SRH_TOKEN: local-dev-token
+      SRH_CONNECTION_STRING: redis://redis:6379
+    ports:
+      - "8079:80"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  server:
+    build:
+      context: ./server
+      target: dev
+    env_file:
+      - ./server/.env.docker.example
+    environment:
+      DATABASE_URL: postgresql://docnow:docnow@postgres:5432/docnow?schema=public
+      UPSTASH_REDIS_REST_URL: http://redis-http:80
+      UPSTASH_REDIS_REST_TOKEN: local-dev-token
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      APP_BASE_URL: http://localhost:3000
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./server:/app
+      - server_node_modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis-http:
+        condition: service_started
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run dev"
+
+  client:
+    build:
+      context: ./client
+      target: dev
+    env_file:
+      - ./client/.env.docker.example
+    environment:
+      API_URL: http://server:5000/api
+      NEXT_PUBLIC_API_URL: http://localhost:5000/api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./client:/app
+      - client_node_modules:/app/node_modules
+    depends_on:
+      - server
+    command: npm run dev -- --hostname 0.0.0.0
+
+volumes:
+  postgres_data:
+  redis_data:
+  server_node_modules:
+  client_node_modules:

@@ -1,7 +1,7 @@
 import { sendTemplateViaWhatsApp } from './wappieWhatsApp';
 import { createReportAccessToken } from './reportAccess';
 
-const WAPPIE_REPORT_TEMPLATE_NAME = process.env.WAPPIE_REPORT_TEMPLATE_NAME || 'template_marketing_20260401171046';
+const WAPPIE_REPORT_TEMPLATE_NAME = process.env.WAPPIE_REPORT_TEMPLATE_NAME || 'reports_ready';
 const WAPPIE_REPORT_TEMPLATE_LANGUAGE = process.env.WAPPIE_REPORT_TEMPLATE_LANGUAGE || 'en';
 const APP_BASE_URL = (process.env.APP_BASE_URL || 'http://localhost:3000').replace(/\/+$/g, '');
 
