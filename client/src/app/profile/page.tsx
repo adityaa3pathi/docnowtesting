@@ -5,14 +5,30 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut, ChevronRight, IndianRupee } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { ProfileTab } from '@/components/profile/ProfileTab';
-import { FamilyTab } from '@/components/profile/FamilyTab';
-import { BookingsTab } from '@/components/profile/BookingsTab';
-import { WalletTab } from '@/components/profile/WalletTab';
-import { ReferralTab } from '@/components/profile/ReferralTab';
-import { ReportsTab } from '@/components/profile/ReportsTab';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import api from '@/lib/api';
+
+// Lazy-load tab components — only downloaded when user opens a dialog
+const ProfileTab = dynamic(() => import('@/components/profile/ProfileTab').then(m => ({ default: m.ProfileTab })), {
+    loading: () => <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>,
+});
+const FamilyTab = dynamic(() => import('@/components/profile/FamilyTab').then(m => ({ default: m.FamilyTab })), {
+    loading: () => <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>,
+});
+const BookingsTab = dynamic(() => import('@/components/profile/BookingsTab').then(m => ({ default: m.BookingsTab })), {
+    loading: () => <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>,
+});
+const WalletTab = dynamic(() => import('@/components/profile/WalletTab').then(m => ({ default: m.WalletTab })), {
+    loading: () => <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>,
+});
+const ReferralTab = dynamic(() => import('@/components/profile/ReferralTab').then(m => ({ default: m.ReferralTab })), {
+    loading: () => <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>,
+});
+const ReportsTab = dynamic(() => import('@/components/profile/ReportsTab').then(m => ({ default: m.ReportsTab })), {
+    loading: () => <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>,
+});
+
 
 // --- BENTO BOX COMPONENT ---
 function BentoCard({ title, icon, value, subtitle, children, className, gradient, onClick, isLink }: any) {
