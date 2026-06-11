@@ -81,7 +81,7 @@ export function generateProductSlug(name: string, partnerCode: string | number):
  * Falls back to legacy format (last hyphen-separated segment) for
  * old URLs that don't contain the '--' delimiter.
  */
-export function parseSlug(slug: string, basePath: 'packages' | 'tests'): { dealTypeId: string, dealType: 'package' | 'profile' | 'parameter' | null, partnerCode: string } {
+export function parseSlug(slug: string, basePath: 'packages' | 'tests' | 'profiles'): { dealTypeId: string, dealType: 'package' | 'profile' | 'parameter' | null, partnerCode: string } {
     let partnerCode: string;
 
     if (slug.includes('--')) {
@@ -91,7 +91,7 @@ export function parseSlug(slug: string, basePath: 'packages' | 'tests'): { dealT
         // Legacy format: last hyphen segment is the numeric ID, infer type from basePath
         const parts = slug.split('-');
         const numericId = parts[parts.length - 1];
-        const prefix = basePath === 'packages' ? 'package' : 'parameter';
+        const prefix = basePath === 'packages' ? 'package' : basePath === 'profiles' ? 'profile' : 'parameter';
         partnerCode = `${prefix}_${numericId}`;
     }
 

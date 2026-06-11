@@ -65,6 +65,12 @@ export const STATUS_MAP: Record<string, StatusDisplay> = {
         step: 3,
         message: 'A phlebotomist has been assigned and will arrive during your selected slot.',
     },
+    'BS006': {
+        label: 'Sample Collector Reached',
+        color: 'bg-purple-100 text-purple-700',
+        step: 3,
+        message: 'Your phlebotomist has reached your location.',
+    },
     'BS007': {
         label: 'Sample Collected',
         color: 'bg-indigo-100 text-indigo-700',
@@ -76,6 +82,24 @@ export const STATUS_MAP: Record<string, StatusDisplay> = {
         color: 'bg-indigo-100 text-indigo-700',
         step: 4,
         message: 'Your sample has reached the lab and testing is underway.',
+    },
+    'BS009': {
+        label: 'Report Generated',
+        color: 'bg-teal-100 text-teal-700',
+        step: 5,
+        message: 'Your report has been generated and is pending verification.',
+    },
+    'BS0012': {
+        label: 'Health Counselling Done',
+        color: 'bg-green-100 text-green-700',
+        step: 5,
+        message: 'Your health counselling session has been completed.',
+    },
+    'BS015': {
+        label: 'Report Available',
+        color: 'bg-green-100 text-green-700',
+        step: 5,
+        message: 'Your report is ready and available for download.',
     },
     'BS0013': {
         label: 'Rescheduled',
@@ -115,6 +139,12 @@ export const STATUS_MAP: Record<string, StatusDisplay> = {
         color: 'bg-purple-100 text-purple-700',
         step: 3,
         message: 'A phlebotomist has been assigned and will arrive during your selected slot.',
+    },
+    'Sample Collector Reached': {
+        label: 'Sample Collector Reached',
+        color: 'bg-purple-100 text-purple-700',
+        step: 3,
+        message: 'Your phlebotomist has reached your location.',
     },
     'Sample Collected': {
         label: 'Sample Collected',

@@ -244,7 +244,7 @@ export default function CatalogManagement() {
                             <tbody>
                                 {items.map((item, index) => (
                                     <tr key={item.id} className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-gray-50/50' : ''}`}>
-                                        <td className="px-6 py-3 font-medium text-gray-900 max-w-xs truncate">{item.name}</td>
+                                        <td className="px-6 py-3 font-medium text-gray-900 max-w-xs truncate" title={item.name}>{item.name}</td>
                                         <td className="px-6 py-3">
                                             <span className="px-2 py-0.5 rounded-full border text-xs font-medium text-gray-700 border-gray-300">
                                                 {item.type}

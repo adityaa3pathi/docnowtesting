@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from 'async_hooks';
+import { captureObservabilityError, captureObservabilityMessage } from './sentry';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -96,4 +97,13 @@ export function logBusinessEvent(event: string, meta: LogMeta = {}, level: LogLe
 export function logAlert(alert: string, meta: LogMeta = {}) {
     // Alert logs are intentionally structured so CloudWatch/Sentry filters can key off `alert`.
     writeLog('error', alert, { event: 'alert', alert, ...meta });
+
+    const error = meta.error || meta.err;
+    const sentryMeta = { ...getRequestContext(), event: 'alert', alert, ...meta };
+    if (error) {
+        captureObservabilityError(error, sentryMeta);
+        return;
+    }
+
+    captureObservabilityMessage(alert, sentryMeta);
 }

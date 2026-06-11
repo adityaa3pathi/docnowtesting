@@ -6,6 +6,7 @@ import { Footer } from '@/components/Footer';
 import { Button, Card } from '@/components/ui';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from '@/contexts/LocationContext';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import {
@@ -32,6 +33,18 @@ export default function PackageDetailsPage(props: { params: Promise<{ slug: stri
   const router = useRouter();
   const { addToCart, cart } = useCart();
   const { isAuthenticated } = useAuth();
+  const { selectedCity } = useLocation();
+
+  const renderDescription = (desc?: string | null) => {
+    if (!desc) return null;
+    const withCity = desc.replace(/{City_Name}/gi, selectedCity || 'your city');
+    return withCity.split(/<br\s*\/?>/i).map((line, i, arr) => (
+      <span key={i}>
+        {line}
+        {i < arr.length - 1 && <br />}
+      </span>
+    ));
+  };
 
   const [localData, setLocalData] = useState<any>(null);
   const [richData, setRichData] = useState<ProductDetailsViewModel | null>(null);
@@ -39,6 +52,9 @@ export default function PackageDetailsPage(props: { params: Promise<{ slug: stri
   const [error, setError] = useState<string | null>(null);
   const [addingToCart, setAddingToCart] = useState(false);
   const [showConstituents, setShowConstituents] = useState(false);
+
+  const descriptionText = richData?.description || localData?.description;
+  const hasValidDescription = !!descriptionText && descriptionText.trim().toLowerCase() !== 'na' && descriptionText.trim().toLowerCase() !== 'n/a';
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -225,14 +241,14 @@ export default function PackageDetailsPage(props: { params: Promise<{ slug: stri
         <div className="grid gap-6">
           
           {/* Description Card */}
-          {(richData?.description || localData.description) && (
+          {hasValidDescription && (
             <Card className="p-6 md:p-8 border-gray-100 shadow-xl shadow-purple-900/5">
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Info className="w-5 h-5 text-purple-600" />
                 About this Package
               </h2>
               <p className="text-gray-600 leading-relaxed">
-                {richData?.description || localData.description}
+                {renderDescription(richData?.description || localData.description)}
               </p>
             </Card>
           )}

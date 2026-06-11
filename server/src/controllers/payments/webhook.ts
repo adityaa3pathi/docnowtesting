@@ -6,6 +6,7 @@ import { rollbackInitiatedBooking } from '../../services/rollback';
 import { assertTransition } from '../../utils/paymentStateMachine';
 import { tryAwardFirstOrderBonus } from '../../utils/referralService';
 import { logAlert, logBusinessEvent, logger } from '../../utils/logger';
+import { addObservabilityBreadcrumb } from '../../utils/sentry';
 
 /**
  * POST /api/payments/webhook
@@ -16,6 +17,7 @@ export const webhookHandler = async (req: Request, res: Response) => {
     const signature = req.headers['x-razorpay-signature'] as string;
 
     if (!signature) {
+        addObservabilityBreadcrumb('razorpay_webhook_missing_signature');
         return res.status(401).json({ error: 'Missing signature' });
     }
 
@@ -27,6 +29,7 @@ export const webhookHandler = async (req: Request, res: Response) => {
     );
 
     if (!isValid) {
+        addObservabilityBreadcrumb('razorpay_webhook_invalid_signature');
         logAlert('razorpay_webhook_invalid_signature');
         return res.status(401).end();
     }
@@ -38,10 +41,12 @@ export const webhookHandler = async (req: Request, res: Response) => {
     const event = payload.event;
 
     if (!eventId) {
+        addObservabilityBreadcrumb('razorpay_webhook_missing_event_id', { event });
         logger.warn({ event }, 'razorpay_webhook_missing_event_id');
         return res.status(400).json({ error: 'event_id missing' });
     }
 
+    addObservabilityBreadcrumb('razorpay_webhook_received', { eventId, event, source: 'razorpay' });
     logBusinessEvent('razorpay_webhook_received', { eventId, event });
 
     // 2. Dedup check using WebhookEvent
@@ -51,6 +56,7 @@ export const webhookHandler = async (req: Request, res: Response) => {
         });
     } catch (e: any) {
         if (e.code === 'P2002') {  // Unique constraint violation
+            addObservabilityBreadcrumb('razorpay_webhook_duplicate', { eventId, event, source: 'razorpay' });
             logBusinessEvent('razorpay_webhook_duplicate', { eventId, event }, 'debug');
             return res.status(200).json({ status: 'duplicate' });
         }
@@ -67,6 +73,11 @@ export const webhookHandler = async (req: Request, res: Response) => {
         });
 
         if (booking && booking.paymentStatus === 'INITIATED') {
+            addObservabilityBreadcrumb('razorpay_payment_captured_processing', {
+                bookingId: booking.id,
+                eventId,
+                source: 'razorpay',
+            });
             assertTransition(booking.paymentStatus, 'AUTHORIZED');
             await prisma.booking.update({
                 where: { id: booking.id },
@@ -119,6 +130,11 @@ export const webhookHandler = async (req: Request, res: Response) => {
         });
 
         if (booking && booking.paymentStatus === 'INITIATED') {
+            addObservabilityBreadcrumb('razorpay_payment_failed_processing', {
+                bookingId: booking.id,
+                eventId,
+                source: 'razorpay',
+            });
             assertTransition(booking.paymentStatus, 'FAILED');
             await prisma.booking.update({
                 where: { id: booking.id },
@@ -138,6 +154,12 @@ export const webhookHandler = async (req: Request, res: Response) => {
         const razorpayPaymentId = payload.payload.payment?.entity?.id;
 
         if (managerOrderId && bookingId) {
+            addObservabilityBreadcrumb('razorpay_payment_link_paid_processing', {
+                bookingId,
+                managerOrderId,
+                eventId,
+                source: 'razorpay',
+            });
             await prisma.managerOrder.updateMany({
                 where: { id: managerOrderId, status: 'SENT' },
                 data: { status: 'PAYMENT_RECEIVED' }
@@ -159,5 +181,6 @@ export const webhookHandler = async (req: Request, res: Response) => {
         }
     }
 
+    addObservabilityBreadcrumb('razorpay_webhook_processed', { eventId, event, source: 'razorpay' });
     res.status(200).json({ status: 'ok' });
 };

@@ -1,0 +1,8 @@
+node_modules
+.next
+.env
+.env.*
+*.log
+coverage
+*.pem
+*.pem.pub
