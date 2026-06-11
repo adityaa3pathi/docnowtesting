@@ -109,10 +109,49 @@ export default function SuperAdminLayout({
 
     if (isLoading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-[#F4F0FA]">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#4b2192]" />
-                    <p className="text-gray-600">Verifying admin access...</p>
+            <div className="flex h-screen bg-[#F4F0FA]">
+                {/* Show sidebar shell immediately for instant feedback */}
+                <aside className="hidden lg:flex flex-col w-64 bg-[#4b2192] text-white">
+                    <div className="p-6 border-b border-white/10">
+                        <DocnowLogo
+                            href="/super-admin/dashboard"
+                            width={148}
+                            height={36}
+                            panel
+                            imageClassName="max-h-9 w-auto"
+                            subtitle="Super Admin"
+                            subtitleClassName="text-white/70"
+                        />
+                    </div>
+                    <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+                        {navItems.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                                <div
+                                    key={item.id}
+                                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white/30"
+                                >
+                                    <span className="flex-shrink-0"><Icon size={20} /></span>
+                                    <span className="text-sm">{item.label}</span>
+                                </div>
+                            );
+                        })}
+                    </nav>
+                </aside>
+                <div className="flex-1 flex flex-col overflow-hidden">
+                    <header className="h-14 bg-white border-b border-gray-200 flex items-center px-4 gap-3 lg:hidden flex-shrink-0 shadow-sm">
+                        <button className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                            <Menu size={22} />
+                        </button>
+                        <DocnowLogo href="/super-admin/dashboard" width={132} height={32} imageClassName="max-h-8 w-auto" />
+                        <span className="text-xs text-gray-400 font-medium">Admin</span>
+                    </header>
+                    <main className="flex-1 flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-4">
+                            <Loader2 className="h-8 w-8 animate-spin text-[#4b2192]" />
+                            <p className="text-gray-600">Verifying admin access...</p>
+                        </div>
+                    </main>
                 </div>
             </div>
         );
