@@ -95,10 +95,48 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
 
     if (isLoading) {
         return (
-            <div className="flex h-screen items-center justify-center" style={{ backgroundColor: '#F8F7FC' }}>
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#4b2192' }} />
-                    <p className="text-gray-600">Verifying manager access...</p>
+            <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#F8F7FC' }}>
+                {/* Show sidebar shell immediately for instant feedback */}
+                <aside className="hidden lg:flex lg:flex-col w-64 flex-shrink-0" style={{ backgroundColor: '#4b2192' }}>
+                    <div className="h-16 flex items-center px-6 border-b border-white/10">
+                        <DocnowLogo
+                            href="/manager/dashboard"
+                            width={148}
+                            height={36}
+                            panel
+                            imageClassName="max-h-9 w-auto"
+                            subtitle="Manager Panel"
+                            subtitleClassName="text-white/70"
+                        />
+                    </div>
+                    <nav className="flex-1 px-3 py-4">
+                        <ul className="space-y-1">
+                            {navItems.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <li key={item.id}>
+                                        <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/30">
+                                            <Icon className="h-5 w-5 flex-shrink-0" />
+                                            <span className="flex-1 text-sm">{item.label}</span>
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </nav>
+                </aside>
+                <div className="flex-1 flex flex-col overflow-hidden">
+                    <header className="h-16 bg-white border-b border-gray-200 flex-shrink-0 px-4 sm:px-6 lg:px-8 flex items-center">
+                        <button className="lg:hidden p-2 hover:bg-gray-100 rounded-lg">
+                            <Menu className="h-6 w-6" />
+                        </button>
+                    </header>
+                    <main className="flex-1 flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-4">
+                            <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#4b2192' }} />
+                            <p className="text-gray-600">Verifying manager access...</p>
+                        </div>
+                    </main>
                 </div>
             </div>
         );
