@@ -22,6 +22,7 @@ import {
     handlePhleboEvent,
 } from '../../services/healthiansWebhook';
 import { ingestReport } from '../../services/reportIngestion';
+import { sendPhleboAssignedViaWhatsApp } from '../../services/phleboNotifications';
 import { logAlert, logBusinessEvent, logger } from '../../utils/logger';
 import { addObservabilityBreadcrumb } from '../../utils/sentry';
 
@@ -116,6 +117,7 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
 
     // 4. Process inside single transaction (dedup + business logic + mark processed)
     let reportIdToIngest: string | null = null;
+    let phleboNotification: { mobile: string; customerName: string; phleboName: string; phleboPhone: string; expectedArrival: string } | null = null;
 
     try {
         await prisma.$transaction(async (tx) => {
@@ -140,7 +142,12 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
                         { rescheduledToId: payload.booking_id },
                     ],
                 },
-                include: { items: true },
+                include: {
+                    items: {
+                        include: { patient: { select: { name: true } } },
+                    },
+                    user: { select: { name: true, mobile: true } },
+                },
             });
 
             if (!booking) {
@@ -209,6 +216,30 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
                         partnerBookingId: payload.booking_id,
                         eventType: payload.type,
                     });
+
+                    // Prepare WhatsApp notification (sent after transaction commits)
+                    if (booking.user?.mobile) {
+                        const patientNames = [...new Set(booking.items.map((i: any) => i.patient?.name).filter(Boolean))];
+                        const customerName = patientNames.length > 0
+                            ? patientNames.join(', ')
+                            : (booking.user.name || 'Customer');
+
+                        const arrivalDate = payload.data?.sample_collection_date || booking.slotDate || '';
+                        const arrivalTime = payload.data?.start_time && payload.data?.end_time
+                            ? `${payload.data.start_time} - ${payload.data.end_time}`
+                            : booking.slotTime || '';
+                        const expectedArrival = arrivalDate && arrivalTime
+                            ? `${arrivalDate}, ${arrivalTime}`
+                            : arrivalDate || arrivalTime || 'To be confirmed';
+
+                        phleboNotification = {
+                            mobile: booking.user.mobile,
+                            customerName,
+                            phleboName: payload.data?.phlebo_name || 'Phlebotomist',
+                            phleboPhone: payload.data?.masked_number || 'N/A',
+                            expectedArrival,
+                        };
+                    }
                     break;
 
                 default:
@@ -232,6 +263,18 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
             });
             ingestReport(reportIdToIngest).catch((err) =>
                 logAlert('report_background_ingestion_failed', { error: err, reportId: reportIdToIngest })
+            );
+        }
+
+        // Step F: Send phlebo assignment WhatsApp notification AFTER transaction commits
+        if (phleboNotification) {
+            sendPhleboAssignedViaWhatsApp(phleboNotification).then(() => {
+                logBusinessEvent('phlebo_notification_sent', {
+                    partnerBookingId: payload.booking_id,
+                    phleboName: phleboNotification!.phleboName,
+                });
+            }).catch((err) =>
+                logAlert('phlebo_notification_failed', { error: err, partnerBookingId: payload.booking_id })
             );
         }
 
