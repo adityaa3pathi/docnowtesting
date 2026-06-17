@@ -4,6 +4,7 @@ import { prisma } from '../../db';
 import { HealthiansAdapter } from '../../adapters/healthians';
 import { validationSchemas } from '../../utils/helpers';
 import { BookingService } from '../../services/booking.service';
+import { sendBookingRescheduledViaWhatsApp } from '../../services/bookingRescheduleNotifications';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
@@ -149,6 +150,11 @@ export async function rescheduleBooking(req: AuthRequest, res: Response) {
                 message: 'Booking rescheduled successfully',
                 new_booking_id: result.id
             });
+
+            // Fire-and-forget WhatsApp notification
+            sendBookingRescheduledViaWhatsApp(result.id).catch((err) =>
+                console.error('[RescheduleNotification] Failed to send WhatsApp:', err?.message || err)
+            );
         } else {
             return res.status(400).json({ error: response.message || 'Failed to reschedule on partner platform' });
         }
