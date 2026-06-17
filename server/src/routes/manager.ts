@@ -23,6 +23,7 @@ import { sendInvoiceViaWhatsApp } from '../services/invoiceNotifications';
 import { getInvoiceLinkExpiryHours } from '../services/invoiceAccess';
 import { getReportLinkExpiryHours } from '../services/reportAccess';
 import { sendSpecificReportViaWhatsApp } from '../services/reportNotifications';
+import { sendBookingRescheduledViaWhatsApp } from '../services/bookingRescheduleNotifications';
 import { sendPaymentLinkViaWhatsApp } from '../services/paymentNotifications';
 import { buildCatalogSearchWhere, normalizeSearchTerm } from '../utils/searchUtils';
 
@@ -1711,6 +1712,11 @@ router.post('/bookings/:id/reschedule', ...mgr, async (req: AuthRequest, res: Re
             message: 'Booking rescheduled successfully',
             new_booking_id: result.id
         });
+
+        // Fire-and-forget WhatsApp notification
+        sendBookingRescheduledViaWhatsApp(result.id).catch((err) =>
+            console.error('[RescheduleNotification] Failed to send WhatsApp:', err?.message || err)
+        );
     } catch (error: any) {
         console.error('[Manager] Reschedule error:', error);
         res.status(500).json({
