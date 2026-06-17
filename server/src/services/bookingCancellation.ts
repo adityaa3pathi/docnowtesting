@@ -6,6 +6,7 @@ import { BookingService } from './booking.service';
 import { assertTransition } from '../utils/paymentStateMachine';
 import { retryWithBackoff } from '../utils/helpers';
 import { getCancelDenialMessage } from '../utils/healthiansStatusMap';
+import { sendBookingCancelledViaWhatsApp } from './bookingCancellationNotifications';
 
 const healthians = HealthiansAdapter.getInstance();
 export const PARTNER_CANCELABLE_STATUSES = new Set(['BS002', 'BS005']);
@@ -389,6 +390,11 @@ async function runCancellation(params: {
         refundStatus: refundAttempt.refundStatus,
         refundError: 'refundError' in refundAttempt ? refundAttempt.refundError : undefined,
     });
+
+    // Send cancellation WhatsApp notification (fire-and-forget)
+    sendBookingCancelledViaWhatsApp(booking.id).catch((err) =>
+        console.error('[CancellationNotification] Failed to send WhatsApp:', err?.message || err)
+    );
 
     return {
         message: getCancellationMessage(partnerCancellation, refundAttempt.refundStatus),
