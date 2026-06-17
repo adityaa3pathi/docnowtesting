@@ -15,6 +15,7 @@ import { sendDeadLetterAlert } from '../utils/slack';
 import { getRazorpay } from './razorpay';
 import { prisma } from '../db';
 import { logAlert, logBusinessEvent, logger } from '../utils/logger';
+import { sendBookingConfirmationViaWhatsApp } from './bookingConfirmationNotifications';
 
 /**
  * Attempts to finalize a paid booking by creating it in the partner system (Healthians).
@@ -116,6 +117,12 @@ export async function finalizeBooking(bookingId: string) {
             attemptId,
             partnerBookingId,
         });
+
+        // Send booking confirmation WhatsApp (fire-and-forget)
+        sendBookingConfirmationViaWhatsApp(bookingId).catch((err) =>
+            logAlert('booking_confirmation_notification_failed', { error: err, bookingId })
+        );
+
         return { status: 'success', partnerBookingId };
     } catch (error: any) {
         logAlert('partner_booking_failed', { error, bookingId, attemptId });
