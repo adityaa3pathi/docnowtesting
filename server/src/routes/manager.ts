@@ -1421,7 +1421,10 @@ router.post('/bookings/:id/send-report', ...mgr, async (req: AuthRequest, res: R
                     select: { id: true, name: true, mobile: true }
                 },
                 items: {
-                    select: { testName: true }
+                    select: {
+                        testName: true,
+                        patient: { select: { name: true } },
+                    }
                 },
                 reports: {
                     where: {
@@ -1442,7 +1445,7 @@ router.post('/bookings/:id/send-report', ...mgr, async (req: AuthRequest, res: R
         }
         const bookingData = booking as typeof booking & {
             reports: Array<{ id: string }>;
-            items: Array<{ testName: string }>;
+            items: Array<{ testName: string; patient: { name: string } }>;
             user: { mobile: string; name: string | null };
         };
 
@@ -1450,6 +1453,12 @@ router.post('/bookings/:id/send-report', ...mgr, async (req: AuthRequest, res: R
         if (!report) {
             return res.status(400).json({ error: 'No downloadable report is available for this booking yet.' });
         }
+
+        // Collect unique patient names
+        const patientNames = [...new Set(bookingData.items.map((item) => item.patient?.name).filter(Boolean))];
+        const patientLabel = patientNames.length === 0
+            ? (bookingData.user.name || 'Customer')
+            : patientNames.join(', ');
 
         const itemNames = bookingData.items.map((item) => item.testName).filter(Boolean);
         const reportLabel =
@@ -1461,7 +1470,7 @@ router.post('/bookings/:id/send-report', ...mgr, async (req: AuthRequest, res: R
 
         const delivery = await sendSpecificReportViaWhatsApp({
             mobile: bookingData.user.mobile,
-            customerName: bookingData.user.name,
+            customerName: patientLabel,
             reportLabel,
             reportId: report.id,
         });
