@@ -46,6 +46,9 @@ export async function ingestReport(reportId: string, options: IngestReportOption
                     items: {
                         select: {
                             testName: true,
+                            patient: {
+                                select: { name: true },
+                            },
                         },
                     },
                 },
@@ -173,6 +176,13 @@ export async function ingestReport(reportId: string, options: IngestReportOption
         });
 
         if (shouldNotifyCustomer && report.booking?.user?.mobile) {
+            // Collect unique patient names
+            const patientNames = [...new Set(report.booking.items.map((item) => (item as any).patient?.name).filter(Boolean))];
+            const patientLabel = patientNames.length === 0
+                ? (report.booking.user.name || 'Customer')
+                : patientNames.join(', ');
+
+            // Collect unique test names
             const itemNames = report.booking.items.map((item) => item.testName).filter(Boolean);
             const reportLabel =
                 itemNames.length === 0
@@ -184,7 +194,7 @@ export async function ingestReport(reportId: string, options: IngestReportOption
             try {
                 const notification = await sendSpecificReportViaWhatsApp({
                     mobile: report.booking.user.mobile,
-                    customerName: report.booking.user.name,
+                    customerName: patientLabel,
                     reportLabel,
                     reportId,
                 });
