@@ -49,19 +49,42 @@ function isValidWebhookSecret(providedSecret: string | undefined) {
     return expected.length === provided.length && crypto.timingSafeEqual(expected, provided);
 }
 
+// Healthians production + non-production IPs (from their infra notification)
+const HEALTHIANS_ALLOWED_IPS = new Set([
+    '161.118.179.139',  // Production
+    '161.118.163.82',   // Non-production
+    '127.0.0.1',        // Localhost (testing)
+    '::1',              // Localhost IPv6
+]);
+
+function extractClientIp(req: Request): string {
+    // Behind Cloudflare/Nginx, real IP is in x-forwarded-for or cf-connecting-ip
+    const cfIp = getHeaderValue(req.headers['cf-connecting-ip']);
+    if (cfIp) return cfIp;
+    const xff = getHeaderValue(req.headers['x-forwarded-for']);
+    if (xff) return xff.split(',')[0].trim();
+    return req.ip || req.socket.remoteAddress || '';
+}
+
 export const healthiansWebhookHandler = async (req: Request, res: Response) => {
     // 1. Hash raw body BEFORE any parsing (req.body is a Buffer here)
     const rawBody = req.body as Buffer;
     const payloadHash = crypto.createHash('sha256').update(rawBody).digest('hex');
 
-    // 2. Validate shared-secret header when configured.
+    // 2. Validate: shared-secret header OR IP allowlist
     const providedSecret = getHeaderValue(req.headers['x-healthians-secret']);
-    if (!isValidWebhookSecret(providedSecret)) {
+    const clientIp = extractClientIp(req);
+
+    const secretValid = isValidWebhookSecret(providedSecret);
+    const ipValid = HEALTHIANS_ALLOWED_IPS.has(clientIp);
+
+    if (!secretValid && !ipValid) {
         addObservabilityBreadcrumb('healthians_webhook_unauthorized', {
             source: 'healthians',
             payloadHash: payloadHash.slice(0, 12),
+            clientIp,
         });
-        logAlert('healthians_webhook_unauthorized', { payloadHash: payloadHash.slice(0, 12) });
+        logAlert('healthians_webhook_unauthorized', { payloadHash: payloadHash.slice(0, 12), clientIp });
         return res.status(401).json({ error: 'Unauthorized webhook' });
     }
 
@@ -78,7 +101,6 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
         return res.status(400).json({ error: 'Invalid JSON' });
     }
 
-    const clientIp = req.ip || req.socket.remoteAddress;
     addObservabilityBreadcrumb('healthians_webhook_received', {
         source: 'healthians',
         eventType: payload.type,
