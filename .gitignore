@@ -26,3 +26,6 @@ whatsapp-integration-artifact.md*.pem.pub
 
 # Local testing scripts
 scripts/
+
+# Interview Prep Docs
+docs/interview_prep/

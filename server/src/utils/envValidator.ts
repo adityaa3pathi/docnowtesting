@@ -5,7 +5,6 @@ export function validateEnv() {
         'HEALTHIANS_CLIENT_ID',
         'HEALTHIANS_CLIENT_SECRET',
         'HEALTHIANS_BOOKING_SECRET_KEY',
-        'HEALTHIANS_WEBHOOK_SECRET',
         'RAZORPAY_KEY_ID',
         'RAZORPAY_KEY_SECRET',
         'RAZORPAY_WEBHOOK_SECRET',
