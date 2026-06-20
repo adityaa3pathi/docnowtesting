@@ -917,8 +917,9 @@ router.post('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
                     addressLine: address.line1,
                     addressCity: address.city,
                     addressPincode: address.pincode,
-                    addressLat: address.lat || "0",
-                    addressLong: address.long || "0",
+                    addressLat: address.lat || "",
+                    addressLong: address.long || "",
+                    partnerSlotId: slotTime,
                     items: { create: resolvedItems }
                 }
             });
