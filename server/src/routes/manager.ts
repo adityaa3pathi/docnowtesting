@@ -29,7 +29,18 @@ import { buildCatalogSearchWhere, normalizeSearchTerm } from '../utils/searchUti
 
 const router = Router();
 const healthians = HealthiansAdapter.getInstance();
-const NON_RESCHEDULABLE_STATUSES = ['Cancelled', 'Sample Collected', 'Report Generated', 'Completed', 'Rescheduled'];
+const NON_RESCHEDULABLE_STATUSES = [
+    'Cancelled', 
+    'Sample Collected', 
+    'Sample Received at Lab',
+    'Report Generated', 
+    'Health Counselling Done',
+    'Report Available',
+    'Completed', 
+    'Rescheduled',
+    'Refunded',
+    'Superseded'
+];
 const MANAGER_GLOBAL_CANCELABLE_STATUSES = new Set(['CREATED', 'SENT', 'PAYMENT_RECEIVED', 'CONFIRMED']);
 const INVOICE_ELIGIBLE_BOOKING_STATUSES = new Set(['Order Booked', 'Sample Collector Assigned', 'Sample Collected', 'Report Generated', 'Completed']);
 const INVOICE_ELIGIBLE_PARTNER_STATUSES = new Set(['BS002', 'BS005', 'BS007', 'BS008', 'BS015']);
@@ -1301,12 +1312,15 @@ router.get('/bookings', ...mgr, async (req: AuthRequest, res: Response) => {
         res.json({
             orders: orders.map((order) => {
                 const latestReport = order.reports[0] || null;
-                const canCancel = order.managerOrder
-                    ? MANAGER_GLOBAL_CANCELABLE_STATUSES.has(order.managerOrder.status)
-                    : order.status !== 'Cancelled' &&
+                const isPartnerCancelable = !order.partnerStatus || PARTNER_CANCELABLE_STATUSES.has(order.partnerStatus);
+                const isBookingStatusCancelable = !NON_RESCHEDULABLE_STATUSES.includes(order.status) &&
+                      order.status !== 'Cancelled' &&
                       order.paymentStatus !== 'CANCELLED' &&
-                      order.paymentStatus !== 'REFUNDED' &&
-                      (!order.partnerStatus || PARTNER_CANCELABLE_STATUSES.has(order.partnerStatus));
+                      order.paymentStatus !== 'REFUNDED';
+                
+                const canCancel = order.managerOrder
+                    ? MANAGER_GLOBAL_CANCELABLE_STATUSES.has(order.managerOrder.status) && isPartnerCancelable && isBookingStatusCancelable
+                    : isBookingStatusCancelable && isPartnerCancelable;
                 const canReschedule = Boolean(order.partnerBookingId) && !NON_RESCHEDULABLE_STATUSES.includes(order.status);
                 const canSendInvoice = canSendInvoiceForBooking(order);
                 const invoiceSentAt = invoiceAuditByBookingId.get(order.id) || null;
