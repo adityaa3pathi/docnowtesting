@@ -19,7 +19,18 @@ const rescheduleRateLimit = process.env.UPSTASH_REDIS_REST_URL && process.env.UP
     }) : null;
 
 // Non-reschedulable statuses
-const NON_RESCHEDULABLE_STATUSES = ['Cancelled', 'Sample Collected', 'Report Generated', 'Completed', 'Rescheduled'];
+const NON_RESCHEDULABLE_STATUSES = [
+    'Cancelled', 
+    'Sample Collected', 
+    'Sample Received at Lab',
+    'Report Generated', 
+    'Health Counselling Done',
+    'Report Available',
+    'Completed', 
+    'Rescheduled',
+    'Refunded',
+    'Superseded'
+];
 
 /**
  * POST /api/bookings/:id/reschedule - Reschedule Booking
