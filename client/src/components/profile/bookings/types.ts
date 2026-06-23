@@ -20,6 +20,13 @@ export interface BookingHeader {
     superseded?: boolean;
     items: string[];
     reports?: ReportSummary[];
+    rescheduleInfo?: {
+        newBookingId: string;
+        newSlotDate: string | null;
+        newSlotTime: string | null;
+        rescheduledBy: string;
+        rescheduledAt: string | null;
+    } | null;
 }
 
 export interface ReportSummary {

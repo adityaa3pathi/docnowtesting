@@ -190,4 +190,29 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
     }
 });
 
+// PATCH /api/profile/addresses/:id/coords - Update only lat/long (no append-only)
+router.patch('/:id/coords', authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        const { lat, long } = req.body;
+        if (!lat || !long) {
+            return res.status(400).json({ error: 'lat and long are required' });
+        }
+
+        const address = await prisma.address.findUnique({ where: { id: req.params.id as string } });
+        if (!address || address.isDeleted || address.userId !== req.userId) {
+            return res.status(404).json({ error: 'Address not found' });
+        }
+
+        await prisma.address.update({
+            where: { id: address.id },
+            data: { lat: String(lat), long: String(long) }
+        });
+
+        res.json({ status: 'ok' });
+    } catch (error) {
+        console.error('Patch address coords error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 export default router;

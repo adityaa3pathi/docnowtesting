@@ -33,6 +33,10 @@ export function useSlots(selectedAddress: Address | undefined, selectedDate: str
                     if (geoRes.data && geoRes.data.lat) {
                         finalLat = geoRes.data.lat;
                         finalLong = geoRes.data.long;
+                        // Save geocoded coords back to address so server has them for booking
+                        api.patch(`/profile/addresses/${address.id}/coords`, {
+                            lat: finalLat, long: finalLong
+                        }).catch(() => {});
                     }
                 } catch (err) {
                     console.error('In-cart geocoding failed:', err);

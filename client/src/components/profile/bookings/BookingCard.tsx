@@ -98,6 +98,21 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                             <span className="text-gray-500 font-normal"> at {booking.slotTime}</span>
                         )}
                     </div>
+                    {booking.rescheduleInfo && (
+                        <div className="mt-1.5 rounded border border-amber-200 bg-amber-50 px-2 py-1">
+                            <div className="text-xs font-medium text-amber-800">
+                                → {booking.rescheduleInfo.newSlotDate
+                                    ? new Date(booking.rescheduleInfo.newSlotDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                                    : 'New slot'}
+                                {booking.rescheduleInfo.newSlotTime && !/^\d+$/.test(booking.rescheduleInfo.newSlotTime) && (
+                                    <span> at {booking.rescheduleInfo.newSlotTime}</span>
+                                )}
+                            </div>
+                            <div className="text-[10px] text-amber-600">
+                                by {booking.rescheduleInfo.rescheduledBy}
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <div>
                     <div className="text-xs sm:text-sm text-gray-500">Total Amount</div>
