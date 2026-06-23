@@ -118,7 +118,7 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                     <div className="text-xs sm:text-sm text-gray-500">Total Amount</div>
                     <div className="font-bold text-primary">₹{booking.totalAmount}</div>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest w-fit ${statusInfo.color}`}>
+                <div className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest w-fit self-center justify-self-end sm:justify-self-auto ${statusInfo.color}`}>
                     {statusInfo.label}
                 </div>
             </div>
