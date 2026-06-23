@@ -65,6 +65,14 @@ interface Order {
     invoiceSentAt: string | null;
     canSendReport: boolean;
     reportSentAt: string | null;
+    rescheduledToId: string | null;
+    rescheduleInfo: {
+        newBookingId: string;
+        newSlotDate: string | null;
+        newSlotTime: string | null;
+        rescheduledBy: string;
+        rescheduledAt: string | null;
+    } | null;
 }
 
 interface Pagination {
@@ -396,6 +404,14 @@ export default function OrdersPage() {
                                                 </div>
                                                 <p className="mt-1 text-xs text-gray-500">{order.slotTime || 'NA'}</p>
                                                 <p className="mt-2 text-xs text-gray-500">Created {formatDate(order.createdAt)}</p>
+                                                {order.rescheduleInfo && (
+                                                    <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2">
+                                                        <p className="text-xs font-medium text-amber-800">
+                                                            → {formatDate(order.rescheduleInfo.newSlotDate)} {order.rescheduleInfo.newSlotTime || ''}
+                                                        </p>
+                                                        <p className="text-xs text-amber-600">by {order.rescheduleInfo.rescheduledBy}</p>
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 align-top">
                                                 <p className="text-sm font-semibold text-gray-900">₹{order.amount.toLocaleString('en-IN')}</p>
@@ -524,6 +540,18 @@ export default function OrdersPage() {
                                     <p className="mt-2 font-medium text-gray-900">{formatDate(selectedOrder.slotDate)}</p>
                                     <p className="mt-1 text-gray-500">{selectedOrder.slotTime}</p>
                                     <p className="text-gray-500">Amount: ₹{selectedOrder.amount.toLocaleString('en-IN')}</p>
+                                    {selectedOrder.rescheduleInfo && (
+                                        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Rescheduled</p>
+                                            <p className="mt-1 text-sm font-medium text-amber-900">
+                                                New Slot: {formatDate(selectedOrder.rescheduleInfo.newSlotDate)} {selectedOrder.rescheduleInfo.newSlotTime || ''}
+                                            </p>
+                                            <p className="mt-1 text-xs text-amber-600">
+                                                By: {selectedOrder.rescheduleInfo.rescheduledBy}
+                                                {selectedOrder.rescheduleInfo.rescheduledAt ? ` on ${formatDate(selectedOrder.rescheduleInfo.rescheduledAt)}` : ''}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="grid gap-4 md:grid-cols-2">

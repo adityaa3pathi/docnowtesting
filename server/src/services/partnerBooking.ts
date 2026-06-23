@@ -2,6 +2,7 @@ import { prisma } from '../db';
 import { HealthiansAdapter } from '../adapters/healthians';
 import { normalizeGender } from '../utils/helpers';
 import { logBusinessEvent } from '../utils/logger';
+import { getGeodataFromPincode } from '../utils/geocoding';
 
 const healthians = HealthiansAdapter.getInstance();
 
@@ -27,6 +28,27 @@ export async function createHealthiansBooking(booking: any, userId: string, slot
         throw new Error('Missing required data for partner booking (User, Address, or Items)');
     }
 
+    // Resolve coordinates — geocode from pincode if lat/long are missing
+    let finalLat = address.lat;
+    let finalLong = address.long;
+
+    if (!finalLat || !finalLong) {
+        const geodata = await getGeodataFromPincode(address.pincode);
+        if (geodata) {
+            finalLat = geodata.lat;
+            finalLong = geodata.long;
+            // Persist geocoded coords so future bookings don't need to re-geocode
+            prisma.address.update({
+                where: { id: address.id },
+                data: { lat: finalLat, long: finalLong }
+            }).catch(() => {}); // fire-and-forget
+        }
+    }
+
+    // Final fallback only if geocoding also fails
+    finalLat = finalLat || '28.6139';
+    finalLong = finalLong || '77.2090';
+
     // Build patient groups from Immutable Booking Items
     const patientGroups = new Map<string, { patient: any, testCodes: string[], testNames: string[] }>();
 
@@ -46,10 +68,10 @@ export async function createHealthiansBooking(booking: any, userId: string, slot
         patientGroups.get(key)!.testNames.push(item.testName);
     }
 
-    // Get zone ID
+    // Get zone ID using resolved coordinates
     const serviceability = await healthians.checkServiceability(
-        address.lat || '28.6139',
-        address.long || '77.2090',
+        finalLat,
+        finalLong,
         address.pincode
     );
     const zoneId = serviceability?.data?.zone_id;
@@ -90,8 +112,8 @@ export async function createHealthiansBooking(booking: any, userId: string, slot
         state: 26,
         cityId: 23,
         sub_locality: address.line1,
-        latitude: address.lat || '28.6139',
-        longitude: address.long || '77.2090',
+        latitude: finalLat,
+        longitude: finalLong,
         address: address.line1,
         zipcode: address.pincode,
         landmark: '',
