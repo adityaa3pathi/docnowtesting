@@ -28,8 +28,53 @@ export async function listBookings(req: AuthRequest, res: Response) {
             }
         });
 
+        // Fetch reschedule context for rescheduled bookings
+        const rescheduledIds = bookings
+            .filter(b => b.status === 'Rescheduled' && b.rescheduledToId)
+            .map(b => b.rescheduledToId!);
+        const newBookingsMap = new Map<string, { slotDate: string, slotTime: string }>();
+        if (rescheduledIds.length > 0) {
+            const newBookings = await prisma.booking.findMany({
+                where: { id: { in: rescheduledIds } },
+                select: { id: true, slotDate: true, slotTime: true }
+            });
+            newBookings.forEach(nb => newBookingsMap.set(nb.id, { slotDate: nb.slotDate, slotTime: nb.slotTime }));
+        }
+
+        const bookingIds = bookings.map(b => b.id);
+        const rescheduleAudits = bookingIds.length > 0
+            ? await prisma.adminAuditLog.findMany({
+                where: {
+                    action: 'MANAGER_BOOKING_RESCHEDULED',
+                    entity: 'Booking',
+                    targetId: { in: bookingIds },
+                },
+                orderBy: { createdAt: 'desc' },
+            })
+            : [];
+        const rescheduleAuditMap = new Map<string, { by: string, at: Date }>();
+        rescheduleAudits.forEach(log => {
+            if (log.targetId && !rescheduleAuditMap.has(log.targetId)) {
+                rescheduleAuditMap.set(log.targetId, { by: log.adminName || 'Manager', at: log.createdAt });
+            }
+        });
+
         // Map to DTO
-        const sanitizedBookings = bookings.map(b => ({
+        const sanitizedBookings = bookings.map(b => {
+            let rescheduleInfo = null;
+            if (b.status === 'Rescheduled' && b.rescheduledToId) {
+                const newSlot = newBookingsMap.get(b.rescheduledToId);
+                const audit = rescheduleAuditMap.get(b.id);
+                rescheduleInfo = {
+                    newBookingId: b.rescheduledToId,
+                    newSlotDate: newSlot?.slotDate || null,
+                    newSlotTime: newSlot?.slotTime || null,
+                    rescheduledBy: audit?.by || 'You',
+                    rescheduledAt: audit?.at || null,
+                };
+            }
+
+            return {
             currentPartnerBookingId: b.rescheduledToId || b.partnerBookingId,
             previousPartnerBookingIds:
                 b.rescheduledToId && b.partnerBookingId && b.rescheduledToId !== b.partnerBookingId
@@ -63,6 +108,7 @@ export async function listBookings(req: AuthRequest, res: Response) {
             createdAt: b.createdAt,
             invoiceAvailable: b.paymentStatus === 'CONFIRMED',
             rescheduledToId: b.rescheduledToId,
+            rescheduleInfo,
             items: b.items.map(i => i.testName),
             address: b.addressLine ? {
                 line1: b.addressLine,
@@ -79,7 +125,7 @@ export async function listBookings(req: AuthRequest, res: Response) {
                 fileSize: r.fileSize,
                 generatedAt: r.generatedAt,
             })),
-        }));
+        }});
 
         res.json(sanitizedBookings);
     } catch (error) {

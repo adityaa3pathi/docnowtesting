@@ -1265,6 +1265,39 @@ router.get('/bookings', ...mgr, async (req: AuthRequest, res: Response) => {
             }
         });
 
+        // Fetch reschedule info for rescheduled bookings
+        const rescheduledOrderIds = orders
+            .filter(o => o.status === 'Rescheduled' && o.rescheduledToId)
+            .map(o => o.rescheduledToId!);
+        const newBookingsMap = new Map<string, { slotDate: string, slotTime: string }>();
+        if (rescheduledOrderIds.length > 0) {
+            const newBookings = await prisma.booking.findMany({
+                where: { id: { in: rescheduledOrderIds } },
+                select: { id: true, slotDate: true, slotTime: true }
+            });
+            newBookings.forEach(b => newBookingsMap.set(b.id, { slotDate: b.slotDate, slotTime: b.slotTime }));
+        }
+
+        const rescheduleAuditLogs = orderIds.length > 0
+            ? await prisma.adminAuditLog.findMany({
+                where: {
+                    action: 'MANAGER_BOOKING_RESCHEDULED',
+                    entity: 'Booking',
+                    targetId: { in: orderIds },
+                },
+                orderBy: { createdAt: 'desc' },
+            })
+            : [];
+        const rescheduleAuditByBookingId = new Map<string, { by: string, at: Date }>();
+        rescheduleAuditLogs.forEach((log) => {
+            if (log.targetId && !rescheduleAuditByBookingId.has(log.targetId)) {
+                rescheduleAuditByBookingId.set(log.targetId, {
+                    by: log.adminName || 'Manager',
+                    at: log.createdAt
+                });
+            }
+        });
+
         res.json({
             orders: orders.map((order) => {
                 const latestReport = order.reports[0] || null;
@@ -1279,6 +1312,20 @@ router.get('/bookings', ...mgr, async (req: AuthRequest, res: Response) => {
                 const invoiceSentAt = invoiceAuditByBookingId.get(order.id) || null;
                 const canSendReport = Boolean(latestReport?.id);
                 const reportSentAt = reportAuditByBookingId.get(order.id) || null;
+
+                // Build reschedule info if applicable
+                let rescheduleInfo = null;
+                if (order.status === 'Rescheduled' && order.rescheduledToId) {
+                    const newSlot = newBookingsMap.get(order.rescheduledToId);
+                    const audit = rescheduleAuditByBookingId.get(order.id);
+                    rescheduleInfo = {
+                        newBookingId: order.rescheduledToId,
+                        newSlotDate: newSlot?.slotDate || null,
+                        newSlotTime: newSlot?.slotTime || null,
+                        rescheduledBy: audit?.by || 'User',
+                        rescheduledAt: audit?.at || null,
+                    };
+                }
 
                 return {
                     id: order.id,
@@ -1304,6 +1351,8 @@ router.get('/bookings', ...mgr, async (req: AuthRequest, res: Response) => {
                     invoiceSentAt,
                     canSendReport,
                     reportSentAt,
+                    rescheduledToId: order.rescheduledToId,
+                    rescheduleInfo,
                 };
             }),
             pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
