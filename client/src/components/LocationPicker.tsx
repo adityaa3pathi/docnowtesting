@@ -83,8 +83,7 @@ function LocationPickerInner({
     const [serviceability, setServiceability] = useState<'checking' | 'yes' | 'no' | null>(null);
 
     const geocoderRef = useRef<google.maps.Geocoder | null>(null);
-    const searchInputRef = useRef<HTMLInputElement>(null);
-    const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     // Initialize geocoder
     useEffect(() => {
@@ -93,33 +92,56 @@ function LocationPickerInner({
         }
     }, [geocodingLib]);
 
-    // Initialize Places Autocomplete
+    // Initialize new Places Autocomplete (PlaceAutocompleteElement)
     useEffect(() => {
-        if (!placesLib || !searchInputRef.current) return;
+        if (!placesLib || !containerRef.current) return;
 
-        const autocomplete = new placesLib.Autocomplete(searchInputRef.current, {
-            componentRestrictions: { country: 'in' },
-            fields: ['geometry', 'formatted_address', 'address_components'],
+        // @ts-ignore - newer API might not be in types
+        const autocomplete = new placesLib.PlaceAutocompleteElement({
+            includedRegionCodes: ['in'],
         });
 
-        autocomplete.addListener('place_changed', () => {
-            const place = autocomplete.getPlace();
-            if (place.geometry?.location) {
-                const newPos = {
-                    lat: place.geometry.location.lat(),
-                    lng: place.geometry.location.lng(),
-                };
-                setPosition(newPos);
-                map?.panTo(newPos);
-                map?.setZoom(17);
-                extractAddressComponents(place.address_components, place.formatted_address);
+        // Basic styling
+        autocomplete.classList.add('w-full', 'rounded-lg');
+        autocomplete.style.width = '100%';
+        
+        containerRef.current.innerHTML = '';
+        containerRef.current.appendChild(autocomplete);
+
+        // @ts-ignore
+        autocomplete.addEventListener('gmp-placeselect', async (e: any) => {
+            const place = e.prediction?.place;
+            if (!place) return;
+
+            try {
+                await place.fetchFields({ fields: ['location', 'formattedAddress', 'addressComponents'] });
+                
+                if (place.location) {
+                    const newPos = {
+                        lat: typeof place.location.lat === 'function' ? place.location.lat() : place.location.lat,
+                        lng: typeof place.location.lng === 'function' ? place.location.lng() : place.location.lng,
+                    };
+                    setPosition(newPos);
+                    map?.panTo(newPos);
+                    map?.setZoom(17);
+
+                    const mappedComponents = place.addressComponents?.map((c: any) => ({
+                        long_name: c.longText || c.long_name,
+                        short_name: c.shortText || c.short_name,
+                        types: c.types,
+                    }));
+
+                    extractAddressComponents(mappedComponents, place.formattedAddress);
+                }
+            } catch (err) {
+                console.error("Error fetching place fields", err);
             }
         });
 
-        autocompleteRef.current = autocomplete;
-
         return () => {
-            google.maps.event.clearInstanceListeners(autocomplete);
+            if (containerRef.current?.contains(autocomplete)) {
+                containerRef.current.removeChild(autocomplete);
+            }
         };
     }, [placesLib, map]);
 
@@ -173,10 +195,6 @@ function LocationPickerInner({
             geocoderRef.current.geocode({ location: { lat, lng } }, (results, status) => {
                 if (status === 'OK' && results?.[0]) {
                     extractAddressComponents(results[0].address_components, results[0].formatted_address);
-                    // Update search input with the address
-                    if (searchInputRef.current) {
-                        searchInputRef.current.value = results[0].formatted_address || '';
-                    }
                 }
             });
         },
@@ -261,14 +279,8 @@ function LocationPickerInner({
         <div className="space-y-3">
             {/* Search + Use My Location */}
             <div className="flex gap-2">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                        ref={searchInputRef}
-                        type="text"
-                        placeholder="Search for area, street name..."
-                        className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-300 focus:border-purple-400 outline-none transition-all"
-                    />
+                <div className="relative flex-1 bg-white rounded-lg border border-gray-300 focus-within:ring-2 focus-within:ring-purple-300 focus-within:border-purple-400 overflow-hidden" ref={containerRef}>
+                    {/* The PlaceAutocompleteElement will be injected here */}
                 </div>
                 <button
                     type="button"
