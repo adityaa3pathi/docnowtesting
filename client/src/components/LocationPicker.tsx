@@ -84,6 +84,7 @@ function LocationPickerInner({
 
     const geocoderRef = useRef<google.maps.Geocoder | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const isDraggingRef = useRef(false);
 
     // Initialize geocoder
     useEffect(() => {
@@ -98,12 +99,13 @@ function LocationPickerInner({
 
         // @ts-ignore - newer API might not be in types
         const autocomplete = new placesLib.PlaceAutocompleteElement({
-            includedRegionCodes: ['in'],
+            includedRegionCodes: ['IN', 'in'],
         });
 
         // Basic styling
-        autocomplete.classList.add('w-full', 'rounded-lg');
+        autocomplete.style.colorScheme = 'light';
         autocomplete.style.width = '100%';
+        autocomplete.style.backgroundColor = 'transparent';
         
         containerRef.current.innerHTML = '';
         containerRef.current.appendChild(autocomplete);
@@ -214,13 +216,28 @@ function LocationPickerInner({
         }
     };
 
-    // Handle marker drag end
+    // Handle marker drag
+    const handleDragStart = useCallback(() => {
+        isDraggingRef.current = true;
+    }, []);
+
     const handleDragEnd = useCallback(
-        (e: google.maps.MapMouseEvent) => {
+        (e: any) => {
+            setTimeout(() => { isDraggingRef.current = false; }, 100);
+
+            let lat, lng;
             if (e.latLng) {
-                const newPos = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+                lat = typeof e.latLng.lat === 'function' ? e.latLng.lat() : e.latLng.lat;
+                lng = typeof e.latLng.lng === 'function' ? e.latLng.lng() : e.latLng.lng;
+            } else if (e.target && e.target.position) {
+                lat = e.target.position.lat;
+                lng = e.target.position.lng;
+            }
+
+            if (lat !== undefined && lng !== undefined) {
+                const newPos = { lat, lng };
                 setPosition(newPos);
-                reverseGeocode(newPos.lat, newPos.lng);
+                reverseGeocode(lat, lng);
             }
         },
         [reverseGeocode]
@@ -228,12 +245,23 @@ function LocationPickerInner({
 
     // Handle map click
     const handleMapClick = useCallback(
-        (e: google.maps.MapMouseEvent) => {
-            if (e.latLng) {
-                const newPos = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+        (e: any) => {
+            if (isDraggingRef.current) return;
+            
+            let lat, lng;
+            if (e.detail?.latLng) {
+                lat = e.detail.latLng.lat;
+                lng = e.detail.latLng.lng;
+            } else if (e.latLng) {
+                lat = typeof e.latLng.lat === 'function' ? e.latLng.lat() : e.latLng.lat;
+                lng = typeof e.latLng.lng === 'function' ? e.latLng.lng() : e.latLng.lng;
+            }
+
+            if (lat !== undefined && lng !== undefined) {
+                const newPos = { lat, lng };
                 setPosition(newPos);
                 map?.panTo(newPos);
-                reverseGeocode(newPos.lat, newPos.lng);
+                reverseGeocode(lat, lng);
             }
         },
         [reverseGeocode, map]
@@ -279,7 +307,7 @@ function LocationPickerInner({
         <div className="space-y-3">
             {/* Search + Use My Location */}
             <div className="flex gap-2">
-                <div className="relative flex-1 bg-white rounded-lg border border-gray-300 focus-within:ring-2 focus-within:ring-purple-300 focus-within:border-purple-400 overflow-hidden" ref={containerRef}>
+                <div className="relative flex-1 bg-white rounded-lg border border-gray-300 focus-within:ring-2 focus-within:ring-purple-300 focus-within:border-purple-400 overflow-hidden flex items-center px-1" ref={containerRef}>
                     {/* The PlaceAutocompleteElement will be injected here */}
                 </div>
                 <button
@@ -313,6 +341,7 @@ function LocationPickerInner({
                     <AdvancedMarker
                         position={position}
                         draggable={true}
+                        onDragStart={handleDragStart as any}
                         onDragEnd={handleDragEnd as any}
                     >
                         <div className="flex flex-col items-center">
