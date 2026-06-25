@@ -288,6 +288,7 @@ function LocationPickerInner({
             {/* Map */}
             <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm" style={{ height }}>
                 <Map
+                    mapId="DEMO_MAP_ID"
                     defaultCenter={position}
                     defaultZoom={DEFAULT_ZOOM}
                     gestureHandling="greedy"
