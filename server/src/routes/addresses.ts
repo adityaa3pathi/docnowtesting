@@ -1,6 +1,6 @@
 import express, { Response } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
-import { getGeodataFromPincode } from '../utils/geocoding';
+import { getGeodataFromPincode, getGeodataFromAddress } from '../utils/geocoding';
 import { prisma } from '../db';
 
 const router = express.Router();
@@ -43,7 +43,8 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
         let detectedCity = city;
 
         if (!finalLat || !finalLong) {
-            const geodata = await getGeodataFromPincode(pincode);
+            // Try full-address geocoding first (more precise), fall back to pincode-only
+            const geodata = await getGeodataFromAddress(`${line1}, ${city} ${pincode}`) || await getGeodataFromPincode(pincode);
             if (geodata) {
                 finalLat = geodata.lat;
                 finalLong = geodata.long;
@@ -106,7 +107,8 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
 
         // If pincode changed and no new coordinates provided, refresh geocoding
         if (pincode && pincode !== existing.pincode && (!lat || !long)) {
-            const geodata = await getGeodataFromPincode(pincode);
+            // Try full-address geocoding first (more precise), fall back to pincode-only
+            const geodata = await getGeodataFromAddress(`${line1 || existing.line1}, ${city || existing.city} ${pincode}`) || await getGeodataFromPincode(pincode);
             if (geodata) {
                 finalLat = geodata.lat;
                 finalLong = geodata.long;

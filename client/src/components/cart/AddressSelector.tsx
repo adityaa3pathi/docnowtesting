@@ -4,15 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
-
-interface Address {
-    id: string;
-    line1: string;
-    city: string;
-    pincode: string;
-    lat?: string;
-    long?: string;
-}
+import LocationPicker, { LocationResult } from '@/components/LocationPicker';
+import { Address } from '@/types/cart';
 
 interface AddressSelectorProps {
     addresses: Address[];
@@ -28,21 +21,43 @@ export function AddressSelector({
     onAddressAdded
 }: AddressSelectorProps) {
     const [addressDialogOpen, setAddressDialogOpen] = useState(false);
-    const [addressForm, setAddressForm] = useState({ line1: '', city: '', pincode: '' });
     const [loading, setLoading] = useState(false);
+    
+    // Two-step flow: 1) Pick location on map  2) Add house/flat details
+    const [step, setStep] = useState<'map' | 'details'>('map');
+    const [pickedLocation, setPickedLocation] = useState<LocationResult | null>(null);
+    const [line1, setLine1] = useState('');
+
+    const handleLocationPicked = (location: LocationResult) => {
+        setPickedLocation(location);
+        setStep('details');
+    };
 
     const handleAddAddress = async () => {
+        if (!pickedLocation) return;
         try {
             setLoading(true);
-            const res = await api.post('/profile/addresses', addressForm);
-            onAddressAdded(res.data.address.id); // Refresh parent list and auto-select
-            setAddressDialogOpen(false);
-            setAddressForm({ line1: '', city: '', pincode: '' });
+            const res = await api.post('/profile/addresses', {
+                line1: line1.trim() || pickedLocation.formattedAddress,
+                city: pickedLocation.city,
+                pincode: pickedLocation.pincode,
+                lat: pickedLocation.lat,
+                long: pickedLocation.lng,
+            });
+            onAddressAdded(res.data.address.id);
+            handleCloseDialog();
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Failed to add address');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleCloseDialog = () => {
+        setAddressDialogOpen(false);
+        setStep('map');
+        setPickedLocation(null);
+        setLine1('');
     };
 
     return (
@@ -81,42 +96,62 @@ export function AddressSelector({
                 </div>
             )}
 
-            {/* Add Address Dialog - Kept local to this component logic */}
-            <Dialog open={addressDialogOpen} onOpenChange={setAddressDialogOpen}>
-                <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader><DialogTitle>Add Collection Address</DialogTitle></DialogHeader>
-                    <div className="space-y-4 mt-4">
-                        <div>
-                            <label className="block text-sm font-medium mb-1">Address Line</label>
-                            <Input
-                                value={addressForm.line1}
-                                onChange={(e) => setAddressForm({ ...addressForm, line1: e.target.value })}
-                                placeholder="Enter full address"
+            {/* Add Address Dialog — Map Picker + Details */}
+            <Dialog open={addressDialogOpen} onOpenChange={(open) => { if (!open) handleCloseDialog(); }}>
+                <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {step === 'map' ? 'Pick Collection Location' : 'Add Address Details'}
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    {step === 'map' ? (
+                        <div className="mt-2">
+                            <LocationPicker
+                                onLocationSelect={handleLocationPicked}
+                                height="320px"
+                                showConfirm={true}
                             />
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium mb-1">City</label>
-                                <Input
-                                    value={addressForm.city}
-                                    onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                                    placeholder="e.g. Gurgaon"
-                                />
+                    ) : (
+                        <div className="space-y-4 mt-2">
+                            {/* Show picked location summary */}
+                            <div className="bg-purple-50 border border-purple-100 rounded-lg p-3">
+                                <div className="flex items-start gap-2">
+                                    <MapPin className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                                    <div>
+                                        <p className="text-sm text-purple-900">{pickedLocation?.formattedAddress}</p>
+                                        <p className="text-xs text-purple-600 mt-0.5">
+                                            {pickedLocation?.city}{pickedLocation?.city && pickedLocation?.pincode ? ' — ' : ''}{pickedLocation?.pincode}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
+
+                            {/* House/Flat/Building details */}
                             <div>
-                                <label className="block text-sm font-medium mb-1">Pincode</label>
+                                <label className="block text-sm font-medium mb-1">
+                                    House / Flat / Building Details
+                                </label>
                                 <Input
-                                    value={addressForm.pincode}
-                                    onChange={(e) => setAddressForm({ ...addressForm, pincode: e.target.value })}
-                                    placeholder="6-digit pincode"
-                                    maxLength={6}
+                                    value={line1}
+                                    onChange={(e) => setLine1(e.target.value)}
+                                    placeholder="e.g. EWS/2/9, Ashiana Greens, Near Suncity"
+                                    autoFocus
                                 />
+                                <p className="text-xs text-gray-400 mt-1">Add specific details to help the phlebotomist find you</p>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => setStep('map')} className="flex-1">
+                                    ← Change Location
+                                </Button>
+                                <Button onClick={handleAddAddress} disabled={loading} className="flex-1">
+                                    {loading ? 'Saving...' : 'Save Address'}
+                                </Button>
                             </div>
                         </div>
-                        <Button onClick={handleAddAddress} disabled={loading} className="w-full">
-                            {loading ? 'Adding...' : 'Add Address'}
-                        </Button>
-                    </div>
+                    )}
                 </DialogContent>
             </Dialog>
         </div>
