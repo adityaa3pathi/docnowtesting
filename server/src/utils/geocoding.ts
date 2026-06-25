@@ -61,3 +61,56 @@ export async function getGeodataFromPincode(pincode: string): Promise<Geodata | 
         return null;
     }
 }
+
+/**
+ * Fetches latitude, longitude, and city name using a full address string.
+ * More precise than pincode-only geocoding because Google can match the actual street/locality.
+ */
+export async function getGeodataFromAddress(fullAddress: string): Promise<Geodata | null> {
+    try {
+        const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+        if (!apiKey) {
+            console.error('GOOGLE_MAPS_API_KEY is not set in environment variables');
+            return null;
+        }
+
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullAddress + ', India')}&key=${apiKey}`;
+        const response = await axios.get(url);
+
+        if (response.data.status === 'OK' && response.data.results && response.data.results.length > 0) {
+            const result = response.data.results[0];
+            const location = result.geometry.location;
+
+            let city = '';
+            let pincode = '';
+            const addressComponents = result.address_components || [];
+
+            for (const component of addressComponents) {
+                if (component.types.includes('locality')) {
+                    city = component.long_name;
+                } else if (component.types.includes('administrative_area_level_2') && !city) {
+                    city = component.long_name;
+                } else if (component.types.includes('postal_code')) {
+                    pincode = component.long_name;
+                }
+            }
+
+            if (!city && result.formatted_address) {
+                const parts = result.formatted_address.split(',');
+                city = parts[1]?.trim() || parts[0]?.trim() || 'Unknown';
+            }
+
+            return {
+                lat: location.lat.toString(),
+                long: location.lng.toString(),
+                city: city
+            };
+        }
+
+        console.error('Google Maps API returned no results for address:', fullAddress);
+        return null;
+    } catch (error) {
+        console.error('Address Geocoding Error:', error);
+        return null;
+    }
+}
