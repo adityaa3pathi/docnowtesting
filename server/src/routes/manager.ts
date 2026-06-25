@@ -10,7 +10,7 @@ import { finalizeBooking } from '../services/bookingFinalization';
 import { cancelGlobalBookingAsManager, cancelManagerOrder, PARTNER_CANCELABLE_STATUSES } from '../services/bookingCancellation';
 import { generateReferralCode } from '../utils/referralService';
 import { getClientIP } from '../utils/adminHelpers';
-import { getGeodataFromPincode } from '../utils/geocoding';
+import { getGeodataFromPincode, getGeodataFromAddress } from '../utils/geocoding';
 import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callbacks';
 import { listCorporateInquiries, updateCorporateInquiryStatus } from '../controllers/admin/corporateInquiries';
 import { listAbandonedCarts } from '../controllers/admin/abandonedCarts';
@@ -730,8 +730,21 @@ router.post('/users/:userId/addresses', ...mgr, async (req: AuthRequest, res: Re
     const userId = req.params.userId as string;
     try {
         const validated = addressSchema.parse(req.body);
+        
+        // Auto-geocode if lat/long not provided
+        let lat = validated.lat;
+        let long = validated.long;
+        if (!lat || !long) {
+            const geodata = await getGeodataFromAddress(`${validated.line1}, ${validated.city} ${validated.pincode}`) 
+                || await getGeodataFromPincode(validated.pincode);
+            if (geodata) {
+                lat = geodata.lat;
+                long = geodata.long;
+            }
+        }
+        
         const address = await prisma.address.create({
-            data: { ...validated, userId }
+            data: { ...validated, lat: lat || null, long: long || null, userId }
         });
         res.status(201).json(address);
     } catch (error: any) {
@@ -801,12 +814,45 @@ router.post('/slots', ...mgr, async (req: AuthRequest, res: Response) => {
         }
 
         console.log('[Manager Slots] Checking serviceability:', { finalLat, finalLong, zipcode });
-        const serviceability = await healthians.checkServiceability(finalLat, finalLong, String(zipcode));
+        let serviceability = await healthians.checkServiceability(finalLat, finalLong, String(zipcode));
         console.log('[Manager Slots] Serviceability response:', JSON.stringify(serviceability).slice(0, 500));
-        const zoneId = serviceability?.data?.zone_id;
+        let zoneId = serviceability?.data?.zone_id;
+        
+        // Retry with full-address geocoding if initial coords fail serviceability
         if (!zoneId) {
-            console.log('[Manager Slots] No zone_id found in serviceability response');
-            return res.status(400).json({ error: 'Could not determine zone for the selected address' });
+            console.log('[Manager Slots] Initial serviceability failed, retrying with full-address geocoding');
+            // Try to get address details for better geocoding
+            const addressId = req.body.addressId;
+            let fullAddress = '';
+            if (addressId) {
+                const addr = await prisma.address.findUnique({ where: { id: addressId } });
+                if (addr) fullAddress = `${addr.line1}, ${addr.city} ${addr.pincode}`;
+            }
+            if (!fullAddress && zipcode) {
+                fullAddress = String(zipcode);
+            }
+            
+            const betterGeo = await getGeodataFromAddress(fullAddress);
+            if (betterGeo) {
+                console.log('[Manager Slots] Retrying with better coords:', { lat: betterGeo.lat, long: betterGeo.long });
+                serviceability = await healthians.checkServiceability(betterGeo.lat, betterGeo.long, String(zipcode));
+                zoneId = serviceability?.data?.zone_id;
+                
+                // Update the address record with better coords (fire-and-forget)
+                if (zoneId && addressId) {
+                    finalLat = betterGeo.lat;
+                    finalLong = betterGeo.long;
+                    prisma.address.update({
+                        where: { id: addressId },
+                        data: { lat: betterGeo.lat, long: betterGeo.long }
+                    }).catch(() => {});
+                }
+            }
+        }
+        
+        if (!zoneId) {
+            console.log('[Manager Slots] No zone_id found after all retries');
+            return res.status(400).json({ error: 'This address is not serviceable by our lab partner. Try updating the address or using a nearby pincode.' });
         }
         console.log('[Manager Slots] Zone ID:', zoneId);
 

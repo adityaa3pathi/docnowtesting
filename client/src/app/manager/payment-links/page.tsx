@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
+import LocationPicker, { LocationResult } from '@/components/LocationPicker';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -487,10 +488,12 @@ function StepPatientsAddress({
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [showAddPatient, setShowAddPatient] = useState(false);
     const [showAddAddress, setShowAddAddress] = useState(false);
+    const [addressStep, setAddressStep] = useState<'map' | 'details'>('map');
+    const [pickedLocation, setPickedLocation] = useState<LocationResult | null>(null);
+    const [addressLine1, setAddressLine1] = useState('');
     const [saving, setSaving] = useState(false);
 
     const [pForm, setPForm] = useState({ name: '', relation: '', age: '', gender: 'Male' });
-    const [aForm, setAForm] = useState({ line1: '', city: '', pincode: '', lat: '', long: '' });
     const canSavePatient = Boolean(pForm.name.trim() && pForm.relation && pForm.age);
 
     const refresh = useCallback(async () => {
@@ -528,12 +531,21 @@ function StepPatientsAddress({
     };
 
     const addAddress = async () => {
+        if (!pickedLocation) return;
         setSaving(true);
         try {
-            await api.post(`/manager/users/${user.id}/addresses`, aForm);
+            await api.post(`/manager/users/${user.id}/addresses`, {
+                line1: addressLine1.trim() || pickedLocation.formattedAddress,
+                city: pickedLocation.city,
+                pincode: pickedLocation.pincode,
+                lat: pickedLocation.lat,
+                long: pickedLocation.lng,
+            });
             toast.success('Address added');
             setShowAddAddress(false);
-            setAForm({ line1: '', city: '', pincode: '', lat: '', long: '' });
+            setAddressStep('map');
+            setPickedLocation(null);
+            setAddressLine1('');
             await refresh();
         } catch (e: any) { toast.error(e?.response?.data?.error || 'Failed to add address'); }
         finally { setSaving(false); }
@@ -635,24 +647,36 @@ function StepPatientsAddress({
                 </div>
                 {showAddAddress && (
                     <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 mb-3 space-y-3">
-                        <input value={aForm.line1} onChange={e => setAForm(f => ({ ...f, line1: e.target.value }))}
-                            placeholder="Address Line 1" className="input-sm w-full" />
-                        <div className="grid grid-cols-2 gap-3">
-                            <input value={aForm.city} onChange={e => setAForm(f => ({ ...f, city: e.target.value }))}
-                                placeholder="City" className="input-sm" />
-                            <input value={aForm.pincode} onChange={e => setAForm(f => ({ ...f, pincode: e.target.value }))}
-                                placeholder="Pincode (6 digits)" className="input-sm" />
-                            <input value={aForm.lat} onChange={e => setAForm(f => ({ ...f, lat: e.target.value }))}
-                                placeholder="Latitude (optional)" className="input-sm" />
-                            <input value={aForm.long} onChange={e => setAForm(f => ({ ...f, long: e.target.value }))}
-                                placeholder="Longitude (optional)" className="input-sm" />
-                        </div>
-                        <div className="flex gap-2 justify-end">
-                            <button onClick={() => setShowAddAddress(false)} className="btn-ghost text-xs">Cancel</button>
-                            <button onClick={addAddress} disabled={saving} className="btn-primary text-xs">
-                                {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save'}
-                            </button>
-                        </div>
+                        {addressStep === 'map' ? (
+                            <LocationPicker
+                                onLocationSelect={(loc) => { setPickedLocation(loc); setAddressStep('details'); }}
+                                height="280px"
+                                showConfirm={true}
+                            />
+                        ) : (
+                            <div className="space-y-3">
+                                <div className="bg-white rounded-lg p-3 border border-purple-200">
+                                    <div className="flex items-start gap-2">
+                                        <MapPin className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                                        <div>
+                                            <p className="text-sm text-purple-900">{pickedLocation?.formattedAddress}</p>
+                                            <p className="text-xs text-purple-600 mt-0.5">
+                                                {pickedLocation?.city}{pickedLocation?.city && pickedLocation?.pincode ? ' — ' : ''}{pickedLocation?.pincode}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input value={addressLine1} onChange={e => setAddressLine1(e.target.value)}
+                                    placeholder="House / Flat / Building details" className="input-sm w-full" autoFocus />
+                                <div className="flex gap-2 justify-end">
+                                    <button onClick={() => setAddressStep('map')} className="btn-ghost text-xs">← Change Location</button>
+                                    <button onClick={() => { setShowAddAddress(false); setAddressStep('map'); setPickedLocation(null); setAddressLine1(''); }} className="btn-ghost text-xs">Cancel</button>
+                                    <button onClick={addAddress} disabled={saving || !pickedLocation} className="btn-primary text-xs">
+                                        {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
                 <div className="space-y-2">

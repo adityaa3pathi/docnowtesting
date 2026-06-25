@@ -17,6 +17,7 @@
     "@sentry/nextjs": "^10.56.0",
     "@types/papaparse": "^5.5.2",
     "@types/react-slick": "^0.23.13",
+    "@vis.gl/react-google-maps": "^1.8.3",
     "axios": "^1.13.4",
     "clsx": "^2.1.1",
     "framer-motion": "^12.29.2",
