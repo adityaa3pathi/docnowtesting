@@ -103,7 +103,7 @@ export function GlobalSearch() {
         <div ref={wrapperRef} className="relative w-full">
             {/* Search Input */}
             <div className="relative flex items-center w-full">
-                <Search className="absolute left-4 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3.5 w-4 h-4 md:w-5 md:h-5 text-gray-400" />
                 <input
                     type="text"
                     value={query}
@@ -113,8 +113,8 @@ export function GlobalSearch() {
                     }}
                     onKeyDown={handleKeyDown}
                     onFocus={() => { if (hasQuery) setIsOpen(true); }}
-                    placeholder="Search"
-                    className="w-full h-11 pl-12 pr-10 text-gray-900 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-shadow shadow-sm placeholder:text-gray-400"
+                    placeholder="Search CBC, Vitamin D, Thyroid..."
+                    className="w-full h-10 md:h-11 pl-10 md:pl-12 pr-10 text-sm text-gray-900 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-shadow shadow-sm placeholder:text-gray-400"
                     role="combobox"
                     aria-expanded={showDropdown}
                     aria-controls="search-dropdown"
