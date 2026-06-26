@@ -6,7 +6,7 @@ import {
     Navigation, Loader2, Shield, Phone, LogOut, Delete, Building2,
 } from 'lucide-react';
 import { Button, Input } from './ui';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import {
     Dialog,
@@ -72,6 +72,15 @@ export function Header() {
 
     // Mobile Drawer State
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    // Scroll-aware compact header
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    useEffect(() => {
+        const onScroll = () => setIsScrolled(window.scrollY > 30);
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
 
     // Auto-open login dialog from URL param
     useEffect(() => {
@@ -156,11 +165,11 @@ export function Header() {
     return (
         <>
             {/* ─── Main Navbar ─── */}
-            <nav className="sticky top-0 z-50 w-full bg-white shadow-sm border-b border-gray-100">
-                <div className="mx-auto flex h-16 max-w-[1380px] items-center justify-between gap-4 lg:gap-6 px-6 lg:px-10">
+            <nav className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100 transition-all duration-200">
+                <div className="mx-auto flex h-14 md:h-16 max-w-[1380px] items-center justify-between gap-3 lg:gap-6 px-4 lg:px-10">
 
-                    {/* Logo */}
-                    <DocnowLogo href="/" priority width={120} height={47} />
+                    {/* Logo — 15% smaller on mobile */}
+                    <DocnowLogo href="/" priority width={120} height={47} imageClassName="max-h-8 md:max-h-[47px] w-auto" />
 
                     {/* Desktop Global Search */}
                     <div className="hidden md:flex flex-1 max-w-xl mx-8 relative">
@@ -354,9 +363,11 @@ export function Header() {
                     </div>
                 </div>
 
-                {/* Mobile Global Search - Always Visible */}
-                <div className="md:hidden px-4 pb-4">
-                    <GlobalSearch />
+                {/* Mobile Global Search — collapses on scroll */}
+                <div className={`md:hidden overflow-hidden transition-all duration-200 ${isScrolled ? 'max-h-0 opacity-0 pb-0' : 'max-h-14 opacity-100 pb-2.5'}`}>
+                    <div className="px-4">
+                        <GlobalSearch />
+                    </div>
                 </div>
 
 
