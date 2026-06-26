@@ -132,7 +132,7 @@ export default function ProfilePage() {
                         title="Profile" 
                         icon={<User className="w-4 h-4" />}
                         value={user?.name || 'User'}
-                        subtitle={`${user?.email} • ${user?.mobile || 'No phone'}`}
+                        subtitle={[user?.email, user?.mobile].filter(Boolean).join(' • ') || 'Complete your profile'}
                     >
                         <ProfileTab />
                     </BentoCard>
