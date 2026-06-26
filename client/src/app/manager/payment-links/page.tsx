@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     Plus, Copy, ChevronRight, ChevronLeft, Search,
     CheckCircle, X, User, MapPin, FlaskConical, Calendar, Trash2,
@@ -892,6 +892,17 @@ function StepTests({
 
 // ─── Step 4: Slot ──────────────────────────────────────────────────────────────
 
+const FREEZE_DURATION_MS = 15 * 60 * 1000;
+const AUTO_REFREEZE_AT_MS = 3 * 60 * 1000;
+const SLOT_WARNING_SECONDS = 5 * 60;
+const SLOT_URGENT_SECONDS = 2 * 60;
+
+function formatSlotTimer(totalSeconds: number): string {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
 function StepSlot({
     address, cart, slotDate, slotTime, setSlotDate, setSlotTime, onNext, onBack
 }: {
@@ -903,6 +914,82 @@ function StepSlot({
 }) {
     const [slots, setSlots] = useState<Slot[]>([]);
     const [loading, setLoading] = useState(false);
+    const [freezingSlot, setFreezingSlot] = useState(false);
+    const [isSlotLocked, setIsSlotLocked] = useState(false);
+    const [freezeExpiresAt, setFreezeExpiresAt] = useState<number | null>(null);
+    const [secondsRemaining, setSecondsRemaining] = useState(0);
+    const autoRefreezeRef = useRef(false);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // Cleanup timer on unmount
+    useEffect(() => {
+        return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    }, []);
+
+    // Countdown ticker
+    useEffect(() => {
+        if (!freezeExpiresAt || !isSlotLocked) {
+            setSecondsRemaining(0);
+            if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+            return;
+        }
+
+        const tick = () => {
+            const remaining = Math.max(0, Math.floor((freezeExpiresAt - Date.now()) / 1000));
+            setSecondsRemaining(remaining);
+
+            if (remaining * 1000 <= AUTO_REFREEZE_AT_MS && remaining > 0 && !autoRefreezeRef.current) {
+                autoRefreezeRef.current = true;
+                silentRefreeze();
+            }
+            if (remaining <= 0) {
+                if (timerRef.current) clearInterval(timerRef.current);
+                setIsSlotLocked(false);
+                setFreezeExpiresAt(null);
+                setSecondsRemaining(0);
+                autoRefreezeRef.current = false;
+                toast.error('Slot reservation expired. Please lock the slot again.', { duration: 5000 });
+            }
+        };
+
+        tick();
+        timerRef.current = setInterval(tick, 1000);
+        return () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
+    }, [freezeExpiresAt, isSlotLocked]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const silentRefreeze = async () => {
+        if (!slotTime) return;
+        try {
+            await api.post('/manager/slots/freeze', { slot_id: slotTime });
+            setFreezeExpiresAt(Date.now() + FREEZE_DURATION_MS);
+            autoRefreezeRef.current = false;
+        } catch { console.warn('[Manager] Auto re-freeze failed'); }
+    };
+
+    const resetFreeze = () => {
+        setIsSlotLocked(false);
+        setFreezeExpiresAt(null);
+        setSecondsRemaining(0);
+        autoRefreezeRef.current = false;
+        if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    };
+
+    const handleFreezeSlot = async () => {
+        if (!slotTime) return;
+        try {
+            setFreezingSlot(true);
+            await api.post('/manager/slots/freeze', { slot_id: slotTime });
+            toast.success('Slot locked! Complete the order within 15 minutes.');
+            setIsSlotLocked(true);
+            setFreezeExpiresAt(Date.now() + FREEZE_DURATION_MS);
+            autoRefreezeRef.current = false;
+        } catch {
+            toast.error('Failed to lock slot. Try another one.');
+            resetFreeze();
+        } finally {
+            setFreezingSlot(false);
+        }
+    };
 
     const fetchSlots = useCallback(async () => {
         if (!slotDate) return;
@@ -923,12 +1010,18 @@ function StepSlot({
 
     const today = new Date().toISOString().split('T')[0];
 
+    const timerLevel = isSlotLocked && secondsRemaining > 0
+        ? secondsRemaining <= SLOT_URGENT_SECONDS ? 'urgent'
+        : secondsRemaining <= SLOT_WARNING_SECONDS ? 'warning'
+        : 'normal'
+        : 'none';
+
     return (
         <div className="space-y-4">
             <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Select Date</label>
                 <input type="date" value={slotDate} min={today}
-                    onChange={e => { setSlotDate(e.target.value); setSlotTime(''); }}
+                    onChange={e => { setSlotDate(e.target.value); setSlotTime(''); resetFreeze(); }}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-300 outline-none" />
             </div>
 
@@ -938,18 +1031,75 @@ function StepSlot({
                     {loading ? (
                         <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin text-purple-500" /></div>
                     ) : slots.length > 0 ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {slots.map(s => {
-                                const label = `${s.slot_time} – ${s.end_time}`;
-                                const selected = slotTime === s.stm_id;
-                                return (
-                                    <button key={s.stm_id} onClick={() => setSlotTime(s.stm_id)}
-                                        className={`text-sm py-2.5 px-3 rounded-lg border font-medium transition-colors
-                                            ${selected ? 'bg-[#4b2192] text-white border-purple-700' : 'border-gray-300 hover:border-purple-400 hover:bg-purple-50'}`}>
-                                        {label}
-                                    </button>
-                                );
-                            })}
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {slots.map(s => {
+                                    const label = `${s.slot_time} – ${s.end_time}`;
+                                    const selected = slotTime === s.stm_id;
+                                    return (
+                                        <button key={s.stm_id}
+                                            onClick={() => { setSlotTime(s.stm_id); resetFreeze(); }}
+                                            disabled={isSlotLocked && !selected}
+                                            className={`text-sm py-2.5 px-3 rounded-lg border font-medium transition-colors
+                                                ${selected ? 'bg-[#4b2192] text-white border-purple-700' :
+                                                isSlotLocked ? 'opacity-40 cursor-not-allowed border-gray-300' :
+                                                'border-gray-300 hover:border-purple-400 hover:bg-purple-50'}`}>
+                                            {label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Lock Slot Button */}
+                            {slotTime && !isSlotLocked && (
+                                <button
+                                    onClick={handleFreezeSlot}
+                                    disabled={freezingSlot}
+                                    className="w-full py-2.5 rounded-lg text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+                                >
+                                    {freezingSlot ? (
+                                        <><Loader2 className="w-4 h-4 animate-spin" /> Locking Slot...</>
+                                    ) : (
+                                        <><Calendar className="w-4 h-4" /> 🔒 Lock Slot</>
+                                    )}
+                                </button>
+                            )}
+
+                            {/* Slot Locked confirmation */}
+                            {isSlotLocked && (
+                                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
+                                    <CheckCircle className="w-4 h-4" /> Slot Locked ✓
+                                </div>
+                            )}
+
+                            {/* Countdown Timer */}
+                            {isSlotLocked && secondsRemaining > 0 && (
+                                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-all duration-500
+                                    ${timerLevel === 'urgent' ? 'bg-red-50 border-red-200 text-red-700 animate-pulse' :
+                                    timerLevel === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                                    'bg-blue-50 border-blue-200 text-blue-700'}`}
+                                >
+                                    <Calendar className={`w-5 h-5 flex-shrink-0 ${
+                                        timerLevel === 'urgent' ? 'text-red-500' :
+                                        timerLevel === 'warning' ? 'text-amber-500' : 'text-blue-500'
+                                    }`} />
+                                    <div className="flex-1">
+                                        {timerLevel === 'urgent' ? (
+                                            <span className="font-bold">⚠️ Hurry! Slot expires in {formatSlotTimer(secondsRemaining)}</span>
+                                        ) : timerLevel === 'warning' ? (
+                                            <span>Complete the order soon — <b>{formatSlotTimer(secondsRemaining)}</b> remaining</span>
+                                        ) : (
+                                            <span>Slot reserved for <b>{formatSlotTimer(secondsRemaining)}</b>. Complete the order before it expires.</span>
+                                        )}
+                                    </div>
+                                    <span className={`text-lg font-black font-mono tabular-nums ${
+                                        timerLevel === 'urgent' ? 'text-red-600' :
+                                        timerLevel === 'warning' ? 'text-amber-600' : 'text-blue-600'
+                                    }`}>
+                                        {formatSlotTimer(secondsRemaining)}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="text-center py-6">
@@ -965,7 +1115,7 @@ function StepSlot({
                 <button onClick={onBack} className="btn-ghost flex items-center gap-1">
                     <ChevronLeft className="w-4 h-4" /> Back
                 </button>
-                <button disabled={!slotDate || !slotTime} onClick={onNext}
+                <button disabled={!slotDate || !slotTime || !isSlotLocked} onClick={onNext}
                     className="btn-primary flex-1 flex items-center justify-center gap-1 disabled:opacity-50">
                     Continue <ChevronRight className="w-4 h-4" />
                 </button>
