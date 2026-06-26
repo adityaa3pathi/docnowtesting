@@ -904,6 +904,24 @@ router.post('/slots', ...mgr, async (req: AuthRequest, res: Response) => {
     }
 });
 
+// D2. Slot Freeze (Manager)
+router.post('/slots/freeze', ...mgr, async (req: AuthRequest, res: Response) => {
+    const { slot_id } = req.body;
+
+    if (!slot_id) {
+        return res.status(400).json({ error: 'Missing required slot_id' });
+    }
+
+    try {
+        const vendorBillingUserId = req.userId || 'manager';
+        const data = await healthians.freezeSlot(slot_id, vendorBillingUserId);
+        res.json(data);
+    } catch (error) {
+        console.error('[Manager] Error freezing slot:', error);
+        res.status(500).json({ error: 'Failed to freeze slot' });
+    }
+});
+
 // E. Order Creation
 router.post('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
     const { userId, addressId, slotDate, slotTime, items } = req.body;

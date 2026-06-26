@@ -1,6 +1,6 @@
 
 import { useMemo } from "react";
-import { Clock, Loader2, Calendar, Lock, CheckCircle2 } from 'lucide-react';
+import { Clock, Loader2, Calendar, Lock, CheckCircle2, AlertTriangle, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SlotSelectorProps {
@@ -13,6 +13,16 @@ interface SlotSelectorProps {
     onDateSelect: (date: string) => void;
     onTimeSelect: (time: string) => void;
     onFreezeSlot: () => void;
+    // Timer props
+    secondsRemaining?: number;
+    warningAtSeconds?: number;
+    urgentAtSeconds?: number;
+}
+
+function formatTime(totalSeconds: number): string {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
 export function SlotSelector({
@@ -24,8 +34,19 @@ export function SlotSelector({
     isSlotLocked = false,
     onDateSelect,
     onTimeSelect,
-    onFreezeSlot
+    onFreezeSlot,
+    secondsRemaining = 0,
+    warningAtSeconds = 300,
+    urgentAtSeconds = 120
 }: SlotSelectorProps) {
+
+    // Determine timer urgency level
+    const timerLevel = useMemo(() => {
+        if (!isSlotLocked || secondsRemaining <= 0) return 'none';
+        if (secondsRemaining <= urgentAtSeconds) return 'urgent';
+        if (secondsRemaining <= warningAtSeconds) return 'warning';
+        return 'normal';
+    }, [isSlotLocked, secondsRemaining, warningAtSeconds, urgentAtSeconds]);
 
     // Generate next 7 days
     const next7Days = useMemo(() => {
@@ -96,9 +117,12 @@ export function SlotSelector({
                                             <button
                                                 key={slot.stm_id || slot.slot_time}
                                                 onClick={() => onTimeSelect(slot.slot_time)}
+                                                disabled={isSlotLocked}
                                                 className={cn(
                                                     "relative px-2.5 py-2.5 sm:px-3 rounded-lg text-xs sm:text-[13px] font-semibold border-2 transition-all duration-200 active:scale-[0.95]",
-                                                    isSelected
+                                                    isSlotLocked && !isSelected
+                                                        ? "opacity-40 cursor-not-allowed bg-gray-50 border-gray-200 text-slate-400"
+                                                        : isSelected
                                                         ? "bg-primary/10 border-primary text-primary ring-2 ring-primary/20 shadow-sm"
                                                         : "bg-gray-50 border-gray-200 text-slate-700 hover:border-primary/40 hover:bg-primary/5"
                                                 )}
@@ -112,9 +136,44 @@ export function SlotSelector({
                                     })}
                                 </div>
 
-                                {/* Lock Slot Button */}
+                                {/* Lock Slot Button + Timer */}
                                 {selectedTime && (
-                                    <div className="pt-2">
+                                    <div className="space-y-3 pt-2">
+                                        {/* Countdown Timer Banner */}
+                                        {isSlotLocked && secondsRemaining > 0 && (
+                                            <div className={cn(
+                                                "flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-all duration-500",
+                                                timerLevel === 'urgent'
+                                                    ? "bg-red-50 border-red-200 text-red-700 animate-pulse"
+                                                    : timerLevel === 'warning'
+                                                    ? "bg-amber-50 border-amber-200 text-amber-700"
+                                                    : "bg-blue-50 border-blue-200 text-blue-700"
+                                            )}>
+                                                <Timer className={cn(
+                                                    "w-5 h-5 flex-shrink-0",
+                                                    timerLevel === 'urgent' ? "text-red-500" :
+                                                    timerLevel === 'warning' ? "text-amber-500" : "text-blue-500"
+                                                )} />
+                                                <div className="flex-1">
+                                                    {timerLevel === 'urgent' ? (
+                                                        <span className="font-bold">⚠️ Hurry! Slot expires in {formatTime(secondsRemaining)}</span>
+                                                    ) : timerLevel === 'warning' ? (
+                                                        <span>Complete your booking soon — <b>{formatTime(secondsRemaining)}</b> remaining</span>
+                                                    ) : (
+                                                        <span>Slot reserved for <b>{formatTime(secondsRemaining)}</b></span>
+                                                    )}
+                                                </div>
+                                                <span className={cn(
+                                                    "text-lg font-black font-mono tabular-nums",
+                                                    timerLevel === 'urgent' ? "text-red-600" :
+                                                    timerLevel === 'warning' ? "text-amber-600" : "text-blue-600"
+                                                )}>
+                                                    {formatTime(secondsRemaining)}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {/* Lock/Locked Button */}
                                         <button
                                             onClick={onFreezeSlot}
                                             disabled={!selectedTime || freezingSlot || isSlotLocked}
@@ -133,7 +192,7 @@ export function SlotSelector({
                                             ) : isSlotLocked ? (
                                                 <>
                                                     <CheckCircle2 className="w-4 h-4" />
-                                                    Slot Locked
+                                                    Slot Locked ✓
                                                 </>
                                             ) : (
                                                 <>
@@ -142,6 +201,14 @@ export function SlotSelector({
                                                 </>
                                             )}
                                         </button>
+
+                                        {/* Initial info message after locking */}
+                                        {isSlotLocked && secondsRemaining > warningAtSeconds && (
+                                            <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                                                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                                                Your slot is reserved for 15 minutes. Complete your booking before the timer expires.
+                                            </p>
+                                        )}
                                     </div>
                                 )}
                             </div>

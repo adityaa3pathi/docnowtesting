@@ -54,7 +54,10 @@ export default function CartPage() {
         isSlotLocked,
         setIsSlotLocked,
         handleFreezeSlot,
-        onTimeSelect
+        onTimeSelect,
+        secondsRemaining,
+        WARNING_AT_SECONDS,
+        URGENT_AT_SECONDS
     } = useSlots(selectedAddress, selectedDate);
 
     const promo = usePromo(total);
@@ -197,6 +200,9 @@ export default function CartPage() {
                                     loading={loadingSlots}
                                     freezingSlot={freezingSlot}
                                     isSlotLocked={isSlotLocked}
+                                    secondsRemaining={secondsRemaining}
+                                    warningAtSeconds={WARNING_AT_SECONDS}
+                                    urgentAtSeconds={URGENT_AT_SECONDS}
                                     onDateSelect={(date) => {
                                         if (date !== selectedDate) {
                                             setSelectedDate(date);

@@ -1,7 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Address, SlotItem } from '@/types/cart';
+
+const FREEZE_DURATION_MS = 15 * 60 * 1000; // 15 minutes (Healthians API)
+const AUTO_REFREEZE_AT_MS = 3 * 60 * 1000; // Re-freeze when 3 minutes remain
+const WARNING_AT_SECONDS = 5 * 60; // Show yellow warning at 5 min
+const URGENT_AT_SECONDS = 2 * 60; // Show red warning at 2 min
 
 export function useSlots(selectedAddress: Address | undefined, selectedDate: string) {
     const [slots, setSlots] = useState<SlotItem[]>([]);
@@ -10,6 +15,85 @@ export function useSlots(selectedAddress: Address | undefined, selectedDate: str
     const [freezingSlot, setFreezingSlot] = useState(false);
     const [isSlotLocked, setIsSlotLocked] = useState(false);
 
+    // Timer state
+    const [freezeExpiresAt, setFreezeExpiresAt] = useState<number | null>(null);
+    const [secondsRemaining, setSecondsRemaining] = useState<number>(0);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const autoRefreezeRef = useRef(false); // prevents double re-freeze
+
+    // Cleanup timer on unmount
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, []);
+
+    // Countdown ticker
+    useEffect(() => {
+        if (!freezeExpiresAt || !isSlotLocked) {
+            setSecondsRemaining(0);
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+            return;
+        }
+
+        const tick = () => {
+            const now = Date.now();
+            const remaining = Math.max(0, Math.floor((freezeExpiresAt - now) / 1000));
+            setSecondsRemaining(remaining);
+
+            // Auto re-freeze at 3 minutes remaining
+            if (remaining * 1000 <= AUTO_REFREEZE_AT_MS && remaining > 0 && !autoRefreezeRef.current) {
+                autoRefreezeRef.current = true;
+                silentRefreeze();
+            }
+
+            // Slot expired
+            if (remaining <= 0) {
+                handleSlotExpired();
+            }
+        };
+
+        tick(); // Run immediately
+        timerRef.current = setInterval(tick, 1000);
+
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+        };
+    }, [freezeExpiresAt, isSlotLocked]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const handleSlotExpired = useCallback(() => {
+        if (timerRef.current) clearInterval(timerRef.current);
+        setIsSlotLocked(false);
+        setFreezeExpiresAt(null);
+        setSecondsRemaining(0);
+        autoRefreezeRef.current = false;
+        toast.error('Slot reservation expired. Please lock the slot again.', { duration: 5000 });
+    }, []);
+
+    const silentRefreeze = useCallback(async () => {
+        if (!selectedAddress || !selectedDate || !selectedTime) return;
+
+        const slot = slots.find(s => s.slot_time === selectedTime);
+        if (!slot?.stm_id) return;
+
+        try {
+            await api.post('/slots/freeze', { slot_id: slot.stm_id });
+            const newExpiry = Date.now() + FREEZE_DURATION_MS;
+            setFreezeExpiresAt(newExpiry);
+            autoRefreezeRef.current = false; // Reset for next cycle
+        } catch {
+            // Silent failure — the original timer will continue counting down
+            console.warn('[useSlots] Auto re-freeze failed');
+        }
+    }, [selectedAddress, selectedDate, selectedTime, slots]);
+
+    // Reset everything when address or date changes
     useEffect(() => {
         if (selectedAddress) {
             fetchSlots(selectedAddress, selectedDate);
@@ -17,7 +101,20 @@ export function useSlots(selectedAddress: Address | undefined, selectedDate: str
             setSlots([]);
             setSelectedTime('');
         }
-    }, [selectedAddress?.id, selectedDate]);
+        // Reset freeze state on address/date change
+        resetFreeze();
+    }, [selectedAddress?.id, selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const resetFreeze = () => {
+        setIsSlotLocked(false);
+        setFreezeExpiresAt(null);
+        setSecondsRemaining(0);
+        autoRefreezeRef.current = false;
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+    };
 
     const fetchSlots = async (address: Address, date: string) => {
         try {
@@ -91,28 +188,23 @@ export function useSlots(selectedAddress: Address | undefined, selectedDate: str
         try {
             setFreezingSlot(true);
             await api.post('/slots/freeze', { slot_id: slotId });
-            toast.success('Slot Locked Successfully!');
+            toast.success('Slot locked! Complete your booking within 15 minutes.');
             setIsSlotLocked(true);
+            setFreezeExpiresAt(Date.now() + FREEZE_DURATION_MS);
+            autoRefreezeRef.current = false;
         } catch (error) {
             console.error('Error freezing slot:', error);
             toast.error('Failed to lock this slot. Please try another one.');
             setIsSlotLocked(false);
+            setFreezeExpiresAt(null);
         } finally {
             setFreezingSlot(false);
         }
     };
 
-    const onDateSelect = (date: string) => {
-        if (date !== selectedDate) {
-            // This needs to be handled by the caller to update selectedDate
-            setSelectedTime('');
-            setIsSlotLocked(false);
-        }
-    };
-
     const onTimeSelect = (time: string) => {
         setSelectedTime(time);
-        setIsSlotLocked(false);
+        resetFreeze();
     };
 
     return {
@@ -124,6 +216,11 @@ export function useSlots(selectedAddress: Address | undefined, selectedDate: str
         isSlotLocked,
         setIsSlotLocked,
         handleFreezeSlot,
-        onTimeSelect
+        onTimeSelect,
+        // Timer exports
+        secondsRemaining,
+        freezeExpiresAt,
+        WARNING_AT_SECONDS,
+        URGENT_AT_SECONDS
     };
 }
