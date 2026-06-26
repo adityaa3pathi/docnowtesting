@@ -30,6 +30,8 @@ import { FeaturedPackages, FeaturedTests } from '@/components/home/FeaturedProdu
 import { CallbackForm } from '@/components/home/CallbackForm';
 import { HeroCTAButtons } from '@/components/home/HeroCTAButtons';
 import { RevealSection } from '@/components/home/RevealSection';
+import { StickyMobileCTA } from '@/components/home/StickyMobileCTA';
+import { TrustSection } from '@/components/home/TrustSection';
 
 // ────────────────────── Static Data (zero JS cost)
 const heroStats = [
@@ -55,7 +57,7 @@ const whyChooseUs = [
 // ────────────────────── Page (Server Component — NO "use client")
 export default function Home() {
   return (
-    <main className="flex flex-col min-h-screen bg-white">
+    <main className="flex flex-col min-h-screen bg-white pb-20 md:pb-0">
 
       {/* ═══════════ HERO — pure server HTML ═══════════ */}
       <section
@@ -105,6 +107,9 @@ export default function Home() {
           <HeroStatsCard />
         </div>
       </section>
+
+      {/* ═══════════ TRUST / SOCIAL PROOF ═══════════ */}
+      <TrustSection />
 
       {/* ═══════════ HEALTH PACKAGES — Client Island ═══════════ */}
       <section className="py-16 md:py-24 bg-gradient-to-b from-white to-gray-50/50">
@@ -224,6 +229,9 @@ export default function Home() {
       </section>
 
       <Footer />
+
+      {/* ═══════════ STICKY MOBILE CTA — Client Island ═══════════ */}
+      <StickyMobileCTA />
     </main>
   );
 }
