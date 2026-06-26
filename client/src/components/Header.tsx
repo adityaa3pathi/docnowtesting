@@ -97,10 +97,10 @@ export function Header() {
                 // Skip zero-delta events (no real movement)
                 if (currentY === s.lastY) { ticking = false; return; }
 
-                // Cooldown: ignore scroll for 400ms after any toggle
-                // This prevents the layout-shift feedback loop
+                // Cooldown: ignore scroll for 600ms after any toggle
+                // Covers: 300ms CSS transition + reflow + scroll anchoring settlement
                 const now = Date.now();
-                if (now - s.lastToggle < 400) {
+                if (now - s.lastToggle < 600) {
                     s.lastY = currentY;
                     ticking = false;
                     return;
@@ -114,16 +114,19 @@ export function Header() {
                     s.direction = newDir;
                 }
 
-                // Near top — always show
-                if (currentY < 40) {
+                // Near top — always show (threshold must be lower than
+                // hide-point minus search-bar-height to avoid scroll-anchoring
+                // false trigger: e.g. hide at scrollY=80, collapse shifts to 32,
+                // which is still > 5, so no false show)
+                if (currentY < 5) {
                     setIsSearchHidden(prev => { if (prev) s.lastToggle = now; return false; });
                 }
-                // Hide after scrolling 60px down from anchor
-                else if (newDir === 'down' && currentY - s.anchorY > 60) {
+                // Hide after scrolling 80px down from anchor
+                else if (newDir === 'down' && currentY - s.anchorY > 80) {
                     setIsSearchHidden(prev => { if (!prev) s.lastToggle = now; return true; });
                 }
-                // Show after scrolling 30px up from anchor
-                else if (newDir === 'up' && s.anchorY - currentY > 30) {
+                // Show after scrolling 40px up from anchor
+                else if (newDir === 'up' && s.anchorY - currentY > 40) {
                     setIsSearchHidden(prev => { if (prev) s.lastToggle = now; return false; });
                 }
 
