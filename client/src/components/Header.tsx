@@ -6,7 +6,7 @@ import {
     Navigation, Loader2, Shield, Phone, LogOut, Delete, Building2,
 } from 'lucide-react';
 import { Button, Input } from './ui';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import {
     Dialog,
@@ -73,11 +73,30 @@ export function Header() {
     // Mobile Drawer State
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // Scroll-aware compact header
-    const [isScrolled, setIsScrolled] = useState(false);
+    // Scroll-aware compact header — direction-based with hysteresis
+    const [isSearchHidden, setIsSearchHidden] = useState(false);
+    const lastScrollY = useRef(0);
 
     useEffect(() => {
-        const onScroll = () => setIsScrolled(window.scrollY > 30);
+        let ticking = false;
+        const onScroll = () => {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(() => {
+                const currentY = window.scrollY;
+                const delta = currentY - lastScrollY.current;
+                // Hide: scrolling down AND past 80px from top
+                if (delta > 5 && currentY > 80) {
+                    setIsSearchHidden(true);
+                }
+                // Show: scrolling up by at least 10px OR near top
+                if (delta < -10 || currentY < 40) {
+                    setIsSearchHidden(false);
+                }
+                lastScrollY.current = currentY;
+                ticking = false;
+            });
+        };
         window.addEventListener('scroll', onScroll, { passive: true });
         return () => window.removeEventListener('scroll', onScroll);
     }, []);
@@ -363,9 +382,17 @@ export function Header() {
                     </div>
                 </div>
 
-                {/* Mobile Global Search — collapses on scroll */}
-                <div className={`md:hidden overflow-hidden transition-all duration-200 ${isScrolled ? 'max-h-0 opacity-0 pb-0' : 'max-h-14 opacity-100 pb-2.5'}`}>
-                    <div className="px-4">
+                {/* Mobile Global Search — smooth slide on scroll direction */}
+                <div
+                    className="md:hidden transition-[transform,opacity] duration-300 ease-in-out"
+                    style={{
+                        transform: isSearchHidden ? 'translateY(-100%)' : 'translateY(0)',
+                        opacity: isSearchHidden ? 0 : 1,
+                        height: isSearchHidden ? 0 : 'auto',
+                        overflow: 'hidden',
+                    }}
+                >
+                    <div className="px-4 pb-2.5">
                         <GlobalSearch />
                     </div>
                 </div>
