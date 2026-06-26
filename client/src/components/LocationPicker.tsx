@@ -40,6 +40,19 @@ const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 const DEFAULT_CENTER = { lat: 26.9124, lng: 75.7873 };
 const DEFAULT_ZOOM = 14;
 
+// ─── Prediction type for our custom dropdown ────────────────────────────────
+
+interface PredictionItem {
+    id: string;
+    mainText: string;
+    secondaryText: string;
+    description: string;
+    /** For new API: the suggestion object to call toPlace() on */
+    _suggestion?: any;
+    /** For legacy API: placeId to call getDetails() */
+    _placeId?: string;
+}
+
 // ─── Main Export ───────────────────────────────────────────────────────────────
 
 export default function LocationPicker({
@@ -84,16 +97,20 @@ function LocationPickerInner({
 
     // Search state
     const [searchQuery, setSearchQuery] = useState('');
-    const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+    const [predictions, setPredictions] = useState<PredictionItem[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [searching, setSearching] = useState(false);
 
     const geocoderRef = useRef<google.maps.Geocoder | null>(null);
-    const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null);
-    const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
     const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const sessionTokenRef = useRef<any>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const isDraggingRef = useRef(false);
+    // Track which API variant is available: 'new' | 'legacy' | null
+    const apiVariantRef = useRef<'new' | 'legacy' | null>(null);
+    // Legacy PlacesService (needs map)
+    const legacyServiceRef = useRef<google.maps.places.PlacesService | null>(null);
+    const legacyAutocompleteRef = useRef<google.maps.places.AutocompleteService | null>(null);
 
     // Initialize geocoder
     useEffect(() => {
@@ -102,16 +119,31 @@ function LocationPickerInner({
         }
     }, [geocodingLib]);
 
-    // Initialize Places AutocompleteService
+    // Detect which Places API variant is available and initialize
     useEffect(() => {
         if (!placesLib) return;
-        autocompleteServiceRef.current = new placesLib.AutocompleteService();
+
+        // Check if new API is available (AutocompleteSuggestion exists)
+        if ((placesLib as any).AutocompleteSuggestion) {
+            apiVariantRef.current = 'new';
+            // Create a session token for the new API
+            if ((placesLib as any).AutocompleteSessionToken) {
+                sessionTokenRef.current = new (placesLib as any).AutocompleteSessionToken();
+            }
+            console.log('[LocationPicker] Using Places API (New)');
+        } else if (placesLib.AutocompleteService) {
+            apiVariantRef.current = 'legacy';
+            legacyAutocompleteRef.current = new placesLib.AutocompleteService();
+            console.log('[LocationPicker] Using legacy Places API');
+        } else {
+            console.warn('[LocationPicker] No Places API variant available');
+        }
     }, [placesLib]);
 
-    // PlacesService needs the map instance
+    // Legacy PlacesService needs the map instance
     useEffect(() => {
-        if (!placesLib || !map) return;
-        placesServiceRef.current = new placesLib.PlacesService(map);
+        if (!placesLib || !map || apiVariantRef.current !== 'legacy') return;
+        legacyServiceRef.current = new placesLib.PlacesService(map);
     }, [placesLib, map]);
 
     // Close dropdown when clicking outside
@@ -125,7 +157,8 @@ function LocationPickerInner({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Debounced search using AutocompleteService
+    // ─── Search (supports both API variants) ────────────────────────────────
+
     const handleSearchChange = (value: string) => {
         setSearchQuery(value);
         if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
@@ -138,53 +171,134 @@ function LocationPickerInner({
 
         setSearching(true);
         searchTimeoutRef.current = setTimeout(() => {
-            if (!autocompleteServiceRef.current) { setSearching(false); return; }
-
-            autocompleteServiceRef.current.getPlacePredictions(
-                {
-                    input: value,
-                    componentRestrictions: { country: 'in' },
-                },
-                (results, status) => {
-                    setSearching(false);
-                    if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-                        setPredictions(results);
-                        setShowDropdown(true);
-                    } else {
-                        setPredictions([]);
-                    }
-                }
-            );
+            if (apiVariantRef.current === 'new') {
+                searchWithNewApi(value);
+            } else if (apiVariantRef.current === 'legacy') {
+                searchWithLegacyApi(value);
+            } else {
+                setSearching(false);
+            }
         }, 300);
     };
 
-    // Handle prediction selection — get full place details
-    const handleSelectPrediction = (prediction: google.maps.places.AutocompletePrediction) => {
-        setSearchQuery(prediction.description);
-        setShowDropdown(false);
-        setPredictions([]);
+    // New Places API: AutocompleteSuggestion.fetchAutocompleteSuggestions
+    const searchWithNewApi = async (input: string) => {
+        try {
+            const AutocompleteSuggestion = (placesLib as any).AutocompleteSuggestion;
+            const request: any = {
+                input,
+                includedRegionCodes: ['IN'],
+            };
+            if (sessionTokenRef.current) {
+                request.sessionToken = sessionTokenRef.current;
+            }
 
-        if (!placesServiceRef.current) return;
+            const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
 
-        placesServiceRef.current.getDetails(
-            {
-                placeId: prediction.place_id,
-                fields: ['geometry', 'formatted_address', 'address_components'],
-            },
-            (place, status) => {
-                if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
-                    const newPos = {
-                        lat: place.geometry.location.lat(),
-                        lng: place.geometry.location.lng(),
-                    };
-                    setPosition(newPos);
-                    map?.panTo(newPos);
-                    map?.setZoom(17);
-                    extractAddressComponents(place.address_components, place.formatted_address);
+            const items: PredictionItem[] = (suggestions || []).map((s: any, i: number) => {
+                const pp = s.placePrediction;
+                return {
+                    id: pp?.placeId || `suggestion-${i}`,
+                    mainText: pp?.mainText?.text || pp?.text?.text || '',
+                    secondaryText: pp?.secondaryText?.text || '',
+                    description: pp?.text?.text || '',
+                    _suggestion: s,
+                };
+            });
+
+            setPredictions(items);
+            setShowDropdown(items.length > 0);
+        } catch (err) {
+            console.error('[LocationPicker] New API search error:', err);
+            setPredictions([]);
+        } finally {
+            setSearching(false);
+        }
+    };
+
+    // Legacy Places API: AutocompleteService.getPlacePredictions
+    const searchWithLegacyApi = (input: string) => {
+        if (!legacyAutocompleteRef.current) { setSearching(false); return; }
+
+        legacyAutocompleteRef.current.getPlacePredictions(
+            { input, componentRestrictions: { country: 'in' } },
+            (results, status) => {
+                setSearching(false);
+                if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                    const items: PredictionItem[] = results.map((r) => ({
+                        id: r.place_id,
+                        mainText: r.structured_formatting.main_text,
+                        secondaryText: r.structured_formatting.secondary_text,
+                        description: r.description,
+                        _placeId: r.place_id,
+                    }));
+                    setPredictions(items);
+                    setShowDropdown(items.length > 0);
+                } else {
+                    setPredictions([]);
                 }
             }
         );
     };
+
+    // ─── Handle prediction selection ────────────────────────────────────────
+
+    const handleSelectPrediction = async (item: PredictionItem) => {
+        setSearchQuery(item.description);
+        setShowDropdown(false);
+        setPredictions([]);
+
+        if (apiVariantRef.current === 'new' && item._suggestion) {
+            // New API: use toPlace() + fetchFields()
+            try {
+                const place = item._suggestion.placePrediction.toPlace();
+                await place.fetchFields({ fields: ['location', 'formattedAddress', 'addressComponents'] });
+
+                if (place.location) {
+                    const lat = typeof place.location.lat === 'function' ? place.location.lat() : place.location.lat;
+                    const lng = typeof place.location.lng === 'function' ? place.location.lng() : place.location.lng;
+                    const newPos = { lat, lng };
+                    setPosition(newPos);
+                    map?.panTo(newPos);
+                    map?.setZoom(17);
+
+                    // Map addressComponents to the format extractAddressComponents expects
+                    const comps = place.addressComponents?.map((c: any) => ({
+                        long_name: c.longText || c.long_name || '',
+                        short_name: c.shortText || c.short_name || '',
+                        types: c.types || [],
+                    }));
+                    extractAddressComponents(comps, place.formattedAddress);
+                }
+
+                // Refresh session token after a selection
+                if ((placesLib as any).AutocompleteSessionToken) {
+                    sessionTokenRef.current = new (placesLib as any).AutocompleteSessionToken();
+                }
+            } catch (err) {
+                console.error('[LocationPicker] New API place details error:', err);
+            }
+        } else if (apiVariantRef.current === 'legacy' && item._placeId && legacyServiceRef.current) {
+            // Legacy API: PlacesService.getDetails()
+            legacyServiceRef.current.getDetails(
+                { placeId: item._placeId, fields: ['geometry', 'formatted_address', 'address_components'] },
+                (place, status) => {
+                    if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
+                        const newPos = {
+                            lat: place.geometry.location.lat(),
+                            lng: place.geometry.location.lng(),
+                        };
+                        setPosition(newPos);
+                        map?.panTo(newPos);
+                        map?.setZoom(17);
+                        extractAddressComponents(place.address_components, place.formatted_address);
+                    }
+                }
+            );
+        }
+    };
+
+    // ─── Geocoding & address helpers ────────────────────────────────────────
 
     // Geocode initial pincode if no position provided
     useEffect(() => {
@@ -221,7 +335,6 @@ function LocationPickerInner({
             setPincode(foundPincode);
             setAddress(formatted || '');
 
-            // Check serviceability
             if (foundPincode) {
                 checkServiceability(position.lat, position.lng, foundPincode);
             }
@@ -255,7 +368,8 @@ function LocationPickerInner({
         }
     };
 
-    // Handle marker drag
+    // ─── Map interaction handlers ───────────────────────────────────────────
+
     const handleDragStart = useCallback(() => {
         isDraggingRef.current = true;
     }, []);
@@ -282,7 +396,6 @@ function LocationPickerInner({
         [reverseGeocode]
     );
 
-    // Handle map click
     const handleMapClick = useCallback(
         (e: any) => {
             if (isDraggingRef.current) return;
@@ -306,7 +419,6 @@ function LocationPickerInner({
         [reverseGeocode, map]
     );
 
-    // Use browser geolocation
     const handleUseMyLocation = () => {
         if (!navigator.geolocation) {
             alert('Geolocation is not supported by your browser');
@@ -331,7 +443,6 @@ function LocationPickerInner({
         );
     };
 
-    // Confirm selection
     const handleConfirm = () => {
         onLocationSelect({
             lat: position.lat.toString(),
@@ -341,6 +452,8 @@ function LocationPickerInner({
             pincode,
         });
     };
+
+    // ─── Render ─────────────────────────────────────────────────────────────
 
     return (
         <div className="space-y-3">
@@ -365,15 +478,15 @@ function LocationPickerInner({
                         <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
                             {predictions.map((p) => (
                                 <button
-                                    key={p.place_id}
+                                    key={p.id}
                                     type="button"
                                     onClick={() => handleSelectPrediction(p)}
                                     className="w-full text-left px-3 py-2.5 hover:bg-purple-50 transition-colors border-b border-gray-50 last:border-0 flex items-start gap-2"
                                 >
                                     <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                                     <div>
-                                        <p className="text-sm text-gray-800">{p.structured_formatting.main_text}</p>
-                                        <p className="text-xs text-gray-500">{p.structured_formatting.secondary_text}</p>
+                                        <p className="text-sm text-gray-800">{p.mainText}</p>
+                                        <p className="text-xs text-gray-500">{p.secondaryText}</p>
                                     </div>
                                 </button>
                             ))}
