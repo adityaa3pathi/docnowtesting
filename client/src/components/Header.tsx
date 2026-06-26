@@ -18,7 +18,7 @@ import {
 import { useLocation } from '@/contexts/LocationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
-import { AuthDialog } from './AuthDialog';
+import { useAuthGate } from '@/contexts/AuthGateContext';
 
 import { getApiUrl } from '@/lib/api';
 import { DocnowLogo } from './DocnowLogo';
@@ -54,6 +54,7 @@ export function Header() {
     const { selectedCity, selectedPincode, updateCity, updatePincode, checkAndSetPincode, serviceabilityStatus } = useLocation();
     const { user, isAuthenticated, logout } = useAuth();
     const { cartCount } = useCart();
+    const { openAuthDialog } = useAuthGate();
 
     const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
     const [citySearch, setCitySearch] = useState('');
@@ -67,8 +68,7 @@ export function Header() {
     const [callbackForm, setCallbackForm] = useState({ name: '', mobile: '', city: 'Gurgaon' });
     const [isSubmittingCallback, setIsSubmittingCallback] = useState(false);
 
-    // Auth Dialog State
-    const [isAuthOpen, setIsAuthOpen] = useState(false);
+
 
     // Mobile Drawer State
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -78,7 +78,7 @@ export function Header() {
         if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);
             if (params.get('login') === 'true') {
-                setIsAuthOpen(true);
+                openAuthDialog();
                 window.history.replaceState({}, '', window.location.pathname);
             }
         }
@@ -325,7 +325,7 @@ export function Header() {
                             </Link>
                         ) : (
                             <button
-                                onClick={() => setIsAuthOpen(true)}
+                                onClick={() => openAuthDialog()}
                                 className="border border-primary text-primary font-semibold text-sm px-5 py-2 rounded-[7px] hover:bg-primary/5 transition-all flex items-center gap-2"
                             >
                                 <User className="h-4 w-4" />
@@ -360,7 +360,7 @@ export function Header() {
                 </div>
 
 
-            <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+
 
                     {/* Callback Dialog */}
                     <Dialog open={isCallbackOpen} onOpenChange={setIsCallbackOpen}>
@@ -447,7 +447,7 @@ export function Header() {
                                 className="w-full rounded-xl font-bold"
                                 onClick={() => {
                                     setIsMobileMenuOpen(false);
-                                    setIsAuthOpen(true);
+                                    openAuthDialog();
                                 }}
                             >
                                 <User className="mr-2 h-4 w-4" />
