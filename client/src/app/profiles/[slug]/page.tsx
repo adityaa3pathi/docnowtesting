@@ -96,11 +96,55 @@ export default function ProfileDetailsPage(props: { params: Promise<{ slug: stri
 
   if (loading) {
     return (
-      <main className="min-h-screen flex flex-col bg-gray-50">
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-10 h-10 animate-spin text-teal-600" />
+      <main className="flex flex-col min-h-screen bg-gray-50 pb-24">
+        <section className="bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 pt-8 pb-16">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <div className="h-4 w-36 bg-white/10 rounded animate-pulse mb-8" />
+            <div className="flex flex-col md:flex-row gap-6 md:items-start">
+              <div className="h-20 w-20 rounded-2xl bg-white/10 animate-pulse flex-shrink-0" />
+              <div className="flex-1 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-6 w-20 rounded-full bg-white/15 animate-pulse" />
+                  <div className="h-6 w-20 rounded-full bg-white/10 animate-pulse" />
+                </div>
+                <div className="h-9 w-3/4 bg-white/15 rounded-lg animate-pulse" />
+                <div className="h-7 w-1/2 bg-white/10 rounded-lg animate-pulse" />
+                <div className="flex flex-wrap gap-4 mt-6">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-14 w-36 bg-white/5 rounded-xl border border-white/10 animate-pulse" />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="container mx-auto px-4 max-w-4xl -mt-6 relative z-10">
+          <div className="grid gap-6">
+            <div className="bg-white p-6 md:p-8 rounded-2xl border border-gray-100 shadow-xl shadow-blue-900/5">
+              <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-5" />
+              <div className="space-y-3">
+                <div className="h-4 w-full bg-gray-100 rounded animate-pulse" />
+                <div className="h-4 w-full bg-gray-100 rounded animate-pulse" />
+                <div className="h-4 w-3/4 bg-gray-100 rounded animate-pulse" />
+              </div>
+            </div>
+            <div className="bg-white p-6 md:p-8 rounded-2xl border border-gray-100 shadow-xl shadow-blue-900/5">
+              <div className="flex items-center justify-between">
+                <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
+                <div className="h-8 w-8 bg-gray-100 rounded-full animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </section>
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50">
+          <div className="container mx-auto max-w-4xl flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="h-3 w-16 bg-gray-200 rounded animate-pulse" />
+              <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
+            </div>
+            <div className="h-11 w-36 bg-gray-200 rounded-lg animate-pulse" />
+          </div>
         </div>
-        <Footer />
       </main>
     );
   }
