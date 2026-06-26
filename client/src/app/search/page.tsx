@@ -253,7 +253,6 @@ function SearchPageContent() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="w-full pl-12 pr-12 py-3.5 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50"
-              autoFocus
             />
             {searchInput && (
               <button onClick={() => { setSearchInput(''); setSearchTerm(''); setPage(1); }} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
