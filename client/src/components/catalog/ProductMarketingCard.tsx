@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Clock3, FlaskConical, Loader2, Users } from 'lucide-react';
+import { ShoppingCart, Clock3, FlaskConical, Loader2, Users, ArrowRight } from 'lucide-react';
 
 export interface ProductDetailsSummary {
     testCount: number | null;
@@ -179,24 +179,38 @@ export function ProductMarketingCard<T extends ProductMarketingCardItem>({
                         {product.mrp && product.mrp > product.price && (
                             <span className="text-sm font-medium text-gray-400 line-through">₹{product.mrp}</span>
                         )}
-                        {discount && (
+                    </div>
+                    {product.mrp && product.mrp > product.price && (
+                        <div className="flex items-center gap-1.5 mt-1">
                             <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-700">
                                 {discount}% OFF
                             </span>
-                        )}
-                    </div>
+                            <span className="text-xs font-bold text-green-600">
+                                Save ₹{product.mrp - product.price}
+                            </span>
+                        </div>
+                    )}
                 </div>
                 <button
                     type="button"
                     onClick={() => onBookNow(product)}
                     disabled={isBooking}
-                    className="relative z-10 inline-flex shrink-0 items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
-                    aria-label={`Book ${product.name}`}
+                    className={`relative z-10 inline-flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm transition-all active:scale-95 disabled:opacity-60 ${
+                        inCartCount > 0
+                            ? 'bg-slate-800 text-white hover:bg-slate-700'
+                            : 'bg-primary text-white hover:opacity-90'
+                    }`}
+                    aria-label={inCartCount > 0 ? `Go to cart` : `Add ${product.name} to cart`}
                 >
-                    {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                    {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : inCartCount > 0 ? (
                         <>
-                            <span>Book Now</span>
+                            <span>Go to Cart</span>
                             <ArrowRight className="h-4 w-4" />
+                        </>
+                    ) : (
+                        <>
+                            <ShoppingCart className="h-4 w-4" />
+                            <span>Add to Cart</span>
                         </>
                     )}
                 </button>

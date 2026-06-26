@@ -477,21 +477,39 @@ export function Header() {
                     {/* Navigation Links */}
                     <div className="px-3 py-3 space-y-0.5">
                         <Link
-                            href="/search"
+                            href="/"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname === '/search' ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
+                            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname === '/' ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
                         >
                             <Search className="w-4 h-4 text-gray-400" />
-                            Search
+                            Home
                         </Link>
                         <Link
-                            href="/about"
+                            href="/search?type=TEST"
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname === '/about' ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
+                            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname === '/search' && typeof window !== 'undefined' && window.location.search.includes('TEST') ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
                         >
-                            <Users className="w-4 h-4 text-gray-400" />
-                            About Us
+                            <Search className="w-4 h-4 text-gray-400" />
+                            Tests
                         </Link>
+                        <Link
+                            href="/search?type=PACKAGE"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname === '/search' && typeof window !== 'undefined' && window.location.search.includes('PACKAGE') ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
+                        >
+                            <Search className="w-4 h-4 text-gray-400" />
+                            Packages
+                        </Link>
+                        {isAuthenticated && (
+                            <Link
+                                href="/profile?tab=bookings"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all text-gray-700`}
+                            >
+                                <ShoppingCart className="w-4 h-4 text-gray-400" />
+                                My Orders
+                            </Link>
+                        )}
                         <Link
                             href="/cart"
                             onClick={() => setIsMobileMenuOpen(false)}
@@ -505,6 +523,18 @@ export function Header() {
                                 </span>
                             )}
                         </Link>
+                        <Link
+                            href="/contact"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname === '/contact' ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
+                        >
+                            <Phone className="w-4 h-4 text-gray-400" />
+                            Contact
+                        </Link>
+                    </div>
+
+                    {/* Quick Action */}
+                    <div className="px-3 py-2 border-t border-gray-100">
                         <button
                             onClick={() => {
                                 setIsMobileMenuOpen(false);
@@ -527,14 +557,6 @@ export function Header() {
                             >
                                 <User className="w-4 h-4 text-gray-400" />
                                 My Profile
-                            </Link>
-                            <Link
-                                href="/profile?tab=bookings"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-primary transition-all"
-                            >
-                                <ShoppingCart className="w-4 h-4 text-gray-400" />
-                                My Bookings
                             </Link>
                             {(user?.role === 'MANAGER' || user?.role === 'SUPER_ADMIN') && (
                                 <Link
