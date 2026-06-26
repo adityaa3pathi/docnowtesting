@@ -8,7 +8,7 @@ import {
   Package, TestTubes, ArrowLeft, Activity
 } from 'lucide-react';
 import api from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthGate } from '@/contexts/AuthGateContext';
 import { useCart } from '@/contexts/CartContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -58,7 +58,7 @@ function SearchPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addToCart, cart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { requireAuth } = useAuthGate();
 
   // Data
   const [products, setProducts] = useState<Product[]>([]);
@@ -173,21 +173,23 @@ function SearchPageContent() {
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   // Helpers
-  const handleBookNow = async (product: Product) => {
-    if (!isAuthenticated) { toast.error('Please log in to book this test'); return; }
-    if (isInCart(product.partnerCode)) {
-      router.push('/cart');
-      return;
-    }
+  const handleBookNow = (product: Product) => {
+    const doAdd = async () => {
+      if (isInCart(product.partnerCode)) {
+        router.push('/cart');
+        return;
+      }
 
-    setAddingToCart(product.partnerCode);
-    const offerPrice = product.price || product.displayPrice || 0;
-    const mrpPrice = product.mrp || product.displayPrice || 0;
-    const success = await addToCart(product.partnerCode, product.name, offerPrice, mrpPrice > offerPrice ? mrpPrice : undefined);
-    setAddingToCart(null);
-    if (success) {
-      router.push('/cart');
-    }
+      setAddingToCart(product.partnerCode);
+      const offerPrice = product.price || product.displayPrice || 0;
+      const mrpPrice = product.mrp || product.displayPrice || 0;
+      const success = await addToCart(product.partnerCode, product.name, offerPrice, mrpPrice > offerPrice ? mrpPrice : undefined);
+      setAddingToCart(null);
+      if (success) {
+        router.push('/cart');
+      }
+    };
+    requireAuth(doAdd);
   };
 
   const isInCart = (code: string) => cart?.items?.some((i) => i.testCode === code) ?? false;

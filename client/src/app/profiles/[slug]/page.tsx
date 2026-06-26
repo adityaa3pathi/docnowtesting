@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Footer } from '@/components/Footer';
 import { Button, Card } from '@/components/ui';
 import { useCart } from '@/contexts/CartContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthGate } from '@/contexts/AuthGateContext';
 import { useLocation } from '@/contexts/LocationContext';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -30,7 +30,7 @@ export default function ProfileDetailsPage(props: { params: Promise<{ slug: stri
   const params = use(props.params);
   const router = useRouter();
   const { addToCart, cart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { requireAuth } = useAuthGate();
   const { selectedCity } = useLocation();
 
   const renderDescription = (desc?: string | null) => {
@@ -121,20 +121,19 @@ export default function ProfileDetailsPage(props: { params: Promise<{ slug: stri
     );
   }
 
-  const handleAddToCart = async () => {
-    if (!isAuthenticated) {
-      toast.error('Please log in to add items to your cart');
-      return;
-    }
-    setAddingToCart(true);
-    const success = await addToCart(
-      localData.partnerCode,
-      localData.name,
-      localData.price,
-      localData.mrp ?? undefined
-    );
-    if (success) toast.success(`${localData.name} added to cart`);
-    setAddingToCart(false);
+  const handleAddToCart = () => {
+    const doAdd = async () => {
+      setAddingToCart(true);
+      const success = await addToCart(
+        localData.partnerCode,
+        localData.name,
+        localData.price,
+        localData.mrp ?? undefined
+      );
+      if (success) toast.success(`${localData.name} added to cart`);
+      setAddingToCart(false);
+    };
+    requireAuth(doAdd);
   };
 
   const inCart = cart?.items?.some((i) => i.testCode === localData.partnerCode) ?? false;

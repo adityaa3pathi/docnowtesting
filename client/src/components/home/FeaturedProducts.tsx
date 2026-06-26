@@ -3,10 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthGate } from '@/contexts/AuthGateContext';
 import api from '@/lib/api';
 import { generateProductSlug } from '@/lib/mapProductDetails';
-import toast from 'react-hot-toast';
 import { ProductMarketingCard, ProductDetailsSummary } from '@/components/catalog/ProductMarketingCard';
 import { Button } from '@/components/ui';
 import {
@@ -47,7 +46,7 @@ function getErrorMessage(error: unknown) {
 export function FeaturedPackages() {
   const router = useRouter();
   const { addToCart, cart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { requireAuth } = useAuthGate();
   const [packages, setPackages] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
@@ -69,13 +68,15 @@ export function FeaturedPackages() {
 
   useEffect(() => { fetchPackages(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleBookNow = async (product: CatalogProduct) => {
-    if (!isAuthenticated) { toast.error('Please log in to book this test'); return; }
-    if (cart?.items?.some((i) => i.testCode === product.partnerCode)) { router.push('/cart'); return; }
-    setAddingToCart(product.partnerCode);
-    const success = await addToCart(product.partnerCode, product.name, product.price, product.mrp ?? undefined);
-    setAddingToCart(null);
-    if (success) router.push('/cart');
+  const handleBookNow = (product: CatalogProduct) => {
+    const doAdd = async () => {
+      if (cart?.items?.some((i) => i.testCode === product.partnerCode)) { router.push('/cart'); return; }
+      setAddingToCart(product.partnerCode);
+      const success = await addToCart(product.partnerCode, product.name, product.price, product.mrp ?? undefined);
+      setAddingToCart(null);
+      if (success) router.push('/cart');
+    };
+    requireAuth(doAdd);
   };
 
   return (
@@ -127,7 +128,7 @@ export function FeaturedPackages() {
 export function FeaturedTests() {
   const router = useRouter();
   const { addToCart, cart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { requireAuth } = useAuthGate();
   const [tests, setTests] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
@@ -149,13 +150,15 @@ export function FeaturedTests() {
 
   useEffect(() => { fetchTests(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleBookNow = async (product: CatalogProduct) => {
-    if (!isAuthenticated) { toast.error('Please log in to book this test'); return; }
-    if (cart?.items?.some((i) => i.testCode === product.partnerCode)) { router.push('/cart'); return; }
-    setAddingToCart(product.partnerCode);
-    const success = await addToCart(product.partnerCode, product.name, product.price, product.mrp ?? undefined);
-    setAddingToCart(null);
-    if (success) router.push('/cart');
+  const handleBookNow = (product: CatalogProduct) => {
+    const doAdd = async () => {
+      if (cart?.items?.some((i) => i.testCode === product.partnerCode)) { router.push('/cart'); return; }
+      setAddingToCart(product.partnerCode);
+      const success = await addToCart(product.partnerCode, product.name, product.price, product.mrp ?? undefined);
+      setAddingToCart(null);
+      if (success) router.push('/cart');
+    };
+    requireAuth(doAdd);
   };
 
   return (
