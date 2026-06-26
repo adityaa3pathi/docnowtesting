@@ -459,19 +459,34 @@ export function Header() {
                     {/* Location Quick View */}
                     <div className="px-5 py-3 border-b border-gray-100 space-y-2">
                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Your Location</p>
-                        <button
-                            onClick={() => {
-                                setIsMobileMenuOpen(false);
-                                setIsLocationDialogOpen(true);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-gray-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-left"
-                        >
-                            <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                            <div className="min-w-0">
-                                <p className="text-sm font-semibold text-gray-800 truncate">{selectedCity}</p>
-                                <p className="text-xs text-gray-500">{selectedPincode}</p>
-                            </div>
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => {
+                                    setIsMobileMenuOpen(false);
+                                    setIsLocationDialogOpen(true);
+                                }}
+                                className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-left"
+                            >
+                                <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                                <div className="min-w-0">
+                                    <p className="text-[10px] text-gray-500 leading-tight">City</p>
+                                    <p className="text-sm font-semibold text-gray-800 truncate leading-tight">{selectedCity}</p>
+                                </div>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setIsMobileMenuOpen(false);
+                                    setIsPincodeDialogOpen(true);
+                                }}
+                                className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-left"
+                            >
+                                <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                                <div className="min-w-0">
+                                    <p className="text-[10px] text-gray-500 leading-tight">Pincode</p>
+                                    <p className="text-sm font-semibold text-gray-800 truncate leading-tight">{selectedPincode}</p>
+                                </div>
+                            </button>
+                        </div>
                     </div>
 
                     {/* Navigation Links */}
