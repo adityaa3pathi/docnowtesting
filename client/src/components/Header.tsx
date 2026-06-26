@@ -73,9 +73,9 @@ export function Header() {
     // Mobile Drawer State
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // Scroll-aware compact header — direction-based with hysteresis
+    // Scroll-aware search bar — accumulates distance before toggling
     const [isSearchHidden, setIsSearchHidden] = useState(false);
-    const lastScrollY = useRef(0);
+    const scrollRef = useRef({ lastY: 0, anchorY: 0, direction: 'up' as 'up' | 'down' });
 
     useEffect(() => {
         let ticking = false;
@@ -84,16 +84,29 @@ export function Header() {
             ticking = true;
             requestAnimationFrame(() => {
                 const currentY = window.scrollY;
-                const delta = currentY - lastScrollY.current;
-                // Hide: scrolling down AND past 80px from top
-                if (delta > 5 && currentY > 80) {
-                    setIsSearchHidden(true);
+                const s = scrollRef.current;
+                const newDir = currentY > s.lastY ? 'down' : 'up';
+
+                // Direction changed — reset anchor
+                if (newDir !== s.direction) {
+                    s.anchorY = currentY;
+                    s.direction = newDir;
                 }
-                // Show: scrolling up by at least 10px OR near top
-                if (delta < -10 || currentY < 40) {
+
+                // Near top — always show
+                if (currentY < 40) {
                     setIsSearchHidden(false);
                 }
-                lastScrollY.current = currentY;
+                // Hide after scrolling 60px down from anchor
+                else if (newDir === 'down' && currentY - s.anchorY > 60) {
+                    setIsSearchHidden(true);
+                }
+                // Show after scrolling 30px up from anchor
+                else if (newDir === 'up' && s.anchorY - currentY > 30) {
+                    setIsSearchHidden(false);
+                }
+
+                s.lastY = currentY;
                 ticking = false;
             });
         };
