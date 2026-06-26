@@ -73,9 +73,14 @@ export function Header() {
     // Mobile Drawer State
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // Scroll-aware search bar — accumulates distance before toggling
+    // Scroll-aware search bar — accumulates distance + cooldown to prevent flicker
     const [isSearchHidden, setIsSearchHidden] = useState(false);
-    const scrollRef = useRef({ lastY: 0, anchorY: 0, direction: 'up' as 'up' | 'down' });
+    const scrollRef = useRef({
+        lastY: 0,
+        anchorY: 0,
+        direction: 'up' as 'up' | 'down',
+        lastToggle: 0,
+    });
 
     useEffect(() => {
         let ticking = false;
@@ -85,6 +90,19 @@ export function Header() {
             requestAnimationFrame(() => {
                 const currentY = window.scrollY;
                 const s = scrollRef.current;
+
+                // Skip zero-delta events (no real movement)
+                if (currentY === s.lastY) { ticking = false; return; }
+
+                // Cooldown: ignore scroll for 400ms after any toggle
+                // This prevents the layout-shift feedback loop
+                const now = Date.now();
+                if (now - s.lastToggle < 400) {
+                    s.lastY = currentY;
+                    ticking = false;
+                    return;
+                }
+
                 const newDir = currentY > s.lastY ? 'down' : 'up';
 
                 // Direction changed — reset anchor
@@ -95,15 +113,15 @@ export function Header() {
 
                 // Near top — always show
                 if (currentY < 40) {
-                    setIsSearchHidden(false);
+                    setIsSearchHidden(prev => { if (prev) s.lastToggle = now; return false; });
                 }
                 // Hide after scrolling 60px down from anchor
                 else if (newDir === 'down' && currentY - s.anchorY > 60) {
-                    setIsSearchHidden(true);
+                    setIsSearchHidden(prev => { if (!prev) s.lastToggle = now; return true; });
                 }
                 // Show after scrolling 30px up from anchor
                 else if (newDir === 'up' && s.anchorY - currentY > 30) {
-                    setIsSearchHidden(false);
+                    setIsSearchHidden(prev => { if (prev) s.lastToggle = now; return false; });
                 }
 
                 s.lastY = currentY;
@@ -387,18 +405,18 @@ export function Header() {
                     </div>
                 </div>
 
-                {/* Mobile Global Search — smooth slide on scroll direction */}
+                {/* Mobile Global Search — grid row collapse for smooth animation */}
                 <div
-                    className="md:hidden transition-[transform,opacity] duration-300 ease-in-out"
+                    className="md:hidden grid transition-[grid-template-rows,opacity] duration-300 ease-in-out"
                     style={{
-                        transform: isSearchHidden ? 'translateY(-100%)' : 'translateY(0)',
+                        gridTemplateRows: isSearchHidden ? '0fr' : '1fr',
                         opacity: isSearchHidden ? 0 : 1,
-                        height: isSearchHidden ? 0 : 'auto',
-                        overflow: 'hidden',
                     }}
                 >
-                    <div className="px-4 pb-2.5">
-                        <GlobalSearch />
+                    <div className="overflow-hidden">
+                        <div className="px-4 pb-2.5">
+                            <GlobalSearch />
+                        </div>
                     </div>
                 </div>
 
