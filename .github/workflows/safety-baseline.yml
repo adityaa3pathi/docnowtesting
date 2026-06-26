@@ -66,6 +66,12 @@ jobs:
       - name: Validate Prisma schema
         run: npm run prisma:validate
 
+      - name: Create .env file for tests
+        run: |
+          echo "DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy" >> .env
+          echo "JWT_SECRET=dummy_secret" >> .env
+          echo "PORT=5000" >> .env
+
       - name: Test
         run: npm test
 
