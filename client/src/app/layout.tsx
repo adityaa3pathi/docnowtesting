@@ -5,6 +5,7 @@ import "./globals.css";
 import { LocationProvider } from "@/contexts/LocationContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
+import { AuthGateProvider } from "@/contexts/AuthGateContext";
 import { Toaster } from "react-hot-toast";
 import { GlobalHeader } from "@/components/GlobalHeader";
 
@@ -37,12 +38,14 @@ export default function RootLayout({
         <LegacyCookieCleanup />
         <AuthProvider>
           <CartProvider>
+            <AuthGateProvider>
             <LocationProvider>
               {/* Global sticky navbar — excluded on /manager and /super-admin by GlobalHeader */}
               <GlobalHeader />
               {children}
               <Toaster position="top-right" />
             </LocationProvider>
+            </AuthGateProvider>
           </CartProvider>
         </AuthProvider>
       </body>

@@ -16,12 +16,13 @@ import { cn } from '@/lib/utils';
 interface AuthDialogProps {
     isOpen: boolean;
     onClose: () => void;
+    onLoginSuccess?: () => void;
 }
 
 type AuthView = 'LOGIN' | 'SIGNUP' | 'FORGOT_PASSWORD';
 type LoginMethod = 'PASSWORD' | 'OTP';
 
-export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
+export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps) {
     const { login } = useAuth();
 
     // Global State
@@ -113,7 +114,7 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                     password: loginPassword
                 });
                 login(res.data.user);
-                onClose();
+                if (onLoginSuccess) { onLoginSuccess(); } else { onClose(); }
             } else {
                 // OTP Login Flow
                 if (loginStep === 'INPUT') {
@@ -130,7 +131,7 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                     code: loginOtp
                 });
                 login(res.data.user);
-                onClose();
+                if (onLoginSuccess) { onLoginSuccess(); } else { onClose(); }
             }
         } catch (err) {
             handleError(err);
@@ -194,7 +195,7 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                     code: signupOtp
                 });
                 login(res.data.user);
-                onClose();
+                if (onLoginSuccess) { onLoginSuccess(); } else { onClose(); }
             } catch (err) {
                 handleError(err);
             }
