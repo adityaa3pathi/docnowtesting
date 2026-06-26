@@ -126,13 +126,7 @@ export default function CartPage() {
     };
 
     if (loading || loadingPatients || loadingAddresses) {
-        return (
-            <div className="min-h-screen bg-gray-50">
-                <div className="flex justify-center items-center py-20">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                </div>
-            </div>
-        );
+        return <CartSkeleton />;
     }
 
     // Calculation shortcuts
@@ -293,6 +287,86 @@ export default function CartPage() {
                     isSlotLocked={isSlotLocked}
                 />
             )}
+        </div>
+    );
+}
+
+function CartSkeleton() {
+    return (
+        <div className="w-full min-h-screen bg-gray-50 pb-32 md:pb-20 overflow-x-hidden">
+            <div className="container mx-auto px-3 sm:px-4 py-5 sm:py-8 max-w-4xl">
+                <div className="h-8 sm:h-10 w-48 bg-gray-200 rounded-lg animate-pulse mb-5 sm:mb-8" />
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-8">
+                    <div className="md:col-span-2 space-y-4 sm:space-y-6">
+                        {/* Cart Items Skeleton */}
+                        <div className="space-y-3 sm:space-y-4">
+                            {[1, 2].map(i => (
+                                <div key={i} className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm">
+                                    <div className="flex gap-4">
+                                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-xl animate-pulse" />
+                                        <div className="flex-1 space-y-3 py-1">
+                                            <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse" />
+                                            <div className="h-4 w-1/2 bg-gray-100 rounded animate-pulse" />
+                                            <div className="h-4 w-1/4 bg-gray-200 rounded animate-pulse" />
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between">
+                                        <div className="h-8 w-32 bg-gray-100 rounded-lg animate-pulse" />
+                                        <div className="h-8 w-24 bg-gray-100 rounded-lg animate-pulse" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Address Selector Skeleton */}
+                        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm">
+                            <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-4" />
+                            <div className="h-20 w-full bg-gray-100 rounded-xl animate-pulse" />
+                        </div>
+
+                        {/* Slot Selector Skeleton */}
+                        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm">
+                            <div className="h-6 w-48 bg-gray-200 rounded animate-pulse mb-4" />
+                            <div className="flex gap-3 mb-4">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className="h-16 w-20 bg-gray-100 rounded-xl animate-pulse" />
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                {[1, 2, 3, 4].map(i => (
+                                    <div key={i} className="h-10 w-full bg-gray-100 rounded-xl animate-pulse" />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Order Summary Skeleton */}
+                    <div className="md:col-span-1">
+                        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm sticky top-24">
+                            <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-6" />
+                            
+                            <div className="space-y-4 mb-6">
+                                {[1, 2, 3, 4].map(i => (
+                                    <div key={i} className="flex justify-between">
+                                        <div className="h-4 w-24 bg-gray-100 rounded animate-pulse" />
+                                        <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <div className="pt-4 border-t border-gray-100 mb-6">
+                                <div className="flex justify-between">
+                                    <div className="h-5 w-20 bg-gray-200 rounded animate-pulse" />
+                                    <div className="h-6 w-24 bg-gray-200 rounded animate-pulse" />
+                                </div>
+                            </div>
+                            
+                            <div className="h-12 w-full bg-gray-200 rounded-xl animate-pulse" />
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
