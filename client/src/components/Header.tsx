@@ -375,16 +375,8 @@ export function Header() {
                         )}
                     </div>
 
-                    {/* ─── Mobile: Cart + Hamburger ─── */}
-                    <div className="flex md:hidden items-center gap-2">
-                        <Link href="/cart" className="relative p-2 text-gray-700 hover:text-primary transition-colors">
-                            <ShoppingCart className="w-5 h-5" />
-                            {cartCount > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-black rounded-full h-4 w-4 flex items-center justify-center">
-                                    {cartCount}
-                                </span>
-                            )}
-                        </Link>
+                    {/* ─── Mobile: Hamburger Only ─── */}
+                    <div className="flex md:hidden items-center">
                         <button
                             className="p-2 text-gray-700 hover:text-primary transition-colors"
                             onClick={() => setIsMobileMenuOpen(true)}
@@ -516,26 +508,20 @@ export function Header() {
                                     setIsMobileMenuOpen(false);
                                     setIsLocationDialogOpen(true);
                                 }}
-                                className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-left"
+                                className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-left"
                             >
-                                <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                                <div className="min-w-0">
-                                    <p className="text-[10px] text-gray-500 leading-tight">City</p>
-                                    <p className="text-sm font-semibold text-gray-800 truncate leading-tight">{selectedCity}</p>
-                                </div>
+                                <p className="text-[10px] text-gray-400 leading-tight">City</p>
+                                <p className="text-sm font-semibold text-gray-800 truncate leading-tight">{selectedCity}</p>
                             </button>
                             <button
                                 onClick={() => {
                                     setIsMobileMenuOpen(false);
                                     setIsPincodeDialogOpen(true);
                                 }}
-                                className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-left"
+                                className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 hover:border-primary/40 hover:bg-primary/5 transition-all text-left"
                             >
-                                <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                                <div className="min-w-0">
-                                    <p className="text-[10px] text-gray-500 leading-tight">Pincode</p>
-                                    <p className="text-sm font-semibold text-gray-800 truncate leading-tight">{selectedPincode}</p>
-                                </div>
+                                <p className="text-[10px] text-gray-400 leading-tight">Pincode</p>
+                                <p className="text-sm font-semibold text-gray-800 truncate leading-tight">{selectedPincode}</p>
                             </button>
                         </div>
                     </div>
