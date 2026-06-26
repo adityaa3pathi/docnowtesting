@@ -82,8 +82,17 @@ function LocationPickerInner({
     const [locating, setLocating] = useState(false);
     const [serviceability, setServiceability] = useState<'checking' | 'yes' | 'no' | null>(null);
 
+    // Search state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [searching, setSearching] = useState(false);
+
     const geocoderRef = useRef<google.maps.Geocoder | null>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
+    const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null);
+    const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
+    const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const isDraggingRef = useRef(false);
 
     // Initialize geocoder
@@ -93,59 +102,89 @@ function LocationPickerInner({
         }
     }, [geocodingLib]);
 
-    // Initialize new Places Autocomplete (PlaceAutocompleteElement)
+    // Initialize Places AutocompleteService
     useEffect(() => {
-        if (!placesLib || !containerRef.current) return;
+        if (!placesLib) return;
+        autocompleteServiceRef.current = new placesLib.AutocompleteService();
+    }, [placesLib]);
 
-        // @ts-ignore - newer API might not be in types
-        const autocomplete = new placesLib.PlaceAutocompleteElement({
-            includedRegionCodes: ['IN', 'in'],
-        });
+    // PlacesService needs the map instance
+    useEffect(() => {
+        if (!placesLib || !map) return;
+        placesServiceRef.current = new placesLib.PlacesService(map);
+    }, [placesLib, map]);
 
-        // Basic styling
-        autocomplete.style.colorScheme = 'light';
-        autocomplete.style.width = '100%';
-        autocomplete.style.backgroundColor = 'transparent';
-        
-        containerRef.current.innerHTML = '';
-        containerRef.current.appendChild(autocomplete);
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
-        // @ts-ignore
-        autocomplete.addEventListener('gmp-placeselect', async (e: any) => {
-            const place = e.prediction?.place;
-            if (!place) return;
+    // Debounced search using AutocompleteService
+    const handleSearchChange = (value: string) => {
+        setSearchQuery(value);
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
 
-            try {
-                await place.fetchFields({ fields: ['location', 'formattedAddress', 'addressComponents'] });
-                
-                if (place.location) {
+        if (value.trim().length < 3) {
+            setPredictions([]);
+            setShowDropdown(false);
+            return;
+        }
+
+        setSearching(true);
+        searchTimeoutRef.current = setTimeout(() => {
+            if (!autocompleteServiceRef.current) { setSearching(false); return; }
+
+            autocompleteServiceRef.current.getPlacePredictions(
+                {
+                    input: value,
+                    componentRestrictions: { country: 'in' },
+                },
+                (results, status) => {
+                    setSearching(false);
+                    if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+                        setPredictions(results);
+                        setShowDropdown(true);
+                    } else {
+                        setPredictions([]);
+                    }
+                }
+            );
+        }, 300);
+    };
+
+    // Handle prediction selection — get full place details
+    const handleSelectPrediction = (prediction: google.maps.places.AutocompletePrediction) => {
+        setSearchQuery(prediction.description);
+        setShowDropdown(false);
+        setPredictions([]);
+
+        if (!placesServiceRef.current) return;
+
+        placesServiceRef.current.getDetails(
+            {
+                placeId: prediction.place_id,
+                fields: ['geometry', 'formatted_address', 'address_components'],
+            },
+            (place, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
                     const newPos = {
-                        lat: typeof place.location.lat === 'function' ? place.location.lat() : place.location.lat,
-                        lng: typeof place.location.lng === 'function' ? place.location.lng() : place.location.lng,
+                        lat: place.geometry.location.lat(),
+                        lng: place.geometry.location.lng(),
                     };
                     setPosition(newPos);
                     map?.panTo(newPos);
                     map?.setZoom(17);
-
-                    const mappedComponents = place.addressComponents?.map((c: any) => ({
-                        long_name: c.longText || c.long_name,
-                        short_name: c.shortText || c.short_name,
-                        types: c.types,
-                    }));
-
-                    extractAddressComponents(mappedComponents, place.formattedAddress);
+                    extractAddressComponents(place.address_components, place.formatted_address);
                 }
-            } catch (err) {
-                console.error("Error fetching place fields", err);
             }
-        });
-
-        return () => {
-            if (containerRef.current?.contains(autocomplete)) {
-                containerRef.current.removeChild(autocomplete);
-            }
-        };
-    }, [placesLib, map]);
+        );
+    };
 
     // Geocode initial pincode if no position provided
     useEffect(() => {
@@ -247,7 +286,7 @@ function LocationPickerInner({
     const handleMapClick = useCallback(
         (e: any) => {
             if (isDraggingRef.current) return;
-            
+
             let lat, lng;
             if (e.detail?.latLng) {
                 lat = e.detail.latLng.lat;
@@ -307,8 +346,39 @@ function LocationPickerInner({
         <div className="space-y-3">
             {/* Search + Use My Location */}
             <div className="flex gap-2">
-                <div className="relative flex-1 bg-white rounded-lg border border-gray-300 focus-within:ring-2 focus-within:ring-purple-300 focus-within:border-purple-400 overflow-hidden flex items-center px-1" ref={containerRef}>
-                    {/* The PlaceAutocompleteElement will be injected here */}
+                <div className="relative flex-1" ref={dropdownRef}>
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        onFocus={() => predictions.length > 0 && setShowDropdown(true)}
+                        placeholder="Search for area, street name..."
+                        className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-300 focus:border-purple-400 outline-none transition-all bg-white"
+                    />
+                    {searching && (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+                    )}
+
+                    {/* Dropdown */}
+                    {showDropdown && predictions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                            {predictions.map((p) => (
+                                <button
+                                    key={p.place_id}
+                                    type="button"
+                                    onClick={() => handleSelectPrediction(p)}
+                                    className="w-full text-left px-3 py-2.5 hover:bg-purple-50 transition-colors border-b border-gray-50 last:border-0 flex items-start gap-2"
+                                >
+                                    <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                                    <div>
+                                        <p className="text-sm text-gray-800">{p.structured_formatting.main_text}</p>
+                                        <p className="text-xs text-gray-500">{p.structured_formatting.secondary_text}</p>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
                 <button
                     type="button"
