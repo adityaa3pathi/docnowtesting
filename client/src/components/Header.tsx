@@ -51,6 +51,9 @@ const desktopNavLinks = [
 
 export function Header() {
     const pathname = usePathname();
+
+    // Pages where the header search bar is redundant or distracting
+    const hideSearch = ['/search', '/profile', '/cart'].some(p => pathname.startsWith(p));
     const { selectedCity, selectedPincode, updateCity, updatePincode, checkAndSetPincode, serviceabilityStatus } = useLocation();
     const { user, isAuthenticated, logout } = useAuth();
     const { cartCount } = useCart();
@@ -221,10 +224,12 @@ export function Header() {
                     {/* Logo — 15% smaller on mobile */}
                     <DocnowLogo href="/" priority width={120} height={47} imageClassName="max-h-8 md:max-h-[47px] w-auto" />
 
-                    {/* Desktop Global Search */}
-                    <div className="hidden md:flex flex-1 max-w-xl mx-8 relative">
-                        <GlobalSearch />
-                    </div>
+                    {/* Desktop Global Search — hidden on pages with their own search */}
+                    {!hideSearch && (
+                        <div className="hidden md:flex flex-1 max-w-xl mx-8 relative">
+                            <GlobalSearch />
+                        </div>
+                    )}
 
                     {/* Desktop Nav Links */}
                     <div className="hidden md:flex items-center gap-6 lg:gap-8">
@@ -405,20 +410,22 @@ export function Header() {
                     </div>
                 </div>
 
-                {/* Mobile Global Search — grid row collapse for smooth animation */}
-                <div
-                    className="md:hidden grid transition-[grid-template-rows,opacity] duration-300 ease-in-out"
-                    style={{
-                        gridTemplateRows: isSearchHidden ? '0fr' : '1fr',
-                        opacity: isSearchHidden ? 0 : 1,
-                    }}
-                >
-                    <div className="overflow-hidden">
-                        <div className="px-4 pb-2.5">
-                            <GlobalSearch />
+                {/* Mobile Global Search — hidden on search/profile/cart pages */}
+                {!hideSearch && (
+                    <div
+                        className="md:hidden grid transition-[grid-template-rows,opacity] duration-300 ease-in-out"
+                        style={{
+                            gridTemplateRows: isSearchHidden ? '0fr' : '1fr',
+                            opacity: isSearchHidden ? 0 : 1,
+                        }}
+                    >
+                        <div className="overflow-hidden">
+                            <div className="px-4 pb-2.5">
+                                <GlobalSearch />
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
 
 
