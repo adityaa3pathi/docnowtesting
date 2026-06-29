@@ -22,7 +22,7 @@ function FooterAccordion({ title, children, defaultOpen = false }: AccordionSect
 
     return (
         <div className="border-b border-gray-100 md:border-0">
-            {/* Mobile: clickable header */}
+            {/* Mobile: Clickable header */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex w-full items-center justify-between py-3 md:hidden"
