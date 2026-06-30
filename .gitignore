@@ -29,3 +29,8 @@ scripts/
 
 # Interview Prep Docs
 docs/interview_prep/
+
+# Private Docs
+docs/case-study.md
+docs/deployment_guidelines.md
+docs/report-delivery-pipeline-plan.md

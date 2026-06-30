@@ -1,6 +1,8 @@
 # DOCNOW
 
-DOCNOW is a production healthcare diagnostics commerce platform for searching lab tests and health packages, booking collection slots, processing payments, integrating with Healthians, storing reports, and managing operations through manager and super-admin dashboards.
+DOCNOW is an open-source, production-ready healthcare diagnostics commerce platform built with Next.js, Node.js, and PostgreSQL. While many open-source projects focus on developer tooling, DOCNOW provides critical, foundational infrastructure for the healthcare sector. It offers a complete, deployable system for searching lab tests, booking collection slots, processing payments, integrating with partners like Healthians, storing reports, and managing operations through manager and super-admin dashboards.
+
+By open-sourcing this architecture, we aim to lower the barrier to entry for developers and organizations building digital health solutions worldwide.
 
 Live deployment: `docnow.in`
 
@@ -62,14 +64,11 @@ Deployment:
 
 ## Documentation
 
-- [Case Study](docs/case-study.md)
 - [Project Overview](docs/project_overview.md)
 - [Server Walkthrough](docs/server_walkthrough.md)
 - [Client Walkthrough](docs/client_walkthrough.md)
 - [Healthians Webhook Walkthrough](docs/healthians-webhook-walkthrough.md)
 - [Local Docker Development](docs/local_docker.md)
-- [Deployment Guidelines](docs/deployment_guidelines.md)
-- [Report Delivery Pipeline Plan](docs/report-delivery-pipeline-plan.md)
 
 ## Local Development
 
