@@ -31,7 +31,7 @@ import { CallbackForm } from '@/components/home/CallbackForm';
 import { HeroCTAButtons } from '@/components/home/HeroCTAButtons';
 import { RevealSection } from '@/components/home/RevealSection';
 import { StickyMobileCTA } from '@/components/home/StickyMobileCTA';
-import { TrustSection } from '@/components/home/TrustSection';
+
 
 // ────────────────────── Static Data (zero JS cost)
 const heroStats = [
@@ -109,7 +109,7 @@ export default function Home() {
       </section>
 
       {/* ═══════════ TRUST / SOCIAL PROOF ═══════════ */}
-      <TrustSection />
+
 
       {/* ═══════════ HEALTH PACKAGES — Client Island ═══════════ */}
       <section className="py-16 md:py-24 bg-gradient-to-b from-white to-gray-50/50">
