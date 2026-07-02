@@ -152,6 +152,7 @@ export async function generateInvoicePdfForBooking(bookingId: string) {
     const lines = buildInvoiceLines(booking);
     const subtotal = booking.totalAmount || 0;
     const totalDiscount = booking.discountAmount || 0;
+    const walletApplied = booking.walletAmount || 0;
     const totalAmount = booking.finalAmount || booking.totalAmount || 0;
     const logoPath = loadLogoPath();
 
@@ -287,9 +288,11 @@ export async function generateInvoicePdfForBooking(bookingId: string) {
         notesX, y + 18, { width: contentWidth / 2 - 20, lineGap: 3 }
     );
 
-    // Totals box
+    // Totals box — dynamic height based on whether wallet was used
+    const rowH = 22;
+    const totalRows = 2 + (walletApplied > 0 ? 1 : 0) + 1; // sub-total + discount + (wallet?) + total
     const boxY = y - 4;
-    const boxH = 82;
+    const boxH = 12 + totalRows * rowH + 4; // padding + rows + separator padding
     doc.rect(totalsX - 8, boxY, totalsW + 16, boxH).strokeColor(COLORS.borderLight).lineWidth(0.5).stroke();
 
     let tY = boxY + 12;
@@ -297,11 +300,17 @@ export async function generateInvoicePdfForBooking(bookingId: string) {
     doc.text('Sub-Total', totalsX, tY, { width: totalsW / 2 });
     doc.text(formatCurrency(subtotal), totalsX + totalsW / 2, tY, { width: totalsW / 2, align: 'right' });
 
-    tY += 22;
+    tY += rowH;
     doc.text('Discount', totalsX, tY, { width: totalsW / 2 });
     doc.text(totalDiscount > 0 ? `- ${formatCurrency(totalDiscount)}` : formatCurrency(0), totalsX + totalsW / 2, tY, { width: totalsW / 2, align: 'right' });
 
-    tY += 22;
+    if (walletApplied > 0) {
+        tY += rowH;
+        doc.text('Wallet Applied', totalsX, tY, { width: totalsW / 2 });
+        doc.text(`- ${formatCurrency(walletApplied)}`, totalsX + totalsW / 2, tY, { width: totalsW / 2, align: 'right' });
+    }
+
+    tY += rowH;
     doc.moveTo(totalsX - 8, tY - 4).lineTo(totalsX + totalsW + 8, tY - 4).strokeColor(COLORS.borderLight).lineWidth(0.5).stroke();
     doc.fillColor(COLORS.black).font('Helvetica-Bold').fontSize(11);
     doc.text('Total', totalsX, tY, { width: totalsW / 2 });
