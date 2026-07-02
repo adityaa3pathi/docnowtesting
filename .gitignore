@@ -34,3 +34,12 @@ docs/interview_prep/
 docs/case-study.md
 docs/deployment_guidelines.md
 docs/report-delivery-pipeline-plan.md
+
+# Ignored files
+.agents/
+.agent/
+db_backups/
+docs/context/
+server/scripts/
+.codex
+docnow-prod-key-new.pem.pub
