@@ -126,7 +126,22 @@ export function LocationProvider({ children }: { children: ReactNode }) {
                 return false;
             }
 
-            const isServiceable = !!(result?.data?.zone_id);
+            let isServiceable = !!(result?.data?.zone_id);
+
+            // Step 3: Fallback — if lat/long check fails, check active zipcodes list
+            if (!isServiceable) {
+                try {
+                    const zipRes = await api.get('/location/active-zipcodes');
+                    const zipcodes = zipRes.data;
+                    // Healthians returns { "0": { zipcode: "..." }, "1": { ... }, ... }
+                    const match = Object.values(zipcodes).some(
+                        (z: any) => z?.zipcode === pincode
+                    );
+                    if (match) isServiceable = true;
+                } catch {
+                    // If active-zipcodes also fails, stick with the lat/long result
+                }
+            }
 
             if (isServiceable) {
                 setServiceabilityStatus('success');
