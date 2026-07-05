@@ -160,6 +160,8 @@ export const webhookHandler = async (req: Request, res: Response) => {
                 eventId,
                 source: 'razorpay',
             });
+
+            // Mark payment received and authorize the booking
             await prisma.managerOrder.updateMany({
                 where: { id: managerOrderId, status: 'SENT' },
                 data: { status: 'PAYMENT_RECEIVED' }
@@ -169,15 +171,61 @@ export const webhookHandler = async (req: Request, res: Response) => {
                 where: { id: bookingId },
                 data: { 
                     razorpayPaymentId: razorpayPaymentId,
+                    paymentStatus: 'AUTHORIZED',
                     paidAt: new Date()
                 }
             });
-            // Do NOT trigger partner booking here. Manager explicitly confirms it.
+
             logBusinessEvent('manager_payment_link_paid', {
                 bookingId,
                 managerOrderId,
                 razorpayPaymentId,
             });
+
+            // Auto-confirm: finalize booking with partner (Healthians)
+            try {
+                const result = await finalizeBooking(bookingId);
+
+                if (result.status === 'success' || result.status === 'already_confirmed') {
+                    await prisma.managerOrder.update({
+                        where: { id: managerOrderId },
+                        data: { 
+                            status: 'CONFIRMED',
+                            collectionMode: 'RAZORPAY_LINK',
+                            confirmedAt: new Date()
+                        }
+                    });
+
+                    // Fetch order to get customerId for cart cleanup
+                    const order = await prisma.managerOrder.findUnique({ where: { id: managerOrderId } });
+                    if (order?.customerId) {
+                        await prisma.cartItem.deleteMany({ where: { cart: { userId: order.customerId } } });
+                    }
+
+                    logBusinessEvent('manager_payment_link_auto_confirmed', {
+                        bookingId,
+                        managerOrderId,
+                        source: 'webhook_auto',
+                    });
+                } else {
+                    // Partner booking failed — mark for manual retry
+                    await prisma.managerOrder.update({
+                        where: { id: managerOrderId },
+                        data: { status: 'BOOKING_FAILED' }
+                    });
+                    logAlert('manager_payment_link_auto_confirm_partner_failed', {
+                        bookingId,
+                        managerOrderId,
+                        result,
+                    });
+                }
+            } catch (autoErr: any) {
+                logAlert('manager_payment_link_auto_confirm_error', {
+                    bookingId,
+                    managerOrderId,
+                    error: autoErr.message,
+                });
+            }
         }
     }
 
