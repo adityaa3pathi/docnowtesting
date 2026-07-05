@@ -422,8 +422,8 @@ export function Header() {
                             opacity: isSearchHidden ? 0 : 1,
                         }}
                     >
-                        <div className="overflow-x-hidden">
-                            <div className="px-4 pb-2.5">
+                        <div style={{ overflow: isSearchHidden ? 'hidden' : 'visible' }}>
+                            <div className="px-4 pt-0.5 pb-2.5">
                                 <GlobalSearch />
                             </div>
                         </div>
