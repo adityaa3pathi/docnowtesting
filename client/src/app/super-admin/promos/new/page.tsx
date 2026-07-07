@@ -6,39 +6,80 @@ import Link from 'next/link';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+// --- Zod schema ---
+
+/** Handles optional numeric inputs from HTML (empty string → undefined). */
+const optionalPositiveNumber = z
+    .union([z.coerce.number().positive(), z.literal('')])
+    .optional()
+    .transform((v) => (v === '' || v === undefined ? undefined : v));
+
+const optionalNonNegativeNumber = z
+    .union([z.coerce.number().min(0), z.literal('')])
+    .optional()
+    .transform((v) => (v === '' || v === undefined ? undefined : v));
+
+const optionalPositiveInt = z
+    .union([z.coerce.number().int().positive(), z.literal('')])
+    .optional()
+    .transform((v) => (v === '' || v === undefined ? undefined : v));
+
+const promoSchema = z.object({
+    code: z
+        .string()
+        .min(1, 'Promo code is required')
+        .transform((v) => v.toUpperCase()),
+    description: z.string().optional(),
+    discountType: z.enum(['PERCENTAGE', 'FLAT']),
+    discountValue: z.coerce.number({ error: 'Discount value is required' }).positive('Must be a positive number'),
+    maxDiscount: optionalNonNegativeNumber,
+    minOrderValue: optionalNonNegativeNumber,
+    maxRedemptions: optionalPositiveInt,
+    maxPerUser: z.coerce.number().int().positive('Must be at least 1').default(1),
+    startsAt: z.string().min(1, 'Start date is required'),
+    expiresAt: z.union([z.string().min(1), z.literal('')]).optional().transform((v) => (v === '' ? undefined : v)),
+    isActive: z.boolean().default(true),
+});
+
+type PromoFormData = z.input<typeof promoSchema>;
 
 export default function NewPromoPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState({
-        code: '',
-        description: '',
-        discountType: 'PERCENTAGE',
-        discountValue: '',
-        maxDiscount: '',
-        minOrderValue: '',
-        maxRedemptions: '',
-        maxPerUser: '1',
-        startsAt: new Date().toISOString().split('T')[0],
-        expiresAt: '',
-        isActive: true
+
+    const {
+        register,
+        handleSubmit,
+        watch,
+        formState: { errors },
+    } = useForm<PromoFormData>({
+        resolver: zodResolver(promoSchema),
+        defaultValues: {
+            code: '',
+            description: '',
+            discountType: 'PERCENTAGE',
+            discountValue: '' as unknown as number,
+            maxDiscount: '',
+            minOrderValue: '',
+            maxRedemptions: '',
+            maxPerUser: '1' as unknown as number,
+            startsAt: new Date().toISOString().split('T')[0],
+            expiresAt: '',
+            isActive: true,
+        },
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value, type } = e.target;
-        if (type === 'checkbox') {
-            setFormData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
-        } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
-        }
-    };
+    const discountType = watch('discountType');
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const onSubmit = async (data: PromoFormData) => {
         setLoading(true);
 
         try {
-            await api.post('/admin/promos', formData);
+            await api.post('/admin/promos', data);
             toast.success('Promo created successfully');
             router.push('/super-admin/promos');
         } catch (error: any) {
@@ -59,7 +100,7 @@ export default function NewPromoPage() {
                 <p className="text-gray-500 mt-1">Configure discount rules and limitations</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
                     {/* Basic Info */}
@@ -70,22 +111,21 @@ export default function NewPromoPage() {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Promo Code <span className="text-red-500">*</span></label>
                             <input
                                 type="text"
-                                name="code"
-                                value={formData.code}
-                                onChange={handleChange}
+                                {...register('code')}
                                 placeholder="e.g. SUMMER25"
                                 className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192] uppercase"
-                                required
                             />
-                            <p className="text-xs text-gray-400 mt-1">Will be converted to uppercase automatically</p>
+                            {errors.code ? (
+                                <p className="text-xs text-red-500 mt-1">{errors.code.message}</p>
+                            ) : (
+                                <p className="text-xs text-gray-400 mt-1">Will be converted to uppercase automatically</p>
+                            )}
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                             <textarea
-                                name="description"
-                                value={formData.description}
-                                onChange={handleChange}
+                                {...register('description')}
                                 placeholder="Internal note or user-facing description"
                                 className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192] h-24 resize-none"
                             />
@@ -100,9 +140,7 @@ export default function NewPromoPage() {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Type <span className="text-red-500">*</span></label>
                                 <select
-                                    name="discountType"
-                                    value={formData.discountType}
-                                    onChange={handleChange}
+                                    {...register('discountType')}
                                     className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192]"
                                 >
                                     <option value="PERCENTAGE">Percentage (%)</option>
@@ -113,29 +151,30 @@ export default function NewPromoPage() {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Value <span className="text-red-500">*</span></label>
                                 <input
                                     type="number"
-                                    name="discountValue"
-                                    value={formData.discountValue}
-                                    onChange={handleChange}
+                                    {...register('discountValue')}
                                     placeholder="e.g. 20"
                                     className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192]"
-                                    required
                                     min="0"
                                 />
+                                {errors.discountValue && (
+                                    <p className="text-xs text-red-500 mt-1">{errors.discountValue.message}</p>
+                                )}
                             </div>
                         </div>
 
-                        {formData.discountType === 'PERCENTAGE' && (
+                        {discountType === 'PERCENTAGE' && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Max Discount Amount (₹)</label>
                                 <input
                                     type="number"
-                                    name="maxDiscount"
-                                    value={formData.maxDiscount}
-                                    onChange={handleChange}
+                                    {...register('maxDiscount')}
                                     placeholder="e.g. 1000"
                                     className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192]"
                                     min="0"
                                 />
+                                {errors.maxDiscount && (
+                                    <p className="text-xs text-red-500 mt-1">{errors.maxDiscount.message}</p>
+                                )}
                             </div>
                         )}
 
@@ -143,13 +182,14 @@ export default function NewPromoPage() {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Min Order Value (₹)</label>
                             <input
                                 type="number"
-                                name="minOrderValue"
-                                value={formData.minOrderValue}
-                                onChange={handleChange}
+                                {...register('minOrderValue')}
                                 placeholder="e.g. 500"
                                 className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192]"
                                 min="0"
                             />
+                            {errors.minOrderValue && (
+                                <p className="text-xs text-red-500 mt-1">{errors.minOrderValue.message}</p>
+                            )}
                         </div>
                     </div>
 
@@ -161,26 +201,28 @@ export default function NewPromoPage() {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Max Redemptions (Total)</label>
                             <input
                                 type="number"
-                                name="maxRedemptions"
-                                value={formData.maxRedemptions}
-                                onChange={handleChange}
+                                {...register('maxRedemptions')}
                                 placeholder="Leave empty for unlimited"
                                 className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192]"
                                 min="0"
                             />
+                            {errors.maxRedemptions && (
+                                <p className="text-xs text-red-500 mt-1">{errors.maxRedemptions.message}</p>
+                            )}
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Max Uses Per User</label>
                             <input
                                 type="number"
-                                name="maxPerUser"
-                                value={formData.maxPerUser}
-                                onChange={handleChange}
+                                {...register('maxPerUser')}
                                 placeholder="1"
                                 className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192]"
                                 min="1"
                             />
+                            {errors.maxPerUser && (
+                                <p className="text-xs text-red-500 mt-1">{errors.maxPerUser.message}</p>
+                            )}
                             <p className="text-xs text-gray-400 mt-1">How many times each user can use this code</p>
                         </div>
 
@@ -189,21 +231,23 @@ export default function NewPromoPage() {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Starts At</label>
                                 <input
                                     type="date"
-                                    name="startsAt"
-                                    value={formData.startsAt}
-                                    onChange={handleChange}
+                                    {...register('startsAt')}
                                     className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192]"
                                 />
+                                {errors.startsAt && (
+                                    <p className="text-xs text-red-500 mt-1">{errors.startsAt.message}</p>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Expires At</label>
                                 <input
                                     type="date"
-                                    name="expiresAt"
-                                    value={formData.expiresAt}
-                                    onChange={handleChange}
+                                    {...register('expiresAt')}
                                     className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192]"
                                 />
+                                {errors.expiresAt && (
+                                    <p className="text-xs text-red-500 mt-1">{errors.expiresAt.message}</p>
+                                )}
                             </div>
                         </div>
                     </div>
