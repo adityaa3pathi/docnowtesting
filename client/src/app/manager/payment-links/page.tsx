@@ -10,6 +10,9 @@ import {
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import LocationPicker, { LocationResult } from '@/components/LocationPicker';
+import { useForm, useFormContext, useFieldArray, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -81,6 +84,35 @@ interface ManagerOrder {
     reportSentAt?: string | null;
 }
 
+// ─── Wizard schema ────────────────────────────────────────────────────────────
+
+const managerOrderSchema = z.object({
+    user: z.object({
+        id: z.string(),
+        name: z.string().nullable(),
+        mobile: z.string(),
+    }).nullable(),
+    selectedPatientIds: z.array(z.string()).min(1, 'Select at least one patient'),
+    address: z.object({
+        id: z.string(),
+        line1: z.string(),
+        city: z.string(),
+        pincode: z.string(),
+        lat: z.string().optional(),
+        long: z.string().optional(),
+    }).nullable(),
+    cart: z.array(z.object({
+        testCode: z.string(),
+        testName: z.string(),
+        price: z.number(),
+        patientId: z.string(),
+    })).min(1, 'Add at least one test'),
+    slotDate: z.string().min(1, 'Select a date'),
+    slotTime: z.string().min(1, 'Select a time slot'),
+});
+
+type ManagerOrderFormValues = z.infer<typeof managerOrderSchema>;
+
 // ─── Step indicators ─────────────────────────────────────────────────────────
 
 const STEPS = [
@@ -139,7 +171,8 @@ function StepIndicator({ current, onStepClick }: { current: number; onStepClick?
 
 // ─── Step 1: Customer ──────────────────────────────────────────────────────────
 
-function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
+function StepCustomer({ onNext }: { onNext: () => void }) {
+    const { setValue } = useFormContext<ManagerOrderFormValues>();
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<UserResult[]>([]);
     const [loading, setLoading] = useState(false);
@@ -192,7 +225,8 @@ function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
 
     const handleSelect = (user: UserResult) => {
         setShowDropdown(false);
-        onNext(user);
+        setValue('user', user);
+        onNext();
     };
 
     const openCreateFlow = () => {
@@ -258,7 +292,8 @@ function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
                 code: form.otp.trim(),
             });
             toast.success('User created successfully');
-            onNext(res.data.user);
+            setValue('user', res.data.user);
+            onNext();
         } catch (e: any) {
             toast.error(e?.response?.data?.error || 'Failed to verify OTP');
         } finally {
@@ -474,16 +509,15 @@ function StepCustomer({ onNext }: { onNext: (u: UserResult) => void }) {
 // ─── Step 2: Patients & Address ────────────────────────────────────────────────
 
 function StepPatientsAddress({
-    user, selectedPatientIds, selectedAddress, setSelectedPatientIds, setSelectedAddress, onNext, onBack
+    user, onNext, onBack
 }: {
     user: UserResult;
-    selectedPatientIds: string[];
-    selectedAddress: Address | null;
-    setSelectedPatientIds: (ids: string[]) => void;
-    setSelectedAddress: (addr: Address | null) => void;
     onNext: () => void;
     onBack: () => void;
 }) {
+    const { watch, setValue, trigger, formState: { errors } } = useFormContext<ManagerOrderFormValues>();
+    const selectedPatientIds = watch('selectedPatientIds');
+    const selectedAddress = watch('address');
     const [patients, setPatients] = useState<Patient[]>([]);
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [showAddPatient, setShowAddPatient] = useState(false);
@@ -508,7 +542,8 @@ function StepPatientsAddress({
     useEffect(() => { refresh(); }, [refresh]);
 
     const togglePatient = (id: string) => {
-        setSelectedPatientIds(
+        setValue(
+            'selectedPatientIds',
             selectedPatientIds.includes(id)
                 ? selectedPatientIds.filter(p => p !== id)
                 : [...selectedPatientIds, id]
@@ -552,6 +587,11 @@ function StepPatientsAddress({
     };
 
     const canProceed = selectedPatientIds.length > 0 && selectedAddress !== null;
+
+    const handleNext = async () => {
+        const valid = await trigger(['selectedPatientIds', 'address']);
+        if (valid) onNext();
+    };
 
     return (
         <div className="space-y-6">
@@ -685,7 +725,7 @@ function StepPatientsAddress({
                             ${selectedAddress?.id === a.id ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}>
                             <input type="radio" name="address" value={a.id}
                                 checked={selectedAddress?.id === a.id}
-                                onChange={() => setSelectedAddress(a)}
+                                onChange={() => setValue('address', a)}
                                 className="accent-purple-700 mt-0.5" />
                             <div>
                                 <p className="font-medium text-sm">{a.line1}</p>
@@ -703,10 +743,13 @@ function StepPatientsAddress({
                 <button onClick={onBack} className="btn-ghost flex items-center gap-1">
                     <ChevronLeft className="w-4 h-4" /> Back
                 </button>
-                <button disabled={!canProceed} onClick={onNext}
+                <button disabled={!canProceed} onClick={handleNext}
                     className="btn-primary flex-1 flex items-center justify-center gap-1 disabled:opacity-50">
                     Continue <ChevronRight className="w-4 h-4" />
                 </button>
+                {errors.selectedPatientIds && (
+                    <p className="text-xs text-red-500 mt-1">{errors.selectedPatientIds.message}</p>
+                )}
             </div>
         </div>
     );
@@ -715,12 +758,14 @@ function StepPatientsAddress({
 // ─── Step 3: Test Selection ────────────────────────────────────────────────────
 
 function StepTests({
-    selectedPatientIds, user, cart, setCart, onNext, onBack
+    user, onNext, onBack
 }: {
-    selectedPatientIds: string[]; user: UserResult;
-    cart: CartItem[]; setCart: (c: CartItem[]) => void;
+    user: UserResult;
     onNext: () => void; onBack: () => void;
 }) {
+    const { watch, trigger, formState: { errors } } = useFormContext<ManagerOrderFormValues>();
+    const selectedPatientIds = watch('selectedPatientIds');
+    const { fields: cart, append, remove, update } = useFieldArray<ManagerOrderFormValues, 'cart'>({ name: 'cart' });
     const [query, setQuery] = useState('');
     const [items, setItems] = useState<CatalogItem[]>([]);
     const [loading, setLoading] = useState(false);
@@ -768,13 +813,13 @@ function StepTests({
             toast.error(`"${item.name}" is already assigned to all selected patients`);
             return;
         }
-        setCart([...cart, ...newRows]);
+        append(newRows);
         toast.success(`Added "${item.name}" for ${newRows.length} patient${newRows.length > 1 ? 's' : ''}`);
     };
 
     // Remove a specific cart row by index
     const removeRow = (index: number) => {
-        setCart(cart.filter((_, i) => i !== index));
+        remove(index);
     };
 
     // Change patient for a cart row (with duplicate check)
@@ -784,7 +829,7 @@ function StepTests({
             toast.error(`"${row.testName}" is already assigned to ${getPatientLabel(newPatientId)}`);
             return;
         }
-        setCart(cart.map((c, i) => i === index ? { ...c, patientId: newPatientId } : c));
+        update(index, { ...row, patientId: newPatientId });
     };
 
     // Count how many of this test are already in cart
@@ -881,10 +926,13 @@ function StepTests({
                 <button onClick={onBack} className="btn-ghost flex items-center gap-1">
                     <ChevronLeft className="w-4 h-4" /> Back
                 </button>
-                <button disabled={cart.length === 0} onClick={onNext}
+                <button disabled={cart.length === 0} onClick={async () => { const valid = await trigger('cart'); if (valid) onNext(); }}
                     className="btn-primary flex-1 flex items-center justify-center gap-1 disabled:opacity-50">
                     Continue <ChevronRight className="w-4 h-4" />
                 </button>
+                {errors.cart && (
+                    <p className="text-xs text-red-500 mt-1">{errors.cart.message || errors.cart.root?.message}</p>
+                )}
             </div>
         </div>
     );
@@ -904,14 +952,15 @@ function formatSlotTimer(totalSeconds: number): string {
 }
 
 function StepSlot({
-    address, cart, slotDate, slotTime, setSlotDate, setSlotTime, onNext, onBack
+    onNext, onBack
 }: {
-    address: Address; cart: CartItem[];
-    slotDate: string; slotTime: string;
-    setSlotDate: (d: string) => void;
-    setSlotTime: (t: string) => void;
     onNext: () => void; onBack: () => void;
 }) {
+    const { watch, setValue, trigger } = useFormContext<ManagerOrderFormValues>();
+    const address = watch('address')!;
+    const cart = watch('cart');
+    const slotDate = watch('slotDate');
+    const slotTime = watch('slotTime');
     const [slots, setSlots] = useState<Slot[]>([]);
     const [loading, setLoading] = useState(false);
     const [freezingSlot, setFreezingSlot] = useState(false);
@@ -1021,7 +1070,7 @@ function StepSlot({
             <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Select Date</label>
                 <input type="date" value={slotDate} min={today}
-                    onChange={e => { setSlotDate(e.target.value); setSlotTime(''); resetFreeze(); }}
+                    onChange={e => { setValue('slotDate', e.target.value); setValue('slotTime', ''); resetFreeze(); }}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-300 outline-none" />
             </div>
 
@@ -1038,7 +1087,7 @@ function StepSlot({
                                     const selected = slotTime === s.stm_id;
                                     return (
                                         <button key={s.stm_id}
-                                            onClick={() => { setSlotTime(s.stm_id); resetFreeze(); }}
+                                            onClick={() => { setValue('slotTime', s.stm_id); resetFreeze(); }}
                                             disabled={isSlotLocked && !selected}
                                             className={`text-sm py-2.5 px-3 rounded-lg border font-medium transition-colors
                                                 ${selected ? 'bg-[#4b2192] text-white border-purple-700' :
@@ -1115,7 +1164,7 @@ function StepSlot({
                 <button onClick={onBack} className="btn-ghost flex items-center gap-1">
                     <ChevronLeft className="w-4 h-4" /> Back
                 </button>
-                <button disabled={!slotDate || !slotTime || !isSlotLocked} onClick={onNext}
+                <button disabled={!slotDate || !slotTime || !isSlotLocked} onClick={async () => { const valid = await trigger(['slotDate', 'slotTime']); if (valid) onNext(); }}
                     className="btn-primary flex-1 flex items-center justify-center gap-1 disabled:opacity-50">
                     Continue <ChevronRight className="w-4 h-4" />
                 </button>
@@ -1174,12 +1223,17 @@ function CartSummaryByPatient({ cart, userId, userName }: { cart: CartItem[]; us
 // ─── Step 5: Confirm & Pay ────────────────────────────────────────────────────
 
 function StepConfirm({
-    user, address, cart, slotDate, slotTime, selectedPatientIds, onBack, onSuccess
+    onBack, onSuccess
 }: {
-    user: UserResult; address: Address; cart: CartItem[];
-    slotDate: string; slotTime: string; selectedPatientIds: string[];
     onBack: () => void; onSuccess: () => void;
 }) {
+    const { watch } = useFormContext<ManagerOrderFormValues>();
+    const user = watch('user')!;
+    const address = watch('address')!;
+    const cart = watch('cart');
+    const slotDate = watch('slotDate');
+    const slotTime = watch('slotTime');
+    const selectedPatientIds = watch('selectedPatientIds');
     const [creating, setCreating] = useState(false);
     const [result, setResult] = useState<{ orderId: string; bookingId: string } | null>(null);
     const [linkUrl, setLinkUrl] = useState<string | null>(null);
@@ -1623,17 +1677,25 @@ export default function PaymentLinksPage() {
     const [step, setStep] = useState(0);
     const [listRefresh, setListRefresh] = useState(false);
 
-    // Wizard state
-    const [selectedUser, setSelectedUser] = useState<UserResult | null>(null);
-    const [selectedPatientIds, setSelectedPatientIds] = useState<string[]>([]);
-    const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
-    const [cart, setCart] = useState<CartItem[]>([]);
-    const [slotDate, setSlotDate] = useState('');
-    const [slotTime, setSlotTime] = useState('');
+    // Wizard form state (replaces 6 individual useState hooks)
+    const methods = useForm<ManagerOrderFormValues>({
+        resolver: zodResolver(managerOrderSchema),
+        defaultValues: {
+            user: null,
+            selectedPatientIds: [],
+            address: null,
+            cart: [],
+            slotDate: '',
+            slotTime: '',
+        },
+    });
+
+    const selectedUser = methods.watch('user');
+    const selectedAddress = methods.watch('address');
 
     const resetWizard = () => {
-        setStep(0); setSelectedUser(null); setSelectedPatientIds([]);
-        setSelectedAddress(null); setCart([]); setSlotDate(''); setSlotTime('');
+        setStep(0);
+        methods.reset();
         setShowWizard(false);
     };
 
@@ -1668,6 +1730,7 @@ export default function PaymentLinksPage() {
 
             {/* Wizard Modal */}
             {showWizard && (
+                <FormProvider {...methods}>
                 <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
                         <div className="sticky top-0 bg-white px-6 pt-6 pb-4 border-b border-gray-100 z-10">
@@ -1695,7 +1758,7 @@ export default function PaymentLinksPage() {
                                                 </div>
                                             </div>
                                             <button
-                                                onClick={() => { setSelectedUser(null); setSelectedPatientIds([]); setSelectedAddress(null); setCart([]); setSlotDate(''); setSlotTime(''); }}
+                                                onClick={() => { methods.reset(); }}
                                                 className="text-sm text-purple-700 hover:text-purple-900 font-medium px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors"
                                             >
                                                 Change
@@ -1707,50 +1770,31 @@ export default function PaymentLinksPage() {
                                         </button>
                                     </div>
                                 ) : (
-                                    <StepCustomer onNext={user => { setSelectedUser(user); setStep(1); }} />
+                                    <StepCustomer onNext={() => { setStep(1); }} />
                                 )
                             )}
                             {step === 1 && selectedUser && (
                                 <StepPatientsAddress
                                     user={selectedUser}
-                                    selectedPatientIds={selectedPatientIds}
-                                    selectedAddress={selectedAddress}
-                                    setSelectedPatientIds={setSelectedPatientIds}
-                                    setSelectedAddress={setSelectedAddress}
                                     onNext={() => setStep(2)}
                                     onBack={() => setStep(0)}
                                 />
                             )}
                             {step === 2 && selectedUser && (
                                 <StepTests
-                                    selectedPatientIds={selectedPatientIds}
                                     user={selectedUser}
-                                    cart={cart}
-                                    setCart={setCart}
                                     onNext={() => setStep(3)}
                                     onBack={() => setStep(1)}
                                 />
                             )}
                             {step === 3 && selectedAddress && (
                                 <StepSlot
-                                    address={selectedAddress}
-                                    cart={cart}
-                                    slotDate={slotDate}
-                                    slotTime={slotTime}
-                                    setSlotDate={setSlotDate}
-                                    setSlotTime={setSlotTime}
                                     onNext={() => setStep(4)}
                                     onBack={() => setStep(2)}
                                 />
                             )}
                             {step === 4 && selectedUser && selectedAddress && (
                                 <StepConfirm
-                                    user={selectedUser}
-                                    address={selectedAddress}
-                                    cart={cart}
-                                    slotDate={slotDate}
-                                    slotTime={slotTime}
-                                    selectedPatientIds={selectedPatientIds}
                                     onBack={() => setStep(3)}
                                     onSuccess={handleSuccess}
                                 />
@@ -1758,6 +1802,7 @@ export default function PaymentLinksPage() {
                         </div>
                     </div>
                 </div>
+                </FormProvider>
             )}
 
             {/* Global Styles (scoped inline classes) */}
