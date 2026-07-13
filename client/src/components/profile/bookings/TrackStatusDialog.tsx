@@ -163,12 +163,10 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
                                                 </div>
                                             ))}
                                         </div>
-                                        <div className="flex justify-between mt-2 px-1">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase">Booked</span>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase">Scheduled</span>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase">Assigned</span>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase">Collected</span>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase">Report</span>
+                                        <div className="flex justify-between mt-2">
+                                            {['Booked', 'Scheduled', 'Assigned', 'Collected', 'Report'].map((label) => (
+                                                <span key={label} className="w-8 text-center text-[10px] font-bold text-slate-400 uppercase leading-tight">{label}</span>
+                                            ))}
                                         </div>
                                     </div>
 
