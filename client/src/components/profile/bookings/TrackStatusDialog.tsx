@@ -341,30 +341,43 @@ export function TrackStatusDialog({ bookingId, open, onOpenChange, onStatusUpdat
                                     {/* Patient Details */}
                                     <div className="space-y-4">
                                         <h4 className="text-sm font-bold text-slate-900 uppercase tracking-tight">Orders by Patient</h4>
-                                        {statusData.data?.customer?.map((cust: any, idx: number) => (
-                                            <div key={idx} className="border border-slate-100 rounded-xl overflow-hidden">
-                                                <div className="bg-slate-50 px-4 py-2 flex justify-between items-center border-b border-slate-100">
-                                                    <span className="text-xs font-bold text-slate-600">
-                                                        {statusData.patientDetails?.[cust.vendor_customer_id]
-                                                            ? `${statusData.patientDetails[cust.vendor_customer_id].name} (${statusData.patientDetails[cust.vendor_customer_id].relation})`
-                                                            : `Patient #${idx + 1}`}
-                                                    </span>
-                                                    <div className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${getStatusDisplay(cust.customer_status).color}`}>
-                                                        {getStatusDisplay(cust.customer_status).label}
-                                                    </div>
-                                                </div>
-                                                <div className="p-4 space-y-3">
-                                                    {cust.test_list?.map((test: any, tIdx: number) => (
-                                                        <div key={tIdx} className="flex justify-between items-center text-sm">
-                                                            <span className="text-slate-700 font-medium">{test.test_name}</span>
-                                                            <span className={`text-xs font-bold ${getStatusDisplay(test.test_status).color.split(' ')[1]}`}>
-                                                                {getStatusDisplay(test.test_status).label}
+                                        {statusData.data?.customer?.map((cust: any, idx: number) => {
+                                            const custStatus = getStatusDisplay(cust.customer_status);
+                                            return (
+                                                <div key={idx} className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                                                    {/* Patient Header */}
+                                                    <div className="bg-gradient-to-r from-slate-50 to-white px-4 py-3 border-b border-slate-100">
+                                                        <div className="flex flex-col gap-1.5">
+                                                            <span className="text-sm font-bold text-slate-800">
+                                                                {statusData.patientDetails?.[cust.vendor_customer_id]
+                                                                    ? `${statusData.patientDetails[cust.vendor_customer_id].name} (${statusData.patientDetails[cust.vendor_customer_id].relation})`
+                                                                    : `Patient #${idx + 1}`}
+                                                            </span>
+                                                            <span className={`self-start text-[10px] font-bold px-2.5 py-1 rounded-full ${custStatus.color}`}>
+                                                                {custStatus.label}
                                                             </span>
                                                         </div>
-                                                    ))}
+                                                    </div>
+                                                    {/* Test List */}
+                                                    <div className="divide-y divide-slate-50">
+                                                        {cust.test_list?.map((test: any, tIdx: number) => {
+                                                            const testStatus = getStatusDisplay(test.test_status);
+                                                            return (
+                                                                <div key={tIdx} className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50/50 transition-colors">
+                                                                    <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${testStatus.color.split(' ')[0]}`} />
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <p className="text-sm font-medium text-slate-700 leading-snug">{test.test_name}</p>
+                                                                        <p className={`text-[11px] font-semibold mt-0.5 ${testStatus.color.split(' ')[1]}`}>
+                                                                            {testStatus.label}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </>
                             )}
