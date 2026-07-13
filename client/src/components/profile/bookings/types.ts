@@ -94,7 +94,7 @@ export const STATUS_MAP: Record<string, StatusDisplay> = {
         label: 'Report Generated',
         color: 'bg-teal-100 text-teal-700',
         step: 5,
-        message: 'Your report has been generated and is pending for verification.',
+        message: 'Your report has been generated and is undergoing final verification.',
     },
     'BS0012': {
         label: 'Health Counselling Done',
