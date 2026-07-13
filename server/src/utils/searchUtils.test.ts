@@ -12,13 +12,25 @@ describe('searchUtils', () => {
         expect(normalizeSearchTerm('CBC Test')).toBe('cbctest');
     });
 
-    it('builds normalized and natural-language Prisma search clauses', () => {
-        expect(buildCatalogSearchWhere('Vitamin D')).toEqual({
+    it('builds single-token search with normalized contains', () => {
+        expect(buildCatalogSearchWhere('Vitamin')).toEqual({
             OR: [
-                { searchName: { contains: 'vitamind' } },
-                { name: { contains: 'Vitamin D', mode: 'insensitive' } },
+                { searchName: { contains: 'vitamin' } },
+                { name: { contains: 'Vitamin', mode: 'insensitive' } },
             ],
         });
+    });
+
+    it('builds multi-token search with AND conditions per token', () => {
+        const result = buildCatalogSearchWhere('culture swab');
+        expect(result.OR[0]).toEqual({
+            AND: [
+                { searchName: { contains: 'culture' } },
+                { searchName: { contains: 'swab' } },
+            ],
+        });
+        // Still has the natural-language fallback
+        expect(result.OR[1]).toEqual({ name: { contains: 'culture swab', mode: 'insensitive' } });
     });
 
     it('scores exact and prefix matches above broad contains matches', () => {

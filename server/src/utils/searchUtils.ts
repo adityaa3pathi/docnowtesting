@@ -44,8 +44,21 @@ export function buildCatalogSearchWhere(search: string): { OR: any[] } {
 
     const conditions: any[] = [];
 
-    // Primary: normalized match against searchName column
-    if (normalized.length > 0) {
+    // Tokenize the query: "culture swab" → ["culture", "swab"]
+    const tokens = trimmed
+        .toLowerCase()
+        .split(/[\s\-_,&]+/)
+        .map(t => t.replace(/[^a-z0-9]/g, ''))
+        .filter(t => t.length > 0);
+
+    if (tokens.length > 1) {
+        // Multi-token: require ALL tokens present in searchName (AND logic)
+        // "culture swab" → searchName contains "culture" AND searchName contains "swab"
+        conditions.push({
+            AND: tokens.map(token => ({ searchName: { contains: token } })),
+        });
+    } else if (normalized.length > 0) {
+        // Single token: original fast path
         conditions.push({ searchName: { contains: normalized } });
     }
 
