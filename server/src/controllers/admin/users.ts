@@ -17,11 +17,11 @@ export async function listUsers(req: AuthRequest, res: Response) {
         const roleFilter = req.query.role as string;
         const where: any = {};
 
-        // Filter by role: default to USER+MANAGER, or specific role if provided
-        if (roleFilter && ['USER', 'MANAGER'].includes(roleFilter)) {
+        // Filter by role: default to all roles, or specific role if provided
+        if (roleFilter && ['USER', 'MANAGER', 'SUPER_ADMIN'].includes(roleFilter)) {
             where.role = roleFilter;
         } else {
-            where.role = { in: ['USER', 'MANAGER'] };
+            where.role = { in: ['USER', 'MANAGER', 'SUPER_ADMIN'] };
         }
 
         if (search) {
