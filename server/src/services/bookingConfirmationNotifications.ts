@@ -8,6 +8,27 @@ const WAPPIE_BOOKING_CONFIRMATION_LANGUAGE =
     process.env.WAPPIE_BOOKING_CONFIRMATION_LANGUAGE || 'en';
 
 /**
+ * Converts a raw date string (ISO / yyyy-mm-dd) into a human-readable format.
+ * e.g. "2026-07-13T00:00:00.000Z" → "13 Jul 2026"
+ *      "2026-07-13"               → "13 Jul 2026"
+ */
+function formatSlotDate(raw: string): string {
+    if (!raw) return '';
+    try {
+        const d = new Date(raw);
+        if (isNaN(d.getTime())) return raw; // fallback to original if unparseable
+        return d.toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            timeZone: 'Asia/Kolkata',
+        });
+    } catch {
+        return raw;
+    }
+}
+
+/**
  * Send booking confirmation WhatsApp message after a booking is confirmed.
  * Fetches booking data internally so callers just pass the bookingId.
  *
@@ -45,9 +66,11 @@ export async function sendBookingConfirmationViaWhatsApp(bookingId: string) {
     // Format date & time
     const slotDate = booking.slotDate || '';
     const slotTime = booking.slotTime || '';
-    const scheduledDateTime = slotDate && slotTime
-        ? `${slotDate}, ${slotTime}`
-        : slotDate || slotTime || 'To be confirmed';
+
+    const formattedDate = formatSlotDate(slotDate);
+    const scheduledDateTime = formattedDate && slotTime
+        ? `${formattedDate}, ${slotTime}`
+        : formattedDate || slotTime || 'To be confirmed';
 
     const result = await sendTemplateViaWhatsApp(
         booking.user.mobile,

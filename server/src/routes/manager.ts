@@ -987,7 +987,7 @@ router.post('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
                     status: 'Awaiting Payment',
                     finalAmount: totalAmount,
                     totalAmount: totalAmount,
-                    slotDate: new Date(slotDate).toISOString(),
+                    slotDate: slotDate.split('T')[0],
                     slotTime,
                     addressLine: address.line1,
                     addressCity: address.city,
