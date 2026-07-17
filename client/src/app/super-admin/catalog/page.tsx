@@ -57,7 +57,7 @@ export default function CatalogManagement() {
         if (searchTerm) params.set('search', searchTerm);
 
         try {
-            const res = await api.get(`/manager/catalog?${params}`);
+            const res = await api.get(`/admin/catalog?${params}`);
             setItems(res.data.items || []);
             setTotal(res.data.total || 0);
         } catch { /* ignore */ }
@@ -76,7 +76,7 @@ export default function CatalogManagement() {
     const handleSync = async () => {
         setSyncing(true);
         try {
-            const res = await api.post('/manager/catalog/sync', { zipcode: '110001' });
+            const res = await api.post('/admin/catalog/sync', { zipcode: '110001' });
             if (res.status === 202) {
                 // Background sync started — auto-refresh after ~70s
                 toast.success('Sync started! Catalog will update in about 60 seconds...');
@@ -102,14 +102,14 @@ export default function CatalogManagement() {
 
     const handleToggle = async (id: string) => {
         try {
-            const res = await api.put(`/manager/catalog/${id}/toggle`);
+            const res = await api.put(`/admin/catalog/${id}/toggle`);
             setItems(prev => prev.map(i => i.id === id ? { ...i, isEnabled: res.data.isEnabled } : i));
         } catch { /* ignore */ }
     };
 
     const handleFeature = async (id: string, currentlyFeatured: boolean) => {
         try {
-            const res = await api.put(`/manager/catalog/${id}/feature`, { isFeatured: !currentlyFeatured });
+            const res = await api.put(`/admin/catalog/${id}/feature`, { isFeatured: !currentlyFeatured });
             setItems(prev => prev.map(i => i.id === id ? { ...i, isFeatured: res.data.isFeatured, featuredOrder: res.data.featuredOrder } : i));
             toast.success(res.data.isFeatured ? `"${res.data.name}" added to featured` : `"${res.data.name}" removed from featured`);
         } catch { /* ignore */ }
@@ -128,7 +128,7 @@ export default function CatalogManagement() {
             const body: any = { displayPrice: editValues.displayPrice };
             body.discountedPrice = editValues.discountedPrice ? parseFloat(editValues.discountedPrice) : null;
 
-            const res = await api.put(`/manager/catalog/${id}`, body);
+            const res = await api.put(`/admin/catalog/${id}`, body);
             setItems(prev => prev.map(i => i.id === id ? { ...i, displayPrice: res.data.displayPrice, discountedPrice: res.data.discountedPrice } : i));
             setEditingId(null);
         } catch { /* ignore */ }
@@ -157,7 +157,7 @@ export default function CatalogManagement() {
                             type: typeFilter,
                             enabled: statusFilter !== 'all' ? (statusFilter === 'enabled' ? 'true' : 'false') : '',
                             search: searchTerm,
-                        }, '/api/manager')}
+                        }, '/api/admin')}
                         disabled={exporting}
                         className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >

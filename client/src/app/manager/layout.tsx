@@ -5,7 +5,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
     LayoutDashboard,
-    Package,
     FolderTree,
     Link as LinkIcon,
     ShoppingCart,
@@ -36,7 +35,6 @@ type NavItem = {
 
 const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/manager/dashboard' },
-    { id: 'catalog', label: 'Catalog', icon: Package, href: '/manager/catalog' },
     { id: 'categories', label: 'Categories', icon: FolderTree, href: '/manager/categories' },
     { id: 'payment-links', label: 'Payment Links', icon: LinkIcon, href: '/manager/payment-links' },
     { id: 'orders', label: 'Orders', icon: ShoppingCart, href: '/manager/orders' },

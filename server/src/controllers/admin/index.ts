@@ -25,3 +25,6 @@ export {
     reorderFeaturedTests,
     toggleFeaturedTestActive
 } from './featuredTests';
+export {
+    syncCatalog, listCatalog, updateCatalogItem, toggleCatalogItem, featureCatalogItem
+} from './catalog';

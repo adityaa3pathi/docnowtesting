@@ -184,7 +184,7 @@ export function CatalogImportDialog({ open, onOpenChange, onSuccess }: CatalogIm
                 // Validate with backend
                 setValidating(true);
                 try {
-                    const res = await api.post('/manager/catalog/import/validate', { rows });
+                    const res = await api.post('/admin/catalog/import/validate', { rows });
                     setValidateResult(res.data);
                     setStep('preview');
                 } catch (error: any) {
@@ -239,7 +239,7 @@ export function CatalogImportDialog({ open, onOpenChange, onSuccess }: CatalogIm
 
         setExecuting(true);
         try {
-            const res = await api.post('/manager/catalog/import/execute', { updates, filename: fileName });
+            const res = await api.post('/admin/catalog/import/execute', { updates, filename: fileName });
             setExecuteResult(res.data);
             setStep('result');
             if (res.data.success > 0) {

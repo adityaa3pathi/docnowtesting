@@ -13,8 +13,10 @@ import {
     getAuditLogs,
     listPromos, createPromo, updatePromo, deletePromo,
     listFeaturedPackages, searchCatalogForFeaturing, addFeaturedPackage, removeFeaturedPackage, reorderFeaturedPackages, toggleFeaturedActive,
-    listFeaturedTests, searchTestsForFeaturing, addFeaturedTest, removeFeaturedTest, reorderFeaturedTests, toggleFeaturedTestActive
+    listFeaturedTests, searchTestsForFeaturing, addFeaturedTest, removeFeaturedTest, reorderFeaturedTests, toggleFeaturedTestActive,
+    syncCatalog, listCatalog, updateCatalogItem, toggleCatalogItem, featureCatalogItem
 } from '../controllers/admin';
+import { validateCatalogImport, executeCatalogImport } from '../controllers/manager/catalogBulk';
 import { exportAdminData } from '../controllers/admin/export';
 import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callbacks';
 import { listCorporateInquiries, updateCorporateInquiryStatus } from '../controllers/admin/corporateInquiries';
@@ -103,5 +105,14 @@ router.post('/featured-tests', ...admin, addFeaturedTest);
 router.put('/featured-tests/reorder', ...admin, reorderFeaturedTests);
 router.delete('/featured-tests/:id', ...admin, removeFeaturedTest);
 router.put('/featured-tests/:id/toggle', ...admin, toggleFeaturedTestActive);
+
+// ── Catalog Management ──────────────────────────────────
+router.post('/catalog/sync', ...admin, syncCatalog);
+router.get('/catalog', ...admin, listCatalog);
+router.put('/catalog/:id', ...admin, updateCatalogItem);
+router.put('/catalog/:id/toggle', ...admin, toggleCatalogItem);
+router.put('/catalog/:id/feature', ...admin, featureCatalogItem);
+router.post('/catalog/import/validate', ...admin, validateCatalogImport);
+router.post('/catalog/import/execute', ...admin, executeCatalogImport);
 
 export default router;
