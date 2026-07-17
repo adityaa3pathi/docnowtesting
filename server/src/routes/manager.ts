@@ -15,6 +15,7 @@ import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callba
 import { listCorporateInquiries, updateCorporateInquiryStatus } from '../controllers/admin/corporateInquiries';
 import { listAbandonedCarts } from '../controllers/admin/abandonedCarts';
 import { exportAdminData } from '../controllers/admin/export';
+import { listCatalog } from '../controllers/admin/catalog';
 
 import { OTP_EXPIRY_MINS, isValidMobile, persistAndSendOtp } from '../services/otp';
 import { BookingService } from '../services/booking.service';
@@ -83,6 +84,12 @@ router.put('/corporate-inquiries/:id/status', ...mgr, updateCorporateInquiryStat
 router.get('/export', ...mgr, exportAdminData);
 
 
+
+// ============================================
+// CATALOG (Read-only for Manager Categories)
+// ============================================
+
+router.get('/catalog', ...mgr, listCatalog);
 
 // ============================================
 // CATEGORY CRUD
