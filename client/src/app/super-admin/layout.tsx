@@ -28,6 +28,7 @@ import {
     AlertTriangle,
     Star,
     TestTube,
+    Package,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,6 +46,7 @@ const navItems = [
     { id: 'promos', label: 'Promo Codes', icon: Ticket, href: '/super-admin/promos' },
     { id: 'featured-packages', label: 'Featured Packages', icon: Star, href: '/super-admin/featured-packages' },
     { id: 'featured-tests', label: 'Featured Tests', icon: TestTube, href: '/super-admin/featured-tests' },
+    { id: 'catalog', label: 'Catalog', icon: Package, href: '/super-admin/catalog' },
     { id: 'callbacks', label: 'Callbacks', icon: PhoneCall, href: '/super-admin/callbacks' },
     { id: 'corporate-inquiries', label: 'Corporate Inquiries', icon: Building2, href: '/super-admin/corporate-inquiries' },
     { id: 'referrals', label: 'Referrals', icon: Gift, href: '/super-admin/referrals' },
