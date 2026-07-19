@@ -65,6 +65,14 @@ export async function rescheduleBooking(req: AuthRequest, res: Response) {
             return res.status(404).json({ error: 'We could not find the details for this appointment. Please contact support if the issue persists.' });
         }
 
+        // Strategy guard: camp bookings can't be rescheduled
+        const { getBookingStrategy } = await import('../../services/bookingStrategyRegistry');
+        const strategy = getBookingStrategy(booking);
+        const rescheduleCheck = strategy.canReschedule(booking);
+        if (!rescheduleCheck.allowed) {
+            return res.status(400).json({ error: rescheduleCheck.reason, code: 'NOT_ALLOWED' });
+        }
+
         if (NON_RESCHEDULABLE_STATUSES.includes(booking.status)) {
             return res.status(400).json({ error: `Booking cannot be rescheduled in current status: ${booking.status}` });
         }

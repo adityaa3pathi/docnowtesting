@@ -455,6 +455,37 @@ export class HealthiansAdapter {
             throw error;
         }
     }
+    /**
+     * Register a user for a health camp on Healthians.
+     * POST /<partner_name>/userRegistration
+     */
+    public async registerCampUser(params: {
+        mobile_number: string;
+        name: string;
+        age: string;
+        gender: string;
+        email: string;
+        vendor_customer_id: string;
+        dob: string;
+        relation?: string;
+    }) {
+        try {
+            const response = await this.client.post('/userRegistration', params);
+            logBusinessEvent('healthians_camp_user_registered', {
+                vendorCustomerId: params.vendor_customer_id,
+                mobile: params.mobile_number,
+            });
+            return response.data;
+        } catch (error: any) {
+            logAlert('healthians_camp_user_registration_failed', {
+                error,
+                vendorCustomerId: params.vendor_customer_id,
+                statusCode: error.response?.status,
+                partnerMessage: error.response?.data?.message,
+            });
+            throw error;
+        }
+    }
 }
 
 export const MOCK_PRODUCTS = [

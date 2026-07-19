@@ -116,6 +116,7 @@ export async function generateInvoicePdfForBooking(bookingId: string) {
         include: {
             user: true,
             managerOrder: true,
+            camp: { select: { name: true, location: true, city: true, pincode: true } },
             items: {
                 include: {
                     patient: true,
@@ -205,9 +206,9 @@ export async function generateInvoicePdfForBooking(bookingId: string) {
     doc.text(customerName, colRight, rightY, { width: contentWidth / 2 - 20 });
     rightY += 14;
     const addressParts = [
-        booking.addressLine,
-        booking.addressCity,
-        booking.addressPincode ? `- ${booking.addressPincode}` : '',
+        booking.addressLine || booking.camp?.location,
+        booking.addressCity || booking.camp?.city,
+        (booking.addressPincode || booking.camp?.pincode) ? `- ${booking.addressPincode || booking.camp?.pincode}` : '',
     ].filter(Boolean).join(', ');
     doc.text(addressParts || 'Address not available', colRight, rightY, { width: contentWidth / 2 - 20, lineGap: 2 });
     rightY += 28;

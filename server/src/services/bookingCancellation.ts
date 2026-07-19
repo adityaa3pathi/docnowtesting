@@ -8,6 +8,8 @@ import { retryWithBackoff } from '../utils/helpers';
 import { getCancelDenialMessage } from '../utils/healthiansStatusMap';
 import { sendBookingCancelledViaWhatsApp } from './bookingCancellationNotifications';
 
+import { getBookingStrategy } from './bookingStrategyRegistry';
+
 const healthians = HealthiansAdapter.getInstance();
 export const PARTNER_CANCELABLE_STATUSES = new Set(['BS002', 'BS005']);
 const MANAGER_CANCELABLE_STATUSES = new Set<ManagerOrderStatus>([
@@ -445,6 +447,13 @@ export async function cancelCustomerBooking(params: {
     const booking = await loadBookingById(params.bookingId, params.userId);
     if (!booking) {
         throw new Error('Booking not found or access denied');
+    }
+
+    // Strategy guard: camp bookings can't be cancelled online
+    const strategy = getBookingStrategy(booking);
+    const { allowed, reason } = strategy.canCustomerCancel(booking);
+    if (!allowed) {
+        throw new Error(reason || 'Cancellation not allowed for this booking type');
     }
 
     if (booking.partnerStatus && !PARTNER_CANCELABLE_STATUSES.has(booking.partnerStatus)) {

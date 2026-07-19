@@ -135,7 +135,7 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
             });
 
             // Step B: Find booking by the original or current partner booking reference.
-            const booking = await tx.booking.findFirst({
+            let booking = await tx.booking.findFirst({
                 where: {
                     OR: [
                         { partnerBookingId: payload.booking_id },
@@ -149,6 +149,31 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
                     user: { select: { name: true, mobile: true } },
                 },
             });
+
+            // Camp booking fallback: parse composite vendor_customer_id (camp:{bookingId}:{patientId})
+            if (!booking && payload.data?.vendor_customer_id?.startsWith('camp:')) {
+                const parts = payload.data.vendor_customer_id.split(':');
+                const campBookingId = parts[1];
+                if (campBookingId) {
+                    booking = await tx.booking.findFirst({
+                        where: { id: campBookingId },
+                        include: {
+                            items: {
+                                include: { patient: { select: { name: true } } },
+                            },
+                            user: { select: { name: true, mobile: true } },
+                        },
+                    });
+                }
+            }
+
+            // Backfill partnerBookingId on first camp webhook
+            if (booking && !booking.partnerBookingId && payload.booking_id && booking.campId) {
+                await tx.booking.update({
+                    where: { id: booking.id },
+                    data: { partnerBookingId: payload.booking_id },
+                });
+            }
 
             if (!booking) {
                 addObservabilityBreadcrumb('healthians_webhook_booking_not_found', {

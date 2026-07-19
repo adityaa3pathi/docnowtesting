@@ -32,6 +32,10 @@ import promoRoutes from './routes/promos';
 import reportRoutes from './routes/reports';
 import invoiceRoutes from './routes/invoices';
 import healthRoutes from './routes/health';
+import { campAdminRoutes, campPublicRoutes } from './modules/camps';
+import { registerBookingStrategy } from './services/bookingStrategyRegistry';
+import { HomeCollectionStrategy } from './services/homeCollectionStrategy';
+import { CampRegistrationStrategy } from './modules/camps';
 
 import { csrfProtection } from './middleware/csrfProtection';
 import { legacyCookieCleanup } from './middleware/legacyCookieCleanup';
@@ -84,6 +88,10 @@ app.post('/api/webhooks/healthians', express.raw({ type: '*/*' }), healthiansWeb
 app.use(express.json());
 app.use(csrfProtection);
 
+// Register booking strategies at boot
+registerBookingStrategy(new HomeCollectionStrategy());
+registerBookingStrategy(new CampRegistrationStrategy());
+
 app.use('/health', healthRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/catalog', catalogRoutes);
@@ -97,11 +105,13 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/slots', slotRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/camps', campAdminRoutes);
 app.use('/api/manager', managerRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/promos', promoRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/invoices', invoiceRoutes);
+app.use('/api/camps', campPublicRoutes);
 
 
 app.get('/', (req, res) => {

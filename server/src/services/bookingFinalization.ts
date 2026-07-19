@@ -10,7 +10,7 @@
 
 import { PaymentStatus } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import { createHealthiansBooking } from './partnerBooking';
+import { getBookingStrategy } from './bookingStrategyRegistry';
 import { sendDeadLetterAlert } from '../utils/slack';
 import { getRazorpay } from './razorpay';
 import { prisma } from '../db';
@@ -83,8 +83,10 @@ export async function finalizeBooking(bookingId: string) {
     // Layer 3: Call Healthians and write back
     try {
         logBusinessEvent('partner_booking_started', { bookingId, attemptId });
-        const partnerResult = await createHealthiansBooking(booking, booking.userId);
-        const partnerBookingId = partnerResult.booking_id;
+        const strategy = getBookingStrategy(booking);
+        const partnerResult = await strategy.finalizeWithPartner(booking, booking.userId);
+        const partnerBookingId = partnerResult.partnerBookingId || null;
+        const confirmedStatus = strategy.getConfirmedStatus();
 
         const updated = await prisma.booking.updateMany({
             where: {
@@ -94,8 +96,8 @@ export async function finalizeBooking(bookingId: string) {
             },
             data: {
                 paymentStatus: 'CONFIRMED',
-                partnerBookingId,
-                status: 'Order Booked',
+                ...(partnerBookingId ? { partnerBookingId } : {}),
+                status: confirmedStatus,
                 processingAttemptId: null,
                 processingStartedAt: null
             }

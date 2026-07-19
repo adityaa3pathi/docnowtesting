@@ -8,6 +8,7 @@ export const patientSchema = z.object({
     relation: z.enum(ALLOWED_RELATIONS, { message: `Relation must be one of: ${ALLOWED_RELATIONS.join(', ')}` }),
     age: z.number().int().min(5, 'Family member must be at least 5 years old').max(150, 'Invalid age'),
     gender: z.enum(['Male', 'Female', 'Other'], { message: 'Gender must be Male, Female, or Other' }),
+    dob: z.coerce.date().optional(),
 });
 
 /**
@@ -33,7 +34,8 @@ export async function resolveOrCreateSelfPatient(userId: string, prisma: PrismaC
                 name: user.name,
                 relation: 'Self',
                 gender: user.gender,
-                age: user.age
+                age: user.age,
+                dob: user.dob || undefined,
             }
         });
     }
