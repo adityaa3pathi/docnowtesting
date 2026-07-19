@@ -15,6 +15,7 @@ import { sendDeadLetterAlert } from '../utils/slack';
 import { finalizeBooking, syncManagerOrder } from '../services/bookingFinalization';
 import { Redis } from '@upstash/redis';
 import { logAlert, logBusinessEvent, logger } from '../utils/logger';
+import { getBookingStrategy } from '../services/bookingStrategyRegistry';
 
 const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
     ? new Redis({
@@ -153,15 +154,18 @@ async function retryPartnerBookings() {
                 lastError: retry.lastError,
             });
 
-            const linkedMO = await prisma.managerOrder.findUnique({
-                where: { bookingId: retry.bookingId }
-            });
+            // Delegate dead-letter handling to the booking strategy
+            const strategy = getBookingStrategy(retry.booking);
+            const action = await strategy.handleDeadLetter(
+                retry.booking, retry.maxAttempts, retry.lastError || 'Unknown'
+            );
 
-            // Step 13: Admin alerting — Slack webhook notification
-            await sendDeadLetterAlert(retry.bookingId, retry.maxAttempts, retry.lastError || 'Unknown');
+            // Only auto-refund if the strategy says so (camp bookings return 'alert_only')
+            if (action === 'refund' && canTransition(retry.booking.paymentStatus, 'REFUNDED')) {
+                const linkedMO = await prisma.managerOrder.findUnique({
+                    where: { bookingId: retry.bookingId }
+                });
 
-            // Mark as REFUNDED if that transition is valid
-            if (canTransition(retry.booking.paymentStatus, 'REFUNDED')) {
                 if (linkedMO?.collectionMode && linkedMO.collectionMode !== 'RAZORPAY_LINK') {
                     // Offline payment — can't auto-refund. Alert admin only.
                     logger.warn({ bookingId: retry.bookingId, managerOrderId: linkedMO.id }, 'reconciler_offline_order_auto_refund_skipped');

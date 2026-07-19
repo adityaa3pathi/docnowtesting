@@ -39,3 +39,4 @@ docs/report-delivery-pipeline-plan.md
 db_backups/
 server/scripts/
 docnow-prod-key-new.pem.pub
+docs/DEPLOYMENT.md

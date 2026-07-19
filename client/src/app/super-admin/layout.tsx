@@ -29,6 +29,7 @@ import {
     Star,
     TestTube,
     Package,
+    Tent,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -51,6 +52,7 @@ const navItems = [
     { id: 'corporate-inquiries', label: 'Corporate Inquiries', icon: Building2, href: '/super-admin/corporate-inquiries' },
     { id: 'referrals', label: 'Referrals', icon: Gift, href: '/super-admin/referrals' },
     { id: 'settings', label: 'System Settings', icon: Settings, href: '/super-admin/settings' },
+    { id: 'camps', label: 'Health Camps', icon: Tent, href: '/super-admin/camps' },
     { id: 'failed-orders', label: 'Failed Orders', icon: AlertTriangle, href: '/super-admin/failed-orders' },
     { id: 'audit', label: 'Audit Logs', icon: FileText, href: '/super-admin/audit-logs' },
 ];

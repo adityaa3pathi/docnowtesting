@@ -89,6 +89,7 @@ model User {
   isVerified    Boolean    @default(false)
   gender        String?
   age           Int?
+  dob           DateTime?
   password      String?
   
   // New fields for Admin & Referral
@@ -156,6 +157,7 @@ model Patient {
   relation     String
   age          Int
   gender       String
+  dob          DateTime?
   bookingItems BookingItem[]
   cartItems    CartItem[]
   user         User          @relation(fields: [userId], references: [id])
@@ -191,11 +193,15 @@ model Booking {
   partnerError      String?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
-  addressId         String
+  addressId         String?
   billingName       String?           // Optional billing name for invoice
   billingGender     String?           // Gender of billing person (for Healthians)
   idempotencyKey    String?       @unique  // Prevent double-initiate
-  address           Address       @relation(fields: [addressId], references: [id])
+  address           Address?      @relation(fields: [addressId], references: [id])
+
+  // Camp support
+  campId            String?
+  camp              Camp?         @relation(fields: [campId], references: [id])
 
   createdByManagerId   String?       // Reference to manager who created this
   managerOrder         ManagerOrder? // One-to-one relation
@@ -551,6 +557,7 @@ model CatalogItem {
   updatedAt        DateTime           @updatedAt
   
   categories       CatalogItemCategory[]
+  campItems        CampCatalogItem[]
   
   @@index([isEnabled])
   @@index([type, isEnabled])
@@ -607,4 +614,42 @@ model ManagerOrder {
 
   @@index([managerId, status])
   @@index([customerId])
+}
+
+// ============================================
+// HEALTH CAMPS
+// ============================================
+
+model Camp {
+  id          String            @id @default(uuid())
+  name        String
+  description String?
+  location    String            // Physical venue address
+  city        String
+  pincode     String
+  startDate   DateTime
+  endDate     DateTime
+  price       Float             // Custom camp price (set by admin)
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  items       CampCatalogItem[]
+  bookings    Booking[]
+
+  @@index([isActive, startDate])
+  @@index([city])
+}
+
+model CampCatalogItem {
+  id            String      @id @default(uuid())
+  campId        String
+  catalogItemId String
+  camp          Camp        @relation(fields: [campId], references: [id], onDelete: Cascade)
+  catalogItem   CatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@unique([campId, catalogItemId])
+  @@index([campId])
+  @@index([catalogItemId])
 }

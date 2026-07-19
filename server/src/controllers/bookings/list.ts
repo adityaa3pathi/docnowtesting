@@ -14,6 +14,9 @@ export async function listBookings(req: AuthRequest, res: Response) {
             orderBy: { createdAt: 'desc' },
             include: {
                 items: true,
+                camp: {
+                    select: { id: true, name: true, location: true, city: true, startDate: true, endDate: true }
+                },
                 reports: {
                     select: {
                         id: true,
@@ -125,6 +128,13 @@ export async function listBookings(req: AuthRequest, res: Response) {
                 fileSize: r.fileSize,
                 generatedAt: r.generatedAt,
             })),
+            isCampBooking: Boolean(b.campId),
+            campName: b.camp?.name || null,
+            campLocation: b.camp?.location || null,
+            campDates: b.camp ? {
+                start: b.camp.startDate,
+                end: b.camp.endDate,
+            } : null,
         }});
 
         res.json(sanitizedBookings);
