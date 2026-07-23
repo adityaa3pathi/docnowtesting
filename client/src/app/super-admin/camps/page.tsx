@@ -209,8 +209,8 @@ export default function CampsPage() {
                 location: form.location.trim(),
                 city: form.city.trim(),
                 pincode: form.pincode.trim(),
-                startDate: form.startDate,
-                endDate: form.endDate,
+                startDate: new Date(form.startDate).toISOString(),
+                endDate: new Date(form.endDate).toISOString(),
                 price: parseFloat(form.price),
                 catalogItemIds: Array.from(selectedCatalogIds),
             };
