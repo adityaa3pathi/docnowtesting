@@ -83,6 +83,7 @@ export default function CampsPage() {
     const [catalogResults, setCatalogResults] = useState<CatalogSearchItem[]>([]);
     const [isSearchingCatalog, setIsSearchingCatalog] = useState(false);
     const [selectedCatalogIds, setSelectedCatalogIds] = useState<Set<string>>(new Set());
+    const [selectedItemsMap, setSelectedItemsMap] = useState<Map<string, { name: string; partnerCode: string; type: string }>>(new Map());
 
     // Items update modal
     const [isItemsModalOpen, setIsItemsModalOpen] = useState(false);
@@ -164,6 +165,7 @@ export default function CampsPage() {
         setEditingCamp(null);
         setForm(defaultForm);
         setSelectedCatalogIds(new Set());
+        setSelectedItemsMap(new Map());
         setCatalogSearch('');
         setCatalogResults([]);
         setIsModalOpen(true);
@@ -182,6 +184,7 @@ export default function CampsPage() {
             price: String(camp.price),
         });
         setSelectedCatalogIds(new Set(camp.items.map(i => i.catalogItemId)));
+        setSelectedItemsMap(new Map(camp.items.map(i => [i.catalogItemId, { name: i.catalogItem.name, partnerCode: i.catalogItem.partnerCode, type: i.catalogItem.type }])));
         setCatalogSearch('');
         setCatalogResults([]);
         setIsModalOpen(true);
@@ -270,11 +273,17 @@ export default function CampsPage() {
         });
     };
 
-    const toggleCatalogItem = (id: string) => {
+    const toggleCatalogItem = (id: string, item?: { name: string; partnerCode: string; type: string }) => {
         setSelectedCatalogIds(prev => {
             const next = new Set(prev);
             if (next.has(id)) next.delete(id);
             else next.add(id);
+            return next;
+        });
+        setSelectedItemsMap(prev => {
+            const next = new Map(prev);
+            if (next.has(id)) next.delete(id);
+            else if (item) next.set(id, item);
             return next;
         });
     };
@@ -579,7 +588,7 @@ export default function CampsPage() {
                                                             <input
                                                                 type="checkbox"
                                                                 checked={isSelected}
-                                                                onChange={() => toggleCatalogItem(item.id)}
+                                                                onChange={() => toggleCatalogItem(item.id, item)}
                                                                 className="w-4 h-4 rounded border-gray-300 text-[#4b2192] focus:ring-[#4b2192]/20 shrink-0"
                                                             />
                                                             <div className="flex-1 min-w-0">
@@ -595,28 +604,36 @@ export default function CampsPage() {
                                     </div>
                                 )}
 
-                                {/* Selected items summary */}
-                                {selectedCatalogIds.size > 0 && (
-                                    <div className="mt-2 flex flex-wrap gap-1.5">
-                                        {editingCamp?.items
-                                            .filter(i => selectedCatalogIds.has(i.catalogItemId))
-                                            .map(i => (
-                                                <span
-                                                    key={i.catalogItemId}
-                                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 text-xs font-medium"
-                                                >
-                                                    {i.catalogItem.name}
+                                {/* Selected items list */}
+                                {selectedItemsMap.size > 0 && (
+                                    <div className="mt-3 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Selected ({selectedItemsMap.size})</span>
+                                            <button
+                                                onClick={() => { setSelectedCatalogIds(new Set()); setSelectedItemsMap(new Map()); }}
+                                                className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
+                                            >
+                                                Clear all
+                                            </button>
+                                        </div>
+                                        <div className="border border-gray-200 rounded-xl divide-y divide-gray-100 max-h-40 overflow-y-auto">
+                                            {Array.from(selectedItemsMap.entries()).map(([id, item]) => (
+                                                <div key={id} className="flex items-center justify-between px-3 py-2 group hover:bg-gray-50/50 transition-colors">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <Package size={14} className="text-purple-400 shrink-0" />
+                                                        <span className="text-sm font-medium text-gray-800 truncate">{item.name}</span>
+                                                        <span className="text-xs text-gray-400 shrink-0">• {item.type}</span>
+                                                    </div>
                                                     <button
-                                                        onClick={() => toggleCatalogItem(i.catalogItemId)}
-                                                        className="text-purple-400 hover:text-purple-600"
+                                                        onClick={() => toggleCatalogItem(id)}
+                                                        className="p-1 rounded-md text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                                                        title="Remove"
                                                     >
-                                                        <X size={12} />
+                                                        <X size={14} />
                                                     </button>
-                                                </span>
+                                                </div>
                                             ))}
-                                        <span className="text-xs text-gray-400 py-1">
-                                            {selectedCatalogIds.size} item{selectedCatalogIds.size > 1 ? 's' : ''} selected
-                                        </span>
+                                        </div>
                                     </div>
                                 )}
                             </div>
