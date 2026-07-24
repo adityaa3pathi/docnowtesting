@@ -27,6 +27,7 @@ import { Card } from '@/components/ui';
 
 // Client Islands — only these ship JS to the browser
 import { FeaturedPackages, FeaturedTests } from '@/components/home/FeaturedProducts';
+import { FeaturedCamps } from '@/components/home/FeaturedCamps';
 import { CallbackForm } from '@/components/home/CallbackForm';
 import { HeroCTAButtons } from '@/components/home/HeroCTAButtons';
 import { RevealSection } from '@/components/home/RevealSection';
@@ -173,6 +174,13 @@ export default function Home() {
             </p>
           </div>
           <FeaturedTests />
+        </RevealSection>
+      </section>
+
+      {/* ═══════════ HEALTH CAMPS — Client Island ═══════════ */}
+      <section className="py-16 md:py-24 bg-white">
+        <RevealSection className="container mx-auto px-4 max-w-7xl">
+          <FeaturedCamps />
         </RevealSection>
       </section>
 

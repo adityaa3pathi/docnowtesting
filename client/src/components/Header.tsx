@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
     ShoppingCart, User, Users, Menu, X, MapPin, Search,
-    Navigation, Loader2, Shield, Phone, LogOut, Delete, Building2,
+    Navigation, Loader2, Shield, Phone, LogOut, Delete, Building2, Tent,
 } from 'lucide-react';
 import { Button, Input } from './ui';
 import { useState, useEffect, useRef } from 'react';
@@ -46,6 +46,7 @@ const callbackCities = Array.from(new Set([...metroCities.map((city) => city.nam
 
 // Desktop nav links (3 only — "Get a Callback" is rendered as a button separately)
 const desktopNavLinks = [
+    { label: 'Health Camps', href: '/camps' },
     { label: 'About Us', href: '/about' },
 ];
 
@@ -579,6 +580,14 @@ export function Header() {
                         >
                             <Search className="w-4 h-4 text-gray-400" />
                             Packages
+                        </Link>
+                        <Link
+                            href="/camps"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname.startsWith('/camps') ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
+                        >
+                            <Tent className="w-4 h-4 text-gray-400" />
+                            Health Camps
                         </Link>
                         {isAuthenticated && (
                             <Link

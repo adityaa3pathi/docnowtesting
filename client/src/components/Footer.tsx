@@ -82,6 +82,11 @@ export function Footer() {
                                 </Link>
                             </li>
                             <li>
+                                <Link href="/camps" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                                    Health Camps
+                                </Link>
+                            </li>
+                            <li>
                                 <Link href="/cart" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                                     My Cart
                                 </Link>

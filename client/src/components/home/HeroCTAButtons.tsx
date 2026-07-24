@@ -19,6 +19,12 @@ export function HeroCTAButtons() {
       >
         View Health Packages
       </button>
+      <button
+        onClick={() => router.push('/camps')}
+        className="bg-white text-[#4b2192] font-inter font-semibold text-base px-6 py-3 rounded-lg hover:bg-white/90 transition-all whitespace-nowrap shadow-lg shadow-purple-900/20"
+      >
+        Explore Health Camps
+      </button>
     </div>
   );
 }

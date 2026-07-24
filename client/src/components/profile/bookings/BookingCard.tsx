@@ -31,8 +31,8 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
     const isAwaitingPayment = booking.paymentStatus === 'INITIATED' || statusInfo.label === 'Awaiting Payment';
     const activePartnerBookingId = booking.currentPartnerBookingId || booking.rescheduledToId || booking.partnerBookingId;
     const canTrack = !isAwaitingPayment && !!activePartnerBookingId && !['Superseded', 'Refunded', 'Cancelled'].includes(statusInfo.label);
-    const canReschedule = ['Order Booked', 'Sample Collector Assigned', 'Fresh Sample Needed', 'Rescheduled'].includes(statusInfo.label);
-    const canCancel = !['Cancelled', 'Sample Collected', 'Sample Received at Lab', 'Report Generated', 'Report Ready', 'Report Available', 'Health Counselling Done', 'Completed', 'Superseded', 'Refunded'].includes(statusInfo.label);
+    const canReschedule = !booking.isCampBooking && ['Order Booked', 'Sample Collector Assigned', 'Fresh Sample Needed', 'Rescheduled'].includes(statusInfo.label);
+    const canCancel = !booking.isCampBooking && !['Cancelled', 'Sample Collected', 'Sample Received at Lab', 'Report Generated', 'Report Ready', 'Report Available', 'Health Counselling Done', 'Completed', 'Superseded', 'Refunded'].includes(statusInfo.label);
     const showPhleboContact = ['Sample Collector Assigned', 'Sample Collector Reached', 'Sample Collected'].includes(statusInfo.label);
     const canContactPhlebo = ['Sample Collector Assigned', 'Sample Collector Reached'].includes(statusInfo.label);
 
@@ -76,7 +76,7 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
     };
 
     return (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+        <div className={`border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow ${booking.isCampBooking ? 'bg-white border-purple-200 ring-1 ring-purple-100' : 'bg-white border-gray-200'}`}>
             {/* Header */}
             <div className="bg-gray-50 px-4 sm:px-6 py-4 grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-between sm:items-center gap-3 sm:gap-4 border-b border-gray-100">
                 <div>
@@ -91,27 +91,48 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
                     ) : null}
                 </div>
                 <div>
-                    <div className="text-xs sm:text-sm text-gray-500">Scheduled For</div>
-                    <div className="font-medium text-slate-800 text-sm">
-                        {new Date(booking.slotDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        {booking.slotTime && !/^\d+$/.test(booking.slotTime) && (
-                            <span className="text-gray-500 font-normal"> at {booking.slotTime}</span>
-                        )}
-                    </div>
-                    {booking.rescheduleInfo && (
-                        <div className="mt-1.5 rounded border border-amber-200 bg-amber-50 px-2 py-1">
-                            <div className="text-xs font-medium text-amber-800">
-                                → {booking.rescheduleInfo.newSlotDate
-                                    ? new Date(booking.rescheduleInfo.newSlotDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                                    : 'New slot'}
-                                {booking.rescheduleInfo.newSlotTime && !/^\d+$/.test(booking.rescheduleInfo.newSlotTime) && (
-                                    <span> at {booking.rescheduleInfo.newSlotTime}</span>
+                    {booking.isCampBooking ? (
+                        <>
+                            <div className="text-xs sm:text-sm text-gray-500">Camp</div>
+                            <div className="font-medium text-slate-800 text-sm">{booking.campName}</div>
+                            {booking.campLocation && (
+                                <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                                    <MapPin className="w-3 h-3" /> {booking.campLocation}
+                                </div>
+                            )}
+                            {booking.campDates && (
+                                <div className="mt-0.5 text-xs text-gray-400">
+                                    {new Date(booking.campDates.start).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                    {' — '}
+                                    {new Date(booking.campDates.end).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <div className="text-xs sm:text-sm text-gray-500">Scheduled For</div>
+                            <div className="font-medium text-slate-800 text-sm">
+                                {new Date(booking.slotDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                {booking.slotTime && !/^\d+$/.test(booking.slotTime) && (
+                                    <span className="text-gray-500 font-normal"> at {booking.slotTime}</span>
                                 )}
                             </div>
-                            <div className="text-[10px] text-amber-600">
-                                by {booking.rescheduleInfo.rescheduledBy}
-                            </div>
-                        </div>
+                            {booking.rescheduleInfo && (
+                                <div className="mt-1.5 rounded border border-amber-200 bg-amber-50 px-2 py-1">
+                                    <div className="text-xs font-medium text-amber-800">
+                                        → {booking.rescheduleInfo.newSlotDate
+                                            ? new Date(booking.rescheduleInfo.newSlotDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                                            : 'New slot'}
+                                        {booking.rescheduleInfo.newSlotTime && !/^\d+$/.test(booking.rescheduleInfo.newSlotTime) && (
+                                            <span> at {booking.rescheduleInfo.newSlotTime}</span>
+                                        )}
+                                    </div>
+                                    <div className="text-[10px] text-amber-600">
+                                        by {booking.rescheduleInfo.rescheduledBy}
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
                 <div>
