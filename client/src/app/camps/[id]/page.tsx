@@ -116,6 +116,9 @@ export default function CampRegistrationPage() {
             setIsLoading(true);
             setError(null);
             try {
+                // Ensure "Self" patient exists before fetching the list
+                try { await api.post('/profile/patients/ensure-self'); } catch { /* profile may be incomplete */ }
+
                 const [campRes, patientsRes] = await Promise.all([
                     api.get(`/camps/${campId}`),
                     api.get('/profile/patients'),
@@ -123,13 +126,25 @@ export default function CampRegistrationPage() {
 
                 const campData = campRes.data.camp || campRes.data;
                 setCamp(campData);
-                setPatients(patientsRes.data || []);
 
-                // Default select first patient
-                if (patientsRes.data?.length > 0) {
-                    setSelectedPatientId(patientsRes.data[0].id);
-                    if (patientsRes.data[0].dob) {
-                        setDob(patientsRes.data[0].dob.split('T')[0]);
+                // Sort: Self first, then alphabetical
+                const allPatients: Patient[] = patientsRes.data || [];
+                allPatients.sort((a, b) => {
+                    const aIsSelf = a.relation?.toLowerCase() === 'self';
+                    const bIsSelf = b.relation?.toLowerCase() === 'self';
+                    if (aIsSelf && !bIsSelf) return -1;
+                    if (!aIsSelf && bIsSelf) return 1;
+                    return a.name.localeCompare(b.name);
+                });
+                setPatients(allPatients);
+
+                // Default select Self patient (or first patient)
+                const selfPatient = allPatients.find(p => p.relation?.toLowerCase() === 'self');
+                const defaultPatient = selfPatient || allPatients[0];
+                if (defaultPatient) {
+                    setSelectedPatientId(defaultPatient.id);
+                    if (defaultPatient.dob) {
+                        setDob(defaultPatient.dob.split('T')[0]);
                     }
                 }
 

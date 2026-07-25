@@ -1,185 +1,125 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Loader2, MapPin, Calendar, TestTubes, ArrowRight, Heart } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Loader2, MapPin, Sparkles } from 'lucide-react';
 import api from '@/lib/api';
-
-interface ActiveCamp {
-    id: string;
-    name: string;
-    description: string | null;
-    location: string;
-    city: string;
-    startDate: string;
-    endDate: string;
-    price: number;
-    _count: {
-        items: number;
-    };
-}
+import { CampCard, type ActiveCamp } from '@/components/camps/CampCard';
 
 export default function CampsListingPage() {
     const [camps, setCamps] = useState<ActiveCamp[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchCamps = async () => {
-            try {
-                const res = await api.get('/camps/active');
-                setCamps(res.data.camps || res.data || []);
-            } catch (error) {
-                console.error('Failed to fetch camps', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchCamps();
+    const fetchCamps = useCallback(async () => {
+        try {
+            const res = await api.get('/camps/active');
+            setCamps(res.data.camps || res.data || []);
+        } catch (error) {
+            console.error('Failed to fetch camps:', error);
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
 
-    const formatDate = (dateStr: string) => {
-        return new Date(dateStr).toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short',
-        });
-    };
-
-    const formatDateFull = (dateStr: string) => {
-        return new Date(dateStr).toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-        });
-    };
-
-    if (isLoading) {
-        return <CampsSkeleton />;
-    }
+    useEffect(() => { fetchCamps(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <div className="w-full min-h-screen bg-gray-50">
-            {/* Hero Header */}
-            <div className="bg-gradient-to-br from-[#4b2192] via-[#5b2db0] to-[#7c3aed] text-white">
-                <div className="container mx-auto px-4 py-12 sm:py-16 max-w-6xl">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-sm">
-                            <Heart className="w-6 h-6" />
-                        </div>
-                        <span className="text-white/70 text-sm font-medium uppercase tracking-wider">DocNow Health Camps</span>
+            {/* ═══ Page Header ═══ */}
+            <div className="relative bg-gradient-to-br from-[#3a1278] via-[#4b2192] to-[#7c3aed] text-white overflow-hidden">
+                {/* Decorative */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/[0.03] rounded-full" />
+                    <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-white/[0.02] rounded-full translate-y-1/2" />
+                </div>
+
+                <div className="relative container mx-auto px-4 py-10 sm:py-14 max-w-6xl text-center">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/15 mb-5">
+                        <Sparkles className="w-3.5 h-3.5 text-purple-200" />
+                        <span className="text-xs sm:text-sm font-bold text-white/90 uppercase tracking-wide">Walk-in Health Checkups</span>
                     </div>
-                    <h1 className="text-3xl sm:text-4xl font-bold mb-3">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-black mb-3 leading-tight">
                         Health Camps Near You
                     </h1>
-                    <p className="text-white/70 text-base sm:text-lg max-w-xl">
-                        Get comprehensive health check-ups at affordable prices. Join a camp near you and take charge of your health.
+                    <p className="text-base sm:text-lg text-white/60 font-medium max-w-xl mx-auto">
+                        Affordable walk-in health checkups at a location near you — no home visit needed
                     </p>
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 py-8 sm:py-12 max-w-6xl">
-                {camps.length === 0 ? (
-                    <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                        <Heart className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                        <h3 className="text-lg font-semibold text-gray-700 mb-2">No active camps available right now</h3>
-                        <p className="text-gray-400 max-w-md mx-auto">
-                            We&apos;re planning new health camps in your area. Check back soon for upcoming events!
-                        </p>
-                    </div>
+            {/* ═══ Content ═══ */}
+            <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-10 max-w-6xl">
+                {isLoading ? (
+                    <CampsSkeleton />
+                ) : camps.length === 0 ? (
+                    <EmptyState />
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {camps.map(camp => (
-                            <Link
-                                key={camp.id}
-                                href={`/camps/${camp.id}`}
-                                className="group bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg hover:border-purple-100 transition-all duration-300 hover:-translate-y-1"
-                            >
-                                {/* Card Top Accent */}
-                                <div className="h-1.5 bg-gradient-to-r from-[#4b2192] to-[#7c3aed]" />
+                    <>
+                        {/* Count */}
+                        <div className="flex items-center justify-between mb-5 sm:mb-7">
+                            <p className="text-sm text-gray-500 font-medium">
+                                <span className="text-gray-900 font-bold">{camps.length}</span> active camp{camps.length !== 1 ? 's' : ''} available
+                            </p>
+                        </div>
 
-                                <div className="p-5 sm:p-6">
-                                    {/* Name & Description */}
-                                    <h3 className="text-lg font-bold text-gray-900 mb-1.5 group-hover:text-[#4b2192] transition-colors">
-                                        {camp.name}
-                                    </h3>
-                                    {camp.description && (
-                                        <p className="text-sm text-gray-500 mb-4 line-clamp-2">{camp.description}</p>
-                                    )}
-
-                                    {/* Details */}
-                                    <div className="space-y-2.5 mb-5">
-                                        <div className="flex items-center gap-2.5 text-sm text-gray-600">
-                                            <MapPin size={16} className="text-gray-400 shrink-0" />
-                                            <span className="truncate">{camp.location}, {camp.city}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2.5 text-sm text-gray-600">
-                                            <Calendar size={16} className="text-gray-400 shrink-0" />
-                                            <span>{formatDate(camp.startDate)} — {formatDateFull(camp.endDate)}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2.5 text-sm text-gray-600">
-                                            <TestTubes size={16} className="text-gray-400 shrink-0" />
-                                            <span>{camp._count?.items ?? 0} tests & packages included</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Price & CTA */}
-                                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                                        <div>
-                                            <div className="text-xs text-gray-400 font-medium uppercase tracking-wider">Camp Price</div>
-                                            <div className="text-2xl font-bold text-gray-900">
-                                                ₹{camp.price}
-                                            </div>
-                                        </div>
-                                        <div className="bg-[#4b2192] text-white px-5 py-2.5 rounded-xl flex items-center gap-2 font-medium group-hover:bg-[#3d1a7a] transition-all shadow-lg shadow-purple-900/10 active:scale-95 text-sm">
-                                            Register Now <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
+                        {/* Card grid */}
+                        <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                            {camps.map(camp => (
+                                <CampCard key={camp.id} camp={camp} />
+                            ))}
+                        </div>
+                    </>
                 )}
             </div>
         </div>
     );
 }
 
+// ── Empty State ─────────────────────────────────────
+function EmptyState() {
+    return (
+        <div className="text-center py-16 sm:py-24">
+            <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                <MapPin className="w-7 h-7 text-purple-400" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">No Active Camps</h2>
+            <p className="text-gray-500 max-w-md mx-auto mb-6">
+                There are no health camps available right now. Check back soon — we regularly add new camps in your area.
+            </p>
+        </div>
+    );
+}
+
+// ── Skeleton ────────────────────────────────────────
 function CampsSkeleton() {
     return (
-        <div className="w-full min-h-screen bg-gray-50">
-            {/* Header Skeleton */}
-            <div className="bg-gradient-to-br from-[#4b2192] via-[#5b2db0] to-[#7c3aed]">
-                <div className="container mx-auto px-4 py-12 sm:py-16 max-w-6xl">
-                    <div className="h-8 w-48 bg-white/20 rounded-lg animate-pulse mb-4" />
-                    <div className="h-10 w-80 bg-white/20 rounded-lg animate-pulse mb-3" />
-                    <div className="h-5 w-96 bg-white/10 rounded-lg animate-pulse" />
-                </div>
+        <>
+            <div className="flex items-center justify-between mb-5 sm:mb-7">
+                <div className="h-5 w-40 bg-gray-100 rounded-lg animate-pulse" />
             </div>
-
-            <div className="container mx-auto px-4 py-8 sm:py-12 max-w-6xl">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[1, 2, 3].map(i => (
-                        <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                            <div className="h-1.5 bg-gray-200 animate-pulse" />
-                            <div className="p-5 sm:p-6 space-y-4">
-                                <div className="h-6 w-3/4 bg-gray-200 rounded animate-pulse" />
-                                <div className="h-4 w-full bg-gray-100 rounded animate-pulse" />
-                                <div className="space-y-2.5">
-                                    <div className="h-4 w-2/3 bg-gray-100 rounded animate-pulse" />
-                                    <div className="h-4 w-1/2 bg-gray-100 rounded animate-pulse" />
-                                    <div className="h-4 w-3/5 bg-gray-100 rounded animate-pulse" />
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3, 4, 5, 6].map(i => (
+                    <div key={i} className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                        <div className="bg-gradient-to-br from-gray-200 to-gray-100 px-5 py-4 sm:px-6 sm:py-5 space-y-3">
+                            <div className="h-5 w-20 bg-white/40 rounded-full animate-pulse" />
+                            <div className="h-6 w-3/4 bg-white/30 rounded-lg animate-pulse" />
+                            <div className="h-4 w-1/2 bg-white/20 rounded animate-pulse" />
+                        </div>
+                        <div className="p-5 sm:p-6 space-y-4">
+                            <div className="flex gap-2">
+                                <div className="h-7 w-36 bg-gray-100 rounded-lg animate-pulse" />
+                                <div className="h-7 w-28 bg-gray-100 rounded-lg animate-pulse" />
+                            </div>
+                            <div className="pt-4 border-t border-gray-100 flex justify-between items-end">
+                                <div>
+                                    <div className="h-3 w-14 bg-gray-100 rounded animate-pulse mb-1.5" />
+                                    <div className="h-8 w-20 bg-gray-200 rounded-lg animate-pulse" />
                                 </div>
-                                <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
-                                    <div>
-                                        <div className="h-3 w-16 bg-gray-100 rounded animate-pulse mb-1.5" />
-                                        <div className="h-8 w-20 bg-gray-200 rounded animate-pulse" />
-                                    </div>
-                                    <div className="h-10 w-32 bg-gray-200 rounded-xl animate-pulse" />
-                                </div>
+                                <div className="h-11 w-28 bg-gray-200 rounded-xl animate-pulse" />
                             </div>
                         </div>
-                    ))}
-                </div>
+                    </div>
+                ))}
             </div>
-        </div>
+        </>
     );
 }

@@ -5,7 +5,23 @@ import { prisma } from '../db';
 
 const router = express.Router();
 
-import { patientSchema } from '../utils/patientValidation';
+import { patientSchema, resolveOrCreateSelfPatient } from '../utils/patientValidation';
+
+// POST /api/profile/patients/ensure-self — Auto-create Self patient if missing
+// Called by camp checkout page on mount to guarantee the user appears in the patient list
+router.post('/ensure-self', authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        const selfPatient = await resolveOrCreateSelfPatient(req.userId!, prisma);
+        res.status(200).json(selfPatient);
+    } catch (error: any) {
+        console.error('Ensure Self Patient Error:', error);
+        // 422 = profile incomplete, user needs to fill name/gender/age first
+        if (error.message?.includes('incomplete')) {
+            return res.status(422).json({ error: error.message });
+        }
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
 
 // GET /api/profile/patients - Get all family members
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
