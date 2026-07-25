@@ -151,6 +151,7 @@ export async function listActiveCamps() {
         },
         orderBy: { startDate: 'asc' },
         include: {
+            _count: { select: { items: true } },
             items: {
                 include: {
                     catalogItem: {
