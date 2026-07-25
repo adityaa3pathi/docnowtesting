@@ -459,22 +459,28 @@ export class HealthiansAdapter {
      * Register a user for a health camp on Healthians.
      * POST /<partner_name>/userRegistration
      */
-    public async registerCampUser(params: {
-        mobile_number: string;
-        name: string;
-        age: string;
-        gender: string;
-        email: string;
-        vendor_customer_id: string;
-        dob: string;
-        relation?: string;
-    }) {
+    public async registerCampUser(params: Record<string, any>) {
         try {
             const response = await this.client.post('/userRegistration', params);
-            logBusinessEvent('healthians_camp_user_registered', {
-                vendorCustomerId: params.vendor_customer_id,
-                mobile: params.mobile_number,
-            });
+            const isSuccess = response.data && (
+                response.data.status === true ||
+                response.data.status === 'true' ||
+                response.data.status === 1 ||
+                response.data.status === '1' ||
+                response.data.status === 'success'
+            );
+
+            if (!isSuccess) {
+                logAlert('healthians_camp_user_registration_failed', {
+                    params,
+                    partnerResponse: response.data,
+                });
+            } else {
+                logBusinessEvent('healthians_camp_user_registered', {
+                    vendorCustomerId: params.vendor_customer_id,
+                    mobile: params.mobile_number || params.mobile,
+                });
+            }
             return response.data;
         } catch (error: any) {
             logAlert('healthians_camp_user_registration_failed', {

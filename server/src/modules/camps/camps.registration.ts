@@ -27,26 +27,24 @@ function normalizeRelation(relation: string): string {
 }
 
 /**
- * Healthians /userRegistration expects 'male'/'female', not 'M'/'F'.
- * Our normalizeGender() returns 'M'/'F' which is for createBooking, not registration.
+ * Healthians expects 'm' or 'f' for gender code.
  */
-function normalizeGenderForRegistration(g?: string | null): string {
-    if (!g) return 'male';
+function normalizeGenderCode(g?: string | null): string {
+    if (!g) return 'm';
     const lower = g.toLowerCase();
-    if (lower.startsWith('f')) return 'female';
-    return 'male';
+    return lower.startsWith('f') ? 'f' : 'm';
 }
 
 /**
- * Format DOB for Healthians as YYYY-MM-DD.
+ * Format DOB for Healthians as DD/MM/YYYY (Healthians standard format).
  * Falls back to an approximate date derived from age if DOB is not available.
  */
 function formatDob(dob: Date | string | null | undefined, age: number): string {
-    if (dob) {
-        return new Date(dob).toISOString().split('T')[0];
-    }
-    // Fallback: estimate DOB from age
-    return `${new Date().getFullYear() - age}-01-01`;
+    const d = dob ? new Date(dob) : new Date(new Date().getFullYear() - age, 0, 1);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
 }
 
 // ── Strategy Implementation ─────────────────────────────
@@ -80,17 +78,29 @@ export class CampRegistrationStrategy implements BookingStrategy {
 
         const response = await healthians.registerCampUser({
             mobile_number: user.mobile,
+            mobile: user.mobile,
+            contact_number: user.mobile,
             name: patient.name,
+            customer_name: patient.name,
             age: String(patient.age),
-            gender: normalizeGenderForRegistration(patient.gender),
-            email: user.email || '',
+            gender: normalizeGenderCode(patient.gender),
+            email: (user.email && user.email.trim()) ? user.email.trim() : `${user.mobile}@docnow.in`,
             vendor_customer_id: vendorCustomerId,
+            vendor_billing_user_id: vendorCustomerId,
             dob: formatDob(patient.dob, patient.age),
             relation: normalizeRelation(patient.relation),
         });
 
-        if (!response.status) {
-            throw new Error(response.message || 'Healthians camp registration failed');
+        const isSuccess = response && (
+            response.status === true ||
+            response.status === 'true' ||
+            response.status === 1 ||
+            response.status === '1' ||
+            response.status === 'success'
+        );
+
+        if (!isSuccess) {
+            throw new Error(response?.message || response?.error || 'Healthians camp registration failed');
         }
 
         logBusinessEvent('camp_user_registered', {
