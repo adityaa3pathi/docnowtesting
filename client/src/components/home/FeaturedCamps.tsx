@@ -15,7 +15,7 @@ interface ActiveCamp {
     startDate: string;
     endDate: string;
     price: number;
-    _count: {
+    _count?: {
         items: number;
     };
 }
@@ -120,7 +120,7 @@ export function FeaturedCamps() {
                                 </div>
                                 <div className="flex items-center gap-2.5 text-sm text-gray-600">
                                     <TestTubes size={16} className="text-gray-400 shrink-0" />
-                                    <span>{camp._count?.items ?? camp.items?.length ?? 0} tests & packages included</span>
+                                    <span>{camp._count?.items ?? 0} tests & packages included</span>
                                 </div>
                             </div>
 
