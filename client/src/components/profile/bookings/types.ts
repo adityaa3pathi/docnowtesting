@@ -139,6 +139,13 @@ export const STATUS_MAP: Record<string, StatusDisplay> = {
         step: 1,
         message: 'Your booking has been placed successfully.',
     },
+    'Registered': {
+        label: 'Registered',
+        color: 'bg-purple-100 text-purple-700',
+        step: 1,
+        message: 'You are registered for this health camp.',
+        subMessage: 'Please visit the camp location on the scheduled date with a valid ID.',
+    },
     'Camp Registered': {
         label: 'Registered',
         color: 'bg-purple-100 text-purple-700',

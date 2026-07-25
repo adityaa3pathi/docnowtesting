@@ -19,7 +19,10 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
     const [phleboData, setPhleboData] = useState<PhleboDetails | null>(null);
     const [reportDownloading, setReportDownloading] = useState(false);
     const [invoiceDownloading, setInvoiceDownloading] = useState(false);
-    const statusInfo = getStatusDisplay(booking.status, booking.reports, booking.partnerStatus);
+    const effectiveStatus = (booking.isCampBooking && ['CONFIRMED', 'PAID', 'AUTHORIZED'].includes(booking.paymentStatus || ''))
+        ? 'Registered'
+        : booking.status;
+    const statusInfo = getStatusDisplay(effectiveStatus, booking.reports, booking.partnerStatus);
     const journeyBanner = getBookingJourneyBanner(booking, statusInfo);
     const reportAction = getReportAction(booking.reports);
     const reportUrl = reportAction.kind === 'download' || reportAction.kind === 'retry'
@@ -30,11 +33,11 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
         : null;
     const isAwaitingPayment = booking.paymentStatus === 'INITIATED' || statusInfo.label === 'Awaiting Payment';
     const activePartnerBookingId = booking.currentPartnerBookingId || booking.rescheduledToId || booking.partnerBookingId;
-    const canTrack = !isAwaitingPayment && !!activePartnerBookingId && !['Superseded', 'Refunded', 'Cancelled'].includes(statusInfo.label);
+    const canTrack = !booking.isCampBooking && !isAwaitingPayment && !!activePartnerBookingId && !['Superseded', 'Refunded', 'Cancelled'].includes(statusInfo.label);
     const canReschedule = !booking.isCampBooking && ['Order Booked', 'Sample Collector Assigned', 'Fresh Sample Needed', 'Rescheduled'].includes(statusInfo.label);
     const canCancel = !booking.isCampBooking && !['Cancelled', 'Sample Collected', 'Sample Received at Lab', 'Report Generated', 'Report Ready', 'Report Available', 'Health Counselling Done', 'Completed', 'Superseded', 'Refunded'].includes(statusInfo.label);
-    const showPhleboContact = ['Sample Collector Assigned', 'Sample Collector Reached', 'Sample Collected'].includes(statusInfo.label);
-    const canContactPhlebo = ['Sample Collector Assigned', 'Sample Collector Reached'].includes(statusInfo.label);
+    const showPhleboContact = !booking.isCampBooking && ['Sample Collector Assigned', 'Sample Collector Reached', 'Sample Collected'].includes(statusInfo.label);
+    const canContactPhlebo = !booking.isCampBooking && ['Sample Collector Assigned', 'Sample Collector Reached'].includes(statusInfo.label);
 
     const handleFetchPhlebo = async () => {
         setPhleboLoading(true);
@@ -194,33 +197,36 @@ export function BookingCard({ booking, onTrack, onReschedule, onCancel }: Bookin
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-2 sm:gap-3 pt-4 border-t border-gray-100">
-                    <Button
-                        onClick={() => onTrack(booking.id)}
-                        variant="primary"
-                        disabled={!canTrack}
-                        className="gap-2 text-xs sm:text-sm"
-                    >
-                        <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        Track
-                    </Button>
+                    {canTrack && (
+                        <Button
+                            onClick={() => onTrack(booking.id)}
+                            variant="primary"
+                            className="gap-2 text-xs sm:text-sm"
+                        >
+                            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            Track
+                        </Button>
+                    )}
 
-                    <Button
-                        variant="outline"
-                        onClick={() => onReschedule(booking)}
-                        disabled={!canReschedule}
-                        className="text-xs sm:text-sm"
-                    >
-                        Reschedule
-                    </Button>
+                    {canReschedule && (
+                        <Button
+                            variant="outline"
+                            onClick={() => onReschedule(booking)}
+                            className="text-xs sm:text-sm"
+                        >
+                            Reschedule
+                        </Button>
+                    )}
 
-                    <Button
-                        variant="outline"
-                        onClick={() => onCancel(booking.id)}
-                        disabled={!canCancel}
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50 text-xs sm:text-sm"
-                    >
-                        Cancel
-                    </Button>
+                    {canCancel && (
+                        <Button
+                            variant="outline"
+                            onClick={() => onCancel(booking.id)}
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50 text-xs sm:text-sm"
+                        >
+                            Cancel
+                        </Button>
+                    )}
 
                     {reportUrl && (
                         <button
