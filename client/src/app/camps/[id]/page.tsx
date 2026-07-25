@@ -260,7 +260,7 @@ export default function CampRegistrationPage() {
             // If fully covered by wallet/promo, no payment needed
             if (data.status === 'confirmed' || data.amount === 0) {
                 toast.success('Registration confirmed!');
-                router.push('/bookings?tab=upcoming');
+                router.push('/profile?tab=bookings');
                 return;
             }
 
@@ -286,7 +286,7 @@ export default function CampRegistrationPage() {
                             razorpay_signature: response.razorpay_signature,
                         });
                         toast.success('Registration confirmed!');
-                        router.push('/bookings?tab=upcoming');
+                        router.push('/profile?tab=bookings');
                     } catch (verifyError: any) {
                         console.error('Payment verification error:', verifyError);
                         toast.error('Payment verification failed. If amount was deducted, it will be refunded within 5-7 days.');
