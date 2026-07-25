@@ -65,7 +65,8 @@ export async function sendBookingConfirmationViaWhatsApp(bookingId: string) {
 
     // Format date & time
     const slotDate = booking.slotDate || '';
-    const slotTime = booking.slotTime || '';
+    const rawSlotTime = booking.slotTime || '';
+    const slotTime = !rawSlotTime || /^\d+$/.test(rawSlotTime.trim()) ? '' : rawSlotTime.trim();
 
     const formattedDate = formatSlotDate(slotDate);
     const scheduledDateTime = formattedDate && slotTime

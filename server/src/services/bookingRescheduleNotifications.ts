@@ -62,7 +62,8 @@ export async function sendBookingRescheduledViaWhatsApp(newBookingId: string) {
 
     // New date & time for {{3}}
     const slotDate = booking.slotDate || '';
-    const slotTime = booking.slotTime || '';
+    const rawSlotTime = booking.slotTime || '';
+    const slotTime = !rawSlotTime || /^\d+$/.test(rawSlotTime.trim()) ? '' : rawSlotTime.trim();
     const formattedDate = formatSlotDate(slotDate);
     const newDateTime = formattedDate && slotTime
         ? `${formattedDate}, ${slotTime}`
