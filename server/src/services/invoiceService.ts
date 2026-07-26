@@ -8,8 +8,6 @@ type InvoiceLine = {
     unitPrice: number;
     amount: number;
     patientName: string;
-    description?: string;
-    isCamp?: boolean;
 };
 
 const COMPANY = {
@@ -77,39 +75,6 @@ function buildInvoiceLines(booking: any): InvoiceLine[] {
     const subtotal = booking.totalAmount || 0;
     const totalDiscount = booking.discountAmount || 0;
 
-    // ─── Health Camp Booking Handling ─────────────────────────────────────
-    // For health camps, the entire package is billed as a single line item.
-    // Included tests are listed in the description to avoid confusing Rs.0.00 rows.
-    if (booking.campId || booking.camp) {
-        const finalPrice = Number(Math.max(0, subtotal - totalDiscount).toFixed(2));
-        const patientName = booking.items[0]?.patient?.name || booking.billingName || 'Patient';
-        
-        const testNames = booking.items
-            .map((item: any) => item.testName)
-            .filter(Boolean);
-
-        const description = testNames.length > 0
-            ? `Included Tests (${testNames.length}): ${testNames.join(', ')}`
-            : 'Walk-in Health Checkup Package';
-
-        const campTitle = booking.camp?.name
-            ? `${booking.camp.name} — Health Checkup Package`
-            : 'Health Camp — Health Checkup Package';
-
-        return [
-            {
-                name: campTitle,
-                quantity: 1,
-                unitPrice: subtotal,
-                amount: finalPrice,
-                patientName,
-                description,
-                isCamp: true,
-            },
-        ];
-    }
-
-    // ─── Standard Home Collection Booking Handling ────────────────────────
     return booking.items.map((item: any, index: number) => {
         const ratio = subtotal > 0 ? item.price / subtotal : 0;
         const rawDiscount = totalDiscount > 0 ? totalDiscount * ratio : 0;
@@ -277,17 +242,11 @@ export async function generateInvoicePdfForBooking(bookingId: string) {
 
     // Table rows
     lines.forEach((line) => {
-        const fontName = line.isCamp ? 'Helvetica-Bold' : 'Helvetica';
-        const nameHeight = doc.font(fontName).fontSize(10).heightOfString(line.name, { width: 280 });
-        const patientLineH = 14;
-        
-        // Calculate description height if present (for camp included tests)
-        const descHeight = line.description
-            ? doc.font('Helvetica').fontSize(8).heightOfString(line.description, { width: 280 }) + 4
-            : 0;
-
-        const rowPadding = 18;
-        const rowHeight = Math.max(38, nameHeight + patientLineH + descHeight + rowPadding);
+        // Calculate how tall the test name will be when wrapped
+        const nameHeight = doc.font('Helvetica').fontSize(10).heightOfString(line.name, { width: 280 });
+        const patientLineH = 14; // height for the patient name sub-line
+        const rowPadding = 20;   // top + bottom padding
+        const rowHeight = Math.max(38, nameHeight + patientLineH + rowPadding);
 
         y = ensureSpace(doc, rowHeight + 10, y);
         y += 10;
@@ -296,22 +255,14 @@ export async function generateInvoicePdfForBooking(bookingId: string) {
         doc.moveTo(margin, y - 4).lineTo(margin, y + rowHeight - 2).strokeColor(COLORS.borderLight).lineWidth(0.5).stroke();
         doc.moveTo(pageWidth - margin, y - 4).lineTo(pageWidth - margin, y + rowHeight - 2).strokeColor(COLORS.borderLight).lineWidth(0.5).stroke();
 
-        // Item / Camp Package Name
-        doc.fillColor(COLORS.black).font(fontName).fontSize(10);
+        // Test name (wraps automatically)
+        doc.fillColor(COLORS.text).font('Helvetica').fontSize(10);
         doc.text(line.name, col1, y, { width: 280 });
 
-        let currentLineY = y + nameHeight + 2;
-
-        // Patient name
-        doc.fillColor(COLORS.subtle).font('Helvetica').fontSize(8.5);
-        doc.text(`Patient: ${line.patientName}`, col1, currentLineY, { width: 280 });
-        currentLineY += patientLineH;
-
-        // Included tests description for health camp
-        if (line.description) {
-            doc.fillColor(COLORS.muted).font('Helvetica').fontSize(8);
-            doc.text(line.description, col1, currentLineY, { width: 280, lineGap: 1.5 });
-        }
+        // Patient name below the test name, after the wrapped text
+        const nameBottom = y + nameHeight + 2;
+        doc.fillColor(COLORS.subtle).font('Helvetica').fontSize(8);
+        doc.text(`Patient: ${line.patientName}`, col1, nameBottom, { width: 280 });
 
         // Price columns aligned to the top of the row
         doc.fillColor(COLORS.text).font('Helvetica').fontSize(10);
@@ -381,10 +332,6 @@ export async function generateInvoicePdfForBooking(bookingId: string) {
     doc.text(`Reference: ${paymentReference}`, notesX, y);
     y += 14;
     doc.text(`Booking ID: ${booking.partnerBookingId || booking.id}`, notesX, y);
-    if (booking.camp) {
-        y += 14;
-        doc.text(`Camp Location: ${booking.camp.location}, ${booking.camp.city}`, notesX, y);
-    }
 
     // ─── Bottom Band ─────────────────────────────────────────────────────
     doc.rect(0, pageHeight - 12, pageWidth, 12).fill(COLORS.band);

@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { prisma } from '../db';
 import { generateInvoicePdfForBooking } from '../services/invoiceService';
+import { generateCampInvoicePdf } from '../services/campInvoiceService';
 import { verifyInvoiceAccessToken } from '../services/invoiceAccess';
 
 const router = Router();
@@ -16,6 +17,7 @@ router.get('/public/:token', async (req: AuthRequest, res: Response) => {
             select: {
                 id: true,
                 paymentStatus: true,
+                campId: true,
             },
         });
 
@@ -27,7 +29,9 @@ router.get('/public/:token', async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ error: 'Invoice is available only after the booking is confirmed.' });
         }
 
-        const { pdf, filename } = await generateInvoicePdfForBooking(payload.bookingId);
+        const { pdf, filename } = booking.campId
+            ? await generateCampInvoicePdf(payload.bookingId)
+            : await generateInvoicePdfForBooking(payload.bookingId);
 
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -62,6 +66,7 @@ router.get('/booking/:bookingId/download', async (req: AuthRequest, res: Respons
             select: {
                 id: true,
                 paymentStatus: true,
+                campId: true,
             },
         });
 
@@ -73,7 +78,9 @@ router.get('/booking/:bookingId/download', async (req: AuthRequest, res: Respons
             return res.status(400).json({ error: 'Invoice is available only after the booking is confirmed.' });
         }
 
-        const { pdf, filename } = await generateInvoicePdfForBooking(bookingId);
+        const { pdf, filename } = booking.campId
+            ? await generateCampInvoicePdf(bookingId)
+            : await generateInvoicePdfForBooking(bookingId);
 
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
