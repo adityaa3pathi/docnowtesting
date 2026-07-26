@@ -319,10 +319,10 @@ export async function generateCampInvoicePdf(bookingId: string) {
 
     // Totals box
     const rowH = 22;
-    const separatorPad = 8;
+    const totalSectionPad = 14; // equal padding above and below "Total Paid" text
     const dataRows = 2 + (walletApplied > 0 ? 1 : 0);
     const boxY = y - 4;
-    const boxH = 12 + dataRows * rowH + separatorPad + rowH + 12;
+    const boxH = 12 + dataRows * rowH + totalSectionPad + rowH + totalSectionPad;
     doc.rect(totalsX - 8, boxY, totalsW + 16, boxH)
         .strokeColor(COLORS.borderLight).lineWidth(0.5).stroke();
 
@@ -346,12 +346,11 @@ export async function generateCampInvoicePdf(bookingId: string) {
 
     // Separator line between detail rows and total
     tY += rowH;
-    const sepLineY = tY - 2;
-    doc.moveTo(totalsX - 8, sepLineY).lineTo(totalsX + totalsW + 8, sepLineY)
+    doc.moveTo(totalsX - 8, tY).lineTo(totalsX + totalsW + 8, tY)
         .strokeColor(COLORS.borderLight).lineWidth(0.5).stroke();
 
-    // Total row — vertically centered below the separator
-    tY += separatorPad;
+    // Total row — vertically centered between separator and box bottom
+    tY += totalSectionPad;
     doc.fillColor(COLORS.black).font('Helvetica-Bold').fontSize(11);
     doc.text('Total Paid', totalsX, tY, { width: totalsW / 2 });
     doc.text(formatCurrency(totalAmount), totalsX + totalsW / 2, tY, { width: totalsW / 2, align: 'right' });
