@@ -109,6 +109,7 @@ const managerOrderSchema = z.object({
     })).min(1, 'Add at least one test'),
     slotDate: z.string().min(1, 'Select a date'),
     slotTime: z.string().min(1, 'Select a time slot'),
+    slotLabel: z.string().optional(),
 });
 
 type ManagerOrderFormValues = z.infer<typeof managerOrderSchema>;
@@ -1070,7 +1071,7 @@ function StepSlot({
             <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Select Date</label>
                 <input type="date" value={slotDate} min={today}
-                    onChange={e => { setValue('slotDate', e.target.value); setValue('slotTime', ''); resetFreeze(); }}
+                    onChange={e => { setValue('slotDate', e.target.value); setValue('slotTime', ''); setValue('slotLabel', ''); resetFreeze(); }}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-300 outline-none" />
             </div>
 
@@ -1087,7 +1088,7 @@ function StepSlot({
                                     const selected = slotTime === s.stm_id;
                                     return (
                                         <button key={s.stm_id}
-                                            onClick={() => { setValue('slotTime', s.stm_id); resetFreeze(); }}
+                                            onClick={() => { setValue('slotTime', s.stm_id); setValue('slotLabel', `${s.slot_time} – ${s.end_time}`); resetFreeze(); }}
                                             disabled={isSlotLocked && !selected}
                                             className={`text-sm py-2.5 px-3 rounded-lg border font-medium transition-colors
                                                 ${selected ? 'bg-[#4b2192] text-white border-purple-700' :
@@ -1315,7 +1316,7 @@ function StepConfirm({
                 </div>
                 <div className="px-4 py-3 flex justify-between text-sm">
                     <span className="text-gray-500">Slot</span>
-                    <span className="font-medium">{slotDate} · {slotTime}</span>
+                    <span className="font-medium">{(() => { try { const d = new Date(slotDate + 'T00:00:00'); return isNaN(d.getTime()) ? slotDate : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return slotDate; } })()} · {watch('slotLabel') || slotTime}</span>
                 </div>
                 <div className="px-4 py-3 space-y-3">
                     <CartSummaryByPatient cart={cart} userId={user.id} userName={user.name} />
@@ -1687,6 +1688,7 @@ export default function PaymentLinksPage() {
             cart: [],
             slotDate: '',
             slotTime: '',
+            slotLabel: '',
         },
     });
 
