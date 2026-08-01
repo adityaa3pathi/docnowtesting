@@ -676,7 +676,7 @@ router.post('/slots/freeze', ...mgr, async (req: AuthRequest, res: Response) => 
 
 // E. Order Creation
 router.post('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
-    const { userId, addressId, slotDate, slotTime, items } = req.body;
+    const { userId, addressId, slotDate, slotTime, slotLabel, items } = req.body;
     const managerId = req.userId!;
 
     if (!userId || !addressId || !slotDate || !slotTime || !items || !items.length) {
@@ -730,6 +730,9 @@ router.post('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
                 resolvedItems.push({ ...item, patientId: pId });
             }
 
+            // Store human-readable label in slotTime, raw stm_id in partnerSlotId
+            const readableSlotTime = (slotLabel && !/^\d+$/.test(slotLabel.trim())) ? slotLabel.trim() : '';
+
             const booking = await tx.booking.create({
                 data: {
                     userId,
@@ -740,7 +743,7 @@ router.post('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
                     finalAmount: totalAmount,
                     totalAmount: totalAmount,
                     slotDate: slotDate.split('T')[0],
-                    slotTime,
+                    slotTime: readableSlotTime,
                     addressLine: address.line1,
                     addressCity: address.city,
                     addressPincode: address.pincode,

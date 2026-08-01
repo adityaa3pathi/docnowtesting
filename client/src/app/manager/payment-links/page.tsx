@@ -1252,6 +1252,7 @@ function StepConfirm({
                 userId: user.id,
                 addressId: address.id,
                 slotDate, slotTime,
+                slotLabel: watch('slotLabel') || '',
                 items: cart.map(c => ({ testCode: c.testCode, patientId: c.patientId }))
             });
             setResult({ orderId: res.data.managerOrder.id, bookingId: res.data.booking.id });
