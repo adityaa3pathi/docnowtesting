@@ -56,7 +56,7 @@ export function Header() {
     // Pages where the header search bar is redundant or distracting
     const hideSearch = ['/search', '/profile', '/cart'].some(p => pathname.startsWith(p));
     const { selectedCity, selectedPincode, updateCity, updatePincode, checkAndSetPincode, serviceabilityStatus } = useLocation();
-    const { user, isAuthenticated, logout } = useAuth();
+    const { user, isAuthenticated, isInitialized, logout } = useAuth();
     const { cartCount } = useCart();
     const { openAuthDialog } = useAuthGate();
 
@@ -387,7 +387,9 @@ export function Header() {
                         </Link>
 
                         {/* Auth */}
-                        {isAuthenticated ? (
+                        {!isInitialized ? (
+                            <div className="w-9 h-9 rounded-full bg-gray-200 animate-pulse" />
+                        ) : isAuthenticated ? (
                             <Link href="/profile" className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-black hover:bg-primary/90 transition-colors">
                                 {user?.name?.[0]?.toUpperCase() || 'U'}
                             </Link>
@@ -501,7 +503,17 @@ export function Header() {
                 {/* Drawer Body */}
                 <div className="flex-1 overflow-y-auto">
                     {/* User Info */}
-                    {isAuthenticated ? (
+                    {!isInitialized ? (
+                        <div className="px-5 py-4 border-b border-gray-100">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse flex-shrink-0" />
+                                <div className="flex-1 space-y-2">
+                                    <div className="h-4 bg-gray-200 animate-pulse rounded w-24" />
+                                    <div className="h-3 bg-gray-200 animate-pulse rounded w-20" />
+                                </div>
+                            </div>
+                        </div>
+                    ) : isAuthenticated ? (
                         <div className="px-5 py-4 bg-primary/5 border-b border-gray-100">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
