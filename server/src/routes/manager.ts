@@ -774,6 +774,109 @@ router.post('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
     }
 });
 
+// E2. Camp Order Creation
+router.post('/camps/orders', ...mgr, async (req: AuthRequest, res: Response) => {
+    const { userId, campId, patientId, dob } = req.body;
+    const managerId = req.userId!;
+
+    if (!userId || !campId || !patientId) {
+        return res.status(400).json({ error: 'Missing required fields: userId, campId, patientId' });
+    }
+
+    try {
+        const isSelf = patientId === 'self';
+
+        const [camp, user] = await Promise.all([
+            prisma.camp.findUnique({
+                where: { id: campId },
+                include: { items: { include: { catalogItem: true } } }
+            }),
+            prisma.user.findUnique({ where: { id: userId } }),
+        ]);
+
+        // Only look up patient if not 'self' — self is resolved inside tx
+        const patient = isSelf ? null : await prisma.patient.findUnique({ where: { id: patientId } });
+
+        if (!camp) return res.status(404).json({ error: 'Camp not found' });
+        if (!camp.isActive) return res.status(400).json({ error: 'Camp is not active' });
+        if (new Date() > camp.endDate) return res.status(400).json({ error: 'Camp has ended' });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        if (!isSelf && (!patient || patient.userId !== userId)) return res.status(404).json({ error: 'Patient not found or does not belong to user' });
+
+        if (camp.items.length === 0) {
+            return res.status(400).json({ error: 'Camp has no tests configured' });
+        }
+
+        const disabledItems = camp.items.filter(i => !i.catalogItem.isEnabled);
+        if (disabledItems.length > 0) {
+            return res.status(400).json({ error: 'Some camp tests are currently unavailable' });
+        }
+
+        const totalAmount = camp.price;
+
+        const result = await prisma.$transaction(async (tx) => {
+            // Resolve 'self' to actual patient record
+            let resolvedPatientId = patientId;
+            let resolvedPatient = patient;
+            if (isSelf) {
+                const selfPatient = await resolveOrCreateSelfPatient(userId, tx as any);
+                resolvedPatientId = selfPatient.id;
+                resolvedPatient = selfPatient;
+            }
+
+            // Update patient DOB if provided and currently missing
+            if (dob && resolvedPatient && !resolvedPatient.dob) {
+                await tx.patient.update({
+                    where: { id: resolvedPatientId },
+                    data: { dob: new Date(dob) }
+                });
+            }
+
+            const booking = await tx.booking.create({
+                data: {
+                    userId,
+                    campId: camp.id,
+                    createdByManagerId: managerId,
+                    paymentStatus: 'INITIATED',
+                    status: 'Awaiting Payment',
+                    totalAmount,
+                    finalAmount: totalAmount,
+                    slotDate: camp.startDate.toISOString().split('T')[0],
+                    slotTime: 'Camp',
+                    addressLine: camp.location,
+                    addressCity: camp.city,
+                    addressPincode: camp.pincode,
+                    items: {
+                        create: camp.items.map(item => ({
+                            testCode: item.catalogItem.partnerCode,
+                            testName: item.catalogItem.name,
+                            price: 0,
+                            patientId: resolvedPatientId,
+                        }))
+                    }
+                }
+            });
+
+            const managerOrder = await tx.managerOrder.create({
+                data: {
+                    bookingId: booking.id,
+                    managerId,
+                    customerId: userId,
+                    totalAmount,
+                    status: 'CREATED'
+                }
+            });
+
+            return { booking, managerOrder };
+        });
+
+        res.status(201).json(result);
+    } catch (error: any) {
+        console.error('[Manager] Camp order creation error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // F. Payment Link
 router.post('/orders/:id/payment-link', ...mgr, async (req: AuthRequest, res: Response) => {
     const id = req.params.id as string; 
