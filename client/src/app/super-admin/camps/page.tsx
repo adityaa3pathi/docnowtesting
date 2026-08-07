@@ -29,6 +29,7 @@ interface Camp {
     startDate: string;
     endDate: string;
     price: number;
+    familyPrice: number;
     isActive: boolean;
     items: CampItem[];
     _count: {
@@ -53,6 +54,7 @@ interface CampFormData {
     startDate: string;
     endDate: string;
     price: string;
+    familyPrice: string;
 }
 
 const defaultForm: CampFormData = {
@@ -64,6 +66,7 @@ const defaultForm: CampFormData = {
     startDate: '',
     endDate: '',
     price: '',
+    familyPrice: '',
 };
 
 export default function CampsPage() {
@@ -182,6 +185,7 @@ export default function CampsPage() {
             startDate: camp.startDate.split('T')[0],
             endDate: camp.endDate.split('T')[0],
             price: String(camp.price),
+            familyPrice: String(camp.familyPrice),
         });
         setSelectedCatalogIds(new Set(camp.items.map(i => i.catalogItemId)));
         setSelectedItemsMap(new Map(camp.items.map(i => [i.catalogItemId, { name: i.catalogItem.name, partnerCode: i.catalogItem.partnerCode, type: i.catalogItem.type }])));
@@ -199,7 +203,7 @@ export default function CampsPage() {
     };
 
     const handleSubmit = async () => {
-        if (!form.name.trim() || !form.location.trim() || !form.city.trim() || !form.startDate || !form.endDate || !form.price) {
+        if (!form.name.trim() || !form.location.trim() || !form.city.trim() || !form.startDate || !form.endDate || !form.price || !form.familyPrice) {
             toast.error('Please fill in all required fields');
             return;
         }
@@ -215,6 +219,7 @@ export default function CampsPage() {
                 startDate: new Date(form.startDate).toISOString(),
                 endDate: new Date(form.endDate).toISOString(),
                 price: parseFloat(form.price),
+                familyPrice: parseFloat(form.familyPrice),
                 catalogItemIds: Array.from(selectedCatalogIds),
             };
 
@@ -514,7 +519,7 @@ export default function CampsPage() {
                             </div>
 
                             {/* Dates & Price */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Start Date *</label>
                                     <input
@@ -534,12 +539,23 @@ export default function CampsPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Price (₹) *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Price (Single Patient) *</label>
                                     <input
                                         type="number"
                                         value={form.price}
                                         onChange={(e) => setForm(f => ({ ...f, price: e.target.value }))}
                                         placeholder="999"
+                                        min="0"
+                                        className="w-full px-4 py-2.5 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192] transition-all text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Family Price (2+ Patients) *</label>
+                                    <input
+                                        type="number"
+                                        value={form.familyPrice}
+                                        onChange={(e) => setForm(f => ({ ...f, familyPrice: e.target.value }))}
+                                        placeholder="1499"
                                         min="0"
                                         className="w-full px-4 py-2.5 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192] transition-all text-sm"
                                     />

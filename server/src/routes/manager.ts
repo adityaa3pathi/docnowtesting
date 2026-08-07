@@ -776,7 +776,7 @@ router.post('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
 
 // E2. Camp Order Creation
 router.post('/camps/orders', ...mgr, async (req: AuthRequest, res: Response) => {
-    const { userId, campId, patientId, dob } = req.body;
+    const { userId, campId, patientId, dob, pricingTier } = req.body;
     const managerId = req.userId!;
 
     if (!userId || !campId || !patientId) {
@@ -812,7 +812,7 @@ router.post('/camps/orders', ...mgr, async (req: AuthRequest, res: Response) => 
             return res.status(400).json({ error: 'Some camp tests are currently unavailable' });
         }
 
-        const totalAmount = camp.price;
+        const totalAmount = pricingTier === 'FAMILY' ? camp.familyPrice : camp.price;
 
         const result = await prisma.$transaction(async (tx) => {
             // Resolve 'self' to actual patient record

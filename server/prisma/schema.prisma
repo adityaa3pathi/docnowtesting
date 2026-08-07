@@ -629,7 +629,8 @@ model Camp {
   pincode     String
   startDate   DateTime
   endDate     DateTime
-  price       Float             // Custom camp price (set by admin)
+  price       Float             // Single patient price
+  familyPrice Float             // Family/group price (2+ patients)
   isActive    Boolean           @default(true)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt

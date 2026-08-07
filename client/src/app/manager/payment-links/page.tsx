@@ -1685,6 +1685,7 @@ export default function PaymentLinksPage() {
     const [selectedCamp, setSelectedCamp] = useState<any>(null);
     const [campPatientId, setCampPatientId] = useState<string>('');
     const [campDob, setCampDob] = useState<string>('');
+    const [campPricingTier, setCampPricingTier] = useState<'SINGLE' | 'FAMILY'>('SINGLE');
     const [campResult, setCampResult] = useState<{orderId: string, bookingId: string} | null>(null);
     const [campCreating, setCampCreating] = useState(false);
 
@@ -1714,6 +1715,7 @@ export default function PaymentLinksPage() {
         setSelectedCamp(null);
         setCampPatientId('');
         setCampDob('');
+        setCampPricingTier('SINGLE');
         setCampResult(null);
     };
 
@@ -2027,6 +2029,7 @@ export default function PaymentLinksPage() {
                                 setCampStep(2);
                                 setCampPatientId('');
                                 setCampDob('');
+                                setCampPricingTier('SINGLE');
                                 setCampResult(null);
                             }}
                             className="w-full py-3 rounded-xl text-sm font-bold bg-purple-100 text-[#4b2192] hover:bg-purple-200 transition-all"
@@ -2049,6 +2052,7 @@ export default function PaymentLinksPage() {
                     campId: selectedCamp.id,
                     patientId: campPatientId,
                     dob: campDob || undefined,
+                    pricingTier: campPricingTier,
                 });
                 setCampResult({ orderId: res.data.managerOrder.id, bookingId: res.data.booking.id });
                 toast.success('Camp registration order created!');
@@ -2062,6 +2066,25 @@ export default function PaymentLinksPage() {
         return (
             <div className="space-y-4">
                 <h3 className="text-lg font-bold text-gray-900">Confirm Camp Registration</h3>
+                
+                <div className="space-y-3">
+                    <label className="block text-sm font-bold text-gray-900">Select Pricing Tier</label>
+                    <div className="flex flex-col gap-2">
+                        <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${campPricingTier === 'SINGLE' ? 'border-[#4b2192] bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${campPricingTier === 'SINGLE' ? 'border-[#4b2192]' : 'border-gray-300'}`}>
+                                {campPricingTier === 'SINGLE' && <div className="w-3 h-3 rounded-full bg-[#4b2192]" />}
+                            </div>
+                            <span className="font-bold text-gray-900">Single Patient — ₹{selectedCamp?.price}</span>
+                        </label>
+                        <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${campPricingTier === 'FAMILY' ? 'border-[#4b2192] bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${campPricingTier === 'FAMILY' ? 'border-[#4b2192]' : 'border-gray-300'}`}>
+                                {campPricingTier === 'FAMILY' && <div className="w-3 h-3 rounded-full bg-[#4b2192]" />}
+                            </div>
+                            <span className="font-bold text-gray-900">Family (2+ Patients) — ₹{selectedCamp?.familyPrice}</span>
+                        </label>
+                    </div>
+                </div>
+
                 <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
                     <div className="px-4 py-3 flex justify-between text-sm">
                         <span className="text-gray-500">Customer</span>
@@ -2089,7 +2112,7 @@ export default function PaymentLinksPage() {
                     </div>
                     <div className="px-4 py-3 flex justify-between text-sm font-bold">
                         <span className="text-gray-700">Total</span>
-                        <span className="text-[#4b2192]">₹{selectedCamp?.price}</span>
+                        <span className="text-[#4b2192]">₹{campPricingTier === 'SINGLE' ? selectedCamp?.price : selectedCamp?.familyPrice}</span>
                     </div>
                 </div>
 
