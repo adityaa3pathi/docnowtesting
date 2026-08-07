@@ -79,8 +79,8 @@ function setCachedUser(user: User | null) {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    // Initialize from localStorage — synchronous, no flash
-    const [user, setUser] = useState<User | null>(getCachedUser);
+    // Initialize to null to match SSR output and prevent React hydration mismatch.
+    const [user, setUser] = useState<User | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
 
     // Stable ref for the logout callback — avoids re-renders when CartContext registers.
@@ -90,8 +90,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logoutCallbackRef.current = cb;
     }, []);
 
-    // Background validation: confirm session is still valid
+    // Hydrate cached user on client mount, then validate in background
     useEffect(() => {
+        const cached = getCachedUser();
+        if (cached) {
+            setUser(cached);
+        }
+
         api.get('/auth/me')
             .then(res => {
                 const serverUser = res.data.user;
