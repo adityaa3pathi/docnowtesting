@@ -556,7 +556,7 @@ export default function CampsPage() {
                                         type="number"
                                         value={form.familyPrice}
                                         onChange={(e) => setForm(f => ({ ...f, familyPrice: e.target.value }))}
-                                        placeholder="1499"
+                                        placeholder="799"
                                         min="0"
                                         className="w-full px-4 py-2.5 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192] transition-all text-sm"
                                     />
