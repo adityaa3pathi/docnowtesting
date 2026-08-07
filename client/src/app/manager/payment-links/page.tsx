@@ -2080,7 +2080,7 @@ export default function PaymentLinksPage() {
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${campPricingTier === 'FAMILY' ? 'border-[#4b2192]' : 'border-gray-300'}`}>
                                 {campPricingTier === 'FAMILY' && <div className="w-3 h-3 rounded-full bg-[#4b2192]" />}
                             </div>
-                            <span className="font-bold text-gray-900">Family (2+ Patients) — ₹{selectedCamp?.familyPrice}</span>
+                            <span className="font-bold text-gray-900">Family (2+ Patients) — ₹{selectedCamp?.familyPrice}/person</span>
                         </label>
                     </div>
                 </div>

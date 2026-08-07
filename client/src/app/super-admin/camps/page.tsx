@@ -390,6 +390,7 @@ export default function CampsPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="font-bold text-gray-900">₹{camp.price}</div>
+                                            <div className="text-xs text-gray-400">₹{camp.familyPrice}/person (family)</div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-medium text-sm">
@@ -550,7 +551,7 @@ export default function CampsPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Family Price (2+ Patients) *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Family Price (per patient, 2+) *</label>
                                     <input
                                         type="number"
                                         value={form.familyPrice}
