@@ -2070,18 +2070,26 @@ export default function PaymentLinksPage() {
                 <div className="space-y-3">
                     <label className="block text-sm font-bold text-gray-900">Select Pricing Tier</label>
                     <div className="flex flex-col gap-2">
-                        <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${campPricingTier === 'SINGLE' ? 'border-[#4b2192] bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}>
+                        <button
+                            type="button"
+                            onClick={() => setCampPricingTier('SINGLE')}
+                            className={`w-full text-left flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${campPricingTier === 'SINGLE' ? 'border-[#4b2192] bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}
+                        >
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${campPricingTier === 'SINGLE' ? 'border-[#4b2192]' : 'border-gray-300'}`}>
                                 {campPricingTier === 'SINGLE' && <div className="w-3 h-3 rounded-full bg-[#4b2192]" />}
                             </div>
                             <span className="font-bold text-gray-900">Single Patient — ₹{selectedCamp?.price}</span>
-                        </label>
-                        <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${campPricingTier === 'FAMILY' ? 'border-[#4b2192] bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setCampPricingTier('FAMILY')}
+                            className={`w-full text-left flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${campPricingTier === 'FAMILY' ? 'border-[#4b2192] bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}
+                        >
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${campPricingTier === 'FAMILY' ? 'border-[#4b2192]' : 'border-gray-300'}`}>
                                 {campPricingTier === 'FAMILY' && <div className="w-3 h-3 rounded-full bg-[#4b2192]" />}
                             </div>
                             <span className="font-bold text-gray-900">Family (2+ Patients) — ₹{selectedCamp?.familyPrice}/person</span>
-                        </label>
+                        </button>
                     </div>
                 </div>
 
