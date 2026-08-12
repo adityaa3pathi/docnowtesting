@@ -68,6 +68,9 @@ interface CartItem {
     testName: string;
     price: number;
     patientId: string; // 'self' | actual patient id
+    customPrice?: number; // Manager-specified custom price
+    catalogPrice?: number; // Original catalog price for reference
+    floorPrice?: number; // Minimum allowed price (70% of catalog)
 }
 
 interface ManagerOrder {
@@ -106,6 +109,9 @@ const managerOrderSchema = z.object({
         testName: z.string(),
         price: z.number(),
         patientId: z.string(),
+        customPrice: z.number().optional(),
+        catalogPrice: z.number().optional(),
+        floorPrice: z.number().optional(),
     })).min(1, 'Add at least one test'),
     slotDate: z.string().min(1, 'Select a date'),
     slotTime: z.string().min(1, 'Select a time slot'),
@@ -805,9 +811,15 @@ function StepTests({
     // Add test for ALL selected patients (skip existing combos)
     const addForAllPatients = (item: CatalogItem) => {
         const newRows: CartItem[] = [];
+        const catalogPrice = item.price;
+        const floorPrice = Math.round(catalogPrice * 0.70 * 100) / 100;
         for (const pid of selectedPatientIds) {
             if (!hasDuplicate(item.partnerCode, pid)) {
-                newRows.push({ testCode: item.partnerCode, testName: item.name, price: item.price, patientId: pid });
+                newRows.push({
+                    testCode: item.partnerCode, testName: item.name,
+                    price: item.price, patientId: pid,
+                    catalogPrice, floorPrice,
+                });
             }
         }
         if (newRows.length === 0) {
@@ -836,7 +848,16 @@ function StepTests({
     // Count how many of this test are already in cart
     const countInCart = (code: string) => cart.filter(c => c.testCode === code).length;
 
-    const total = cart.reduce((s, c) => s + c.price, 0);
+    const total = cart.reduce((s, c) => {
+        const effectivePrice = (c.customPrice !== undefined && c.customPrice !== null && c.floorPrice && c.customPrice >= c.floorPrice && c.customPrice <= (c.catalogPrice || c.price))
+            ? c.customPrice : (c.catalogPrice || c.price);
+        return s + effectivePrice;
+    }, 0);
+
+    // Check if any cart item has an invalid custom price
+    const hasInvalidPrice = cart.some(c =>
+        c.customPrice !== undefined && c.customPrice !== null && c.floorPrice && c.customPrice < c.floorPrice
+    );
 
     return (
         <div className="space-y-4">
@@ -892,29 +913,74 @@ function StepTests({
                 <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
                     <h4 className="text-sm font-semibold text-purple-800 mb-3">Cart ({cart.length} items)</h4>
                     <div className="space-y-2">
-                        {cart.map((c, idx) => (
+                        {cart.map((c, idx) => {
+                            const hasCustom = c.customPrice !== undefined && c.customPrice !== null && c.customPrice !== c.catalogPrice;
+                            const priceError = c.customPrice !== undefined && c.customPrice !== null && c.floorPrice && c.customPrice < c.floorPrice;
+                            return (
                             <div key={`${c.testCode}-${c.patientId}-${idx}`}
-                                className="flex items-center gap-2 bg-white border border-purple-100 rounded-lg p-2.5">
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-gray-900 truncate">{c.testName}</p>
-                                    <p className="text-xs text-gray-400">₹{c.price}</p>
+                                className={`bg-white border rounded-lg p-2.5 ${priceError ? 'border-red-300' : hasCustom ? 'border-amber-300' : 'border-purple-100'}`}>
+                                <div className="flex items-center gap-2">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-gray-900 truncate">{c.testName}</p>
+                                        {hasCustom && !priceError && (
+                                            <span className="inline-flex items-center gap-1 mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                                                Custom price
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-xs text-gray-400">₹</span>
+                                        <input
+                                            type="number"
+                                            value={c.customPrice !== undefined && c.customPrice !== null ? c.customPrice : c.price}
+                                            onChange={e => {
+                                                const val = e.target.value === '' ? undefined : Number(e.target.value);
+                                                update(idx, {
+                                                    ...c,
+                                                    customPrice: val,
+                                                    price: val !== undefined && val !== null && c.floorPrice && val >= c.floorPrice && val <= (c.catalogPrice || c.price)
+                                                        ? val : (c.catalogPrice || c.price),
+                                                });
+                                            }}
+                                            min={c.floorPrice || 0}
+                                            max={c.catalogPrice || undefined}
+                                            step="1"
+                                            className={`w-20 text-sm font-semibold text-right border rounded-lg px-2 py-1 outline-none focus:ring-2 ${
+                                                priceError
+                                                    ? 'border-red-300 text-red-700 focus:ring-red-300'
+                                                    : hasCustom
+                                                        ? 'border-amber-300 text-amber-700 focus:ring-amber-300'
+                                                        : 'border-gray-200 text-purple-700 focus:ring-purple-300'
+                                            }`}
+                                        />
+                                    </div>
+                                    <select
+                                        value={c.patientId}
+                                        onChange={e => changeRowPatient(idx, e.target.value)}
+                                        className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-purple-300 outline-none max-w-[140px]"
+                                    >
+                                        {selectedPatientIds.map(pid => (
+                                            <option key={pid} value={pid}>{getPatientLabel(pid)}</option>
+                                        ))}
+                                    </select>
+                                    <button onClick={() => removeRow(idx)}
+                                        className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Remove">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
                                 </div>
-                                <select
-                                    value={c.patientId}
-                                    onChange={e => changeRowPatient(idx, e.target.value)}
-                                    className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-purple-300 outline-none max-w-[140px]"
-                                >
-                                    {selectedPatientIds.map(pid => (
-                                        <option key={pid} value={pid}>{getPatientLabel(pid)}</option>
-                                    ))}
-                                </select>
-                                <button onClick={() => removeRow(idx)}
-                                    className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                    title="Remove">
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                </button>
+                                {priceError && (
+                                    <p className="text-[11px] text-red-600 mt-1 pl-1">
+                                        Min: ₹{c.floorPrice} (70% of ₹{c.catalogPrice})
+                                    </p>
+                                )}
+                                {!priceError && c.floorPrice && hasCustom && (
+                                    <p className="text-[11px] text-gray-400 mt-1 pl-1">
+                                        Range: ₹{c.floorPrice} – ₹{c.catalogPrice}
+                                    </p>
+                                )}
                             </div>
-                        ))}
+                        );})}
                     </div>
                     <div className="border-t border-purple-200 mt-3 pt-2 flex justify-between font-bold text-purple-900">
                         <span>Total</span>
@@ -927,7 +993,7 @@ function StepTests({
                 <button onClick={onBack} className="btn-ghost flex items-center gap-1">
                     <ChevronLeft className="w-4 h-4" /> Back
                 </button>
-                <button disabled={cart.length === 0} onClick={async () => { const valid = await trigger('cart'); if (valid) onNext(); }}
+                <button disabled={cart.length === 0 || hasInvalidPrice} onClick={async () => { const valid = await trigger('cart'); if (valid) onNext(); }}
                     className="btn-primary flex-1 flex items-center justify-center gap-1 disabled:opacity-50">
                     Continue <ChevronRight className="w-4 h-4" />
                 </button>
@@ -1209,12 +1275,28 @@ function CartSummaryByPatient({ cart, userId, userName }: { cart: CartItem[]; us
                     <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-1">
                         {getLabel(pid)}
                     </p>
-                    {items.map((c, i) => (
-                        <div key={`${c.testCode}-${i}`} className="flex justify-between text-sm pl-2">
-                            <span className="text-gray-700">{c.testName}</span>
-                            <span className="font-medium">₹{c.price}</span>
-                        </div>
-                    ))}
+                    {items.map((c, i) => {
+                        const hasCustom = c.customPrice !== undefined && c.customPrice !== null && c.catalogPrice && c.customPrice !== c.catalogPrice;
+                        const effectivePrice = hasCustom ? c.customPrice! : c.price;
+                        return (
+                            <div key={`${c.testCode}-${i}`} className="flex justify-between text-sm pl-2">
+                                <span className="text-gray-700 flex items-center gap-1.5">
+                                    {c.testName}
+                                    {hasCustom && (
+                                        <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                                            Custom
+                                        </span>
+                                    )}
+                                </span>
+                                <span className="font-medium flex items-center gap-1.5">
+                                    {hasCustom && (
+                                        <span className="text-xs text-gray-400 line-through">₹{c.catalogPrice}</span>
+                                    )}
+                                    ₹{effectivePrice}
+                                </span>
+                            </div>
+                        );
+                    })}
                 </div>
             ))}
         </>
@@ -1242,8 +1324,18 @@ function StepConfirm({
     const [confirming, setConfirming] = useState(false);
     const [whatsappSending, setWhatsappSending] = useState(false);
     const [payMode, setPayMode] = useState<'RAZORPAY_LINK' | 'OFFLINE_CASH' | 'OFFLINE_UPI' | null>(null);
+    const [remarks, setRemarks] = useState('');
 
-    const total = cart.reduce((s, c) => s + c.price, 0);
+    const hasCustomPricing = cart.some(c => c.customPrice !== undefined && c.customPrice !== null && c.catalogPrice && c.customPrice !== c.catalogPrice);
+
+    const total = cart.reduce((s, c) => {
+        const effectivePrice = (c.customPrice !== undefined && c.customPrice !== null && c.floorPrice && c.customPrice >= c.floorPrice && c.customPrice <= (c.catalogPrice || c.price))
+            ? c.customPrice : (c.catalogPrice || c.price);
+        return s + effectivePrice;
+    }, 0);
+
+    const catalogTotal = cart.reduce((s, c) => s + (c.catalogPrice || c.price), 0);
+    const totalDiscount = hasCustomPricing ? catalogTotal - total : 0;
 
     const createOrder = async () => {
         setCreating(true);
@@ -1253,7 +1345,15 @@ function StepConfirm({
                 addressId: address.id,
                 slotDate, slotTime,
                 slotLabel: watch('slotLabel') || '',
-                items: cart.map(c => ({ testCode: c.testCode, patientId: c.patientId }))
+                items: cart.map(c => {
+                    const hasCustom = c.customPrice !== undefined && c.customPrice !== null && c.catalogPrice && c.customPrice !== c.catalogPrice;
+                    return {
+                        testCode: c.testCode,
+                        patientId: c.patientId,
+                        ...(hasCustom ? { customPrice: c.customPrice } : {}),
+                    };
+                }),
+                ...(hasCustomPricing && remarks.trim() ? { remarks: remarks.trim() } : {}),
             });
             setResult({ orderId: res.data.managerOrder.id, bookingId: res.data.booking.id });
             toast.success('Order created!');
@@ -1322,11 +1422,41 @@ function StepConfirm({
                 <div className="px-4 py-3 space-y-3">
                     <CartSummaryByPatient cart={cart} userId={user.id} userName={user.name} />
                 </div>
+                {hasCustomPricing && totalDiscount > 0 && (
+                    <div className="px-4 py-2 flex justify-between text-sm text-amber-700 bg-amber-50/50">
+                        <span className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">Custom Pricing</span>
+                            Discount
+                        </span>
+                        <span className="font-medium">-₹{totalDiscount}</span>
+                    </div>
+                )}
                 <div className="px-4 py-3 flex justify-between font-bold text-purple-900">
                     <span>Total</span>
-                    <span>₹{total}</span>
+                    <span className="flex items-center gap-2">
+                        {hasCustomPricing && totalDiscount > 0 && (
+                            <span className="text-sm font-normal text-gray-400 line-through">₹{catalogTotal}</span>
+                        )}
+                        ₹{total}
+                    </span>
                 </div>
             </div>
+
+            {/* Remarks for custom pricing */}
+            {hasCustomPricing && !result && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-2">
+                    <label className="text-sm font-medium text-amber-800 block">
+                        Reason for custom pricing (optional)
+                    </label>
+                    <textarea
+                        value={remarks}
+                        onChange={e => setRemarks(e.target.value)}
+                        placeholder="e.g. Negotiated rate for returning customer, corporate tie-up, etc."
+                        rows={2}
+                        className="w-full text-sm border border-amber-200 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-amber-300 outline-none resize-none"
+                    />
+                </div>
+            )}
 
             {!result ? (
                 <div className="flex gap-3">
