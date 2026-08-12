@@ -86,6 +86,23 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), web
 app.post('/api/webhooks/healthians', express.raw({ type: '*/*' }), healthiansWebhookHandler);
 
 app.use(express.json());
+
+// ── UAT Response Logger ─────────────────────────────────
+// Intercepts all JSON responses and logs them to the terminal.
+// Remove this block after UAT is complete.
+app.use((req: any, res: any, next: any) => {
+    const originalJson = res.json.bind(res);
+    res.json = (body: any) => {
+        console.log(`\n${'═'.repeat(60)}`);
+        console.log(`[UAT] ${req.method} ${req.originalUrl} → ${res.statusCode}`);
+        console.log(`${'─'.repeat(60)}`);
+        console.log(JSON.stringify(body, null, 2));
+        console.log(`${'═'.repeat(60)}\n`);
+        return originalJson(body);
+    };
+    next();
+});
+
 app.use(csrfProtection);
 
 // Register booking strategies at boot

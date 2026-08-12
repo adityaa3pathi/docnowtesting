@@ -68,6 +68,9 @@ interface CartItem {
     testName: string;
     price: number;
     patientId: string; // 'self' | actual patient id
+    customPrice?: number; // Manager-specified custom price
+    catalogPrice?: number; // Original catalog price for reference
+    floorPrice?: number; // Minimum allowed price (70% of catalog)
 }
 
 interface ManagerOrder {
@@ -106,9 +109,13 @@ const managerOrderSchema = z.object({
         testName: z.string(),
         price: z.number(),
         patientId: z.string(),
+        customPrice: z.number().optional(),
+        catalogPrice: z.number().optional(),
+        floorPrice: z.number().optional(),
     })).min(1, 'Add at least one test'),
     slotDate: z.string().min(1, 'Select a date'),
     slotTime: z.string().min(1, 'Select a time slot'),
+    slotLabel: z.string().optional(),
 });
 
 type ManagerOrderFormValues = z.infer<typeof managerOrderSchema>;
@@ -804,9 +811,15 @@ function StepTests({
     // Add test for ALL selected patients (skip existing combos)
     const addForAllPatients = (item: CatalogItem) => {
         const newRows: CartItem[] = [];
+        const catalogPrice = item.price;
+        const floorPrice = Math.round(catalogPrice * 0.70 * 100) / 100;
         for (const pid of selectedPatientIds) {
             if (!hasDuplicate(item.partnerCode, pid)) {
-                newRows.push({ testCode: item.partnerCode, testName: item.name, price: item.price, patientId: pid });
+                newRows.push({
+                    testCode: item.partnerCode, testName: item.name,
+                    price: item.price, patientId: pid,
+                    catalogPrice, floorPrice,
+                });
             }
         }
         if (newRows.length === 0) {
@@ -835,7 +848,16 @@ function StepTests({
     // Count how many of this test are already in cart
     const countInCart = (code: string) => cart.filter(c => c.testCode === code).length;
 
-    const total = cart.reduce((s, c) => s + c.price, 0);
+    const total = cart.reduce((s, c) => {
+        const effectivePrice = (c.customPrice !== undefined && c.customPrice !== null && c.floorPrice && c.customPrice >= c.floorPrice && c.customPrice <= (c.catalogPrice || c.price))
+            ? c.customPrice : (c.catalogPrice || c.price);
+        return s + effectivePrice;
+    }, 0);
+
+    // Check if any cart item has an invalid custom price
+    const hasInvalidPrice = cart.some(c =>
+        c.customPrice !== undefined && c.customPrice !== null && c.floorPrice && c.customPrice < c.floorPrice
+    );
 
     return (
         <div className="space-y-4">
@@ -891,29 +913,74 @@ function StepTests({
                 <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
                     <h4 className="text-sm font-semibold text-purple-800 mb-3">Cart ({cart.length} items)</h4>
                     <div className="space-y-2">
-                        {cart.map((c, idx) => (
+                        {cart.map((c, idx) => {
+                            const hasCustom = c.customPrice !== undefined && c.customPrice !== null && c.customPrice !== c.catalogPrice;
+                            const priceError = c.customPrice !== undefined && c.customPrice !== null && c.floorPrice && c.customPrice < c.floorPrice;
+                            return (
                             <div key={`${c.testCode}-${c.patientId}-${idx}`}
-                                className="flex items-center gap-2 bg-white border border-purple-100 rounded-lg p-2.5">
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-gray-900 truncate">{c.testName}</p>
-                                    <p className="text-xs text-gray-400">₹{c.price}</p>
+                                className={`bg-white border rounded-lg p-2.5 ${priceError ? 'border-red-300' : hasCustom ? 'border-amber-300' : 'border-purple-100'}`}>
+                                <div className="flex items-center gap-2">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-gray-900 truncate">{c.testName}</p>
+                                        {hasCustom && !priceError && (
+                                            <span className="inline-flex items-center gap-1 mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                                                Custom price
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-xs text-gray-400">₹</span>
+                                        <input
+                                            type="number"
+                                            value={c.customPrice !== undefined && c.customPrice !== null ? c.customPrice : c.price}
+                                            onChange={e => {
+                                                const val = e.target.value === '' ? undefined : Number(e.target.value);
+                                                update(idx, {
+                                                    ...c,
+                                                    customPrice: val,
+                                                    price: val !== undefined && val !== null && c.floorPrice && val >= c.floorPrice && val <= (c.catalogPrice || c.price)
+                                                        ? val : (c.catalogPrice || c.price),
+                                                });
+                                            }}
+                                            min={c.floorPrice || 0}
+                                            max={c.catalogPrice || undefined}
+                                            step="1"
+                                            className={`w-20 text-sm font-semibold text-right border rounded-lg px-2 py-1 outline-none focus:ring-2 ${
+                                                priceError
+                                                    ? 'border-red-300 text-red-700 focus:ring-red-300'
+                                                    : hasCustom
+                                                        ? 'border-amber-300 text-amber-700 focus:ring-amber-300'
+                                                        : 'border-gray-200 text-purple-700 focus:ring-purple-300'
+                                            }`}
+                                        />
+                                    </div>
+                                    <select
+                                        value={c.patientId}
+                                        onChange={e => changeRowPatient(idx, e.target.value)}
+                                        className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-purple-300 outline-none max-w-[140px]"
+                                    >
+                                        {selectedPatientIds.map(pid => (
+                                            <option key={pid} value={pid}>{getPatientLabel(pid)}</option>
+                                        ))}
+                                    </select>
+                                    <button onClick={() => removeRow(idx)}
+                                        className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Remove">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
                                 </div>
-                                <select
-                                    value={c.patientId}
-                                    onChange={e => changeRowPatient(idx, e.target.value)}
-                                    className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:ring-2 focus:ring-purple-300 outline-none max-w-[140px]"
-                                >
-                                    {selectedPatientIds.map(pid => (
-                                        <option key={pid} value={pid}>{getPatientLabel(pid)}</option>
-                                    ))}
-                                </select>
-                                <button onClick={() => removeRow(idx)}
-                                    className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                    title="Remove">
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                </button>
+                                {priceError && (
+                                    <p className="text-[11px] text-red-600 mt-1 pl-1">
+                                        Min: ₹{c.floorPrice} (70% of ₹{c.catalogPrice})
+                                    </p>
+                                )}
+                                {!priceError && c.floorPrice && hasCustom && (
+                                    <p className="text-[11px] text-gray-400 mt-1 pl-1">
+                                        Range: ₹{c.floorPrice} – ₹{c.catalogPrice}
+                                    </p>
+                                )}
                             </div>
-                        ))}
+                        );})}
                     </div>
                     <div className="border-t border-purple-200 mt-3 pt-2 flex justify-between font-bold text-purple-900">
                         <span>Total</span>
@@ -926,7 +993,7 @@ function StepTests({
                 <button onClick={onBack} className="btn-ghost flex items-center gap-1">
                     <ChevronLeft className="w-4 h-4" /> Back
                 </button>
-                <button disabled={cart.length === 0} onClick={async () => { const valid = await trigger('cart'); if (valid) onNext(); }}
+                <button disabled={cart.length === 0 || hasInvalidPrice} onClick={async () => { const valid = await trigger('cart'); if (valid) onNext(); }}
                     className="btn-primary flex-1 flex items-center justify-center gap-1 disabled:opacity-50">
                     Continue <ChevronRight className="w-4 h-4" />
                 </button>
@@ -1070,7 +1137,7 @@ function StepSlot({
             <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">Select Date</label>
                 <input type="date" value={slotDate} min={today}
-                    onChange={e => { setValue('slotDate', e.target.value); setValue('slotTime', ''); resetFreeze(); }}
+                    onChange={e => { setValue('slotDate', e.target.value); setValue('slotTime', ''); setValue('slotLabel', ''); resetFreeze(); }}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-300 outline-none" />
             </div>
 
@@ -1087,7 +1154,7 @@ function StepSlot({
                                     const selected = slotTime === s.stm_id;
                                     return (
                                         <button key={s.stm_id}
-                                            onClick={() => { setValue('slotTime', s.stm_id); resetFreeze(); }}
+                                            onClick={() => { setValue('slotTime', s.stm_id); setValue('slotLabel', `${s.slot_time} – ${s.end_time}`); resetFreeze(); }}
                                             disabled={isSlotLocked && !selected}
                                             className={`text-sm py-2.5 px-3 rounded-lg border font-medium transition-colors
                                                 ${selected ? 'bg-[#4b2192] text-white border-purple-700' :
@@ -1208,12 +1275,28 @@ function CartSummaryByPatient({ cart, userId, userName }: { cart: CartItem[]; us
                     <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-1">
                         {getLabel(pid)}
                     </p>
-                    {items.map((c, i) => (
-                        <div key={`${c.testCode}-${i}`} className="flex justify-between text-sm pl-2">
-                            <span className="text-gray-700">{c.testName}</span>
-                            <span className="font-medium">₹{c.price}</span>
-                        </div>
-                    ))}
+                    {items.map((c, i) => {
+                        const hasCustom = c.customPrice !== undefined && c.customPrice !== null && c.catalogPrice && c.customPrice !== c.catalogPrice;
+                        const effectivePrice = hasCustom ? c.customPrice! : c.price;
+                        return (
+                            <div key={`${c.testCode}-${i}`} className="flex justify-between text-sm pl-2">
+                                <span className="text-gray-700 flex items-center gap-1.5">
+                                    {c.testName}
+                                    {hasCustom && (
+                                        <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                                            Custom
+                                        </span>
+                                    )}
+                                </span>
+                                <span className="font-medium flex items-center gap-1.5">
+                                    {hasCustom && (
+                                        <span className="text-xs text-gray-400 line-through">₹{c.catalogPrice}</span>
+                                    )}
+                                    ₹{effectivePrice}
+                                </span>
+                            </div>
+                        );
+                    })}
                 </div>
             ))}
         </>
@@ -1241,8 +1324,18 @@ function StepConfirm({
     const [confirming, setConfirming] = useState(false);
     const [whatsappSending, setWhatsappSending] = useState(false);
     const [payMode, setPayMode] = useState<'RAZORPAY_LINK' | 'OFFLINE_CASH' | 'OFFLINE_UPI' | null>(null);
+    const [remarks, setRemarks] = useState('');
 
-    const total = cart.reduce((s, c) => s + c.price, 0);
+    const hasCustomPricing = cart.some(c => c.customPrice !== undefined && c.customPrice !== null && c.catalogPrice && c.customPrice !== c.catalogPrice);
+
+    const total = cart.reduce((s, c) => {
+        const effectivePrice = (c.customPrice !== undefined && c.customPrice !== null && c.floorPrice && c.customPrice >= c.floorPrice && c.customPrice <= (c.catalogPrice || c.price))
+            ? c.customPrice : (c.catalogPrice || c.price);
+        return s + effectivePrice;
+    }, 0);
+
+    const catalogTotal = cart.reduce((s, c) => s + (c.catalogPrice || c.price), 0);
+    const totalDiscount = hasCustomPricing ? catalogTotal - total : 0;
 
     const createOrder = async () => {
         setCreating(true);
@@ -1251,7 +1344,16 @@ function StepConfirm({
                 userId: user.id,
                 addressId: address.id,
                 slotDate, slotTime,
-                items: cart.map(c => ({ testCode: c.testCode, patientId: c.patientId }))
+                slotLabel: watch('slotLabel') || '',
+                items: cart.map(c => {
+                    const hasCustom = c.customPrice !== undefined && c.customPrice !== null && c.catalogPrice && c.customPrice !== c.catalogPrice;
+                    return {
+                        testCode: c.testCode,
+                        patientId: c.patientId,
+                        ...(hasCustom ? { customPrice: c.customPrice } : {}),
+                    };
+                }),
+                ...(hasCustomPricing && remarks.trim() ? { remarks: remarks.trim() } : {}),
             });
             setResult({ orderId: res.data.managerOrder.id, bookingId: res.data.booking.id });
             toast.success('Order created!');
@@ -1315,16 +1417,46 @@ function StepConfirm({
                 </div>
                 <div className="px-4 py-3 flex justify-between text-sm">
                     <span className="text-gray-500">Slot</span>
-                    <span className="font-medium">{slotDate} · {slotTime}</span>
+                    <span className="font-medium">{(() => { try { const d = new Date(slotDate + 'T00:00:00'); return isNaN(d.getTime()) ? slotDate : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return slotDate; } })()} · {watch('slotLabel') || slotTime}</span>
                 </div>
                 <div className="px-4 py-3 space-y-3">
                     <CartSummaryByPatient cart={cart} userId={user.id} userName={user.name} />
                 </div>
+                {hasCustomPricing && totalDiscount > 0 && (
+                    <div className="px-4 py-2 flex justify-between text-sm text-amber-700 bg-amber-50/50">
+                        <span className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">Custom Pricing</span>
+                            Discount
+                        </span>
+                        <span className="font-medium">-₹{totalDiscount}</span>
+                    </div>
+                )}
                 <div className="px-4 py-3 flex justify-between font-bold text-purple-900">
                     <span>Total</span>
-                    <span>₹{total}</span>
+                    <span className="flex items-center gap-2">
+                        {hasCustomPricing && totalDiscount > 0 && (
+                            <span className="text-sm font-normal text-gray-400 line-through">₹{catalogTotal}</span>
+                        )}
+                        ₹{total}
+                    </span>
                 </div>
             </div>
+
+            {/* Remarks for custom pricing */}
+            {hasCustomPricing && !result && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-2">
+                    <label className="text-sm font-medium text-amber-800 block">
+                        Reason for custom pricing (optional)
+                    </label>
+                    <textarea
+                        value={remarks}
+                        onChange={e => setRemarks(e.target.value)}
+                        placeholder="e.g. Negotiated rate for returning customer, corporate tie-up, etc."
+                        rows={2}
+                        className="w-full text-sm border border-amber-200 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-amber-300 outline-none resize-none"
+                    />
+                </div>
+            )}
 
             {!result ? (
                 <div className="flex gap-3">
@@ -1677,6 +1809,16 @@ export default function PaymentLinksPage() {
     const [step, setStep] = useState(0);
     const [listRefresh, setListRefresh] = useState(false);
 
+    // Camp-specific state
+    const [orderMode, setOrderMode] = useState<'HOME_COLLECTION' | 'CAMP'>('HOME_COLLECTION');
+    const [campStep, setCampStep] = useState(0);
+    const [selectedCamp, setSelectedCamp] = useState<any>(null);
+    const [campPatientId, setCampPatientId] = useState<string>('');
+    const [campDob, setCampDob] = useState<string>('');
+    const [campPricingTier, setCampPricingTier] = useState<'SINGLE' | 'FAMILY'>('SINGLE');
+    const [campResult, setCampResult] = useState<{orderId: string, bookingId: string} | null>(null);
+    const [campCreating, setCampCreating] = useState(false);
+
     // Wizard form state (replaces 6 individual useState hooks)
     const methods = useForm<ManagerOrderFormValues>({
         resolver: zodResolver(managerOrderSchema),
@@ -1687,6 +1829,7 @@ export default function PaymentLinksPage() {
             cart: [],
             slotDate: '',
             slotTime: '',
+            slotLabel: '',
         },
     });
 
@@ -1697,6 +1840,13 @@ export default function PaymentLinksPage() {
         setStep(0);
         methods.reset();
         setShowWizard(false);
+        setOrderMode('HOME_COLLECTION');
+        setCampStep(0);
+        setSelectedCamp(null);
+        setCampPatientId('');
+        setCampDob('');
+        setCampPricingTier('SINGLE');
+        setCampResult(null);
     };
 
     const handleSuccess = () => {
@@ -1704,6 +1854,416 @@ export default function PaymentLinksPage() {
         setListRefresh(v => !v);
         toast.success('🎉 Order finalized successfully!');
     };
+
+    function ResultActions({ orderId, bookingId }: { orderId: string, bookingId: string }) {
+        const [linkUrl, setLinkUrl] = useState<string | null>(null);
+        const [generating, setGenerating] = useState(false);
+        const [confirming, setConfirming] = useState(false);
+        const [whatsappSending, setWhatsappSending] = useState(false);
+        const [payMode, setPayMode] = useState<'RAZORPAY_LINK' | 'OFFLINE_CASH' | 'OFFLINE_UPI' | null>(null);
+
+        const generateLink = async () => {
+            setGenerating(true);
+            try {
+                const res = await api.post(`/manager/orders/${orderId}/payment-link`);
+                setLinkUrl(res.data.shortUrl);
+                toast.success('Payment link generated!');
+            } catch (e: any) {
+                toast.error(e?.response?.data?.error || 'Failed to generate link');
+            } finally { setGenerating(false); }
+        };
+
+        const confirmPayment = async () => {
+            if (!payMode) return;
+            setConfirming(true);
+            try {
+                await api.post(`/manager/orders/${orderId}/confirm-payment`, { collectionMode: payMode });
+                toast.success('Payment confirmed & booking finalized!');
+                handleSuccess();
+            } catch (e: any) {
+                toast.error(e?.response?.data?.error || 'Failed to confirm payment');
+            } finally { setConfirming(false); }
+        };
+
+        const copyLink = () => {
+            if (linkUrl) { navigator.clipboard.writeText(linkUrl); toast.success('Copied!'); }
+        };
+
+        const sendWhatsApp = async () => {
+            setWhatsappSending(true);
+            try {
+                const res = await api.post(`/manager/orders/${orderId}/send-whatsapp-link`);
+                toast.success(res.data.message || 'Payment link sent via WhatsApp!');
+            } catch (e: any) {
+                toast.error(e?.response?.data?.error || 'Failed to send WhatsApp message');
+            } finally {
+                setWhatsappSending(false);
+            }
+        };
+
+        return (
+            <div className="space-y-4">
+                <div className="border border-gray-200 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                        <Smartphone className="w-4 h-4 text-purple-600" />
+                        <h4 className="font-semibold text-sm text-gray-800">Send Razorpay Payment Link</h4>
+                    </div>
+                    {linkUrl ? (
+                        <div className="space-y-2">
+                            <div className="flex gap-2">
+                                <input value={linkUrl} readOnly className="flex-1 text-sm px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 font-mono" />
+                                <button onClick={copyLink} className="px-3 py-2 border rounded-lg hover:bg-gray-50"><Copy className="w-4 h-4" /></button>
+                                <a href={linkUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-2 border rounded-lg hover:bg-gray-50">
+                                    <ExternalLink className="w-4 h-4" />
+                                </a>
+                            </div>
+                            <button
+                                onClick={sendWhatsApp}
+                                disabled={whatsappSending}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-colors disabled:opacity-60"
+                            >
+                                {whatsappSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
+                                {whatsappSending ? 'Sending...' : 'Send Payment Link via WhatsApp'}
+                            </button>
+                        </div>
+                    ) : (
+                        <button onClick={generateLink} disabled={generating}
+                            className="w-full btn-primary flex items-center justify-center gap-2">
+                            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Smartphone className="w-4 h-4" />}
+                            Generate & Send Payment Link
+                        </button>
+                    )}
+                </div>
+
+                <div className="border border-gray-200 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                        <Banknote className="w-4 h-4 text-emerald-600" />
+                        <h4 className="font-semibold text-sm text-gray-800">Record Offline Payment</h4>
+                    </div>
+                    <div className="flex gap-2">
+                        {(['OFFLINE_CASH', 'OFFLINE_UPI'] as const).map(m => (
+                            <button key={m} onClick={() => setPayMode(m)}
+                                className={`flex-1 text-sm py-2 px-3 rounded-lg border font-medium transition-colors
+                                    ${payMode === m ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-300 hover:border-emerald-400'}`}>
+                                {m === 'OFFLINE_CASH' ? '💵 Cash' : '📱 UPI'}
+                            </button>
+                        ))}
+                    </div>
+                    {payMode && payMode !== 'RAZORPAY_LINK' && (
+                        <button onClick={confirmPayment} disabled={confirming}
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2">
+                            {confirming ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                            Confirm {payMode === 'OFFLINE_CASH' ? 'Cash' : 'UPI'} Payment & Finalize
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    function StepCampSelect() {
+        const [camps, setCamps] = useState<any[]>([]);
+        const [loading, setLoading] = useState(true);
+
+        useEffect(() => {
+            api.get('/camps/active').then(res => {
+                setCamps(res.data);
+            }).catch(() => toast.error('Failed to load camps')).finally(() => setLoading(false));
+        }, []);
+
+        if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[#4b2192]" /></div>;
+        if (camps.length === 0) return <div className="text-center py-12 text-gray-500">No active camps available</div>;
+
+        return (
+            <div className="space-y-3">
+                <h3 className="text-lg font-bold text-gray-900">Select a Health Camp</h3>
+                <div className="grid gap-3">
+                    {camps.map(camp => {
+                        const isSelected = selectedCamp?.id === camp.id;
+                        const startDate = new Date(camp.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                        const endDate = new Date(camp.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                        return (
+                            <button
+                                key={camp.id}
+                                onClick={() => setSelectedCamp(camp)}
+                                className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                                    isSelected ? 'border-[#4b2192] bg-purple-50 shadow-md' : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
+                                }`}
+                            >
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h4 className="font-bold text-gray-900">{camp.name}</h4>
+                                        <p className="text-sm text-gray-500 mt-1">📍 {camp.location}, {camp.city} - {camp.pincode}</p>
+                                        <p className="text-sm text-gray-500">📅 {startDate} → {endDate}</p>
+                                        <p className="text-xs text-gray-400 mt-1">{camp._count?.items || camp.items?.length || 0} tests included</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-lg font-black text-[#4b2192]">₹{camp.price}</p>
+                                        {isSelected && <span className="text-xs text-green-600 font-bold">✓ Selected</span>}
+                                    </div>
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    }
+
+    function StepCampPatient() {
+        const [patients, setPatients] = useState<any[]>([]);
+        const [loading, setLoading] = useState(true);
+        const [showAddForm, setShowAddForm] = useState(false);
+        const [newPatient, setNewPatient] = useState({ name: '', relation: 'Spouse', age: '', gender: 'Male' });
+        const [adding, setAdding] = useState(false);
+
+        const fetchPatients = () => {
+            if (!selectedUser) return;
+            setLoading(true);
+            api.get(`/manager/users/${selectedUser.id}/patients`).then(res => {
+                setPatients(res.data);
+            }).catch(() => {}).finally(() => setLoading(false));
+        };
+
+        useEffect(() => { fetchPatients(); }, [selectedUser]);
+
+        const handleAddPatient = async () => {
+            if (!newPatient.name || !newPatient.age) { toast.error('Name and age are required'); return; }
+            setAdding(true);
+            try {
+                await api.post(`/manager/users/${selectedUser!.id}/patients`, {
+                    name: newPatient.name,
+                    relation: newPatient.relation,
+                    age: parseInt(newPatient.age),
+                    gender: newPatient.gender,
+                });
+                toast.success('Patient added');
+                setNewPatient({ name: '', relation: 'Spouse', age: '', gender: 'Male' });
+                setShowAddForm(false);
+                fetchPatients();
+            } catch (e: any) {
+                toast.error(e?.response?.data?.error || 'Failed to add patient');
+            } finally {
+                setAdding(false);
+            }
+        };
+
+        if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[#4b2192]" /></div>;
+
+        return (
+            <div className="space-y-4">
+                <h3 className="text-lg font-bold text-gray-900">Select Patient</h3>
+
+                {/* Self option */}
+                <button
+                    onClick={() => { setCampPatientId('self'); setCampDob(''); }}
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                        campPatientId === 'self' ? 'border-[#4b2192] bg-purple-50' : 'border-gray-200 hover:border-purple-300'
+                    }`}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            campPatientId === 'self' ? 'border-[#4b2192]' : 'border-gray-300'
+                        }`}>
+                            {campPatientId === 'self' && <div className="w-3 h-3 rounded-full bg-[#4b2192]" />}
+                        </div>
+                        <div>
+                            <p className="font-bold text-gray-900">{selectedUser?.name} (Self)</p>
+                            <p className="text-xs text-gray-500">Primary account holder</p>
+                        </div>
+                    </div>
+                </button>
+
+                {/* Family members */}
+                {patients.map(p => (
+                    <button
+                        key={p.id}
+                        onClick={() => { setCampPatientId(p.id); setCampDob(p.dob ? p.dob.split('T')[0] : ''); }}
+                        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                            campPatientId === p.id ? 'border-[#4b2192] bg-purple-50' : 'border-gray-200 hover:border-purple-300'
+                        }`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                campPatientId === p.id ? 'border-[#4b2192]' : 'border-gray-300'
+                            }`}>
+                                {campPatientId === p.id && <div className="w-3 h-3 rounded-full bg-[#4b2192]" />}
+                            </div>
+                            <div>
+                                <p className="font-bold text-gray-900">{p.name}</p>
+                                <p className="text-xs text-gray-500">{p.relation} · {p.age}y · {p.gender}</p>
+                            </div>
+                        </div>
+                    </button>
+                ))}
+
+                {/* DOB input for selected patient (if missing) */}
+                {campPatientId && (
+                    <div className="mt-3">
+                        <label className="text-sm font-medium text-gray-700 block mb-1">Date of Birth {campDob ? '' : '(required for registration)'}</label>
+                        <input
+                            type="date"
+                            value={campDob}
+                            onChange={e => setCampDob(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-purple-300 outline-none"
+                        />
+                    </div>
+                )}
+
+                {/* Add new patient */}
+                {!showAddForm ? (
+                    <button
+                        onClick={() => setShowAddForm(true)}
+                        className="text-sm text-[#4b2192] font-bold hover:underline"
+                    >
+                        + Add a new patient
+                    </button>
+                ) : (
+                    <div className="border border-gray-200 rounded-xl p-4 space-y-3">
+                        <h4 className="font-bold text-sm text-gray-700">Add New Patient</h4>
+                        <input placeholder="Patient Name" value={newPatient.name} onChange={e => setNewPatient({...newPatient, name: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                        <div className="grid grid-cols-3 gap-2">
+                            <select value={newPatient.relation} onChange={e => setNewPatient({...newPatient, relation: e.target.value})} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                                <option>Spouse</option><option>Child</option><option>Parent</option><option>Sibling</option><option>Other</option>
+                            </select>
+                            <input type="number" placeholder="Age" value={newPatient.age} onChange={e => setNewPatient({...newPatient, age: e.target.value})} className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                            <select value={newPatient.gender} onChange={e => setNewPatient({...newPatient, gender: e.target.value})} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                                <option>Male</option><option>Female</option><option>Other</option>
+                            </select>
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={handleAddPatient} disabled={adding} className="px-4 py-2 rounded-lg bg-[#4b2192] text-white text-sm font-bold disabled:opacity-50">
+                                {adding ? 'Adding...' : 'Add Patient'}
+                            </button>
+                            <button onClick={() => setShowAddForm(false)} className="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 text-sm font-bold">Cancel</button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    function StepCampConfirm() {
+        if (campResult) {
+            return (
+                <div className="space-y-6">
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+                        <div className="text-4xl mb-3">✅</div>
+                        <h3 className="text-lg font-bold text-green-800">Camp Registration Order Created!</h3>
+                        <p className="text-sm text-green-600 mt-1">Order ID: {campResult.orderId.slice(0, 8)}...</p>
+                    </div>
+                    <ResultActions orderId={campResult.orderId} bookingId={campResult.bookingId} />
+                    <div className="border-t pt-4">
+                        <button
+                            onClick={() => {
+                                setCampStep(2);
+                                setCampPatientId('');
+                                setCampDob('');
+                                setCampPricingTier('SINGLE');
+                                setCampResult(null);
+                            }}
+                            className="w-full py-3 rounded-xl text-sm font-bold bg-purple-100 text-[#4b2192] hover:bg-purple-200 transition-all"
+                        >
+                            📋 Register Another Patient for This Camp
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        const campStartDate = selectedCamp ? new Date(selectedCamp.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+        const patientLabel = campPatientId === 'self' ? `${selectedUser?.name} (Self)` : '';
+
+        const createCampOrder = async () => {
+            setCampCreating(true);
+            try {
+                const res = await api.post('/manager/camps/orders', {
+                    userId: selectedUser!.id,
+                    campId: selectedCamp.id,
+                    patientId: campPatientId,
+                    dob: campDob || undefined,
+                    pricingTier: campPricingTier,
+                });
+                setCampResult({ orderId: res.data.managerOrder.id, bookingId: res.data.booking.id });
+                toast.success('Camp registration order created!');
+            } catch (e: any) {
+                toast.error(e?.response?.data?.error || 'Failed to create camp order');
+            } finally {
+                setCampCreating(false);
+            }
+        };
+
+        return (
+            <div className="space-y-4">
+                <h3 className="text-lg font-bold text-gray-900">Confirm Camp Registration</h3>
+                
+                <div className="space-y-3">
+                    <label className="block text-sm font-bold text-gray-900">Select Pricing Tier</label>
+                    <div className="flex flex-col gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setCampPricingTier('SINGLE')}
+                            className={`w-full text-left flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${campPricingTier === 'SINGLE' ? 'border-[#4b2192] bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}
+                        >
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${campPricingTier === 'SINGLE' ? 'border-[#4b2192]' : 'border-gray-300'}`}>
+                                {campPricingTier === 'SINGLE' && <div className="w-3 h-3 rounded-full bg-[#4b2192]" />}
+                            </div>
+                            <span className="font-bold text-gray-900">Single Patient — ₹{selectedCamp?.price}</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setCampPricingTier('FAMILY')}
+                            className={`w-full text-left flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${campPricingTier === 'FAMILY' ? 'border-[#4b2192] bg-purple-50' : 'border-gray-200 hover:border-purple-300'}`}
+                        >
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${campPricingTier === 'FAMILY' ? 'border-[#4b2192]' : 'border-gray-300'}`}>
+                                {campPricingTier === 'FAMILY' && <div className="w-3 h-3 rounded-full bg-[#4b2192]" />}
+                            </div>
+                            <span className="font-bold text-gray-900">Family (2+ Patients) — ₹{selectedCamp?.familyPrice}/person</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+                    <div className="px-4 py-3 flex justify-between text-sm">
+                        <span className="text-gray-500">Customer</span>
+                        <span className="font-medium">{selectedUser?.name} ({selectedUser?.mobile})</span>
+                    </div>
+                    <div className="px-4 py-3 flex justify-between text-sm">
+                        <span className="text-gray-500">Camp</span>
+                        <span className="font-medium">{selectedCamp?.name}</span>
+                    </div>
+                    <div className="px-4 py-3 flex justify-between text-sm">
+                        <span className="text-gray-500">Location</span>
+                        <span className="font-medium">{selectedCamp?.location}, {selectedCamp?.city}</span>
+                    </div>
+                    <div className="px-4 py-3 flex justify-between text-sm">
+                        <span className="text-gray-500">Date</span>
+                        <span className="font-medium">{campStartDate}</span>
+                    </div>
+                    <div className="px-4 py-3 flex justify-between text-sm">
+                        <span className="text-gray-500">Patient</span>
+                        <span className="font-medium">{patientLabel || campPatientId.slice(0, 8) + '...'}</span>
+                    </div>
+                    <div className="px-4 py-3 flex justify-between text-sm">
+                        <span className="text-gray-500">Tests</span>
+                        <span className="font-medium">{selectedCamp?.items?.length || selectedCamp?._count?.items || 0} tests included</span>
+                    </div>
+                    <div className="px-4 py-3 flex justify-between text-sm font-bold">
+                        <span className="text-gray-700">Total</span>
+                        <span className="text-[#4b2192]">₹{campPricingTier === 'SINGLE' ? selectedCamp?.price : selectedCamp?.familyPrice}</span>
+                    </div>
+                </div>
+
+                <button
+                    onClick={createCampOrder}
+                    disabled={campCreating}
+                    className="w-full py-3.5 rounded-xl text-sm font-bold bg-[#4b2192] text-white hover:bg-[#3a1a73] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                >
+                    {campCreating ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating...</> : 'Create Camp Order'}
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -1740,64 +2300,160 @@ export default function PaymentLinksPage() {
                                     <X className="w-5 h-5 text-gray-600" />
                                 </button>
                             </div>
-                            <StepIndicator current={step} onStepClick={(s) => setStep(s)} />
+                            
+                            <div className="flex gap-2 mb-6">
+                                <button
+                                    onClick={() => { setOrderMode('HOME_COLLECTION'); }}
+                                    className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${orderMode === 'HOME_COLLECTION' ? 'bg-[#4b2192] text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                >
+                                    🏠 Home Collection
+                                </button>
+                                <button
+                                    onClick={() => { setOrderMode('CAMP'); }}
+                                    className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${orderMode === 'CAMP' ? 'bg-[#4b2192] text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                >
+                                    🏕️ Camp Registration
+                                </button>
+                            </div>
+
+                            {orderMode === 'HOME_COLLECTION' && (
+                                <StepIndicator current={step} onStepClick={(s) => setStep(s)} />
+                            )}
                         </div>
                         <div className="p-6">
-                            {step === 0 && (
-                                selectedUser ? (
-                                    <div className="space-y-4">
-                                        <h2 className="text-lg font-semibold text-gray-800">Selected Customer</h2>
-                                        <div className="flex items-center justify-between p-4 bg-purple-50 border border-purple-200 rounded-xl">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center text-purple-700 font-bold text-sm">
-                                                    {(selectedUser.name || 'U')[0].toUpperCase()}
+                            {orderMode === 'HOME_COLLECTION' && (
+                                <>
+                                    {step === 0 && (
+                                        selectedUser ? (
+                                            <div className="space-y-4">
+                                                <h2 className="text-lg font-semibold text-gray-800">Selected Customer</h2>
+                                                <div className="flex items-center justify-between p-4 bg-purple-50 border border-purple-200 rounded-xl">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center text-purple-700 font-bold text-sm">
+                                                            {(selectedUser.name || 'U')[0].toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-semibold text-gray-900">{selectedUser.name || 'Unnamed'}</p>
+                                                            <p className="text-sm text-gray-500">{selectedUser.mobile}</p>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => { methods.reset(); }}
+                                                        className="text-sm text-purple-700 hover:text-purple-900 font-medium px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors"
+                                                    >
+                                                        Change
+                                                    </button>
                                                 </div>
-                                                <div>
-                                                    <p className="font-semibold text-gray-900">{selectedUser.name || 'Unnamed'}</p>
-                                                    <p className="text-sm text-gray-500">{selectedUser.mobile}</p>
+                                                <button onClick={() => setStep(1)}
+                                                    className="btn-primary w-full flex items-center justify-center gap-1">
+                                                    Continue <ChevronRight className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <StepCustomer onNext={() => { setStep(1); }} />
+                                        )
+                                    )}
+                                    {step === 1 && selectedUser && (
+                                        <StepPatientsAddress
+                                            user={selectedUser}
+                                            onNext={() => setStep(2)}
+                                            onBack={() => setStep(0)}
+                                        />
+                                    )}
+                                    {step === 2 && selectedUser && (
+                                        <StepTests
+                                            user={selectedUser}
+                                            onNext={() => setStep(3)}
+                                            onBack={() => setStep(1)}
+                                        />
+                                    )}
+                                    {step === 3 && selectedAddress && (
+                                        <StepSlot
+                                            onNext={() => setStep(4)}
+                                            onBack={() => setStep(2)}
+                                        />
+                                    )}
+                                    {step === 4 && selectedUser && selectedAddress && (
+                                        <StepConfirm
+                                            onBack={() => setStep(3)}
+                                            onSuccess={handleSuccess}
+                                        />
+                                    )}
+                                </>
+                            )}
+
+                            {orderMode === 'CAMP' && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-2 mb-8">
+                                        {['Customer', 'Select Camp', 'Patient', 'Confirm'].map((label, i) => (
+                                            <div key={label} className="flex items-center gap-2">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                                                    i < campStep ? 'bg-green-500 text-white' :
+                                                    i === campStep ? 'bg-[#4b2192] text-white shadow-lg' :
+                                                    'bg-gray-200 text-gray-500'
+                                                }`}>{i < campStep ? '✓' : i + 1}</div>
+                                                <span className={`text-sm font-medium hidden sm:inline ${i === campStep ? 'text-[#4b2192]' : 'text-gray-400'}`}>{label}</span>
+                                                {i < 3 && <div className={`w-8 h-0.5 ${i < campStep ? 'bg-green-500' : 'bg-gray-200'}`} />}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {campStep === 0 && (
+                                        selectedUser ? (
+                                            <div className="space-y-4">
+                                                <h2 className="text-lg font-semibold text-gray-800">Selected Customer</h2>
+                                                <div className="flex items-center justify-between p-4 bg-purple-50 border border-purple-200 rounded-xl">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center text-purple-700 font-bold text-sm">
+                                                            {(selectedUser.name || 'U')[0].toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-semibold text-gray-900">{selectedUser.name || 'Unnamed'}</p>
+                                                            <p className="text-sm text-gray-500">{selectedUser.mobile}</p>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => { methods.reset(); }}
+                                                        className="text-sm text-purple-700 hover:text-purple-900 font-medium px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors"
+                                                    >
+                                                        Change
+                                                    </button>
                                                 </div>
                                             </div>
+                                        ) : (
+                                            <StepCustomer onNext={() => {}} />
+                                        )
+                                    )}
+
+                                    {campStep === 1 && <StepCampSelect />}
+                                    {campStep === 2 && <StepCampPatient />}
+                                    {campStep === 3 && <StepCampConfirm />}
+
+                                    {!campResult && (
+                                        <div className="flex justify-between pt-4">
                                             <button
-                                                onClick={() => { methods.reset(); }}
-                                                className="text-sm text-purple-700 hover:text-purple-900 font-medium px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors"
+                                                onClick={() => setCampStep(Math.max(0, campStep - 1))}
+                                                disabled={campStep === 0}
+                                                className="px-6 py-2.5 rounded-xl text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-40 transition-all"
                                             >
-                                                Change
+                                                ← Back
                                             </button>
+                                            {campStep < 3 && (
+                                                <button
+                                                    onClick={() => setCampStep(campStep + 1)}
+                                                    disabled={
+                                                        (campStep === 0 && !selectedUser) ||
+                                                        (campStep === 1 && !selectedCamp) ||
+                                                        (campStep === 2 && !campPatientId)
+                                                    }
+                                                    className="px-6 py-2.5 rounded-xl text-sm font-bold bg-[#4b2192] text-white hover:bg-[#3a1a73] disabled:opacity-40 transition-all"
+                                                >
+                                                    Next →
+                                                </button>
+                                            )}
                                         </div>
-                                        <button onClick={() => setStep(1)}
-                                            className="btn-primary w-full flex items-center justify-center gap-1">
-                                            Continue <ChevronRight className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <StepCustomer onNext={() => { setStep(1); }} />
-                                )
-                            )}
-                            {step === 1 && selectedUser && (
-                                <StepPatientsAddress
-                                    user={selectedUser}
-                                    onNext={() => setStep(2)}
-                                    onBack={() => setStep(0)}
-                                />
-                            )}
-                            {step === 2 && selectedUser && (
-                                <StepTests
-                                    user={selectedUser}
-                                    onNext={() => setStep(3)}
-                                    onBack={() => setStep(1)}
-                                />
-                            )}
-                            {step === 3 && selectedAddress && (
-                                <StepSlot
-                                    onNext={() => setStep(4)}
-                                    onBack={() => setStep(2)}
-                                />
-                            )}
-                            {step === 4 && selectedUser && selectedAddress && (
-                                <StepConfirm
-                                    onBack={() => setStep(3)}
-                                    onSuccess={handleSuccess}
-                                />
+                                    )}
+                                </div>
                             )}
                         </div>
                     </div>

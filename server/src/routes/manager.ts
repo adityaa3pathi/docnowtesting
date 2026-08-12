@@ -26,6 +26,7 @@ import { getReportLinkExpiryHours } from '../services/reportAccess';
 import { sendSpecificReportViaWhatsApp } from '../services/reportNotifications';
 import { sendBookingRescheduledViaWhatsApp } from '../services/bookingRescheduleNotifications';
 import { sendPaymentLinkViaWhatsApp } from '../services/paymentNotifications';
+import { validateManagerPrices, validateCampCustomPrice, MANAGER_PRICE_FLOOR_PERCENTAGE } from '../utils/priceValidation';
 
 
 const router = Router();
@@ -90,6 +91,38 @@ router.get('/export', ...mgr, exportAdminData);
 // ============================================
 
 router.get('/catalog', ...mgr, listCatalog);
+
+// Price Range Preview — returns allowed price ranges for given test codes
+router.get('/price-range', ...mgr, async (req: AuthRequest, res: Response) => {
+    const raw = req.query.testCodes as string;
+    if (!raw) return res.status(400).json({ error: 'testCodes query param required' });
+
+    const testCodes = raw.split(',').map(s => s.trim()).filter(Boolean);
+    if (testCodes.length === 0) return res.status(400).json({ error: 'No valid test codes provided' });
+
+    try {
+        const catalogItems = await prisma.catalogItem.findMany({
+            where: { partnerCode: { in: testCodes } }
+        });
+
+        const result = catalogItems.map(cat => {
+            const catalogPrice = Math.max(0, cat.discountedPrice ?? cat.displayPrice);
+            const floorPrice = Math.round(catalogPrice * MANAGER_PRICE_FLOOR_PERCENTAGE * 100) / 100;
+            return {
+                testCode: cat.partnerCode,
+                testName: cat.name,
+                catalogPrice,
+                floorPrice,
+                displayPrice: cat.displayPrice,
+                discountedPrice: cat.discountedPrice,
+            };
+        });
+
+        res.json(result);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // ============================================
 // CATEGORY CRUD
@@ -676,7 +709,7 @@ router.post('/slots/freeze', ...mgr, async (req: AuthRequest, res: Response) => 
 
 // E. Order Creation
 router.post('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
-    const { userId, addressId, slotDate, slotTime, items } = req.body;
+    const { userId, addressId, slotDate, slotTime, slotLabel, items, remarks } = req.body;
     const managerId = req.userId!;
 
     if (!userId || !addressId || !slotDate || !slotTime || !items || !items.length) {
@@ -687,25 +720,32 @@ router.post('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
         const address = await prisma.address.findUnique({ where: { id: addressId } });
         if (!address) return res.status(404).json({ error: 'Address not found' });
 
-        let totalAmount = 0;
-        const catalogItems = await prisma.catalogItem.findMany({
-            where: { partnerCode: { in: items.map((i: any) => i.testCode) } }
-        });
-        const catalogMap = new Map(catalogItems.map(c => [c.partnerCode, c]));
-
-        const finalItems: Array<{testCode: string, testName: string, price: number, patientId: string}> = [];
-        for (const item of items) {
-            const cat = catalogMap.get(item.testCode);
-            if (!cat) throw new Error(`Test code not found: ${item.testCode}`);
-            const price = Math.max(0, cat.discountedPrice ?? cat.displayPrice);
-            totalAmount += price;
-            finalItems.push({
-                testCode: item.testCode,
-                testName: cat.name,
-                price: price,
-                patientId: item.patientId
+        // Validate prices (supports optional customPrice per item)
+        const priceResult = await validateManagerPrices(
+            items.map((i: any) => ({
+                testCode: i.testCode,
+                customPrice: i.customPrice !== undefined && i.customPrice !== null
+                    ? Number(i.customPrice)
+                    : undefined,
+            }))
+        );
+        if (!priceResult.valid) {
+            return res.status(400).json({
+                error: priceResult.errors[0],
+                details: priceResult.errors,
             });
         }
+
+        const totalAmount = priceResult.totalAmount;
+        const hasCustomPrice = priceResult.items.some(i => i.isCustomPrice);
+
+        const finalItems: Array<{testCode: string, testName: string, price: number, patientId: string}> = 
+            priceResult.items.map((v, idx) => ({
+                testCode: v.testCode,
+                testName: v.testName,
+                price: v.finalPrice,
+                patientId: items[idx].patientId,
+            }));
 
         // Duplicate validation: same test + same patient = rejected
         const seen = new Set<string>();
@@ -730,6 +770,13 @@ router.post('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
                 resolvedItems.push({ ...item, patientId: pId });
             }
 
+            // Store human-readable label in slotTime, raw stm_id in partnerSlotId
+            const readableSlotTime = (slotLabel && !/^\d+$/.test(slotLabel.trim())) ? slotLabel.trim() : '';
+
+            // Calculate discount amount for custom-price orders
+            const catalogTotal = priceResult.items.reduce((s, i) => s + i.catalogPrice, 0);
+            const discountAmount = hasCustomPrice ? catalogTotal - totalAmount : 0;
+
             const booking = await tx.booking.create({
                 data: {
                     userId,
@@ -739,8 +786,9 @@ router.post('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
                     status: 'Awaiting Payment',
                     finalAmount: totalAmount,
                     totalAmount: totalAmount,
+                    discountAmount,
                     slotDate: slotDate.split('T')[0],
-                    slotTime,
+                    slotTime: readableSlotTime,
                     addressLine: address.line1,
                     addressCity: address.city,
                     addressPincode: address.pincode,
@@ -764,9 +812,183 @@ router.post('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
             return { booking, managerOrder };
         });
 
+        // Audit log for custom-price orders
+        if (hasCustomPrice) {
+            const catalogTotal = priceResult.items.reduce((s, i) => s + i.catalogPrice, 0);
+            await prisma.adminAuditLog.create({
+                data: {
+                    adminId: req.adminId!,
+                    adminName: req.adminName || 'Manager',
+                    action: 'MANAGER_CUSTOM_PRICE_ORDER',
+                    entity: 'Booking',
+                    targetId: result.booking.id,
+                    newValue: {
+                        items: priceResult.items
+                            .filter(i => i.isCustomPrice)
+                            .map(i => ({
+                                testCode: i.testCode,
+                                testName: i.testName,
+                                catalogPrice: i.catalogPrice,
+                                customPrice: i.finalPrice,
+                                discount: i.catalogPrice - i.finalPrice,
+                            })),
+                        totalCatalogPrice: catalogTotal,
+                        totalCustomPrice: totalAmount,
+                        totalDiscount: catalogTotal - totalAmount,
+                        remarks: remarks || null,
+                    },
+                    ipAddress: getClientIP(req),
+                    isDestructive: false,
+                }
+            });
+        }
+
         res.status(201).json(result);
     } catch (error: any) {
         console.error('[Manager] Order creation error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// E2. Camp Order Creation
+router.post('/camps/orders', ...mgr, async (req: AuthRequest, res: Response) => {
+    const { userId, campId, patientId, dob, pricingTier, customPrice, remarks } = req.body;
+    const managerId = req.userId!;
+
+    if (!userId || !campId || !patientId) {
+        return res.status(400).json({ error: 'Missing required fields: userId, campId, patientId' });
+    }
+
+    try {
+        const isSelf = patientId === 'self';
+
+        const [camp, user] = await Promise.all([
+            prisma.camp.findUnique({
+                where: { id: campId },
+                include: { items: { include: { catalogItem: true } } }
+            }),
+            prisma.user.findUnique({ where: { id: userId } }),
+        ]);
+
+        // Only look up patient if not 'self' — self is resolved inside tx
+        const patient = isSelf ? null : await prisma.patient.findUnique({ where: { id: patientId } });
+
+        if (!camp) return res.status(404).json({ error: 'Camp not found' });
+        if (!camp.isActive) return res.status(400).json({ error: 'Camp is not active' });
+        if (new Date() > camp.endDate) return res.status(400).json({ error: 'Camp has ended' });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        if (!isSelf && (!patient || patient.userId !== userId)) return res.status(404).json({ error: 'Patient not found or does not belong to user' });
+
+        if (camp.items.length === 0) {
+            return res.status(400).json({ error: 'Camp has no tests configured' });
+        }
+
+        const disabledItems = camp.items.filter(i => !i.catalogItem.isEnabled);
+        if (disabledItems.length > 0) {
+            return res.status(400).json({ error: 'Some camp tests are currently unavailable' });
+        }
+
+        const basePrice = pricingTier === 'FAMILY' ? camp.familyPrice : camp.price;
+        let totalAmount = basePrice;
+        let isCustomPriceUsed = false;
+
+        // Validate custom price if provided
+        if (customPrice !== undefined && customPrice !== null) {
+            const priceNum = Number(customPrice);
+            const validation = validateCampCustomPrice(priceNum, basePrice, camp.name);
+            if (!validation.valid) {
+                return res.status(400).json({ error: validation.error });
+            }
+            totalAmount = priceNum;
+            isCustomPriceUsed = true;
+        }
+
+        const discountAmount = isCustomPriceUsed ? basePrice - totalAmount : 0;
+
+        const result = await prisma.$transaction(async (tx) => {
+            // Resolve 'self' to actual patient record
+            let resolvedPatientId = patientId;
+            let resolvedPatient = patient;
+            if (isSelf) {
+                const selfPatient = await resolveOrCreateSelfPatient(userId, tx as any);
+                resolvedPatientId = selfPatient.id;
+                resolvedPatient = selfPatient;
+            }
+
+            // Update patient DOB if provided and currently missing
+            if (dob && resolvedPatient && !resolvedPatient.dob) {
+                await tx.patient.update({
+                    where: { id: resolvedPatientId },
+                    data: { dob: new Date(dob) }
+                });
+            }
+
+            const booking = await tx.booking.create({
+                data: {
+                    userId,
+                    campId: camp.id,
+                    createdByManagerId: managerId,
+                    paymentStatus: 'INITIATED',
+                    status: 'Awaiting Payment',
+                    totalAmount,
+                    finalAmount: totalAmount,
+                    discountAmount,
+                    slotDate: camp.startDate.toISOString().split('T')[0],
+                    slotTime: 'Camp',
+                    addressLine: camp.location,
+                    addressCity: camp.city,
+                    addressPincode: camp.pincode,
+                    items: {
+                        create: camp.items.map(item => ({
+                            testCode: item.catalogItem.partnerCode,
+                            testName: item.catalogItem.name,
+                            price: 0,
+                            patientId: resolvedPatientId,
+                        }))
+                    }
+                }
+            });
+
+            const managerOrder = await tx.managerOrder.create({
+                data: {
+                    bookingId: booking.id,
+                    managerId,
+                    customerId: userId,
+                    totalAmount,
+                    status: 'CREATED'
+                }
+            });
+
+            return { booking, managerOrder };
+        });
+
+        // Audit log for custom-price camp orders
+        if (isCustomPriceUsed) {
+            await prisma.adminAuditLog.create({
+                data: {
+                    adminId: req.adminId!,
+                    adminName: req.adminName || 'Manager',
+                    action: 'MANAGER_CUSTOM_PRICE_CAMP_ORDER',
+                    entity: 'Booking',
+                    targetId: result.booking.id,
+                    newValue: {
+                        campId: camp.id,
+                        campName: camp.name,
+                        pricingTier: pricingTier || 'INDIVIDUAL',
+                        originalPrice: basePrice,
+                        customPrice: totalAmount,
+                        discount: discountAmount,
+                        remarks: remarks || null,
+                    },
+                    ipAddress: getClientIP(req),
+                    isDestructive: false,
+                }
+            });
+        }
+
+        res.status(201).json(result);
+    } catch (error: any) {
+        console.error('[Manager] Camp order creation error:', error);
         res.status(500).json({ error: error.message });
     }
 });
