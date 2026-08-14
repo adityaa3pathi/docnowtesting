@@ -124,7 +124,7 @@ export default function CampsPage() {
         const timer = setTimeout(async () => {
             setIsSearchingCatalog(true);
             try {
-                const res = await api.get(`/admin/featured-packages/search?q=${encodeURIComponent(catalogSearch.trim())}`);
+                const res = await api.get(`/admin/featured-packages/search?q=${encodeURIComponent(catalogSearch.trim())}&scope=all`);
                 setCatalogResults(res.data.products || res.data || []);
             } catch (error) {
                 console.error('Catalog search failed', error);
@@ -145,7 +145,7 @@ export default function CampsPage() {
         const timer = setTimeout(async () => {
             setIsSearchingItemsCatalog(true);
             try {
-                const res = await api.get(`/admin/featured-packages/search?q=${encodeURIComponent(itemsCatalogSearch.trim())}`);
+                const res = await api.get(`/admin/featured-packages/search?q=${encodeURIComponent(itemsCatalogSearch.trim())}&scope=all`);
                 setItemsCatalogResults(res.data.products || res.data || []);
             } catch (error) {
                 console.error('Catalog search failed', error);
