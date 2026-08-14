@@ -48,7 +48,8 @@ export const listFeaturedPackages = async (req: AuthRequest, res: Response) => {
  * Search/browse non-featured packages with pagination
  */
 export const searchCatalogForFeaturing = async (req: AuthRequest, res: Response) => {
-    const { search, page = '1', limit = '20' } = req.query;
+    const { q, search, page = '1', limit = '20' } = req.query;
+    const searchTerm = (q || search) as string | undefined;
     const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
     const limitNum = Math.min(50, Math.max(1, parseInt(limit as string, 10) || 20));
     const skip = (pageNum - 1) * limitNum;
@@ -58,8 +59,8 @@ export const searchCatalogForFeaturing = async (req: AuthRequest, res: Response)
             isFeatured: false,
             type: { in: PACKAGE_TYPES },
         };
-        if (search && (search as string).trim().length >= 1) {
-            const searchClause = buildCatalogSearchWhere(search as string);
+        if (searchTerm && searchTerm.trim().length >= 1) {
+            const searchClause = buildCatalogSearchWhere(searchTerm);
             where.OR = searchClause.OR;
         }
 
