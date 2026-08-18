@@ -1,0 +1,55 @@
+#!/bin/bash
+# Pre-commit hook to prevent accidental commit of confidential files and secrets
+
+# List of banned file patterns (regex)
+BANNED_PATTERNS=(
+  "\.env$"
+  "\.env\.local$"
+  "\.env\.production$"
+  "\.env\.staging$"
+  "\.log$"
+  "\.pem$"
+  "\.key$"
+  "seed\.js$"
+  "check_.*\.js$"
+  "get_.*\.js$"
+  "query\.js$"
+  "docnow-prod-key"
+)
+
+# Get staged files
+STAGED_FILES=$(git diff --cached --name-only)
+
+ERRORS=0
+
+for file in $STAGED_FILES; do
+  # Skip checking this hook file itself for regex matches
+  if [ "$file" = ".githooks/pre-commit" ]; then
+    continue
+  fi
+
+  # Check against banned filename patterns
+  for pattern in "${BANNED_PATTERNS[@]}"; do
+    if echo "$file" | grep -qE "$pattern"; then
+      # Allow .example env files
+      if echo "$file" | grep -qE "\.example$"; then
+        continue
+      fi
+      echo "❌ ERROR: Staging banned file pattern '$pattern': $file"
+      ERRORS=$((ERRORS + 1))
+    fi
+  done
+
+  # Scan staged content for hardcoded passwords/tokens
+  if git diff --cached "$file" | grep -qE "Admin@[0-9]+|eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9|rzp_live_|AKIA[0-9A-Z]{16}"; then
+    echo "❌ ERROR: Staged file '$file' contains suspicious hardcoded secrets or tokens!"
+    ERRORS=$((ERRORS + 1))
+  fi
+done
+
+if [ $ERRORS -gt 0 ]; then
+  echo "🚫 Commit rejected! Please remove confidential/secret files before committing."
+  exit 1
+fi
+
+exit 0
