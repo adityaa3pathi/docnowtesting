@@ -24,17 +24,23 @@ export async function resolveOrCreateSelfPatient(userId: string, prisma: PrismaC
     if (!selfPatient) {
         // Fallback: create the Self stub from the User's core info
         const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (!user || !user.name || !user.gender || !user.age) {
-            throw new Error('User profile is incomplete. Cannot create Self patient stub.');
+        if (!user) {
+            throw new Error('User not found. Cannot create Self patient stub.');
         }
+
+        // Use available profile data, falling back to sensible defaults
+        // for users who signed up via OTP but haven't completed their profile
+        const name = user.name || user.mobile || 'Self';
+        const gender = user.gender || 'Other';
+        const age = user.age || 25;
 
         selfPatient = await prisma.patient.create({
             data: {
                 userId,
-                name: user.name,
+                name,
                 relation: 'Self',
-                gender: user.gender,
-                age: user.age,
+                gender,
+                age,
                 dob: user.dob || undefined,
             }
         });
