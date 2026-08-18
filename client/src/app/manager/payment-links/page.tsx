@@ -1021,9 +1021,9 @@ function StepTests({
                                         Min: ₹{c.floorPrice} (70% of ₹{c.catalogPrice})
                                     </p>
                                 )}
-                                {!priceError && c.floorPrice && hasCustom && (
+                                {!priceError && c.floorPrice && (
                                     <p className="text-[11px] text-gray-400 mt-1 pl-1">
-                                        Range: ₹{c.floorPrice} – ₹{c.catalogPrice}
+                                        Allowed: ₹{c.floorPrice} – ₹{c.catalogPrice}
                                     </p>
                                 )}
                             </div>
