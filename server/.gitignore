@@ -7,6 +7,16 @@ node_modules
 # Build output
 dist
 build
+prisma/seed.js
+prisma/seed.js.map
+check_*.js
+check_*.ts
+get_*.js
+get_*.ts
+query.js
+test_*.js
+test_*.ts
+
 
 # Logs
 logs
