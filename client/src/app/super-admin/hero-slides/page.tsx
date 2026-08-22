@@ -3,82 +3,46 @@
 import { useState, useEffect } from 'react';
 import {
   Plus,
-  Edit2,
   Trash2,
   ArrowUp,
   ArrowDown,
-  Eye,
-  EyeOff,
-  Sparkles,
-  Sliders,
-  Check,
-  X,
   Loader2,
-  ExternalLink,
-  Paintbrush,
   ImageIcon,
   Monitor,
   Smartphone,
   Info,
+  GripVertical,
+  X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 
-export interface HeroSlide {
+interface HeroSlide {
   id: string;
-  title: string;
-  subtitle: string;
-  badgeText?: string | null;
-  ctaText: string;
-  ctaLink: string;
-  secondaryCtaText?: string | null;
-  secondaryCtaLink?: string | null;
-  imageUrl?: string | null;
   desktopImageUrl?: string | null;
   mobileImageUrl?: string | null;
   imageAlt?: string | null;
-  bgGradient: string;
   sortOrder: number;
   isActive: boolean;
 }
-
-const GRADIENT_PRESETS = [
-  { name: 'Royal Purple', value: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' },
-  { name: 'Midnight Blue', value: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #1E3A8A 25.49%, #0F172A 74.17%)' },
-  { name: 'Emerald Forest', value: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #065F46 25.49%, #022C22 74.17%)' },
-  { name: 'Crimson Night', value: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #881337 25.49%, #4C0519 74.17%)' },
-  { name: 'Deep Amethyst', value: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #581C87 25.49%, #3B0764 74.17%)' },
-];
 
 export default function HeroSlidesCMSPage() {
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Form State
-  const [formData, setFormData] = useState({
-    title: '',
-    subtitle: '',
-    badgeText: '',
-    ctaText: 'Book a Test',
-    ctaLink: '/search',
-    secondaryCtaText: '',
-    secondaryCtaLink: '',
-    desktopImageUrl: '',
-    mobileImageUrl: '',
-    imageAlt: '',
-    bgGradient: GRADIENT_PRESETS[0].value,
-    isActive: true,
-  });
+  // Simple form — just image URLs + alt
+  const [desktopImageUrl, setDesktopImageUrl] = useState('');
+  const [mobileImageUrl, setMobileImageUrl] = useState('');
+  const [imageAlt, setImageAlt] = useState('');
 
   const fetchSlides = async () => {
     try {
       setLoading(true);
       const res = await api.get('/admin/hero-slides');
       setSlides(res.data.slides || []);
-    } catch (err: any) {
+    } catch {
       toast.error('Failed to load hero slides');
     } finally {
       setLoading(false);
@@ -89,90 +53,49 @@ export default function HeroSlidesCMSPage() {
     fetchSlides();
   }, []);
 
-  const openCreateModal = () => {
-    setEditingSlide(null);
-    setFormData({
-      title: '',
-      subtitle: '',
-      badgeText: '',
-      ctaText: 'Book a Test',
-      ctaLink: '/search',
-      secondaryCtaText: 'View Packages',
-      secondaryCtaLink: '/packages',
-      desktopImageUrl: '',
-      mobileImageUrl: '',
-      imageAlt: '',
-      bgGradient: GRADIENT_PRESETS[0].value,
-      isActive: true,
-    });
+  const openAddModal = () => {
+    setDesktopImageUrl('');
+    setMobileImageUrl('');
+    setImageAlt('');
     setModalOpen(true);
   };
 
-  const openEditModal = (slide: HeroSlide) => {
-    setEditingSlide(slide);
-    setFormData({
-      title: slide.title,
-      subtitle: slide.subtitle,
-      badgeText: slide.badgeText || '',
-      ctaText: slide.ctaText,
-      ctaLink: slide.ctaLink,
-      secondaryCtaText: slide.secondaryCtaText || '',
-      secondaryCtaLink: slide.secondaryCtaLink || '',
-      desktopImageUrl: slide.desktopImageUrl || '',
-      mobileImageUrl: slide.mobileImageUrl || '',
-      imageAlt: slide.imageAlt || '',
-      bgGradient: slide.bgGradient,
-      isActive: slide.isActive,
-    });
-    setModalOpen(true);
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title.trim() || !formData.subtitle.trim()) {
-      toast.error('Title and subtitle are required');
+    if (!desktopImageUrl.trim() && !mobileImageUrl.trim()) {
+      toast.error('Please provide at least one image URL');
       return;
     }
 
     try {
       setSaving(true);
-      if (editingSlide) {
-        await api.put(`/admin/hero-slides/${editingSlide.id}`, formData);
-        toast.success('Hero slide updated');
-      } else {
-        await api.post('/admin/hero-slides', {
-          ...formData,
-          sortOrder: slides.length,
-        });
-        toast.success('Hero slide created');
-      }
+      await api.post('/admin/hero-slides', {
+        title: imageAlt || 'Hero Banner',
+        subtitle: '',
+        desktopImageUrl: desktopImageUrl.trim() || null,
+        mobileImageUrl: mobileImageUrl.trim() || null,
+        imageAlt: imageAlt.trim() || null,
+        sortOrder: slides.length,
+        isActive: true,
+      });
+      toast.success('Banner added');
       setModalOpen(false);
       fetchSlides();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to save slide');
+      toast.error(err.response?.data?.error || 'Failed to add banner');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleToggle = async (slide: HeroSlide) => {
-    try {
-      await api.put(`/admin/hero-slides/${slide.id}/toggle`);
-      toast.success(slide.isActive ? 'Slide hidden' : 'Slide activated');
-      fetchSlides();
-    } catch (err) {
-      toast.error('Failed to update status');
-    }
-  };
-
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this hero slide?')) return;
+    if (!confirm('Delete this banner?')) return;
     try {
       await api.delete(`/admin/hero-slides/${id}`);
-      toast.success('Hero slide deleted');
+      toast.success('Banner deleted');
       fetchSlides();
-    } catch (err) {
-      toast.error('Failed to delete slide');
+    } catch {
+      toast.error('Failed to delete');
     }
   };
 
@@ -181,23 +104,15 @@ export default function HeroSlidesCMSPage() {
     if (targetIndex < 0 || targetIndex >= slides.length) return;
 
     const newSlides = [...slides];
-    const temp = newSlides[index];
-    newSlides[index] = newSlides[targetIndex];
-    newSlides[targetIndex] = temp;
+    [newSlides[index], newSlides[targetIndex]] = [newSlides[targetIndex], newSlides[index]];
 
-    // Re-assign sortOrder
-    const reorderedItems = newSlides.map((item, idx) => ({
-      id: item.id,
-      sortOrder: idx,
-    }));
-
-    setSlides(newSlides); // optimistic update
+    const reordered = newSlides.map((s, i) => ({ id: s.id, sortOrder: i }));
+    setSlides(newSlides);
 
     try {
-      await api.put('/admin/hero-slides/reorder', { items: reorderedItems });
-      toast.success('Slide order updated');
-    } catch (err) {
-      toast.error('Failed to reorder slides');
+      await api.put('/admin/hero-slides/reorder', { items: reordered });
+    } catch {
+      toast.error('Reorder failed');
       fetchSlides();
     }
   };
@@ -208,22 +123,87 @@ export default function HeroSlidesCMSPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-purple-100">
         <div>
           <div className="flex items-center gap-2 text-purple-700 font-bold text-sm mb-1">
-            <Sliders size={18} />
+            <ImageIcon size={18} />
             <span>Homepage CMS</span>
           </div>
-          <h1 className="text-2xl font-black text-gray-900">Hero Slides CMS</h1>
+          <h1 className="text-2xl font-black text-gray-900">Hero Banners</h1>
           <p className="text-sm text-gray-500 font-medium mt-1">
-            Manage, customize, and reorder hero banners displayed on the DOCNOW landing page.
+            Upload, delete, and reorder hero banner images for the landing page.
           </p>
         </div>
 
         <button
-          onClick={openCreateModal}
+          onClick={openAddModal}
           className="inline-flex items-center gap-2 px-5 py-3 bg-[#4b2192] hover:bg-[#3b1975] text-white font-bold rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 text-sm"
         >
           <Plus size={18} />
-          <span>Add New Slide</span>
+          <span>Add Banner</span>
         </button>
+      </div>
+
+      {/* Image Spec Guidelines — always visible */}
+      <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl p-5 space-y-3">
+        <div className="flex items-start gap-2">
+          <Info size={16} className="text-purple-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-purple-800">Image Upload Guidelines</p>
+            <p className="text-xs text-purple-600 mt-0.5">
+              Upload separate images for desktop and mobile for best results. Host images on Cloudinary / S3 and paste the URL.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="bg-white rounded-xl p-4 border border-purple-100 shadow-sm">
+            <div className="flex items-center gap-2 mb-2.5">
+              <Monitor size={16} className="text-blue-600" />
+              <span className="text-sm font-extrabold text-gray-800">Desktop Banner</span>
+            </div>
+            <ul className="space-y-1.5 text-xs text-gray-600 font-medium">
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
+                <strong>Size:</strong>&nbsp;1440 × 560 px
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
+                <strong>Aspect Ratio:</strong>&nbsp;18 : 7
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
+                <strong>Format:</strong>&nbsp;WebP or PNG
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
+                <strong>Max Size:</strong>&nbsp;200 KB
+              </li>
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 border border-purple-100 shadow-sm">
+            <div className="flex items-center gap-2 mb-2.5">
+              <Smartphone size={16} className="text-green-600" />
+              <span className="text-sm font-extrabold text-gray-800">Mobile Banner</span>
+            </div>
+            <ul className="space-y-1.5 text-xs text-gray-600 font-medium">
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
+                <strong>Size:</strong>&nbsp;768 × 480 px
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
+                <strong>Aspect Ratio:</strong>&nbsp;8 : 5
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
+                <strong>Format:</strong>&nbsp;WebP or PNG
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
+                <strong>Max Size:</strong>&nbsp;120 KB
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       {/* Slide List */}
@@ -232,95 +212,83 @@ export default function HeroSlidesCMSPage() {
           <Loader2 className="w-8 h-8 animate-spin text-[#4b2192]" />
         </div>
       ) : slides.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 p-8">
-          <Sparkles className="w-12 h-12 text-purple-300 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-gray-800">No Hero Slides Found</h3>
-          <p className="text-sm text-gray-500 max-w-md mx-auto mt-1 mb-6">
-            Get started by creating your first hero carousel slide.
-          </p>
+        <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+          <ImageIcon className="w-12 h-12 text-purple-200 mx-auto mb-3" />
+          <h3 className="text-lg font-bold text-gray-800">No Banners Yet</h3>
+          <p className="text-sm text-gray-500 mt-1 mb-6">Add your first hero banner image.</p>
           <button
-            onClick={openCreateModal}
+            onClick={openAddModal}
             className="px-5 py-2.5 bg-[#4b2192] text-white font-bold text-sm rounded-xl"
           >
-            Create Hero Slide
+            Add Banner
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {slides.map((slide, idx) => (
             <div
               key={slide.id}
-              className={`bg-white rounded-2xl border transition-all overflow-hidden shadow-sm hover:shadow-md ${
-                slide.isActive ? 'border-gray-200' : 'border-gray-200 opacity-60 bg-gray-50/50'
-              }`}
+              className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
             >
-              <div className="p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-                {/* Visual Preview Badge */}
-                <div
-                  className="w-full lg:w-72 h-36 rounded-xl p-4 flex flex-col justify-between text-white relative shadow-inner flex-shrink-0"
-                  style={{ background: slide.bgGradient }}
-                >
-                  {slide.badgeText && (
-                    <span className="self-start text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/20 tracking-wider uppercase">
-                      {slide.badgeText}
-                    </span>
-                  )}
-                  <div>
-                    <h4 className="font-extrabold text-sm line-clamp-1">{slide.title}</h4>
-                    <p className="text-[11px] text-white/80 line-clamp-2 mt-0.5">{slide.subtitle}</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-[10px] font-semibold text-amber-300">
-                    <span>{slide.ctaText} →</span>
-                  </div>
+              <div className="flex items-center gap-4 p-4">
+                {/* Drag handle + order */}
+                <div className="flex flex-col items-center gap-1 text-gray-300">
+                  <GripVertical size={20} />
+                  <span className="text-[10px] font-bold text-gray-400">#{idx + 1}</span>
                 </div>
 
-                {/* Details */}
+                {/* Desktop thumbnail */}
+                <div className="flex-shrink-0">
+                  {slide.desktopImageUrl ? (
+                    <img
+                      src={slide.desktopImageUrl}
+                      alt={slide.imageAlt || `Banner ${idx + 1}`}
+                      className="w-48 h-20 object-cover rounded-lg border border-gray-100"
+                    />
+                  ) : (
+                    <div className="w-48 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <span className="text-[10px] text-gray-400 font-medium">No desktop image</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Mobile thumbnail */}
+                <div className="flex-shrink-0 hidden sm:block">
+                  {slide.mobileImageUrl ? (
+                    <img
+                      src={slide.mobileImageUrl}
+                      alt={slide.imageAlt || `Banner ${idx + 1}`}
+                      className="w-14 h-20 object-cover rounded-lg border border-gray-100"
+                    />
+                  ) : (
+                    <div className="w-14 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <span className="text-[8px] text-gray-400 font-medium text-center leading-tight">No<br/>mobile</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Alt text label */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="px-2.5 py-0.5 rounded-md bg-purple-50 text-purple-700 font-bold text-xs">
-                      Slide #{idx + 1}
-                    </span>
-                    <span
-                      className={`px-2.5 py-0.5 rounded-md font-bold text-xs flex items-center gap-1 ${
-                        slide.isActive
-                          ? 'bg-green-50 text-green-700'
-                          : 'bg-gray-100 text-gray-500'
-                      }`}
-                    >
-                      {slide.isActive ? <Eye size={12} /> : <EyeOff size={12} />}
-                      {slide.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-
-                  <h3 className="text-lg font-bold text-gray-900 line-clamp-1">{slide.title}</h3>
-                  <p className="text-xs text-gray-500 font-medium line-clamp-2 mt-1">
-                    {slide.subtitle}
+                  <p className="text-sm font-semibold text-gray-700 truncate">
+                    {slide.imageAlt || `Banner ${idx + 1}`}
                   </p>
-
-                  <div className="flex flex-wrap items-center gap-4 mt-3 text-xs font-semibold text-gray-600">
-                    <span className="flex items-center gap-1 text-purple-700">
-                      <ExternalLink size={12} />
-                      CTA: {slide.ctaText} ({slide.ctaLink})
-                    </span>
-                    {slide.secondaryCtaText && (
-                      <span className="text-gray-500">
-                        Secondary: {slide.secondaryCtaText} ({slide.secondaryCtaLink})
-                      </span>
-                    )}
-                  </div>
+                  <p className="text-[11px] text-gray-400 font-medium mt-0.5 truncate">
+                    {slide.desktopImageUrl ? 'Desktop ✓' : 'Desktop ✗'}
+                    {' · '}
+                    {slide.mobileImageUrl ? 'Mobile ✓' : 'Mobile ✗'}
+                  </p>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 self-end lg:self-center border-t lg:border-t-0 pt-4 lg:pt-0 w-full lg:w-auto justify-end">
-                  {/* Reorder Buttons */}
-                  <div className="flex items-center bg-gray-100 rounded-lg p-0.5 mr-2">
+                <div className="flex items-center gap-1.5">
+                  <div className="flex flex-col bg-gray-100 rounded-lg p-0.5">
                     <button
                       onClick={() => handleMove(idx, 'up')}
                       disabled={idx === 0}
                       className="p-1.5 hover:bg-white text-gray-600 disabled:opacity-30 rounded-md transition-colors"
                       title="Move up"
                     >
-                      <ArrowUp size={16} />
+                      <ArrowUp size={15} />
                     </button>
                     <button
                       onClick={() => handleMove(idx, 'down')}
@@ -328,39 +296,16 @@ export default function HeroSlidesCMSPage() {
                       className="p-1.5 hover:bg-white text-gray-600 disabled:opacity-30 rounded-md transition-colors"
                       title="Move down"
                     >
-                      <ArrowDown size={16} />
+                      <ArrowDown size={15} />
                     </button>
                   </div>
 
-                  {/* Toggle Active */}
-                  <button
-                    onClick={() => handleToggle(slide)}
-                    className={`p-2 rounded-xl transition-all ${
-                      slide.isActive
-                        ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
-                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                    }`}
-                    title={slide.isActive ? 'Deactivate' : 'Activate'}
-                  >
-                    {slide.isActive ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-
-                  {/* Edit */}
-                  <button
-                    onClick={() => openEditModal(slide)}
-                    className="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                    title="Edit slide"
-                  >
-                    <Edit2 size={18} />
-                  </button>
-
-                  {/* Delete */}
                   <button
                     onClick={() => handleDelete(slide.id)}
-                    className="p-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                    title="Delete slide"
+                    className="p-2 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                    title="Delete"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>
@@ -369,321 +314,67 @@ export default function HeroSlidesCMSPage() {
         </div>
       )}
 
-      {/* Modal for Create/Edit */}
+      {/* Add Banner Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-6 my-8 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b pb-4">
-              <div>
-                <h2 className="text-xl font-black text-gray-900">
-                  {editingSlide ? 'Edit Hero Slide' : 'Create New Hero Slide'}
-                </h2>
-                <p className="text-xs text-gray-500 font-medium">
-                  Configure headline, badges, call-to-action buttons, and gradient style.
-                </p>
-              </div>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-black text-gray-900">Add Hero Banner</h2>
               <button
                 onClick={() => setModalOpen(false)}
                 className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            {/* Live Preview Card */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles size={14} className="text-purple-600" />
-                Live Banner Preview
-              </label>
-              <div
-                className="rounded-2xl p-6 text-white min-h-[180px] flex flex-col justify-between shadow-lg transition-all duration-300"
-                style={{ background: formData.bgGradient }}
-              >
-                {formData.badgeText && (
-                  <span className="self-start text-xs font-bold px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 tracking-wider uppercase">
-                    {formData.badgeText}
-                  </span>
-                )}
-                <div>
-                  <h3 className="font-black text-xl sm:text-2xl leading-tight">
-                    {formData.title || 'Slide Title Headline'}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-white/80 font-medium mt-1">
-                    {formData.subtitle || 'Slide subtitle description goes here...'}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-3 mt-4">
-                  <span className="px-4 py-2 bg-amber-400 text-gray-900 font-extrabold rounded-lg text-xs shadow-md">
-                    {formData.ctaText || 'CTA Button'} →
-                  </span>
-                  {formData.secondaryCtaText && (
-                    <span className="px-4 py-2 bg-white/15 text-white font-bold rounded-lg text-xs border border-white/20">
-                      {formData.secondaryCtaText}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <form onSubmit={handleSave} className="space-y-4">
-              {/* Title & Badge */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="text-xs font-bold text-gray-700">Headline Title *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="e.g. Precision Diagnostics, Delivered to Your Door."
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-700">Badge Pill (Optional)</label>
-                  <input
-                    type="text"
-                    value={formData.badgeText}
-                    onChange={(e) => setFormData({ ...formData, badgeText: e.target.value })}
-                    placeholder="e.g. 100% ACCREDITED"
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Subtitle */}
+            <form onSubmit={handleAdd} className="space-y-4">
+              {/* Desktop URL */}
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-700">Subtitle Description *</label>
-                <textarea
-                  rows={2}
-                  required
-                  value={formData.subtitle}
-                  onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                  placeholder="e.g. Get NABL & CAP certified lab tests and health checkups at home."
+                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                  <Monitor size={13} className="text-blue-600" />
+                  Desktop Image URL
+                </label>
+                <input
+                  type="url"
+                  value={desktopImageUrl}
+                  onChange={(e) => setDesktopImageUrl(e.target.value)}
+                  placeholder="https://res.cloudinary.com/.../hero-desktop.webp"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
+                />
+                <p className="text-[10px] text-gray-400 font-medium">1440 × 560 px · WebP/PNG · &lt; 200 KB</p>
+              </div>
+
+              {/* Mobile URL */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                  <Smartphone size={13} className="text-green-600" />
+                  Mobile Image URL
+                </label>
+                <input
+                  type="url"
+                  value={mobileImageUrl}
+                  onChange={(e) => setMobileImageUrl(e.target.value)}
+                  placeholder="https://res.cloudinary.com/.../hero-mobile.webp"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
+                />
+                <p className="text-[10px] text-gray-400 font-medium">768 × 480 px · WebP/PNG · &lt; 120 KB</p>
+              </div>
+
+              {/* Alt text */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-700">Alt Text (optional)</label>
+                <input
+                  type="text"
+                  value={imageAlt}
+                  onChange={(e) => setImageAlt(e.target.value)}
+                  placeholder="e.g. Summer health checkup offer"
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
                 />
               </div>
 
-              {/* Primary CTA */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-700">Primary CTA Text</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.ctaText}
-                    onChange={(e) => setFormData({ ...formData, ctaText: e.target.value })}
-                    placeholder="e.g. Book a Test"
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-700">Primary CTA Link</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.ctaLink}
-                    onChange={(e) => setFormData({ ...formData, ctaLink: e.target.value })}
-                    placeholder="e.g. /search"
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Secondary CTA */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-700">Secondary CTA Text (Optional)</label>
-                  <input
-                    type="text"
-                    value={formData.secondaryCtaText}
-                    onChange={(e) => setFormData({ ...formData, secondaryCtaText: e.target.value })}
-                    placeholder="e.g. Explore Packages"
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-700">Secondary CTA Link (Optional)</label>
-                  <input
-                    type="text"
-                    value={formData.secondaryCtaLink}
-                    onChange={(e) => setFormData({ ...formData, secondaryCtaLink: e.target.value })}
-                    placeholder="e.g. /packages"
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* ═══ Hero Image Upload Section ═══ */}
-              <div className="space-y-3 pt-2 border-t border-dashed border-gray-200">
-                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                  <ImageIcon size={14} className="text-purple-600" />
-                  Hero Banner Image (Optional)
-                </label>
-
-                {/* ── Image Dimension Guidelines ── */}
-                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-4 space-y-3">
-                  <div className="flex items-start gap-2">
-                    <Info size={16} className="text-purple-600 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs font-bold text-purple-800">Image Upload Guidelines for Managers</p>
-                      <p className="text-[11px] text-purple-600 mt-0.5">Follow these specs for best results on all devices. Images should be hosted externally (e.g. Cloudinary, S3) and the URL pasted below.</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Desktop Specs */}
-                    <div className="bg-white rounded-lg p-3 border border-purple-100 shadow-sm">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Monitor size={14} className="text-blue-600" />
-                        <span className="text-xs font-extrabold text-gray-800">Desktop Banner</span>
-                      </div>
-                      <ul className="space-y-1 text-[11px] text-gray-600 font-medium">
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
-                          <span><strong>Size:</strong> 1440 × 560 px</span>
-                        </li>
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
-                          <span><strong>Aspect Ratio:</strong> 18:7 (≈ 2.57:1)</span>
-                        </li>
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
-                          <span><strong>Format:</strong> WebP or PNG (compressed)</span>
-                        </li>
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
-                          <span><strong>Max File Size:</strong> 200 KB</span>
-                        </li>
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full flex-shrink-0" />
-                          <span><strong>Safe Zone:</strong> Keep text/logos away from left 50% — text overlays that area</span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    {/* Mobile Specs */}
-                    <div className="bg-white rounded-lg p-3 border border-purple-100 shadow-sm">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Smartphone size={14} className="text-green-600" />
-                        <span className="text-xs font-extrabold text-gray-800">Mobile Banner</span>
-                      </div>
-                      <ul className="space-y-1 text-[11px] text-gray-600 font-medium">
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
-                          <span><strong>Size:</strong> 768 × 480 px</span>
-                        </li>
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
-                          <span><strong>Aspect Ratio:</strong> 8:5 (1.6:1)</span>
-                        </li>
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
-                          <span><strong>Format:</strong> WebP or PNG (compressed)</span>
-                        </li>
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
-                          <span><strong>Max File Size:</strong> 120 KB</span>
-                        </li>
-                        <li className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full flex-shrink-0" />
-                          <span><strong>Safe Zone:</strong> Keep key visuals centered — text overlaps top portion</span>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <p className="text-[10px] text-purple-500 font-semibold italic">💡 Tip: Use dark / semi-transparent images so white heading text remains readable. If no image is provided, the gradient background is used instead.</p>
-                </div>
-
-                {/* Image URL Inputs */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                      <Monitor size={12} className="text-blue-600" />
-                      Desktop Image URL
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.desktopImageUrl}
-                      onChange={(e) => setFormData({ ...formData, desktopImageUrl: e.target.value })}
-                      placeholder="https://res.cloudinary.com/.../hero-desktop.webp"
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
-                    />
-                    <p className="text-[10px] text-gray-400 font-medium">Recommended: 1440×560px, WebP, &lt;200KB</p>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                      <Smartphone size={12} className="text-green-600" />
-                      Mobile Image URL
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.mobileImageUrl}
-                      onChange={(e) => setFormData({ ...formData, mobileImageUrl: e.target.value })}
-                      placeholder="https://res.cloudinary.com/.../hero-mobile.webp"
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
-                    />
-                    <p className="text-[10px] text-gray-400 font-medium">Recommended: 768×480px, WebP, &lt;120KB</p>
-                  </div>
-                </div>
-
-                {/* Image Alt Text */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-700">Image Alt Text (for accessibility & SEO)</label>
-                  <input
-                    type="text"
-                    value={formData.imageAlt}
-                    onChange={(e) => setFormData({ ...formData, imageAlt: e.target.value })}
-                    placeholder="e.g. Family enjoying home health checkup"
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Gradient Theme Picker */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                  <Paintbrush size={14} className="text-purple-600" />
-                  Background Gradient Theme
-                  <span className="text-[10px] text-gray-400 font-medium ml-1">(visible when no image is set, or as overlay)</span>
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                  {GRADIENT_PRESETS.map((preset) => (
-                    <button
-                      key={preset.name}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, bgGradient: preset.value })}
-                      className={`h-12 rounded-xl p-2 text-white font-bold text-[10px] flex items-center justify-center text-center transition-all ${
-                        formData.bgGradient === preset.value
-                          ? 'ring-2 ring-purple-600 scale-105 shadow-md'
-                          : 'opacity-80 hover:opacity-100'
-                      }`}
-                      style={{ background: preset.value }}
-                    >
-                      {preset.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Active Checkbox */}
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="w-4 h-4 text-[#4b2192] rounded border-gray-300 focus:ring-[#4b2192]"
-                />
-                <label htmlFor="isActive" className="text-xs font-bold text-gray-700">
-                  Slide is Active and visible on home page
-                </label>
-              </div>
-
-              {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t">
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
@@ -697,7 +388,7 @@ export default function HeroSlidesCMSPage() {
                   className="px-6 py-2.5 bg-[#4b2192] hover:bg-[#3b1975] text-white font-bold text-sm rounded-xl shadow-md flex items-center gap-2 transition-all"
                 >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  <span>{editingSlide ? 'Update Slide' : 'Create Slide'}</span>
+                  Add Banner
                 </button>
               </div>
             </form>
