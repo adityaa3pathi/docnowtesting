@@ -132,5 +132,40 @@ router.put('/hero-slides/:id', ...admin, updateHeroSlide);
 router.put('/hero-slides/:id/toggle', ...admin, toggleHeroSlideActive);
 router.delete('/hero-slides/:id', ...admin, deleteHeroSlide);
 
+// ── Image Upload (shared) ──────────────────────────────
+import multer from 'multer';
+import { uploadImage, deleteImage } from '../services/imageUpload';
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 500 * 1024 }, // 500 KB
+});
+
+router.post('/upload-image', ...admin, upload.single('file'), async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file provided' });
+    }
+    const folder = (req.body.folder as string) || 'hero-banners';
+    const result = await uploadImage(req.file.buffer, req.file.originalname, req.file.mimetype, folder);
+    res.json({ url: result.url, key: result.key });
+  } catch (error: any) {
+    console.error('[Admin] Image upload error:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/delete-image', ...admin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ error: 'URL is required' });
+    await deleteImage(url);
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('[Admin] Image delete error:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+});
+
 export default router;
 

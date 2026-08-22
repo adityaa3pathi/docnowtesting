@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Plus,
   Trash2,
@@ -13,6 +13,8 @@ import {
   Info,
   GripVertical,
   X,
+  Upload,
+  CheckCircle2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -32,10 +34,16 @@ export default function HeroSlidesCMSPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Simple form — just image URLs + alt
-  const [desktopImageUrl, setDesktopImageUrl] = useState('');
-  const [mobileImageUrl, setMobileImageUrl] = useState('');
+  // Upload state
+  const [desktopFile, setDesktopFile] = useState<File | null>(null);
+  const [mobileFile, setMobileFile] = useState<File | null>(null);
+  const [desktopPreview, setDesktopPreview] = useState<string | null>(null);
+  const [mobilePreview, setMobilePreview] = useState<string | null>(null);
   const [imageAlt, setImageAlt] = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  const desktopInputRef = useRef<HTMLInputElement>(null);
+  const mobileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchSlides = async () => {
     try {
@@ -53,45 +61,108 @@ export default function HeroSlidesCMSPage() {
     fetchSlides();
   }, []);
 
-  const openAddModal = () => {
-    setDesktopImageUrl('');
-    setMobileImageUrl('');
+  const resetModal = () => {
+    setDesktopFile(null);
+    setMobileFile(null);
+    setDesktopPreview(null);
+    setMobilePreview(null);
     setImageAlt('');
+    setUploading(false);
+  };
+
+  const openAddModal = () => {
+    resetModal();
     setModalOpen(true);
+  };
+
+  const handleFileSelect = (file: File, type: 'desktop' | 'mobile') => {
+    const validTypes = ['image/webp', 'image/png', 'image/jpeg', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Only WebP, PNG, or JPEG files are allowed');
+      return;
+    }
+    const maxKB = type === 'desktop' ? 500 : 500;
+    if (file.size > maxKB * 1024) {
+      toast.error(`File too large. Max ${maxKB} KB`);
+      return;
+    }
+
+    const preview = URL.createObjectURL(file);
+    if (type === 'desktop') {
+      setDesktopFile(file);
+      setDesktopPreview(preview);
+    } else {
+      setMobileFile(file);
+      setMobilePreview(preview);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, type: 'desktop' | 'mobile') => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileSelect(file, type);
+  };
+
+  const uploadFileToS3 = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', 'hero-banners');
+    const res = await api.post('/admin/upload-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data.url;
   };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!desktopImageUrl.trim() && !mobileImageUrl.trim()) {
-      toast.error('Please provide at least one image URL');
+    if (!desktopFile && !mobileFile) {
+      toast.error('Please upload at least one image');
       return;
     }
 
     try {
       setSaving(true);
+      setUploading(true);
+
+      let desktopUrl: string | null = null;
+      let mobileUrl: string | null = null;
+
+      if (desktopFile) desktopUrl = await uploadFileToS3(desktopFile);
+      if (mobileFile) mobileUrl = await uploadFileToS3(mobileFile);
+
       await api.post('/admin/hero-slides', {
         title: imageAlt || 'Hero Banner',
         subtitle: '',
-        desktopImageUrl: desktopImageUrl.trim() || null,
-        mobileImageUrl: mobileImageUrl.trim() || null,
+        desktopImageUrl: desktopUrl,
+        mobileImageUrl: mobileUrl,
         imageAlt: imageAlt.trim() || null,
         sortOrder: slides.length,
         isActive: true,
       });
-      toast.success('Banner added');
+
+      toast.success('Banner uploaded & added!');
       setModalOpen(false);
+      resetModal();
       fetchSlides();
     } catch (err: any) {
-      toast.error(err.response?.data?.error || 'Failed to add banner');
+      toast.error(err.response?.data?.error || 'Upload failed');
     } finally {
       setSaving(false);
+      setUploading(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (slide: HeroSlide) => {
     if (!confirm('Delete this banner?')) return;
     try {
-      await api.delete(`/admin/hero-slides/${id}`);
+      // Delete images from S3
+      if (slide.desktopImageUrl) {
+        await api.post('/admin/delete-image', { url: slide.desktopImageUrl }).catch(() => {});
+      }
+      if (slide.mobileImageUrl) {
+        await api.post('/admin/delete-image', { url: slide.mobileImageUrl }).catch(() => {});
+      }
+      await api.delete(`/admin/hero-slides/${slide.id}`);
       toast.success('Banner deleted');
       fetchSlides();
     } catch {
@@ -141,14 +212,14 @@ export default function HeroSlidesCMSPage() {
         </button>
       </div>
 
-      {/* Image Spec Guidelines — always visible */}
+      {/* Image Spec Guidelines */}
       <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl p-5 space-y-3">
         <div className="flex items-start gap-2">
           <Info size={16} className="text-purple-600 mt-0.5 flex-shrink-0" />
           <div>
             <p className="text-sm font-bold text-purple-800">Image Upload Guidelines</p>
             <p className="text-xs text-purple-600 mt-0.5">
-              Upload separate images for desktop and mobile for best results. Host images on Cloudinary / S3 and paste the URL.
+              Upload separate images for desktop and mobile for best results. Files are uploaded directly to our servers.
             </p>
           </div>
         </div>
@@ -170,11 +241,11 @@ export default function HeroSlidesCMSPage() {
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
-                <strong>Format:</strong>&nbsp;WebP or PNG
+                <strong>Format:</strong>&nbsp;WebP, PNG, or JPEG
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
-                <strong>Max Size:</strong>&nbsp;200 KB
+                <strong>Max Size:</strong>&nbsp;500 KB
               </li>
             </ul>
           </div>
@@ -195,11 +266,11 @@ export default function HeroSlidesCMSPage() {
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
-                <strong>Format:</strong>&nbsp;WebP or PNG
+                <strong>Format:</strong>&nbsp;WebP, PNG, or JPEG
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
-                <strong>Max Size:</strong>&nbsp;120 KB
+                <strong>Max Size:</strong>&nbsp;500 KB
               </li>
             </ul>
           </div>
@@ -231,7 +302,7 @@ export default function HeroSlidesCMSPage() {
               className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
             >
               <div className="flex items-center gap-4 p-4">
-                {/* Drag handle + order */}
+                {/* Order indicator */}
                 <div className="flex flex-col items-center gap-1 text-gray-300">
                   <GripVertical size={20} />
                   <span className="text-[10px] font-bold text-gray-400">#{idx + 1}</span>
@@ -273,9 +344,9 @@ export default function HeroSlidesCMSPage() {
                     {slide.imageAlt || `Banner ${idx + 1}`}
                   </p>
                   <p className="text-[11px] text-gray-400 font-medium mt-0.5 truncate">
-                    {slide.desktopImageUrl ? 'Desktop ✓' : 'Desktop ✗'}
+                    {slide.desktopImageUrl ? '🖥 Desktop ✓' : '🖥 Desktop ✗'}
                     {' · '}
-                    {slide.mobileImageUrl ? 'Mobile ✓' : 'Mobile ✗'}
+                    {slide.mobileImageUrl ? '📱 Mobile ✓' : '📱 Mobile ✗'}
                   </p>
                 </div>
 
@@ -301,7 +372,7 @@ export default function HeroSlidesCMSPage() {
                   </div>
 
                   <button
-                    onClick={() => handleDelete(slide.id)}
+                    onClick={() => handleDelete(slide)}
                     className="p-2 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
                     title="Delete"
                   >
@@ -317,11 +388,11 @@ export default function HeroSlidesCMSPage() {
       {/* Add Banner Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-black text-gray-900">Add Hero Banner</h2>
               <button
-                onClick={() => setModalOpen(false)}
+                onClick={() => { setModalOpen(false); resetModal(); }}
                 className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <X size={18} />
@@ -329,41 +400,89 @@ export default function HeroSlidesCMSPage() {
             </div>
 
             <form onSubmit={handleAdd} className="space-y-4">
-              {/* Desktop URL */}
-              <div className="space-y-1">
+              {/* Desktop Upload Zone */}
+              <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
                   <Monitor size={13} className="text-blue-600" />
-                  Desktop Image URL
+                  Desktop Image
+                  <span className="text-gray-400 font-medium">(1440 × 560 px)</span>
                 </label>
                 <input
-                  type="url"
-                  value={desktopImageUrl}
-                  onChange={(e) => setDesktopImageUrl(e.target.value)}
-                  placeholder="https://res.cloudinary.com/.../hero-desktop.webp"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
+                  ref={desktopInputRef}
+                  type="file"
+                  accept="image/webp,image/png,image/jpeg"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleFileSelect(f, 'desktop');
+                  }}
                 />
-                <p className="text-[10px] text-gray-400 font-medium">1440 × 560 px · WebP/PNG · &lt; 200 KB</p>
+                {desktopPreview ? (
+                  <div className="relative group">
+                    <img src={desktopPreview} alt="Desktop preview" className="w-full h-32 object-cover rounded-xl border border-blue-200" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
+                      <button type="button" onClick={() => desktopInputRef.current?.click()} className="px-3 py-1.5 bg-white text-gray-700 text-xs font-bold rounded-lg">Replace</button>
+                      <button type="button" onClick={() => { setDesktopFile(null); setDesktopPreview(null); }} className="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg">Remove</button>
+                    </div>
+                    <div className="absolute top-2 right-2"><CheckCircle2 size={20} className="text-green-500 drop-shadow" /></div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => desktopInputRef.current?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => handleDrop(e, 'desktop')}
+                    className="w-full h-28 border-2 border-dashed border-gray-200 hover:border-blue-400 rounded-xl flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors bg-gray-50 hover:bg-blue-50/50"
+                  >
+                    <Upload size={22} className="text-gray-400" />
+                    <p className="text-xs text-gray-500 font-medium">Click or drag & drop desktop image</p>
+                    <p className="text-[10px] text-gray-400">WebP, PNG, JPEG · Max 500 KB</p>
+                  </div>
+                )}
               </div>
 
-              {/* Mobile URL */}
-              <div className="space-y-1">
+              {/* Mobile Upload Zone */}
+              <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
                   <Smartphone size={13} className="text-green-600" />
-                  Mobile Image URL
+                  Mobile Image
+                  <span className="text-gray-400 font-medium">(768 × 480 px)</span>
                 </label>
                 <input
-                  type="url"
-                  value={mobileImageUrl}
-                  onChange={(e) => setMobileImageUrl(e.target.value)}
-                  placeholder="https://res.cloudinary.com/.../hero-mobile.webp"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
+                  ref={mobileInputRef}
+                  type="file"
+                  accept="image/webp,image/png,image/jpeg"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleFileSelect(f, 'mobile');
+                  }}
                 />
-                <p className="text-[10px] text-gray-400 font-medium">768 × 480 px · WebP/PNG · &lt; 120 KB</p>
+                {mobilePreview ? (
+                  <div className="relative group">
+                    <img src={mobilePreview} alt="Mobile preview" className="w-full h-32 object-cover rounded-xl border border-green-200" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
+                      <button type="button" onClick={() => mobileInputRef.current?.click()} className="px-3 py-1.5 bg-white text-gray-700 text-xs font-bold rounded-lg">Replace</button>
+                      <button type="button" onClick={() => { setMobileFile(null); setMobilePreview(null); }} className="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg">Remove</button>
+                    </div>
+                    <div className="absolute top-2 right-2"><CheckCircle2 size={20} className="text-green-500 drop-shadow" /></div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => mobileInputRef.current?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => handleDrop(e, 'mobile')}
+                    className="w-full h-28 border-2 border-dashed border-gray-200 hover:border-green-400 rounded-xl flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors bg-gray-50 hover:bg-green-50/50"
+                  >
+                    <Upload size={22} className="text-gray-400" />
+                    <p className="text-xs text-gray-500 font-medium">Click or drag & drop mobile image</p>
+                    <p className="text-[10px] text-gray-400">WebP, PNG, JPEG · Max 500 KB</p>
+                  </div>
+                )}
               </div>
 
               {/* Alt text */}
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-700">Alt Text (optional)</label>
+                <label className="text-xs font-bold text-gray-700">Alt Text <span className="text-gray-400 font-medium">(optional)</span></label>
                 <input
                   type="text"
                   value={imageAlt}
@@ -377,18 +496,27 @@ export default function HeroSlidesCMSPage() {
               <div className="flex items-center justify-end gap-3 pt-3 border-t">
                 <button
                   type="button"
-                  onClick={() => setModalOpen(false)}
+                  onClick={() => { setModalOpen(false); resetModal(); }}
                   className="px-5 py-2.5 text-gray-600 hover:bg-gray-100 font-bold text-sm rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={saving}
-                  className="px-6 py-2.5 bg-[#4b2192] hover:bg-[#3b1975] text-white font-bold text-sm rounded-xl shadow-md flex items-center gap-2 transition-all"
+                  disabled={saving || (!desktopFile && !mobileFile)}
+                  className="px-6 py-2.5 bg-[#4b2192] hover:bg-[#3b1975] text-white font-bold text-sm rounded-xl shadow-md flex items-center gap-2 transition-all disabled:opacity-50"
                 >
-                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Add Banner
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {uploading ? 'Uploading...' : 'Saving...'}
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={16} />
+                      Upload & Add
+                    </>
+                  )}
                 </button>
               </div>
             </form>
