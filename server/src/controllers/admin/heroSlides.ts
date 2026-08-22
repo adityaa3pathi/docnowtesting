@@ -24,8 +24,8 @@ export async function listHeroSlides(req: AuthRequest, res: Response) {
 export async function createHeroSlide(req: AuthRequest, res: Response) {
   try {
     const {
-      title,
-      subtitle,
+      title = '',
+      subtitle = '',
       badgeText,
       ctaText = 'Book a Test',
       ctaLink = '/search',
@@ -39,10 +39,6 @@ export async function createHeroSlide(req: AuthRequest, res: Response) {
       sortOrder,
       isActive = true,
     } = req.body;
-
-    if (!title || !subtitle) {
-      return res.status(400).json({ error: 'Title and subtitle are required' });
-    }
 
     let calculatedSortOrder = sortOrder;
     if (calculatedSortOrder === undefined || calculatedSortOrder === null) {
