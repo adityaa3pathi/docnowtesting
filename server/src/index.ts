@@ -32,7 +32,9 @@ import promoRoutes from './routes/promos';
 import reportRoutes from './routes/reports';
 import invoiceRoutes from './routes/invoices';
 import healthRoutes from './routes/health';
+import heroSlidesRoutes from './routes/heroSlides';
 import { campAdminRoutes, campPublicRoutes } from './modules/camps';
+
 import { registerBookingStrategy } from './services/bookingStrategyRegistry';
 import { HomeCollectionStrategy } from './services/homeCollectionStrategy';
 import { CampRegistrationStrategy } from './modules/camps';
@@ -129,6 +131,8 @@ app.use('/api/promos', promoRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/camps', campPublicRoutes);
+app.use('/api/hero-slides', heroSlidesRoutes);
+
 
 
 app.get('/', (req, res) => {

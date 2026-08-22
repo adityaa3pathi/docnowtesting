@@ -653,3 +653,27 @@ model CampCatalogItem {
   @@index([campId])
   @@index([catalogItemId])
 }
+
+// ============================================
+// HERO CAROUSEL CMS
+// ============================================
+
+model HeroSlide {
+  id               String   @id @default(uuid())
+  title            String
+  subtitle         String
+  badgeText        String?
+  ctaText          String   @default("Book a Test")
+  ctaLink          String   @default("/search")
+  secondaryCtaText String?
+  secondaryCtaLink String?
+  imageUrl         String?
+  bgGradient       String   @default("radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)")
+  sortOrder        Int      @default(0)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+

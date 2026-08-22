@@ -30,6 +30,7 @@ import {
     TestTube,
     Package,
     Tent,
+    Sliders,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,6 +46,7 @@ const navItems = [
     { id: 'orders', label: 'Orders', icon: ShoppingCart, href: '/super-admin/orders' },
     { id: 'wallets', label: 'Wallets', icon: Wallet, href: '/super-admin/wallets' },
     { id: 'promos', label: 'Promo Codes', icon: Ticket, href: '/super-admin/promos' },
+    { id: 'hero-slides', label: 'Hero Slides CMS', icon: Sliders, href: '/super-admin/hero-slides' },
     { id: 'featured-packages', label: 'Featured Packages', icon: Star, href: '/super-admin/featured-packages' },
     { id: 'featured-tests', label: 'Featured Tests', icon: TestTube, href: '/super-admin/featured-tests' },
     { id: 'catalog', label: 'Catalog', icon: Package, href: '/super-admin/catalog' },
@@ -56,6 +58,7 @@ const navItems = [
     { id: 'failed-orders', label: 'Failed Orders', icon: AlertTriangle, href: '/super-admin/failed-orders' },
     { id: 'audit', label: 'Audit Logs', icon: FileText, href: '/super-admin/audit-logs' },
 ];
+
 
 export default function SuperAdminLayout({
     children,

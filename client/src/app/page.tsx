@@ -29,18 +29,9 @@ import { Card } from '@/components/ui';
 import { FeaturedPackages, FeaturedTests } from '@/components/home/FeaturedProducts';
 import { FeaturedCamps } from '@/components/home/FeaturedCamps';
 import { CallbackForm } from '@/components/home/CallbackForm';
-import { HeroCTAButtons } from '@/components/home/HeroCTAButtons';
+import { HeroCarousel } from '@/components/home/HeroCarousel';
 import { RevealSection } from '@/components/home/RevealSection';
 import { StickyMobileCTA } from '@/components/home/StickyMobileCTA';
-
-
-// ────────────────────── Static Data (zero JS cost)
-const heroStats = [
-  { icon: Users, iconBg: 'bg-purple-50', iconColor: 'text-purple-500', value: '50K+', label: 'HAPPY PATIENTS' },
-  { icon: FlaskConical, iconBg: 'bg-blue-50', iconColor: 'text-blue-500', value: '200+', label: 'LAB TESTS' },
-  { icon: Clock, iconBg: 'bg-orange-50', iconColor: 'text-orange-400', value: '24h', label: 'REPORT DELIVERY' },
-  { icon: Truck, iconBg: 'bg-green-50', iconColor: 'text-green-500', value: '100+', label: 'CITIES COVERED' },
-];
 
 const howItWorks = [
   { step: '01', title: 'Choose Your Test', description: 'Browse our catalog and select the tests or health packages you need.', icon: Search, color: 'from-purple-500 to-indigo-600' },
@@ -60,54 +51,9 @@ export default function Home() {
   return (
     <main className="flex flex-col min-h-screen bg-white pb-20 md:pb-0">
 
-      {/* ═══════════ HERO — pure server HTML ═══════════ */}
-      <section
-        className="relative pb-16 md:pb-24 lg:pb-32"
-        style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}
-      >
-        <div className="max-w-[1380px] mx-auto px-6 lg:px-16 pt-4 pb-8 lg:pb-16">
-          <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-0">
-            <div className="flex-1 flex flex-col items-start pt-8 lg:pt-16 max-w-xl lg:max-w-none lg:pr-10">
-              <h1 className="text-white font-black font-inter text-4xl md:text-5xl lg:text-[56px] leading-[1.1] mb-5">
-                Precision Diagnostics,{' '}
-                <br className="hidden sm:block" />
-                Delivered to Your Door.
-              </h1>
-              <p className="text-white/80 font-inter text-base md:text-lg mb-10 leading-relaxed max-w-lg">
-                Get NABL &amp; CAP certified lab tests and health checkups at home.
-                Fast, accurate results you can trust.
-              </p>
+      {/* ═══════════ HERO CAROUSEL ═══════════ */}
+      <HeroCarousel />
 
-              {/* Client Island: CTA Buttons (needs useRouter) */}
-              <HeroCTAButtons />
-
-              {/* Trust Badges — pure HTML */}
-              <div className="flex flex-wrap items-center gap-5 text-white/80 text-sm font-inter font-semibold">
-                <span className="flex items-center gap-1.5">
-                  <Shield size={15} className="text-white/70" />
-                  100% SECURE
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Clock size={15} className="text-white/70" />
-                  REPORTS IN 24H
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Truck size={15} className="text-white/70" />
-                  FREE COLLECTION
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Card — pure server HTML */}
-        <div className="hidden lg:block absolute -bottom-14 left-1/2 -translate-x-1/2 w-[calc(100%-5rem)] max-w-4xl z-20">
-          <HeroStatsCard />
-        </div>
-        <div className="lg:hidden mx-4 relative z-20 -mb-4">
-          <HeroStatsCard />
-        </div>
-      </section>
 
       {/* ═══════════ TRUST / SOCIAL PROOF ═══════════ */}
 
@@ -244,25 +190,3 @@ export default function Home() {
   );
 }
 
-// ────────────────────── HeroStatsCard (Server Component — pure HTML)
-function HeroStatsCard() {
-  return (
-    <div className="bg-white rounded-2xl shadow-[0_9px_30px_rgba(0,0,0,0.18)] px-6 py-6 md:px-10">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4">
-        {heroStats.map((stat) => (
-          <div key={stat.label} className="flex flex-col items-center gap-2 text-center">
-            <div className={`w-11 h-11 rounded-full ${stat.iconBg} flex items-center justify-center`}>
-              <stat.icon size={24} className={stat.iconColor} />
-            </div>
-            <span className="font-inter font-black text-2xl md:text-3xl text-gray-900">
-              {stat.value}
-            </span>
-            <span className="font-inter font-semibold text-xs text-gray-400 tracking-wide uppercase">
-              {stat.label}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}

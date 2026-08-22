@@ -21,6 +21,14 @@ import { exportAdminData } from '../controllers/admin/export';
 import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callbacks';
 import { listCorporateInquiries, updateCorporateInquiryStatus } from '../controllers/admin/corporateInquiries';
 import { listFailedOrders } from '../controllers/admin/failedOrders';
+import {
+    listHeroSlides,
+    createHeroSlide,
+    updateHeroSlide,
+    toggleHeroSlideActive,
+    deleteHeroSlide,
+    reorderHeroSlides
+} from '../controllers/admin/heroSlides';
 
 const router = Router();
 
@@ -28,6 +36,7 @@ console.log('Admin Router Loaded');
 
 // All admin routes require authentication + super admin role
 const admin = [authMiddleware, requireSuperAdmin] as const;
+
 
 // ── Health ──────────────────────────────────────────────
 router.get('/health', ...admin, (req: AuthRequest, res: Response) => {
@@ -112,7 +121,13 @@ router.get('/catalog', ...admin, listCatalog);
 router.put('/catalog/:id', ...admin, updateCatalogItem);
 router.put('/catalog/:id/toggle', ...admin, toggleCatalogItem);
 router.put('/catalog/:id/feature', ...admin, featureCatalogItem);
-router.post('/catalog/import/validate', ...admin, validateCatalogImport);
-router.post('/catalog/import/execute', ...admin, executeCatalogImport);
+// ── Hero Slides CMS ────────────────────────────────────
+router.get('/hero-slides', ...admin, listHeroSlides);
+router.post('/hero-slides', ...admin, createHeroSlide);
+router.put('/hero-slides/reorder', ...admin, reorderHeroSlides);
+router.put('/hero-slides/:id', ...admin, updateHeroSlide);
+router.put('/hero-slides/:id/toggle', ...admin, toggleHeroSlideActive);
+router.delete('/hero-slides/:id', ...admin, deleteHeroSlide);
 
 export default router;
+

@@ -888,7 +888,8 @@ router.post('/camps/orders', ...mgr, async (req: AuthRequest, res: Response) => 
             return res.status(400).json({ error: 'Some camp tests are currently unavailable' });
         }
 
-        const basePrice = pricingTier === 'FAMILY' ? camp.familyPrice : camp.price;
+        const basePrice = pricingTier === 'FAMILY' ? ((camp as any).familyPrice ?? camp.price) : camp.price;
+
         let totalAmount = basePrice;
         let isCustomPriceUsed = false;
 
