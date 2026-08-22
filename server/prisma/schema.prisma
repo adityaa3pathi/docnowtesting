@@ -668,6 +668,9 @@ model HeroSlide {
   secondaryCtaText String?
   secondaryCtaLink String?
   imageUrl         String?
+  desktopImageUrl  String?
+  mobileImageUrl   String?
+  imageAlt         String?
   bgGradient       String   @default("radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)")
   sortOrder        Int      @default(0)
   isActive         Boolean  @default(true)

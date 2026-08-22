@@ -25,6 +25,9 @@ export interface HeroSlide {
   secondaryCtaText?: string | null;
   secondaryCtaLink?: string | null;
   imageUrl?: string | null;
+  desktopImageUrl?: string | null;
+  mobileImageUrl?: string | null;
+  imageAlt?: string | null;
   bgGradient: string;
   sortOrder: number;
   isActive: boolean;
@@ -167,6 +170,32 @@ export function HeroCarousel() {
       {/* Background Decorative Blur Orbs */}
       <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-white/5 blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
+
+      {/* Responsive Hero Background Image */}
+      {(currentSlide.desktopImageUrl || currentSlide.mobileImageUrl || currentSlide.imageUrl) && (
+        <>
+          {/* Desktop image (hidden on mobile) */}
+          {(currentSlide.desktopImageUrl || currentSlide.imageUrl) && (
+            <img
+              src={currentSlide.desktopImageUrl || currentSlide.imageUrl!}
+              alt={currentSlide.imageAlt || currentSlide.title}
+              className="hidden md:block absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+              style={{ zIndex: 1 }}
+            />
+          )}
+          {/* Mobile image (hidden on desktop) */}
+          {(currentSlide.mobileImageUrl || currentSlide.imageUrl) && (
+            <img
+              src={currentSlide.mobileImageUrl || currentSlide.imageUrl!}
+              alt={currentSlide.imageAlt || currentSlide.title}
+              className="block md:hidden absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+              style={{ zIndex: 1 }}
+            />
+          )}
+          {/* Dark overlay for text readability over image */}
+          <div className="absolute inset-0 bg-black/40 pointer-events-none" style={{ zIndex: 2 }} />
+        </>
+      )}
 
       <div className="max-w-[1380px] mx-auto px-6 lg:px-16 pt-4 pb-8 lg:pb-16 relative z-10">
         <div className="min-h-[380px] md:min-h-[420px] flex flex-col justify-center">

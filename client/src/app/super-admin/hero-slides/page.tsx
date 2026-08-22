@@ -16,6 +16,10 @@ import {
   Loader2,
   ExternalLink,
   Paintbrush,
+  ImageIcon,
+  Monitor,
+  Smartphone,
+  Info,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -30,6 +34,9 @@ export interface HeroSlide {
   secondaryCtaText?: string | null;
   secondaryCtaLink?: string | null;
   imageUrl?: string | null;
+  desktopImageUrl?: string | null;
+  mobileImageUrl?: string | null;
+  imageAlt?: string | null;
   bgGradient: string;
   sortOrder: number;
   isActive: boolean;
@@ -59,6 +66,9 @@ export default function HeroSlidesCMSPage() {
     ctaLink: '/search',
     secondaryCtaText: '',
     secondaryCtaLink: '',
+    desktopImageUrl: '',
+    mobileImageUrl: '',
+    imageAlt: '',
     bgGradient: GRADIENT_PRESETS[0].value,
     isActive: true,
   });
@@ -89,6 +99,9 @@ export default function HeroSlidesCMSPage() {
       ctaLink: '/search',
       secondaryCtaText: 'View Packages',
       secondaryCtaLink: '/packages',
+      desktopImageUrl: '',
+      mobileImageUrl: '',
+      imageAlt: '',
       bgGradient: GRADIENT_PRESETS[0].value,
       isActive: true,
     });
@@ -105,6 +118,9 @@ export default function HeroSlidesCMSPage() {
       ctaLink: slide.ctaLink,
       secondaryCtaText: slide.secondaryCtaText || '',
       secondaryCtaLink: slide.secondaryCtaLink || '',
+      desktopImageUrl: slide.desktopImageUrl || '',
+      mobileImageUrl: slide.mobileImageUrl || '',
+      imageAlt: slide.imageAlt || '',
       bgGradient: slide.bgGradient,
       isActive: slide.isActive,
     });
@@ -499,11 +515,139 @@ export default function HeroSlidesCMSPage() {
                 </div>
               </div>
 
+              {/* ═══ Hero Image Upload Section ═══ */}
+              <div className="space-y-3 pt-2 border-t border-dashed border-gray-200">
+                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                  <ImageIcon size={14} className="text-purple-600" />
+                  Hero Banner Image (Optional)
+                </label>
+
+                {/* ── Image Dimension Guidelines ── */}
+                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-4 space-y-3">
+                  <div className="flex items-start gap-2">
+                    <Info size={16} className="text-purple-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-purple-800">Image Upload Guidelines for Managers</p>
+                      <p className="text-[11px] text-purple-600 mt-0.5">Follow these specs for best results on all devices. Images should be hosted externally (e.g. Cloudinary, S3) and the URL pasted below.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Desktop Specs */}
+                    <div className="bg-white rounded-lg p-3 border border-purple-100 shadow-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Monitor size={14} className="text-blue-600" />
+                        <span className="text-xs font-extrabold text-gray-800">Desktop Banner</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-gray-600 font-medium">
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
+                          <span><strong>Size:</strong> 1440 × 560 px</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
+                          <span><strong>Aspect Ratio:</strong> 18:7 (≈ 2.57:1)</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
+                          <span><strong>Format:</strong> WebP or PNG (compressed)</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0" />
+                          <span><strong>Max File Size:</strong> 200 KB</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full flex-shrink-0" />
+                          <span><strong>Safe Zone:</strong> Keep text/logos away from left 50% — text overlays that area</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* Mobile Specs */}
+                    <div className="bg-white rounded-lg p-3 border border-purple-100 shadow-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Smartphone size={14} className="text-green-600" />
+                        <span className="text-xs font-extrabold text-gray-800">Mobile Banner</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-gray-600 font-medium">
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
+                          <span><strong>Size:</strong> 768 × 480 px</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
+                          <span><strong>Aspect Ratio:</strong> 8:5 (1.6:1)</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
+                          <span><strong>Format:</strong> WebP or PNG (compressed)</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
+                          <span><strong>Max File Size:</strong> 120 KB</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full flex-shrink-0" />
+                          <span><strong>Safe Zone:</strong> Keep key visuals centered — text overlaps top portion</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] text-purple-500 font-semibold italic">💡 Tip: Use dark / semi-transparent images so white heading text remains readable. If no image is provided, the gradient background is used instead.</p>
+                </div>
+
+                {/* Image URL Inputs */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                      <Monitor size={12} className="text-blue-600" />
+                      Desktop Image URL
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.desktopImageUrl}
+                      onChange={(e) => setFormData({ ...formData, desktopImageUrl: e.target.value })}
+                      placeholder="https://res.cloudinary.com/.../hero-desktop.webp"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
+                    />
+                    <p className="text-[10px] text-gray-400 font-medium">Recommended: 1440×560px, WebP, &lt;200KB</p>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                      <Smartphone size={12} className="text-green-600" />
+                      Mobile Image URL
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.mobileImageUrl}
+                      onChange={(e) => setFormData({ ...formData, mobileImageUrl: e.target.value })}
+                      placeholder="https://res.cloudinary.com/.../hero-mobile.webp"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
+                    />
+                    <p className="text-[10px] text-gray-400 font-medium">Recommended: 768×480px, WebP, &lt;120KB</p>
+                  </div>
+                </div>
+
+                {/* Image Alt Text */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-700">Image Alt Text (for accessibility & SEO)</label>
+                  <input
+                    type="text"
+                    value={formData.imageAlt}
+                    onChange={(e) => setFormData({ ...formData, imageAlt: e.target.value })}
+                    placeholder="e.g. Family enjoying home health checkup"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#4b2192] outline-none"
+                  />
+                </div>
+              </div>
+
               {/* Gradient Theme Picker */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
                   <Paintbrush size={14} className="text-purple-600" />
                   Background Gradient Theme
+                  <span className="text-[10px] text-gray-400 font-medium ml-1">(visible when no image is set, or as overlay)</span>
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                   {GRADIENT_PRESETS.map((preset) => (
