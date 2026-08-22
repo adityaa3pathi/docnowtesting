@@ -121,6 +121,9 @@ router.get('/catalog', ...admin, listCatalog);
 router.put('/catalog/:id', ...admin, updateCatalogItem);
 router.put('/catalog/:id/toggle', ...admin, toggleCatalogItem);
 router.put('/catalog/:id/feature', ...admin, featureCatalogItem);
+router.post('/catalog/import/validate', ...admin, validateCatalogImport);
+router.post('/catalog/import/execute', ...admin, executeCatalogImport);
+
 // ── Hero Slides CMS ────────────────────────────────────
 router.get('/hero-slides', ...admin, listHeroSlides);
 router.post('/hero-slides', ...admin, createHeroSlide);

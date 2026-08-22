@@ -11,6 +11,9 @@ export interface HeroSlideData {
   secondaryCtaText?: string | null;
   secondaryCtaLink?: string | null;
   imageUrl?: string | null;
+  desktopImageUrl?: string | null;
+  mobileImageUrl?: string | null;
+  imageAlt?: string | null;
   bgGradient: string;
   sortOrder: number;
   isActive: boolean;
