@@ -3,14 +3,16 @@
  *
  * Reuses the same S3 credentials as reportStorage.
  * Uploads images under a configurable prefix (default: "hero-banners/").
- * Returns the public S3 URL after upload.
+ * Returns a presigned read URL (valid 7 days) for serving the image.
  */
 
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 
 const ALLOWED_MIME_TYPES = ['image/webp', 'image/png', 'image/jpeg', 'image/jpg'];
 const MAX_FILE_SIZE = 500 * 1024; // 500 KB
+const PRESIGNED_URL_EXPIRY = 7 * 24 * 60 * 60; // 7 days in seconds
 
 let s3Client: S3Client | null = null;
 
@@ -45,7 +47,7 @@ export interface UploadResult {
 
 /**
  * Upload an image buffer to S3.
- * Returns the public URL and the object key.
+ * Returns a presigned URL (valid 7 days) and the object key.
  */
 export async function uploadImage(
   buffer: Buffer,
@@ -64,9 +66,8 @@ export async function uploadImage(
   const ext = originalFilename.split('.').pop()?.toLowerCase() || 'webp';
   const key = `${folder}/${randomUUID()}.${ext}`;
   const bucket = getBucket();
-  const region = process.env.AWS_S3_REGION;
 
-  const command = new PutObjectCommand({
+  const putCommand = new PutObjectCommand({
     Bucket: bucket,
     Key: key,
     Body: buffer,
@@ -74,25 +75,30 @@ export async function uploadImage(
     CacheControl: 'public, max-age=31536000, immutable',
   });
 
-  await getS3Client().send(command);
+  await getS3Client().send(putCommand);
+  console.log(`[ImageUpload] Uploaded to S3: ${key} (${buffer.length} bytes)`);
 
-  const url = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
-  console.log(`[ImageUpload] Uploaded: ${url} (${buffer.length} bytes)`);
+  // Generate presigned read URL
+  const url = await refreshPresignedUrl(key);
 
   return { url, key };
 }
 
 /**
- * Delete an image from S3 by its key or full URL.
+ * Generate a fresh presigned URL for an S3 key.
  */
-export async function deleteImage(keyOrUrl: string): Promise<void> {
+export async function refreshPresignedUrl(key: string): Promise<string> {
   const bucket = getBucket();
-  // Extract key from full URL if needed
-  let key = keyOrUrl;
-  if (keyOrUrl.startsWith('https://')) {
-    const urlObj = new URL(keyOrUrl);
-    key = urlObj.pathname.replace(/^\//, '');
-  }
+  const getCommand = new GetObjectCommand({ Bucket: bucket, Key: key });
+  const url = await getSignedUrl(getS3Client(), getCommand, { expiresIn: PRESIGNED_URL_EXPIRY });
+  return url;
+}
+
+/**
+ * Delete an image from S3 by its key.
+ */
+export async function deleteImage(key: string): Promise<void> {
+  const bucket = getBucket();
 
   const command = new DeleteObjectCommand({
     Bucket: bucket,

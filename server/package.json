@@ -22,6 +22,7 @@
   "type": "commonjs",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1025.0",
+    "@aws-sdk/s3-request-presigner": "^3.1118.0",
     "@prisma/client": "^5.22.0",
     "@sentry/node": "^10.56.0",
     "@types/jsonwebtoken": "^9.0.10",

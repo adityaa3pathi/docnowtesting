@@ -157,9 +157,9 @@ router.post('/upload-image', ...admin, upload.single('file'), async (req: AuthRe
 
 router.post('/delete-image', ...admin, async (req: AuthRequest, res: Response) => {
   try {
-    const { url } = req.body;
-    if (!url) return res.status(400).json({ error: 'URL is required' });
-    await deleteImage(url);
+    const { key } = req.body;
+    if (!key) return res.status(400).json({ error: 'S3 key is required' });
+    await deleteImage(key);
     res.json({ success: true });
   } catch (error: any) {
     console.error('[Admin] Image delete error:', error.message);

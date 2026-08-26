@@ -22,7 +22,9 @@ import api from '@/lib/api';
 interface HeroSlide {
   id: string;
   desktopImageUrl?: string | null;
+  desktopImageKey?: string | null;
   mobileImageUrl?: string | null;
+  mobileImageKey?: string | null;
   imageAlt?: string | null;
   sortOrder: number;
   isActive: boolean;
@@ -103,14 +105,14 @@ export default function HeroSlidesCMSPage() {
     if (file) handleFileSelect(file, type);
   };
 
-  const uploadFileToS3 = async (file: File): Promise<string> => {
+  const uploadFileToS3 = async (file: File): Promise<{ url: string; key: string }> => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('folder', 'hero-banners');
     const res = await api.post('/admin/upload-image', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    return res.data.url;
+    return { url: res.data.url, key: res.data.key };
   };
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -125,16 +127,28 @@ export default function HeroSlidesCMSPage() {
       setUploading(true);
 
       let desktopUrl: string | null = null;
+      let desktopKey: string | null = null;
       let mobileUrl: string | null = null;
+      let mobileKey: string | null = null;
 
-      if (desktopFile) desktopUrl = await uploadFileToS3(desktopFile);
-      if (mobileFile) mobileUrl = await uploadFileToS3(mobileFile);
+      if (desktopFile) {
+        const result = await uploadFileToS3(desktopFile);
+        desktopUrl = result.url;
+        desktopKey = result.key;
+      }
+      if (mobileFile) {
+        const result = await uploadFileToS3(mobileFile);
+        mobileUrl = result.url;
+        mobileKey = result.key;
+      }
 
       await api.post('/admin/hero-slides', {
         title: imageAlt || 'Hero Banner',
         subtitle: '',
         desktopImageUrl: desktopUrl,
+        desktopImageKey: desktopKey,
         mobileImageUrl: mobileUrl,
+        mobileImageKey: mobileKey,
         imageAlt: imageAlt.trim() || null,
         sortOrder: slides.length,
         isActive: true,
@@ -155,12 +169,12 @@ export default function HeroSlidesCMSPage() {
   const handleDelete = async (slide: HeroSlide) => {
     if (!confirm('Delete this banner?')) return;
     try {
-      // Delete images from S3
-      if (slide.desktopImageUrl) {
-        await api.post('/admin/delete-image', { url: slide.desktopImageUrl }).catch(() => {});
+      // Delete images from S3 using keys
+      if (slide.desktopImageKey) {
+        await api.post('/admin/delete-image', { key: slide.desktopImageKey }).catch(() => {});
       }
-      if (slide.mobileImageUrl) {
-        await api.post('/admin/delete-image', { url: slide.mobileImageUrl }).catch(() => {});
+      if (slide.mobileImageKey) {
+        await api.post('/admin/delete-image', { key: slide.mobileImageKey }).catch(() => {});
       }
       await api.delete(`/admin/hero-slides/${slide.id}`);
       toast.success('Banner deleted');
