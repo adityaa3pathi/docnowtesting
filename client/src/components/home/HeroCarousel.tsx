@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Shield, Clock, Truck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Shield, Clock, Truck, Users, Beaker, Building2 } from 'lucide-react';
 import api from '@/lib/api';
 
 interface HeroSlide {
@@ -123,56 +123,60 @@ export function HeroCarousel() {
       <div className="max-w-[1380px] mx-auto px-5 sm:px-6 lg:px-16 relative z-10">
 
         {/* ────────────────────────── DESKTOP ────────────────────────── */}
-        <div className="hidden lg:flex items-center min-h-[440px] gap-10 xl:gap-14 py-10 xl:py-12">
+        <div className="hidden lg:block relative">
+          {/* Content row */}
+          <div className="relative min-h-[460px] xl:min-h-[500px]">
 
-          {/* Left: Text Content */}
-          <div className="flex-1 min-w-0" style={{ maxWidth: '55%' }}>
-            <span className="inline-block px-4 py-1.5 bg-white/10 backdrop-blur-sm text-white/90 text-xs font-bold rounded-full border border-white/20 tracking-wider mb-5">
-              100% SECURE & ACCREDITED
-            </span>
+            {/* Left: Text Content */}
+            <div className="relative z-10 max-w-[50%] py-12 xl:py-16">
+              <span className="inline-block px-4 py-1.5 bg-white/10 backdrop-blur-sm text-white/90 text-xs font-bold rounded-full border border-white/20 tracking-wider mb-5">
+                100% SECURE & ACCREDITED
+              </span>
 
-            <h1 className="text-4xl lg:text-[2.85rem] xl:text-5xl font-black text-white leading-[1.08] mb-5">
-              Precision Diagnostics,
-              <br />
-              Delivered to Your Door.
-            </h1>
+              <h1 className="text-4xl lg:text-[2.85rem] xl:text-5xl font-black text-white leading-[1.08] mb-5">
+                Precision Diagnostics,
+                <br />
+                Delivered to Your Door.
+              </h1>
 
-            <p className="text-base lg:text-lg text-white/65 font-medium max-w-md mb-8 leading-relaxed">
-              Get NABL & CAP certified lab tests and health checkups at home.
-              <br className="hidden lg:block" />
-              Fast, accurate results you can trust.
-            </p>
+              <p className="text-base lg:text-lg text-white/65 font-medium max-w-md mb-8 leading-relaxed">
+                Get NABL & CAP certified lab tests and health checkups at home.
+                <br className="hidden xl:block" />
+                Fast, accurate results you can trust.
+              </p>
 
-            <div className="flex flex-wrap gap-3 mb-8">
-              <a
-                href="/search"
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-white text-[#4B0082] font-bold rounded-xl hover:bg-gray-100 active:scale-[0.97] transition-all shadow-lg text-sm"
-              >
-                Book a Test Now
-              </a>
-              <a
-                href="/packages"
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-white/10 text-white font-bold rounded-xl border border-white/25 hover:bg-white/20 active:scale-[0.97] transition-all text-sm"
-              >
-                View Health Packages
-              </a>
+              <div className="flex flex-wrap gap-3 mb-8">
+                <a
+                  href="/search"
+                  className="inline-flex items-center gap-2 px-7 py-3.5 bg-white text-[#4B0082] font-bold rounded-xl hover:bg-gray-100 active:scale-[0.97] transition-all shadow-lg text-sm"
+                >
+                  Book a Test Now
+                </a>
+                <a
+                  href="/packages"
+                  className="inline-flex items-center gap-2 px-7 py-3.5 bg-white/10 text-white font-bold rounded-xl border border-white/25 hover:bg-white/20 active:scale-[0.97] transition-all text-sm"
+                >
+                  View Health Packages
+                </a>
+              </div>
+
+              <TrustBadges />
             </div>
 
-            <TrustBadges />
-          </div>
-
-          {/* Right: Image with crossfade — extends to right edge */}
-          <div className="flex-1 relative flex items-center justify-end" style={{ maxWidth: '45%', marginRight: '-4rem' }} aria-live="polite">
-            <div className="relative w-full">
-
-              {/* Shimmer skeleton (shows while loading or during initial fetch) */}
+            {/* Right: Image — absolutely positioned, full height, flush to right edge */}
+            <div
+              className="absolute top-0 right-0 h-full overflow-hidden"
+              style={{ width: '50%', marginRight: 'calc(-1 * (100vw - 100%) / 2)' }}
+              aria-live="polite"
+            >
+              {/* Shimmer */}
               {(isLoading || (hasSlides && !imgLoaded && !imgError)) && (
-                <div className="absolute inset-0 w-full h-[360px] lg:h-[400px] bg-white/5 overflow-hidden">
+                <div className="absolute inset-0 bg-white/5 overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-pulse" />
                 </div>
               )}
 
-              {/* Actual image with crossfade */}
+              {/* Image */}
               {hasSlides && !imgError && (
                 <img
                   key={current!.id}
@@ -180,16 +184,36 @@ export function HeroCarousel() {
                   alt={current!.imageAlt || 'Healthcare professional'}
                   onLoad={() => setImgLoaded(true)}
                   onError={() => setImgError(true)}
-                  className={`w-full h-[360px] lg:h-[400px] object-cover object-center transition-opacity duration-500 ease-in-out ${
+                  className={`w-full h-full object-cover object-center transition-opacity duration-500 ease-in-out ${
                     imgLoaded ? 'opacity-100' : 'opacity-0'
                   }`}
                 />
               )}
 
-              {/* Fallback when no slides or image error */}
+              {/* Fallback */}
               {(!hasSlides && !isLoading) || imgError ? (
-                <div className="w-full h-[360px] lg:h-[400px] bg-gradient-to-br from-white/5 to-transparent" />
+                <div className="w-full h-full bg-gradient-to-br from-white/5 to-transparent" />
               ) : null}
+            </div>
+          </div>
+
+          {/* ─── Stats Bar — overlapping white card ─── */}
+          <div className="relative z-20 -mt-10 mb-4">
+            <div className="bg-white rounded-2xl shadow-xl shadow-purple-900/10 px-8 py-6 grid grid-cols-4 divide-x divide-gray-100">
+              {[
+                { icon: Users, value: '50K+', label: 'HAPPY PATIENTS', color: 'text-purple-600 bg-purple-50' },
+                { icon: Beaker, value: '200+', label: 'LAB TESTS', color: 'text-blue-600 bg-blue-50' },
+                { icon: Clock, value: '24h', label: 'REPORT DELIVERY', color: 'text-orange-600 bg-orange-50' },
+                { icon: Building2, value: '100+', label: 'CITIES COVERED', color: 'text-green-600 bg-green-50' },
+              ].map((stat) => (
+                <div key={stat.label} className="flex flex-col items-center gap-1.5 px-4">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${stat.color}`}>
+                    <stat.icon size={18} />
+                  </div>
+                  <span className="text-2xl xl:text-3xl font-black text-gray-900">{stat.value}</span>
+                  <span className="text-[10px] font-bold text-gray-400 tracking-wider">{stat.label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
