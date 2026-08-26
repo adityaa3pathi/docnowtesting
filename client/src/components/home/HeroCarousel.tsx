@@ -135,7 +135,7 @@ export function HeroCarousel() {
       <div className="max-w-[1380px] mx-auto px-5 sm:px-6 lg:px-16 relative z-10">
 
         {/* ────────────────────────── DESKTOP ────────────────────────── */}
-        <div className="hidden md:flex items-center min-h-[440px] gap-8 lg:gap-14 py-10 lg:py-12">
+        <div className="hidden lg:flex items-center min-h-[440px] gap-10 xl:gap-14 py-10 xl:py-12">
 
           {/* Left: Text Content */}
           <div className="flex-1 min-w-0" style={{ maxWidth: '55%' }}>
@@ -215,7 +215,7 @@ export function HeroCarousel() {
         </div>
 
         {/* ────────────────────────── MOBILE ────────────────────────── */}
-        <div className="md:hidden py-8 pb-6">
+        <div className="lg:hidden py-8 pb-6">
 
           {/* Title + Image side-by-side */}
           <div className="flex items-start gap-4 mb-5">
@@ -223,13 +223,13 @@ export function HeroCarousel() {
               <span className="inline-block px-3 py-1 bg-white/10 text-white/80 text-[10px] font-bold rounded-full border border-white/15 tracking-wider mb-3">
                 100% SECURE
               </span>
-              <h1 className="text-[1.55rem] sm:text-[1.7rem] font-black text-white leading-[1.12]">
+              <h1 className="text-[1.55rem] sm:text-[1.7rem] md:text-3xl font-black text-white leading-[1.12]">
                 Precision Diagnostics, Delivered to Your Door.
               </h1>
             </div>
 
             {/* Mobile image — responsive width */}
-            <div className="flex-shrink-0 w-[38%] max-w-[160px] relative" aria-live="polite">
+            <div className="flex-shrink-0 w-[38%] max-w-[160px] sm:max-w-[200px] md:max-w-[260px] relative" aria-live="polite">
               {hasSlides && !imgError ? (
                 <img
                   key={current!.id}
@@ -259,7 +259,7 @@ export function HeroCarousel() {
             </div>
           </div>
 
-          <p className="text-[13px] sm:text-sm text-white/65 font-medium mb-6 leading-relaxed">
+          <p className="text-[13px] sm:text-sm md:text-base text-white/65 font-medium mb-6 leading-relaxed">
             Get NABL & CAP certified lab tests and health checkups at home.
             Fast, accurate results you can trust.
           </p>
@@ -287,7 +287,7 @@ export function HeroCarousel() {
 
       {/* ─── Carousel Dots ─── */}
       {slides.length > 1 && (
-        <div className="relative z-10 pb-4 md:pb-5">
+        <div className="relative z-10 pb-4 lg:pb-5">
           <div className="flex items-center justify-center gap-2">
             {slides.map((_, idx) => (
               <button
@@ -307,7 +307,7 @@ export function HeroCarousel() {
 
       {/* ─── Desktop Nav Arrows ─── */}
       {slides.length > 1 && (
-        <div className="hidden md:block">
+        <div className="hidden lg:block">
           <button
             onClick={handlePrev}
             aria-label="Previous slide"
