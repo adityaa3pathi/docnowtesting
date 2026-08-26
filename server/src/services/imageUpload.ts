@@ -90,7 +90,7 @@ export async function uploadImage(
 export async function refreshPresignedUrl(key: string): Promise<string> {
   const bucket = getBucket();
   const getCommand = new GetObjectCommand({ Bucket: bucket, Key: key });
-  const url = await getSignedUrl(getS3Client(), getCommand, { expiresIn: PRESIGNED_URL_EXPIRY });
+  const url = await getSignedUrl(getS3Client() as any, getCommand, { expiresIn: PRESIGNED_URL_EXPIRY });
   return url;
 }
 
