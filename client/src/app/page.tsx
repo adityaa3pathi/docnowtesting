@@ -49,7 +49,7 @@ const whyChooseUs = [
 // ────────────────────── Page (Server Component — NO "use client")
 export default function Home() {
   return (
-    <main className="flex flex-col min-h-screen bg-white pb-20 md:pb-0">
+    <main className="flex flex-col min-h-screen bg-white pb-20 md:pb-0 overflow-x-hidden">
 
       {/* ═══════════ HERO CAROUSEL ═══════════ */}
       <HeroCarousel />
