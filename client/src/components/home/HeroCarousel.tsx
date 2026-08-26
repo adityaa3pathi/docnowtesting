@@ -88,19 +88,7 @@ export function HeroCarousel() {
   const nextIndex = slides.length > 1 ? (currentIndex + 1) % slides.length : -1;
   const nextSlide = nextIndex >= 0 ? slides[nextIndex] : null;
 
-  /* ─── Shared image container shape ─── */
-  const imageShape = { borderRadius: '24px 24px 24px 80px' } as const;
-  const mobileImageShape = { borderRadius: '16px 16px 16px 48px' } as const;
 
-  /* ─── Image Shimmer Skeleton ─── */
-  const ShimmerSkeleton = ({ className, style }: { className: string; style?: React.CSSProperties }) => (
-    <div
-      className={`${className} overflow-hidden`}
-      style={style}
-    >
-      <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-pulse" />
-    </div>
-  );
 
   /* ─── Trust Badges ─── */
   const TrustBadges = ({ className = '' }: { className?: string }) => (
@@ -173,16 +161,15 @@ export function HeroCarousel() {
             <TrustBadges />
           </div>
 
-          {/* Right: Image with crossfade */}
-          <div className="flex-1 relative flex items-center justify-end" style={{ maxWidth: '45%' }} aria-live="polite">
-            <div className="relative w-full max-w-[520px]">
+          {/* Right: Image with crossfade — extends to right edge */}
+          <div className="flex-1 relative flex items-center justify-end" style={{ maxWidth: '45%', marginRight: '-4rem' }} aria-live="polite">
+            <div className="relative w-full">
 
               {/* Shimmer skeleton (shows while loading or during initial fetch) */}
               {(isLoading || (hasSlides && !imgLoaded && !imgError)) && (
-                <ShimmerSkeleton
-                  className="absolute inset-0 w-full h-[360px] lg:h-[400px] bg-white/5"
-                  style={imageShape}
-                />
+                <div className="absolute inset-0 w-full h-[360px] lg:h-[400px] bg-white/5 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-pulse" />
+                </div>
               )}
 
               {/* Actual image with crossfade */}
@@ -193,43 +180,43 @@ export function HeroCarousel() {
                   alt={current!.imageAlt || 'Healthcare professional'}
                   onLoad={() => setImgLoaded(true)}
                   onError={() => setImgError(true)}
-                  className={`w-full h-[360px] lg:h-[400px] object-cover shadow-2xl transition-opacity duration-500 ease-in-out ${
+                  className={`w-full h-[360px] lg:h-[400px] object-cover object-center transition-opacity duration-500 ease-in-out ${
                     imgLoaded ? 'opacity-100' : 'opacity-0'
                   }`}
-                  style={imageShape}
                 />
               )}
 
-              {/* Fallback when no slides or image error — clean gradient, no emoji */}
+              {/* Fallback when no slides or image error */}
               {(!hasSlides && !isLoading) || imgError ? (
-                <div
-                  className="w-full h-[360px] lg:h-[400px] bg-gradient-to-br from-white/8 to-white/3 border border-white/10 shadow-xl"
-                  style={imageShape}
-                />
+                <div className="w-full h-[360px] lg:h-[400px] bg-gradient-to-br from-white/5 to-transparent" />
               ) : null}
-
-              {/* Decorative glow */}
-              <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-purple-400/15 rounded-full blur-2xl pointer-events-none" />
             </div>
           </div>
         </div>
 
-        {/* ────────────────────────── MOBILE ────────────────────────── */}
-        <div className="lg:hidden py-8 pb-6">
+        {/* ────────────────────────── MOBILE / TABLET ────────────────────────── */}
+        <div className="lg:hidden">
 
-          {/* Title + Image side-by-side */}
-          <div className="flex items-start gap-4 mb-5">
-            <div className="flex-1 min-w-0 pt-1">
-              <span className="inline-block px-3 py-1 bg-white/10 text-white/80 text-[10px] font-bold rounded-full border border-white/15 tracking-wider mb-3">
-                100% SECURE
-              </span>
-              <h1 className="text-[1.55rem] sm:text-[1.7rem] md:text-3xl font-black text-white leading-[1.12]">
+          {/* Hero content area — image bleeds to right edge */}
+          <div className="relative min-h-[320px] sm:min-h-[360px] md:min-h-[400px]">
+
+            {/* Text — left side with padding */}
+            <div className="relative z-10 w-[55%] sm:w-[50%] pt-8 pb-4 pl-0">
+              <h1 className="text-[1.5rem] sm:text-[1.75rem] md:text-[2rem] font-black text-white leading-[1.1] mb-3 sm:mb-4">
                 Precision Diagnostics, Delivered to Your Door.
               </h1>
+              <p className="text-[12px] sm:text-[13px] md:text-sm text-white/65 font-medium leading-relaxed mb-0">
+                Get NABL & CAP certified lab tests and health checkups at home.
+                Fast, accurate results you can trust.
+              </p>
             </div>
 
-            {/* Mobile image — responsive width */}
-            <div className="flex-shrink-0 w-[38%] max-w-[160px] sm:max-w-[200px] md:max-w-[260px] relative" aria-live="polite">
+            {/* Image — right side, flush to edge, no border-radius */}
+            <div
+              className="absolute top-0 right-0 w-[50%] sm:w-[52%] h-full"
+              style={{ marginRight: '-20px' }}
+              aria-live="polite"
+            >
               {hasSlides && !imgError ? (
                 <img
                   key={current!.id}
@@ -237,35 +224,25 @@ export function HeroCarousel() {
                   alt={current!.imageAlt || 'Healthcare'}
                   onLoad={() => setImgLoaded(true)}
                   onError={() => setImgError(true)}
-                  className={`w-full aspect-square object-cover shadow-lg transition-opacity duration-500 ${
+                  className={`w-full h-full object-cover object-center transition-opacity duration-500 ${
                     imgLoaded ? 'opacity-100' : 'opacity-0'
                   }`}
-                  style={mobileImageShape}
                 />
-              ) : (
-                <div
-                  className="w-full aspect-square bg-gradient-to-br from-white/8 to-white/3 border border-white/10 shadow-lg"
-                  style={mobileImageShape}
-                />
-              )}
+              ) : !isLoading ? (
+                <div className="w-full h-full bg-gradient-to-br from-white/5 to-transparent" />
+              ) : null}
 
               {/* Shimmer while loading */}
               {hasSlides && !imgLoaded && !imgError && (
-                <ShimmerSkeleton
-                  className="absolute inset-0 w-full aspect-square bg-white/5"
-                  style={mobileImageShape}
-                />
+                <div className="absolute inset-0 bg-white/5 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-pulse" />
+                </div>
               )}
             </div>
           </div>
 
-          <p className="text-[13px] sm:text-sm md:text-base text-white/65 font-medium mb-6 leading-relaxed">
-            Get NABL & CAP certified lab tests and health checkups at home.
-            Fast, accurate results you can trust.
-          </p>
-
-          {/* Mobile CTAs */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-5">
+          {/* CTAs — full width below hero area */}
+          <div className="flex flex-col sm:flex-row gap-3 pb-4">
             <a
               href="/packages"
               className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 text-white font-bold rounded-xl border border-white/25 active:scale-[0.97] transition-all text-sm flex-1"
@@ -281,7 +258,7 @@ export function HeroCarousel() {
           </div>
 
           {/* Mobile trust badges */}
-          <TrustBadges className="justify-center" />
+          <TrustBadges className="justify-center pb-5" />
         </div>
       </div>
 
