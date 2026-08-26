@@ -107,7 +107,7 @@ export function HeroCarousel() {
 
   return (
     <section
-      className="relative w-full overflow-visible pb-16 lg:pb-28"
+      className="relative w-full overflow-visible pb-16 lg:pb-28 mb-16 lg:mb-20"
       style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
@@ -120,103 +120,75 @@ export function HeroCarousel() {
       <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-white/5 blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
 
+      {/* ─── DESKTOP RIGHT IMAGE (Direct child of section — spans top-0 to bottom-0, right 45%) ─── */}
+      <div
+        className="hidden lg:block absolute top-0 right-0 bottom-0 w-[45%] overflow-hidden z-0"
+        aria-live="polite"
+      >
+        {/* Shimmer */}
+        {(isLoading || (hasSlides && !imgLoaded && !imgError)) && (
+          <div className="absolute inset-0 bg-white/5 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-pulse" />
+          </div>
+        )}
+
+        {/* Image */}
+        {hasSlides && !imgError && (
+          <img
+            key={current!.id}
+            src={current!.desktopImageUrl || current!.mobileImageUrl || ''}
+            alt={current!.imageAlt || 'Healthcare professional'}
+            onLoad={() => setImgLoaded(true)}
+            onError={() => setImgError(true)}
+            className={`w-full h-full object-cover object-center transition-opacity duration-500 ease-in-out ${
+              imgLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+        )}
+
+        {/* Fallback */}
+        {(!hasSlides && !isLoading) || imgError ? (
+          <div className="w-full h-full bg-gradient-to-br from-white/5 to-transparent" />
+        ) : null}
+      </div>
+
       <div className="max-w-[1380px] mx-auto px-5 sm:px-6 lg:px-16 relative z-10">
 
-        {/* ────────────────────────── DESKTOP ────────────────────────── */}
-        <div className="hidden lg:block relative">
-          {/* Content row */}
-          <div className="relative min-h-[460px] xl:min-h-[500px]">
+        {/* ────────────────────────── DESKTOP TEXT CONTENT ────────────────────────── */}
+        <div className="hidden lg:block pt-12 pb-24 xl:pt-16 xl:pb-28">
+          <div className="max-w-[50%]">
+            <span className="inline-block px-4 py-1.5 bg-white/10 backdrop-blur-sm text-white/90 text-xs font-bold rounded-full border border-white/20 tracking-wider mb-5">
+              100% SECURE & ACCREDITED
+            </span>
 
-            {/* Left: Text Content */}
-            <div className="relative z-10 max-w-[50%] py-12 xl:py-16">
-              <span className="inline-block px-4 py-1.5 bg-white/10 backdrop-blur-sm text-white/90 text-xs font-bold rounded-full border border-white/20 tracking-wider mb-5">
-                100% SECURE & ACCREDITED
-              </span>
+            <h1 className="text-4xl lg:text-[2.85rem] xl:text-5xl font-black text-white leading-[1.08] mb-5">
+              Precision Diagnostics,
+              <br />
+              Delivered to Your Door.
+            </h1>
 
-              <h1 className="text-4xl lg:text-[2.85rem] xl:text-5xl font-black text-white leading-[1.08] mb-5">
-                Precision Diagnostics,
-                <br />
-                Delivered to Your Door.
-              </h1>
+            <p className="text-base lg:text-lg text-white/65 font-medium max-w-md mb-8 leading-relaxed">
+              Get NABL & CAP certified lab tests and health checkups at home.
+              <br className="hidden xl:block" />
+              Fast, accurate results you can trust.
+            </p>
 
-              <p className="text-base lg:text-lg text-white/65 font-medium max-w-md mb-8 leading-relaxed">
-                Get NABL & CAP certified lab tests and health checkups at home.
-                <br className="hidden xl:block" />
-                Fast, accurate results you can trust.
-              </p>
-
-              <div className="flex flex-wrap gap-3 mb-8">
-                <a
-                  href="/search"
-                  className="inline-flex items-center gap-2 px-7 py-3.5 bg-white text-[#4B0082] font-bold rounded-xl hover:bg-gray-100 active:scale-[0.97] transition-all shadow-lg text-sm"
-                >
-                  Book a Test Now
-                </a>
-                <a
-                  href="/packages"
-                  className="inline-flex items-center gap-2 px-7 py-3.5 bg-white/10 text-white font-bold rounded-xl border border-white/25 hover:bg-white/20 active:scale-[0.97] transition-all text-sm"
-                >
-                  View Health Packages
-                </a>
-              </div>
-
-              <TrustBadges />
+            <div className="flex flex-wrap gap-3 mb-8">
+              <a
+                href="/search"
+                className="inline-flex items-center gap-2 px-7 py-3.5 bg-white text-[#4B0082] font-bold rounded-xl hover:bg-gray-100 active:scale-[0.97] transition-all shadow-lg text-sm"
+              >
+                Book a Test Now
+              </a>
+              <a
+                href="/packages"
+                className="inline-flex items-center gap-2 px-7 py-3.5 bg-white/10 text-white font-bold rounded-xl border border-white/25 hover:bg-white/20 active:scale-[0.97] transition-all text-sm"
+              >
+                View Health Packages
+              </a>
             </div>
 
-            {/* Right: Image — absolutely positioned, full height, flush to right edge */}
-            <div
-              className="absolute top-0 right-0 h-full overflow-hidden"
-              style={{ width: '45%', marginRight: 'calc(-1 * (100vw - 100%) / 2)' }}
-              aria-live="polite"
-            >
-              {/* Shimmer */}
-              {(isLoading || (hasSlides && !imgLoaded && !imgError)) && (
-                <div className="absolute inset-0 bg-white/5 overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-pulse" />
-                </div>
-              )}
-
-              {/* Image */}
-              {hasSlides && !imgError && (
-                <img
-                  key={current!.id}
-                  src={current!.desktopImageUrl || current!.mobileImageUrl || ''}
-                  alt={current!.imageAlt || 'Healthcare professional'}
-                  onLoad={() => setImgLoaded(true)}
-                  onError={() => setImgError(true)}
-                  className={`w-full h-full object-cover object-center transition-opacity duration-500 ease-in-out ${
-                    imgLoaded ? 'opacity-100' : 'opacity-0'
-                  }`}
-                />
-              )}
-
-              {/* Fallback */}
-              {(!hasSlides && !isLoading) || imgError ? (
-                <div className="w-full h-full bg-gradient-to-br from-white/5 to-transparent" />
-              ) : null}
-            </div>
-          </div>
-
-          {/* ─── Stats Bar — hangs below the hero section ─── */}
-          <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-4xl z-20">
-            <div className="bg-white rounded-2xl shadow-[0_9px_30px_rgba(0,0,0,0.18)] px-6 py-6 md:px-10">
-              <div className="grid grid-cols-4 gap-4">
-                {[
-                  { icon: Users, value: '50K+', label: 'HAPPY PATIENTS', iconBg: 'bg-purple-50', iconColor: 'text-purple-500' },
-                  { icon: Beaker, value: '200+', label: 'LAB TESTS', iconBg: 'bg-blue-50', iconColor: 'text-blue-500' },
-                  { icon: Clock, value: '24h', label: 'REPORT DELIVERY', iconBg: 'bg-orange-50', iconColor: 'text-orange-400' },
-                  { icon: Building2, value: '100+', label: 'CITIES COVERED', iconBg: 'bg-green-50', iconColor: 'text-green-500' },
-                ].map((stat) => (
-                  <div key={stat.label} className="flex flex-col items-center gap-2 text-center">
-                    <div className={`w-11 h-11 rounded-full ${stat.iconBg} flex items-center justify-center`}>
-                      <stat.icon size={24} className={stat.iconColor} />
-                    </div>
-                    <span className="font-black text-2xl md:text-3xl text-gray-900">{stat.value}</span>
-                    <span className="font-semibold text-xs text-gray-400 tracking-wide uppercase">{stat.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <TrustBadges />
           </div>
         </div>
 
@@ -328,15 +300,27 @@ export function HeroCarousel() {
         </div>
       )}
 
-      {/* ─── Preload Next Image (hidden) ─── */}
-      {nextSlide && (
-        <img
-          src={nextSlide.desktopImageUrl || nextSlide.mobileImageUrl || ''}
-          alt=""
-          aria-hidden="true"
-          className="absolute w-0 h-0 opacity-0 pointer-events-none"
-        />
-      )}
+      {/* ─── STATS BAR CARD (Direct child of section — hangs half in hero, half below) ─── */}
+      <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-4xl z-20">
+        <div className="bg-white rounded-2xl shadow-[0_9px_30px_rgba(0,0,0,0.18)] px-6 py-6 md:px-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4">
+            {[
+              { icon: Users, value: '50K+', label: 'HAPPY PATIENTS', iconBg: 'bg-purple-50', iconColor: 'text-purple-500' },
+              { icon: Beaker, value: '200+', label: 'LAB TESTS', iconBg: 'bg-blue-50', iconColor: 'text-blue-500' },
+              { icon: Clock, value: '24h', label: 'REPORT DELIVERY', iconBg: 'bg-orange-50', iconColor: 'text-orange-400' },
+              { icon: Building2, value: '100+', label: 'CITIES COVERED', iconBg: 'bg-green-50', iconColor: 'text-green-500' },
+            ].map((stat) => (
+              <div key={stat.label} className="flex flex-col items-center gap-2 text-center">
+                <div className={`w-11 h-11 rounded-full ${stat.iconBg} flex items-center justify-center`}>
+                  <stat.icon size={24} className={stat.iconColor} />
+                </div>
+                <span className="font-black text-2xl md:text-3xl text-gray-900">{stat.value}</span>
+                <span className="font-semibold text-xs text-gray-400 tracking-wide uppercase">{stat.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
