@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Shield, Clock, Truck, Users, Beaker, Building2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Shield, Clock, Truck, Users, Beaker, Building2, Calendar, Package } from 'lucide-react';
 import api from '@/lib/api';
 
 interface HeroSlide {
@@ -192,27 +192,27 @@ export function HeroCarousel() {
           </div>
         </div>
 
-        {/* ────────────────────────── MOBILE / TABLET ────────────────────────── */}
+        {/* ────────────────────────── MOBILE / TABLET layout ────────────────────────── */}
         <div className="lg:hidden">
 
-          {/* Hero content area — image bleeds to right edge */}
-          <div className="relative min-h-[320px] sm:min-h-[360px] md:min-h-[400px]">
+          {/* Top row: Text + Right Image (image flush to right with top-left curve) */}
+          <div className="relative min-h-[280px] sm:min-h-[320px] flex items-stretch mb-5">
 
-            {/* Text — left side with padding */}
-            <div className="relative z-10 w-[55%] sm:w-[50%] pt-8 pb-4 pl-0">
-              <h1 className="text-[1.5rem] sm:text-[1.75rem] md:text-[2rem] font-black text-white leading-[1.1] mb-3 sm:mb-4">
+            {/* Left: Text Content */}
+            <div className="w-[52%] sm:w-[50%] pr-2 pt-4 pb-2 z-10 flex flex-col justify-center">
+              <h1 className="text-xl sm:text-2xl font-black text-white leading-[1.12] mb-3">
                 Precision Diagnostics, Delivered to Your Door.
               </h1>
-              <p className="text-[12px] sm:text-[13px] md:text-sm text-white/65 font-medium leading-relaxed mb-0">
+              <p className="text-[11px] sm:text-xs text-white/75 font-medium leading-relaxed">
                 Get NABL & CAP certified lab tests and health checkups at home.
                 Fast, accurate results you can trust.
               </p>
             </div>
 
-            {/* Image — right side, flush to edge, no border-radius */}
+            {/* Right: Image — flush to right edge with rounded-tl-[50px] */}
             <div
-              className="absolute top-0 right-0 w-[50%] sm:w-[52%] h-full"
-              style={{ marginRight: '-20px' }}
+              className="w-[48%] sm:w-[50%] relative overflow-hidden rounded-tl-[48px] sm:rounded-tl-[60px]"
+              style={{ marginRight: '-1.25rem' }}
               aria-live="polite"
             >
               {hasSlides && !imgError ? (
@@ -227,7 +227,7 @@ export function HeroCarousel() {
                   }`}
                 />
               ) : !isLoading ? (
-                <div className="w-full h-full bg-gradient-to-br from-white/5 to-transparent" />
+                <div className="w-full h-full bg-gradient-to-br from-white/10 to-transparent" />
               ) : null}
 
               {/* Shimmer while loading */}
@@ -239,24 +239,26 @@ export function HeroCarousel() {
             </div>
           </div>
 
-          {/* CTAs — full width below hero area */}
-          <div className="flex flex-col sm:flex-row gap-3 pb-4">
+          {/* CTAs — Side-by-side buttons with icons matching design */}
+          <div className="grid grid-cols-2 gap-3 pb-5">
             <a
               href="/packages"
-              className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 text-white font-bold rounded-xl border border-white/25 active:scale-[0.97] transition-all text-sm flex-1"
+              className="flex items-center justify-center gap-2 px-3 py-3 sm:py-3.5 bg-white/10 text-white font-bold rounded-xl border border-white/30 hover:bg-white/20 active:scale-[0.97] transition-all text-xs sm:text-sm text-center"
             >
-              View Health Packages
+              <Package size={16} className="flex-shrink-0" />
+              <span>View Health Packages</span>
             </a>
             <a
               href="/search"
-              className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white text-[#4B0082] font-bold rounded-xl shadow-lg active:scale-[0.97] transition-all text-sm flex-1"
+              className="flex items-center justify-center gap-2 px-3 py-3 sm:py-3.5 bg-white text-[#4B0082] font-bold rounded-xl shadow-lg hover:bg-gray-100 active:scale-[0.97] transition-all text-xs sm:text-sm text-center"
             >
-              Book a Test Now
+              <Calendar size={16} className="flex-shrink-0" />
+              <span>Book a Test Now</span>
             </a>
           </div>
 
           {/* Mobile trust badges */}
-          <TrustBadges className="justify-center pb-5" />
+          <TrustBadges className="justify-between sm:justify-center pb-6" />
         </div>
       </div>
 
@@ -300,22 +302,23 @@ export function HeroCarousel() {
         </div>
       )}
 
-      {/* ─── STATS BAR CARD (Direct child of section — hangs half in hero, half below) ─── */}
-      <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-4xl z-20">
-        <div className="bg-white rounded-2xl shadow-[0_9px_30px_rgba(0,0,0,0.18)] px-6 py-6 md:px-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4">
+      {/* ─── STATS BAR CARD (Responsive for mobile & desktop, hangs half in hero, half below) ─── */}
+      <div className="absolute -bottom-16 sm:-bottom-14 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-4xl z-20">
+        <div className="bg-white rounded-2xl shadow-[0_9px_30px_rgba(0,0,0,0.15)] px-4 sm:px-8 py-4 sm:py-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             {[
               { icon: Users, value: '50K+', label: 'HAPPY PATIENTS', iconBg: 'bg-purple-50', iconColor: 'text-purple-500' },
               { icon: Beaker, value: '200+', label: 'LAB TESTS', iconBg: 'bg-blue-50', iconColor: 'text-blue-500' },
               { icon: Clock, value: '24h', label: 'REPORT DELIVERY', iconBg: 'bg-orange-50', iconColor: 'text-orange-400' },
               { icon: Building2, value: '100+', label: 'CITIES COVERED', iconBg: 'bg-green-50', iconColor: 'text-green-500' },
             ].map((stat) => (
-              <div key={stat.label} className="flex flex-col items-center gap-2 text-center">
-                <div className={`w-11 h-11 rounded-full ${stat.iconBg} flex items-center justify-center`}>
-                  <stat.icon size={24} className={stat.iconColor} />
+              <div key={stat.label} className="flex flex-col items-center gap-1.5 text-center">
+                <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full ${stat.iconBg} flex items-center justify-center`}>
+                  <stat.icon size={20} className={`${stat.iconColor} sm:hidden`} />
+                  <stat.icon size={24} className={`${stat.iconColor} hidden sm:block`} />
                 </div>
-                <span className="font-black text-2xl md:text-3xl text-gray-900">{stat.value}</span>
-                <span className="font-semibold text-xs text-gray-400 tracking-wide uppercase">{stat.label}</span>
+                <span className="font-black text-xl sm:text-2xl md:text-3xl text-gray-900">{stat.value}</span>
+                <span className="font-semibold text-[10px] sm:text-xs text-gray-400 tracking-wide uppercase">{stat.label}</span>
               </div>
             ))}
           </div>
