@@ -107,7 +107,7 @@ export function HeroCarousel() {
 
   return (
     <section
-      className="relative w-full overflow-visible pb-16 lg:pb-28 mb-16 lg:mb-20"
+      className="relative w-full overflow-visible pb-36 sm:pb-32 lg:pb-28 mb-20 sm:mb-20 lg:mb-24"
       style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
@@ -195,11 +195,11 @@ export function HeroCarousel() {
         {/* ────────────────────────── MOBILE / TABLET layout ────────────────────────── */}
         <div className="lg:hidden">
 
-          {/* Top row: Text + Right Image (image flush to right with top-left curve) */}
-          <div className="relative min-h-[280px] sm:min-h-[320px] flex items-stretch mb-5">
+          {/* Top row: Text + Right Image (image flush to right, straight edges) */}
+          <div className="relative min-h-[260px] sm:min-h-[300px] flex items-stretch mb-6">
 
             {/* Left: Text Content */}
-            <div className="w-[52%] sm:w-[50%] pr-2 pt-4 pb-2 z-10 flex flex-col justify-center">
+            <div className="w-[52%] sm:w-[50%] pr-3 pt-3 pb-2 z-10 flex flex-col justify-center">
               <h1 className="text-xl sm:text-2xl font-black text-white leading-[1.12] mb-3">
                 Precision Diagnostics, Delivered to Your Door.
               </h1>
@@ -209,10 +209,9 @@ export function HeroCarousel() {
               </p>
             </div>
 
-            {/* Right: Image — flush to right edge with rounded-tl-[50px] */}
+            {/* Right: Image — flush to screen edge, no rounded borders */}
             <div
-              className="w-[48%] sm:w-[50%] relative overflow-hidden rounded-tl-[48px] sm:rounded-tl-[60px]"
-              style={{ marginRight: '-1.25rem' }}
+              className="w-[calc(48%+1.25rem)] sm:w-[calc(50%+1.5rem)] -mr-5 sm:-mr-6 relative overflow-hidden rounded-none"
               aria-live="polite"
             >
               {hasSlides && !imgError ? (
