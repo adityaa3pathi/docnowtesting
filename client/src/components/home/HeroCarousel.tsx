@@ -104,10 +104,9 @@ export function HeroCarousel() {
       </span>
     </div>
   );
-
   return (
     <section
-      className="relative w-full overflow-visible pb-36 sm:pb-32 lg:pb-28 mb-20 sm:mb-20 lg:mb-24"
+      className="relative w-full overflow-x-clip overflow-y-visible pb-44 sm:pb-40 lg:pb-28 mb-16 sm:mb-20 lg:mb-24"
       style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
@@ -116,9 +115,11 @@ export function HeroCarousel() {
       onTouchEnd={onTouchEnd}
       aria-label="Hero banner carousel"
     >
-      {/* Decorative blur orbs */}
-      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-white/5 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
+      {/* Decorative blur orbs (clipped inside parent to prevent horizontal scroll) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-white/5 blur-3xl" />
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-purple-500/10 blur-3xl" />
+      </div>
 
       {/* ─── DESKTOP RIGHT IMAGE (Direct child of section — spans top-0 to bottom-0, right 45%) ─── */}
       <div
@@ -152,7 +153,7 @@ export function HeroCarousel() {
         ) : null}
       </div>
 
-      <div className="max-w-[1380px] mx-auto px-5 sm:px-6 lg:px-16 relative z-10">
+      <div className="max-w-[1380px] mx-auto px-4 sm:px-6 lg:px-16 relative z-10">
 
         {/* ────────────────────────── DESKTOP TEXT CONTENT ────────────────────────── */}
         <div className="hidden lg:block pt-12 pb-24 xl:pt-16 xl:pb-28">
@@ -195,12 +196,12 @@ export function HeroCarousel() {
         {/* ────────────────────────── MOBILE / TABLET layout ────────────────────────── */}
         <div className="lg:hidden">
 
-          {/* Top row: Text + Right Image (image flush to right, straight edges) */}
-          <div className="relative min-h-[260px] sm:min-h-[300px] flex items-stretch mb-6">
+          {/* Top row: Text + Right Image (image flush to right, no overflow) */}
+          <div className="relative min-h-[220px] sm:min-h-[260px] flex items-stretch mb-5">
 
             {/* Left: Text Content */}
-            <div className="w-[52%] sm:w-[50%] pr-3 pt-3 pb-2 z-10 flex flex-col justify-center">
-              <h1 className="text-xl sm:text-2xl font-black text-white leading-[1.12] mb-3">
+            <div className="w-[55%] sm:w-[50%] pr-2 pt-2 pb-1 z-10 flex flex-col justify-center">
+              <h1 className="text-lg sm:text-xl font-black text-white leading-[1.15] mb-2">
                 Precision Diagnostics, Delivered to Your Door.
               </h1>
               <p className="text-[11px] sm:text-xs text-white/75 font-medium leading-relaxed">
@@ -209,9 +210,9 @@ export function HeroCarousel() {
               </p>
             </div>
 
-            {/* Right: Image — flush to screen edge, no rounded borders */}
+            {/* Right: Image — flush to right edge within container bounds */}
             <div
-              className="w-[calc(48%+1.25rem)] sm:w-[calc(50%+1.5rem)] -mr-5 sm:-mr-6 relative overflow-hidden rounded-none"
+              className="w-[45%] sm:w-[50%] relative overflow-hidden rounded-none"
               aria-live="polite"
             >
               {hasSlides && !imgError ? (
@@ -238,32 +239,32 @@ export function HeroCarousel() {
             </div>
           </div>
 
-          {/* CTAs — Side-by-side buttons with icons matching design */}
-          <div className="grid grid-cols-2 gap-3 pb-5">
+          {/* CTAs — Side-by-side buttons */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pb-3">
             <a
               href="/packages"
-              className="flex items-center justify-center gap-2 px-3 py-3 sm:py-3.5 bg-white/10 text-white font-bold rounded-xl border border-white/30 hover:bg-white/20 active:scale-[0.97] transition-all text-xs sm:text-sm text-center"
+              className="flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2.5 sm:py-3 bg-white/10 text-white font-bold rounded-xl border border-white/30 hover:bg-white/20 active:scale-[0.97] transition-all text-[11px] sm:text-xs text-center"
             >
-              <Package size={16} className="flex-shrink-0" />
-              <span>View Health Packages</span>
+              <Package size={15} className="flex-shrink-0" />
+              <span>View Packages</span>
             </a>
             <a
               href="/search"
-              className="flex items-center justify-center gap-2 px-3 py-3 sm:py-3.5 bg-white text-[#4B0082] font-bold rounded-xl shadow-lg hover:bg-gray-100 active:scale-[0.97] transition-all text-xs sm:text-sm text-center"
+              className="flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2.5 sm:py-3 bg-white text-[#4B0082] font-bold rounded-xl shadow-md hover:bg-gray-100 active:scale-[0.97] transition-all text-[11px] sm:text-xs text-center"
             >
-              <Calendar size={16} className="flex-shrink-0" />
-              <span>Book a Test Now</span>
+              <Calendar size={15} className="flex-shrink-0" />
+              <span>Book a Test</span>
             </a>
           </div>
 
           {/* Mobile trust badges */}
-          <TrustBadges className="justify-between sm:justify-center pb-6" />
+          <TrustBadges className="justify-center gap-3 sm:gap-6 pb-2 text-[10px] sm:text-xs flex-wrap" />
         </div>
       </div>
 
       {/* ─── Carousel Dots ─── */}
       {slides.length > 1 && (
-        <div className="relative z-10 pb-4 lg:pb-5">
+        <div className="relative z-10 pb-2 lg:pb-5">
           <div className="flex items-center justify-center gap-2">
             {slides.map((_, idx) => (
               <button
@@ -302,22 +303,22 @@ export function HeroCarousel() {
       )}
 
       {/* ─── STATS BAR CARD (Responsive for mobile & desktop, hangs half in hero, half below) ─── */}
-      <div className="absolute -bottom-16 sm:-bottom-14 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-4xl z-20">
-        <div className="bg-white rounded-2xl shadow-[0_9px_30px_rgba(0,0,0,0.15)] px-4 sm:px-8 py-4 sm:py-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+      <div className="absolute -bottom-10 sm:-bottom-12 lg:-bottom-14 left-1/2 -translate-x-1/2 w-[calc(100%-1.75rem)] sm:w-[calc(100%-2.5rem)] max-w-4xl z-20">
+        <div className="bg-white rounded-2xl shadow-[0_8px_25px_rgba(0,0,0,0.15)] px-3 sm:px-8 py-3.5 sm:py-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
             {[
               { icon: Users, value: '50K+', label: 'HAPPY PATIENTS', iconBg: 'bg-purple-50', iconColor: 'text-purple-500' },
               { icon: Beaker, value: '200+', label: 'LAB TESTS', iconBg: 'bg-blue-50', iconColor: 'text-blue-500' },
               { icon: Clock, value: '24h', label: 'REPORT DELIVERY', iconBg: 'bg-orange-50', iconColor: 'text-orange-400' },
               { icon: Building2, value: '100+', label: 'CITIES COVERED', iconBg: 'bg-green-50', iconColor: 'text-green-500' },
             ].map((stat) => (
-              <div key={stat.label} className="flex flex-col items-center gap-1.5 text-center">
-                <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full ${stat.iconBg} flex items-center justify-center`}>
-                  <stat.icon size={20} className={`${stat.iconColor} sm:hidden`} />
+              <div key={stat.label} className="flex flex-col items-center gap-1 text-center">
+                <div className={`w-8 h-8 sm:w-11 sm:h-11 rounded-full ${stat.iconBg} flex items-center justify-center`}>
+                  <stat.icon size={18} className={`${stat.iconColor} sm:hidden`} />
                   <stat.icon size={24} className={`${stat.iconColor} hidden sm:block`} />
                 </div>
-                <span className="font-black text-xl sm:text-2xl md:text-3xl text-gray-900">{stat.value}</span>
-                <span className="font-semibold text-[10px] sm:text-xs text-gray-400 tracking-wide uppercase">{stat.label}</span>
+                <span className="font-black text-lg sm:text-2xl md:text-3xl text-gray-900 leading-tight">{stat.value}</span>
+                <span className="font-semibold text-[9px] sm:text-xs text-gray-400 tracking-wide uppercase">{stat.label}</span>
               </div>
             ))}
           </div>
