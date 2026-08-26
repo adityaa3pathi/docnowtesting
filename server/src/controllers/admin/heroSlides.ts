@@ -1,6 +1,5 @@
 import { Response } from 'express';
 import { prisma } from '../../db';
-import { seedDefaultHeroSlidesIfEmpty } from '../../services/heroSlides';
 import { AuthRequest } from '../../middleware/auth';
 
 /**
@@ -8,7 +7,6 @@ import { AuthRequest } from '../../middleware/auth';
  */
 export async function listHeroSlides(req: AuthRequest, res: Response) {
   try {
-    await seedDefaultHeroSlidesIfEmpty();
     const slides = await prisma.heroSlide.findMany({
       orderBy: { sortOrder: 'asc' },
     });

@@ -96,7 +96,8 @@ export async function seedDefaultHeroSlidesIfEmpty() {
 }
 
 /**
- * Fetch active slides for public landing page
+ * Fetch active slides for public landing page.
+ * Returns empty array if none exist — frontend handles fallback.
  */
 export async function getPublicHeroSlides() {
   try {
@@ -104,14 +105,9 @@ export async function getPublicHeroSlides() {
       where: { isActive: true },
       orderBy: { sortOrder: 'asc' },
     });
-
-    if (slides.length === 0) {
-      return DEFAULT_HERO_SLIDES;
-    }
-
     return slides;
   } catch (error: any) {
-    logger.warn({ error: error.message }, 'Database error fetching hero slides, serving fallback slides');
-    return DEFAULT_HERO_SLIDES;
+    logger.warn({ error: error.message }, 'Database error fetching hero slides');
+    return [];
   }
 }
