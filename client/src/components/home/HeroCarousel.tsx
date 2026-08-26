@@ -107,7 +107,7 @@ export function HeroCarousel() {
 
   return (
     <section
-      className="relative w-full overflow-hidden"
+      className="relative w-full overflow-visible pb-16 lg:pb-28"
       style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
@@ -166,7 +166,7 @@ export function HeroCarousel() {
             {/* Right: Image — absolutely positioned, full height, flush to right edge */}
             <div
               className="absolute top-0 right-0 h-full overflow-hidden"
-              style={{ width: '50%', marginRight: 'calc(-1 * (100vw - 100%) / 2)' }}
+              style={{ width: '45%', marginRight: 'calc(-1 * (100vw - 100%) / 2)' }}
               aria-live="polite"
             >
               {/* Shimmer */}
@@ -197,23 +197,25 @@ export function HeroCarousel() {
             </div>
           </div>
 
-          {/* ─── Stats Bar — overlapping white card ─── */}
-          <div className="relative z-20 -mt-10 mb-4">
-            <div className="bg-white rounded-2xl shadow-xl shadow-purple-900/10 px-8 py-6 grid grid-cols-4 divide-x divide-gray-100">
-              {[
-                { icon: Users, value: '50K+', label: 'HAPPY PATIENTS', color: 'text-purple-600 bg-purple-50' },
-                { icon: Beaker, value: '200+', label: 'LAB TESTS', color: 'text-blue-600 bg-blue-50' },
-                { icon: Clock, value: '24h', label: 'REPORT DELIVERY', color: 'text-orange-600 bg-orange-50' },
-                { icon: Building2, value: '100+', label: 'CITIES COVERED', color: 'text-green-600 bg-green-50' },
-              ].map((stat) => (
-                <div key={stat.label} className="flex flex-col items-center gap-1.5 px-4">
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${stat.color}`}>
-                    <stat.icon size={18} />
+          {/* ─── Stats Bar — hangs below the hero section ─── */}
+          <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-4xl z-20">
+            <div className="bg-white rounded-2xl shadow-[0_9px_30px_rgba(0,0,0,0.18)] px-6 py-6 md:px-10">
+              <div className="grid grid-cols-4 gap-4">
+                {[
+                  { icon: Users, value: '50K+', label: 'HAPPY PATIENTS', iconBg: 'bg-purple-50', iconColor: 'text-purple-500' },
+                  { icon: Beaker, value: '200+', label: 'LAB TESTS', iconBg: 'bg-blue-50', iconColor: 'text-blue-500' },
+                  { icon: Clock, value: '24h', label: 'REPORT DELIVERY', iconBg: 'bg-orange-50', iconColor: 'text-orange-400' },
+                  { icon: Building2, value: '100+', label: 'CITIES COVERED', iconBg: 'bg-green-50', iconColor: 'text-green-500' },
+                ].map((stat) => (
+                  <div key={stat.label} className="flex flex-col items-center gap-2 text-center">
+                    <div className={`w-11 h-11 rounded-full ${stat.iconBg} flex items-center justify-center`}>
+                      <stat.icon size={24} className={stat.iconColor} />
+                    </div>
+                    <span className="font-black text-2xl md:text-3xl text-gray-900">{stat.value}</span>
+                    <span className="font-semibold text-xs text-gray-400 tracking-wide uppercase">{stat.label}</span>
                   </div>
-                  <span className="text-2xl xl:text-3xl font-black text-gray-900">{stat.value}</span>
-                  <span className="text-[10px] font-bold text-gray-400 tracking-wider">{stat.label}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
