@@ -124,7 +124,7 @@ export function useCheckout({
             if (status === 'confirmed' || amount === 0) {
                 toast.success('Order placed successfully!');
                 await refreshCart();
-                router.push('/profile?tab=bookings');
+                router.push(`/thank-you?bookingId=${bookingId}`);
                 return;
             }
 
@@ -148,11 +148,11 @@ export function useCheckout({
                         if (verifyRes.data.status === 'confirmed' || verifyRes.data.status === 'already_confirmed') {
                             toast.success('Order placed successfully!');
                             await refreshCart();
-                            router.push('/profile?tab=bookings');
+                            router.push(`/thank-you?bookingId=${bookingId}`);
                         } else if (verifyRes.data.status === 'payment_received_booking_pending') {
                             toast.success('Payment received! Your booking is being confirmed. You will receive an update shortly.');
                             await refreshCart();
-                            router.push('/profile?tab=bookings');
+                            router.push(`/thank-you?bookingId=${bookingId}&status=pending`);
                         } else if (verifyRes.data.status === 'refunded_due_to_partner_error') {
                             toast.error('Booking Failed: Partner issue. Payment auto-refund initiated.', {
                                 duration: 8000,

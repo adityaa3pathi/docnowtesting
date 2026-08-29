@@ -54,7 +54,7 @@ export function Header() {
     const pathname = usePathname();
 
     // Pages where the header search bar is redundant or distracting
-    const hideSearch = ['/search', '/profile', '/cart'].some(p => pathname.startsWith(p));
+    const hideSearch = ['/search', '/profile', '/cart', '/thank-you'].some(p => pathname.startsWith(p));
     const { selectedCity, selectedPincode, updateCity, updatePincode, checkAndSetPincode, serviceabilityStatus } = useLocation();
     const { user, isAuthenticated, logout } = useAuth();
     const { cartCount } = useCart();
