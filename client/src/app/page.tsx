@@ -62,7 +62,7 @@ export default function Home() {
 
       {/* ═══════════ HERO — pure server HTML with desktop carousel ═══════════ */}
       <section
-        className="relative pb-16 md:pb-24 lg:pb-32 overflow-hidden"
+        className="relative pb-16 md:pb-24 lg:pb-32"
         style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}
       >
         {/* Desktop Carousel — Only renders on desktop (lg: and up) */}
