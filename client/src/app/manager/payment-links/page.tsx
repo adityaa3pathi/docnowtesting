@@ -762,6 +762,61 @@ function StepPatientsAddress({
     );
 }
 
+// ─── Cart Price Input (local string state for smooth editing) ──────────────────
+
+function CartPriceInput({
+    value, catalogPrice, floorPrice, hasCustom, priceError,
+    onCommit,
+}: {
+    value: number;
+    catalogPrice: number;
+    floorPrice: number;
+    hasCustom: boolean;
+    priceError: boolean;
+    onCommit: (newPrice: number | undefined) => void;
+}) {
+    const [localValue, setLocalValue] = useState(String(value));
+    const [isFocused, setIsFocused] = useState(false);
+
+    // Sync from parent when not focused (e.g., when item is first added)
+    useEffect(() => {
+        if (!isFocused) {
+            setLocalValue(String(value));
+        }
+    }, [value, isFocused]);
+
+    return (
+        <input
+            type="number"
+            value={localValue}
+            onFocus={() => setIsFocused(true)}
+            onChange={e => setLocalValue(e.target.value)}
+            onBlur={() => {
+                setIsFocused(false);
+                const trimmed = localValue.trim();
+                if (trimmed === '' || isNaN(Number(trimmed))) {
+                    // Empty or invalid → reset to catalog price
+                    setLocalValue(String(catalogPrice));
+                    onCommit(undefined);
+                } else {
+                    const num = Number(trimmed);
+                    onCommit(num === catalogPrice ? undefined : num);
+                }
+            }}
+            min={floorPrice || 0}
+            max={catalogPrice || undefined}
+            step="1"
+            className={`w-20 text-sm font-semibold text-right border rounded-lg px-2 py-1 outline-none focus:ring-2 ${
+                priceError
+                    ? 'border-red-300 text-red-700 focus:ring-red-300'
+                    : hasCustom
+                        ? 'border-amber-300 text-amber-700 focus:ring-amber-300'
+                        : 'border-gray-200 text-purple-700 focus:ring-purple-300'
+            }`}
+        />
+    );
+}
+
 // ─── Step 3: Test Selection ────────────────────────────────────────────────────
 
 function StepTests({
@@ -930,28 +985,20 @@ function StepTests({
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <span className="text-xs text-gray-400">₹</span>
-                                        <input
-                                            type="number"
-                                            value={c.customPrice !== undefined && c.customPrice !== null ? c.customPrice : c.price}
-                                            onChange={e => {
-                                                const val = e.target.value === '' ? undefined : Number(e.target.value);
+                                        <CartPriceInput
+                                            value={c.customPrice !== undefined && c.customPrice !== null ? c.customPrice : (c.catalogPrice || c.price)}
+                                            catalogPrice={c.catalogPrice || c.price}
+                                            floorPrice={c.floorPrice || 0}
+                                            hasCustom={!!hasCustom}
+                                            priceError={!!priceError}
+                                            onCommit={(newPrice) => {
                                                 update(idx, {
                                                     ...c,
-                                                    customPrice: val,
-                                                    price: val !== undefined && val !== null && c.floorPrice && val >= c.floorPrice && val <= (c.catalogPrice || c.price)
-                                                        ? val : (c.catalogPrice || c.price),
+                                                    customPrice: newPrice,
+                                                    price: newPrice !== undefined && c.floorPrice && newPrice >= c.floorPrice && newPrice <= (c.catalogPrice || c.price)
+                                                        ? newPrice : (c.catalogPrice || c.price),
                                                 });
                                             }}
-                                            min={c.floorPrice || 0}
-                                            max={c.catalogPrice || undefined}
-                                            step="1"
-                                            className={`w-20 text-sm font-semibold text-right border rounded-lg px-2 py-1 outline-none focus:ring-2 ${
-                                                priceError
-                                                    ? 'border-red-300 text-red-700 focus:ring-red-300'
-                                                    : hasCustom
-                                                        ? 'border-amber-300 text-amber-700 focus:ring-amber-300'
-                                                        : 'border-gray-200 text-purple-700 focus:ring-purple-300'
-                                            }`}
                                         />
                                     </div>
                                     <select
@@ -974,9 +1021,9 @@ function StepTests({
                                         Min: ₹{c.floorPrice} (70% of ₹{c.catalogPrice})
                                     </p>
                                 )}
-                                {!priceError && c.floorPrice && hasCustom && (
+                                {!priceError && c.floorPrice && (
                                     <p className="text-[11px] text-gray-400 mt-1 pl-1">
-                                        Range: ₹{c.floorPrice} – ₹{c.catalogPrice}
+                                        Allowed: ₹{c.floorPrice} – ₹{c.catalogPrice}
                                     </p>
                                 )}
                             </div>

@@ -29,6 +29,7 @@ interface Camp {
     startDate: string;
     endDate: string;
     price: number;
+    familyPrice: number;
     isActive: boolean;
     items: CampItem[];
     _count: {
@@ -53,6 +54,7 @@ interface CampFormData {
     startDate: string;
     endDate: string;
     price: string;
+    familyPrice: string;
 }
 
 const defaultForm: CampFormData = {
@@ -64,6 +66,7 @@ const defaultForm: CampFormData = {
     startDate: '',
     endDate: '',
     price: '',
+    familyPrice: '',
 };
 
 export default function CampsPage() {
@@ -121,7 +124,7 @@ export default function CampsPage() {
         const timer = setTimeout(async () => {
             setIsSearchingCatalog(true);
             try {
-                const res = await api.get(`/admin/featured-packages/search?q=${encodeURIComponent(catalogSearch.trim())}`);
+                const res = await api.get(`/admin/featured-packages/search?q=${encodeURIComponent(catalogSearch.trim())}&scope=all`);
                 setCatalogResults(res.data.products || res.data || []);
             } catch (error) {
                 console.error('Catalog search failed', error);
@@ -142,7 +145,7 @@ export default function CampsPage() {
         const timer = setTimeout(async () => {
             setIsSearchingItemsCatalog(true);
             try {
-                const res = await api.get(`/admin/featured-packages/search?q=${encodeURIComponent(itemsCatalogSearch.trim())}`);
+                const res = await api.get(`/admin/featured-packages/search?q=${encodeURIComponent(itemsCatalogSearch.trim())}&scope=all`);
                 setItemsCatalogResults(res.data.products || res.data || []);
             } catch (error) {
                 console.error('Catalog search failed', error);
@@ -182,6 +185,7 @@ export default function CampsPage() {
             startDate: camp.startDate.split('T')[0],
             endDate: camp.endDate.split('T')[0],
             price: String(camp.price),
+            familyPrice: String(camp.familyPrice),
         });
         setSelectedCatalogIds(new Set(camp.items.map(i => i.catalogItemId)));
         setSelectedItemsMap(new Map(camp.items.map(i => [i.catalogItemId, { name: i.catalogItem.name, partnerCode: i.catalogItem.partnerCode, type: i.catalogItem.type }])));
@@ -199,7 +203,7 @@ export default function CampsPage() {
     };
 
     const handleSubmit = async () => {
-        if (!form.name.trim() || !form.location.trim() || !form.city.trim() || !form.startDate || !form.endDate || !form.price) {
+        if (!form.name.trim() || !form.location.trim() || !form.city.trim() || !form.startDate || !form.endDate || !form.price || !form.familyPrice) {
             toast.error('Please fill in all required fields');
             return;
         }
@@ -215,6 +219,7 @@ export default function CampsPage() {
                 startDate: new Date(form.startDate).toISOString(),
                 endDate: new Date(form.endDate).toISOString(),
                 price: parseFloat(form.price),
+                familyPrice: parseFloat(form.familyPrice),
                 catalogItemIds: Array.from(selectedCatalogIds),
             };
 
@@ -385,6 +390,7 @@ export default function CampsPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="font-bold text-gray-900">₹{camp.price}</div>
+                                            <div className="text-xs text-gray-400">₹{camp.familyPrice}/person (family)</div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-medium text-sm">
@@ -514,7 +520,7 @@ export default function CampsPage() {
                             </div>
 
                             {/* Dates & Price */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Start Date *</label>
                                     <input
@@ -534,12 +540,23 @@ export default function CampsPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Price (₹) *</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Price (Single Patient) *</label>
                                     <input
                                         type="number"
                                         value={form.price}
                                         onChange={(e) => setForm(f => ({ ...f, price: e.target.value }))}
                                         placeholder="999"
+                                        min="0"
+                                        className="w-full px-4 py-2.5 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192] transition-all text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Family Price (per patient, 2+) *</label>
+                                    <input
+                                        type="number"
+                                        value={form.familyPrice}
+                                        onChange={(e) => setForm(f => ({ ...f, familyPrice: e.target.value }))}
+                                        placeholder="799"
                                         min="0"
                                         className="w-full px-4 py-2.5 bg-white rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4b2192]/20 focus:border-[#4b2192] transition-all text-sm"
                                     />

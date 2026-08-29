@@ -20,7 +20,7 @@ export async function createCamp(data: CreateCampInput) {
                 startDate: new Date(campData.startDate),
                 endDate: new Date(campData.endDate),
                 items: {
-                    create: catalogItemIds.map(catalogItemId => ({
+                    create: catalogItemIds.map((catalogItemId: string) => ({
                         catalogItemId,
                     })),
                 },

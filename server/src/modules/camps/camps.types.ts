@@ -15,6 +15,7 @@ export const createCampSchema = z.object({
     startDate: z.string().datetime({ message: 'Valid start date required' }),
     endDate: z.string().datetime({ message: 'Valid end date required' }),
     price: z.number().positive('Price must be positive'),
+    familyPrice: z.number().positive('Family price must be positive'),
     catalogItemIds: z.array(z.string().uuid()).min(1, 'At least one test/package is required'),
 });
 

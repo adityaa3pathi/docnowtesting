@@ -48,18 +48,26 @@ export const listFeaturedPackages = async (req: AuthRequest, res: Response) => {
  * Search/browse non-featured packages with pagination
  */
 export const searchCatalogForFeaturing = async (req: AuthRequest, res: Response) => {
-    const { search, page = '1', limit = '20' } = req.query;
+    const { q, search, page = '1', limit = '20', scope } = req.query;
+    const searchTerm = (q || search) as string | undefined;
     const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
     const limitNum = Math.min(50, Math.max(1, parseInt(limit as string, 10) || 20));
     const skip = (pageNum - 1) * limitNum;
 
     try {
-        const where: any = {
-            isFeatured: false,
-            type: { in: PACKAGE_TYPES },
-        };
-        if (search && (search as string).trim().length >= 1) {
-            const searchClause = buildCatalogSearchWhere(search as string);
+        const where: any = {};
+
+        // When scope=all (used by camp edit), search across all types and featured states
+        // Default behavior (featured packages page): only non-featured PACKAGE/PROFILE
+        if (scope !== 'all') {
+            where.isFeatured = false;
+            where.type = { in: PACKAGE_TYPES };
+        } else {
+            where.isEnabled = true;
+        }
+
+        if (searchTerm && searchTerm.trim().length >= 1) {
+            const searchClause = buildCatalogSearchWhere(searchTerm);
             where.OR = searchClause.OR;
         }
 

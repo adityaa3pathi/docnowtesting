@@ -19,10 +19,34 @@ to_be_implemented.md
 .idea/
 *.log
 *.pem
+*.key
+*.id_rsa
+*.id_rsa.pub
 
-# Server Storage
+# Environment Files
+.env
+.env.local
+.env.production
+.env.staging
+.env.test
+!.env.example
+!.env.*.example
+
+# Debug and compiled seed scripts
+**/prisma/seed.js
+**/prisma/seed.js.map
+**/check_*.js
+**/check_*.ts
+**/get_*.js
+**/get_*.ts
+**/query.js
+**/test_*.js
+
+# Server Storage & Keys
 server/storage/
-whatsapp-integration-artifact.md*.pem.pub
+*.pem.pub
+docnow-prod-key*
+
 
 # Local testing scripts
 scripts/

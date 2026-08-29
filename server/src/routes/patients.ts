@@ -54,7 +54,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
             message: 'Family member added successfully',
             patient
         });
-    } catch (error) {
+    } catch (error: any) {
         if (error instanceof z.ZodError) {
             res.status(400).json({ error: error.issues[0].message });
             return;
@@ -96,7 +96,7 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
             message: 'Family member updated successfully',
             patient: updatedPatient
         });
-    } catch (error) {
+    } catch (error: any) {
         if (error instanceof z.ZodError) {
             res.status(400).json({ error: error.issues[0].message });
             return;
