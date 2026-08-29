@@ -62,7 +62,7 @@ export default function Home() {
 
       {/* ═══════════ HERO — pure server HTML with desktop carousel ═══════════ */}
       <section
-        className="relative pb-16 md:pb-24 lg:pb-32 mb-12 sm:mb-16 lg:mb-24"
+        className="relative pb-16 md:pb-24 lg:pb-32"
         style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}
       >
         {/* Desktop Carousel — Only renders on desktop (lg: and up) */}
@@ -103,11 +103,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Stats Card — hangs half in hero, half below with full clearance */}
-        <div className="hidden lg:block absolute -bottom-14 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-4xl z-30">
+        {/* Stats Card — pure server HTML */}
+        <div className="hidden lg:block absolute -bottom-14 left-1/2 -translate-x-1/2 w-[calc(100%-5rem)] max-w-4xl z-20">
           <HeroStatsCard />
         </div>
-        <div className="lg:hidden mx-4 relative z-30 -mb-4">
+        <div className="lg:hidden mx-4 relative z-20 -mb-4">
           <HeroStatsCard />
         </div>
       </section>
