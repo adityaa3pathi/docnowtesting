@@ -17,8 +17,8 @@ interface HeroSlide {
  * Desktop Hero Carousel — Client Island
  * 
  * Renders dynamically loaded CMS slides on the right side of the hero section
- * on desktop viewports (lg and up). Automatically pauses on hover and gracefully
- * handles empty or error states.
+ * on desktop viewports (lg and up). When no slides are uploaded or available,
+ * returns null to ensure the hero background is 100% seamless with zero shade distortion.
  */
 export function HeroCarousel() {
   const [slides, setSlides] = useState<HeroSlide[]>([]);
@@ -40,7 +40,7 @@ export function HeroCarousel() {
           if (withImages.length > 0) setSlides(withImages);
         }
       } catch {
-        // Fallback: hero section displays default gradient background
+        // Fallback: hero section displays default pure gradient background
       } finally {
         setIsLoading(false);
       }
@@ -70,8 +70,12 @@ export function HeroCarousel() {
     };
   }, [isPaused, slides.length, handleNext]);
 
-  const current = slides.length > 0 ? (slides[currentIndex] || slides[0]) : null;
-  const hasSlides = slides.length > 0 && current;
+  // When no slides are configured or still loading with no data, return null
+  if (slides.length === 0) {
+    return null;
+  }
+
+  const current = slides[currentIndex] || slides[0];
 
   return (
     <div
@@ -80,19 +84,12 @@ export function HeroCarousel() {
       onMouseLeave={() => setIsPaused(false)}
       aria-label="Hero banner carousel"
     >
-      {/* Shimmer loading state */}
-      {(isLoading || (hasSlides && !imgLoaded && !imgError)) && (
-        <div className="absolute inset-0 bg-white/5 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-pulse" />
-        </div>
-      )}
-
       {/* Slide image */}
-      {hasSlides && !imgError && (
+      {!imgError && (
         <img
-          key={current!.id}
-          src={current!.desktopImageUrl || current!.mobileImageUrl || ''}
-          alt={current!.imageAlt || 'Doctor and healthcare professional'}
+          key={current.id}
+          src={current.desktopImageUrl || current.mobileImageUrl || ''}
+          alt={current.imageAlt || 'Doctor and healthcare professional'}
           onLoad={() => setImgLoaded(true)}
           onError={() => setImgError(true)}
           className={`w-full h-full object-cover object-center transition-opacity duration-500 ease-in-out ${
@@ -101,13 +98,8 @@ export function HeroCarousel() {
         />
       )}
 
-      {/* Fallback subtle gradient when no images exist */}
-      {(!hasSlides && !isLoading) || imgError ? (
-        <div className="w-full h-full bg-gradient-to-br from-white/5 to-transparent" />
-      ) : null}
-
       {/* Desktop Navigation Arrows */}
-      {slides.length > 1 && (
+      {slides.length > 1 && imgLoaded && (
         <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex items-center justify-between pointer-events-none z-20">
           <button
             onClick={handlePrev}
@@ -127,7 +119,7 @@ export function HeroCarousel() {
       )}
 
       {/* Slide Indicator Dots */}
-      {slides.length > 1 && (
+      {slides.length > 1 && imgLoaded && (
         <div className="absolute bottom-6 inset-x-0 flex items-center justify-center gap-2 z-20">
           {slides.map((_, idx) => (
             <button
