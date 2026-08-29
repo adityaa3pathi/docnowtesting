@@ -4,7 +4,7 @@ import { ThankYouClient } from './ThankYouClient';
 import { Loader2 } from 'lucide-react';
 
 export const metadata: Metadata = {
-    title: 'Order Confirmed - DOCNOW',
+    title: 'Booking Successful - DOCNOW',
     description: 'Thank you for your order with DOCNOW. Your health test booking is confirmed.',
 };
 

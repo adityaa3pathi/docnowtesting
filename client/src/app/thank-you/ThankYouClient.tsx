@@ -8,8 +8,6 @@ import {
     Calendar,
     Clock,
     MapPin,
-    Copy,
-    Check,
     ArrowRight,
     ShieldCheck,
     FileText,
@@ -21,7 +19,6 @@ import {
     Truck,
     FlaskConical
 } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button, Card } from '@/components/ui';
 import { Footer } from '@/components/Footer';
@@ -52,7 +49,6 @@ export function ThankYouClient() {
     const bookingId = searchParams.get('bookingId') || searchParams.get('id') || searchParams.get('order_id') || '';
     const queryStatus = searchParams.get('status') || '';
 
-    const [copied, setCopied] = useState(false);
     const [bookingDetails, setBookingDetails] = useState<BookingStatusData | null>(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
 
@@ -87,18 +83,6 @@ export function ThankYouClient() {
         };
     }, [bookingId, isAuthenticated]);
 
-    const handleCopyBookingId = async () => {
-        if (!bookingId) return;
-        try {
-            await navigator.clipboard.writeText(bookingId);
-            setCopied(true);
-            toast.success('Booking ID copied to clipboard!');
-            setTimeout(() => setCopied(false), 2500);
-        } catch {
-            toast.error('Failed to copy ID');
-        }
-    };
-
     const isPending = queryStatus === 'pending' || bookingDetails?.status === 'payment_received_booking_pending';
 
     return (
@@ -124,41 +108,12 @@ export function ThankYouClient() {
                     </div>
 
                     <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight mb-3">
-                        {isPending ? 'Payment Received!' : 'Order Confirmed!'}
+                        Booking Successful!
                     </h1>
 
-                    <p className="text-base md:text-lg text-gray-600 font-medium max-w-xl mx-auto mb-6">
-                        {isPending
-                            ? 'Your payment was successful! Our lab partner is finalizing your slot assignment.'
-                            : `Thank you${user?.name ? `, ${user.name}` : ''}! Your health test booking has been successfully placed.`}
+                    <p className="text-base md:text-lg text-gray-600 font-medium max-w-xl mx-auto">
+                        {`Thank you${user?.name ? `, ${user.name}` : ''}! Your health test booking has been successfully placed.`}
                     </p>
-
-                    {/* Booking Reference Pill */}
-                    {bookingId ? (
-                        <div className="inline-flex flex-wrap items-center justify-center gap-2 md:gap-3 px-4 py-2.5 rounded-2xl bg-white border border-gray-200 shadow-sm">
-                            <span className="text-xs md:text-sm font-semibold text-gray-500">Booking Reference:</span>
-                            <span className="text-xs md:text-sm font-mono font-bold text-primary bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100/60">
-                                {bookingId}
-                            </span>
-                            <button
-                                onClick={handleCopyBookingId}
-                                aria-label="Copy booking reference ID"
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-gray-600 hover:text-primary hover:bg-purple-50 transition-colors"
-                            >
-                                {copied ? (
-                                    <>
-                                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                        <span className="text-emerald-600">Copied</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Copy className="w-3.5 h-3.5" />
-                                        <span>Copy</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    ) : null}
                 </div>
 
                 {/* ═══════════ MAIN CONTENT GRID ═══════════ */}
