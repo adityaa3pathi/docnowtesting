@@ -43,6 +43,7 @@ import { csrfProtection } from './middleware/csrfProtection';
 import { legacyCookieCleanup } from './middleware/legacyCookieCleanup';
 import { requestContextMiddleware } from './middleware/requestContext';
 import { logger } from './utils/logger';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -106,6 +107,13 @@ app.use((req: any, res: any, next: any) => {
 });
 
 app.use(csrfProtection);
+
+// Proxy AI support requests to Python FastAPI service
+const AI_SUPPORT_URL = process.env.AI_SUPPORT_URL || 'http://localhost:8000';
+app.use('/api/support', createProxyMiddleware({
+    target: AI_SUPPORT_URL,
+    changeOrigin: true,
+}));
 
 // Register booking strategies at boot
 registerBookingStrategy(new HomeCollectionStrategy());

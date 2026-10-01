@@ -8,6 +8,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { AuthGateProvider } from "@/contexts/AuthGateContext";
 import { Toaster } from "react-hot-toast";
 import { GlobalHeader } from "@/components/GlobalHeader";
+import { SupportChat } from "@/components/support/SupportChat";
 
 import { LegacyCookieCleanup } from "@/components/LegacyCookieCleanup";
 
@@ -72,6 +73,7 @@ export default function RootLayout({
               {/* Global sticky navbar — excluded on /manager and /super-admin by GlobalHeader */}
               <GlobalHeader />
               {children}
+              <SupportChat />
               <Toaster position="top-right" />
             </LocationProvider>
             </AuthGateProvider>

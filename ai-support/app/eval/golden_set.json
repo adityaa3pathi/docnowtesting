@@ -1,0 +1,454 @@
+{
+  "queries": [
+    {
+      "id": "cat-01",
+      "query": "I want to test for diabetes, what do you have?",
+      "category": "catalog",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "ground_truth": "We have tests for diabetes including Fasting Blood Sugar, Post Prandial Blood Sugar, and HbA1c.",
+      "should_abstain": false
+    },
+    {
+      "id": "cat-02",
+      "query": "How much does a thyroid test cost?",
+      "category": "catalog",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "ground_truth": "The thyroid profile test costs are listed in our catalog. A standard Thyroid Profile (T3, T4, TSH) is available.",
+      "should_abstain": false
+    },
+    {
+      "id": "cat-03",
+      "query": "Do you have a Complete Blood Count (CBC) test?",
+      "category": "catalog",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "ground_truth": "Yes, we offer the Complete Blood Count (CBC) test.",
+      "should_abstain": false
+    },
+    {
+      "id": "cat-04",
+      "query": "I need a liver function test, when can I get it done?",
+      "category": "catalog",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "ground_truth": "We offer the Liver Function Test (LFT). You can book a slot for home collection at your convenience.",
+      "should_abstain": false
+    },
+    {
+      "id": "cat-05",
+      "query": "Can you check my Vitamin D levels?",
+      "category": "catalog",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "ground_truth": "Yes, we offer Vitamin D (25-OH) tests to check your levels.",
+      "should_abstain": false
+    },
+    {
+      "id": "cat-06",
+      "query": "What's included in the full body checkup?",
+      "category": "catalog",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "ground_truth": "A full body checkup typically includes CBC, Lipid Profile, Liver Function, Kidney Function, Thyroid, and blood sugar tests.",
+      "should_abstain": false
+    },
+    {
+      "id": "cat-07",
+      "query": "Do I need to fast before a lipid profile test?",
+      "category": "catalog",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "ground_truth": "Yes, a lipid profile test usually requires 10-12 hours of fasting.",
+      "should_abstain": false
+    },
+    {
+      "id": "cat-08",
+      "query": "How long does it take to get the report for a blood test?",
+      "category": "catalog",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "ground_truth": "Report times vary by test, but most routine blood test reports are delivered within 24 hours.",
+      "should_abstain": false
+    },
+    {
+      "id": "cat-09",
+      "query": "What is the difference between the basic and advanced full body checkup?",
+      "category": "catalog",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "ground_truth": "The advanced checkup includes additional parameters like Vitamin D, Vitamin B12, and advanced cardiac risk markers compared to the basic package.",
+      "should_abstain": false
+    },
+    {
+      "id": "cat-10",
+      "query": "What is the cheapest test you have for diabetes?",
+      "category": "catalog",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "ground_truth": "Fasting Blood Sugar (FBS) is generally our most affordable test for diabetes screening.",
+      "should_abstain": false
+    },
+    {
+      "id": "cat-11",
+      "query": "I am a 45 year old man, what tests should I take?",
+      "category": "catalog",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "ground_truth": "For a 45-year-old man, a comprehensive full body checkup including cardiac markers, diabetes screen, lipid profile, and prostate-specific antigen (PSA) is recommended.",
+      "should_abstain": false
+    },
+    {
+      "id": "cat-12",
+      "query": "Are there any test recommendations for pregnant women?",
+      "category": "catalog",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "ground_truth": "We have antenatal profiles that include CBC, Blood Grouping, Thyroid, VDRL, HIV, and blood sugar tests suitable for pregnant women.",
+      "should_abstain": false
+    },
+    {
+      "id": "cat-13",
+      "query": "Is there a discount on the advanced health package?",
+      "category": "catalog",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "ground_truth": "You can view the discounted price for the advanced health package in our catalog.",
+      "should_abstain": false
+    },
+    {
+      "id": "cat-14",
+      "query": "What type of sample is needed for the CBC test?",
+      "category": "catalog",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "ground_truth": "The CBC test requires a blood sample.",
+      "should_abstain": false
+    },
+    {
+      "id": "cat-15",
+      "query": "Can you search for an HbA1c test for me?",
+      "category": "catalog",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "ground_truth": "Yes, we offer the HbA1c test which measures your average blood sugar over the past 3 months.",
+      "should_abstain": false
+    },
+    {
+      "id": "book-01",
+      "query": "Can you check the status of my booking #12345?",
+      "category": "booking",
+      "expected_source": "booking",
+      "expected_tool": "get_booking_status",
+      "ground_truth": "The response should provide the current status (e.g., confirmed, pending, completed) of booking #12345.",
+      "should_abstain": false
+    },
+    {
+      "id": "book-02",
+      "query": "I want to cancel my booking for tomorrow.",
+      "category": "booking",
+      "expected_source": "booking",
+      "expected_tool": "cancel_booking",
+      "ground_truth": "The response should assist the user in cancelling their upcoming booking.",
+      "should_abstain": false
+    },
+    {
+      "id": "book-03",
+      "query": "Can I reschedule my appointment to next Monday?",
+      "category": "booking",
+      "expected_source": "booking",
+      "expected_tool": "reschedule_booking",
+      "ground_truth": "The response should guide the user to reschedule their appointment to next Monday.",
+      "should_abstain": false
+    },
+    {
+      "id": "book-04",
+      "query": "List all my upcoming bookings.",
+      "category": "booking",
+      "expected_source": "booking",
+      "expected_tool": "list_bookings",
+      "ground_truth": "The response should display a list of all upcoming bookings for the user.",
+      "should_abstain": false
+    },
+    {
+      "id": "book-05",
+      "query": "When will the phlebotomist arrive for my booking today?",
+      "category": "booking",
+      "expected_source": "booking",
+      "expected_tool": "get_booking_status",
+      "ground_truth": "The response should provide the expected arrival time or status of the phlebotomist for today's booking.",
+      "should_abstain": false
+    },
+    {
+      "id": "book-06",
+      "query": "Are there any slots available for tomorrow morning?",
+      "category": "booking",
+      "expected_source": "booking",
+      "expected_tool": "check_slot_availability",
+      "ground_truth": "The response should list the available time slots for home collection tomorrow morning.",
+      "should_abstain": false
+    },
+    {
+      "id": "book-07",
+      "query": "My booking status says pending, what does that mean?",
+      "category": "booking",
+      "expected_source": "booking",
+      "expected_tool": "get_booking_status",
+      "ground_truth": "The response should explain that a pending status means the booking is awaiting confirmation or payment.",
+      "should_abstain": false
+    },
+    {
+      "id": "book-08",
+      "query": "I need to cancel booking number 98765.",
+      "category": "booking",
+      "expected_source": "booking",
+      "expected_tool": "cancel_booking",
+      "ground_truth": "The response should confirm the cancellation process for booking #98765.",
+      "should_abstain": false
+    },
+    {
+      "id": "book-09",
+      "query": "What time is my appointment for the CBC test?",
+      "category": "booking",
+      "expected_source": "booking",
+      "expected_tool": "list_bookings",
+      "ground_truth": "The response should look up the user's bookings and provide the appointment time for their CBC test.",
+      "should_abstain": false
+    },
+    {
+      "id": "book-10",
+      "query": "Can you change my booking time from 9 AM to 11 AM?",
+      "category": "booking",
+      "expected_source": "booking",
+      "expected_tool": "reschedule_booking",
+      "ground_truth": "The response should process the rescheduling of the booking from 9 AM to 11 AM if slots are available.",
+      "should_abstain": false
+    },
+    {
+      "id": "book-11",
+      "query": "Has a phlebotomist been assigned to my booking?",
+      "category": "booking",
+      "expected_source": "booking",
+      "expected_tool": "get_booking_status",
+      "ground_truth": "The response should indicate whether a phlebotomist has been assigned and provide their details if available.",
+      "should_abstain": false
+    },
+    {
+      "id": "book-12",
+      "query": "Show me my past bookings.",
+      "category": "booking",
+      "expected_source": "booking",
+      "expected_tool": "list_bookings",
+      "ground_truth": "The response should display the user's booking history.",
+      "should_abstain": false
+    },
+    {
+      "id": "book-13",
+      "query": "Is 8 AM available for home collection this Saturday?",
+      "category": "booking",
+      "expected_source": "booking",
+      "expected_tool": "check_slot_availability",
+      "ground_truth": "The response should confirm if the 8 AM slot is available for this Saturday.",
+      "should_abstain": false
+    },
+    {
+      "id": "book-14",
+      "query": "I missed my appointment, can I reschedule it?",
+      "category": "booking",
+      "expected_source": "booking",
+      "expected_tool": "reschedule_booking",
+      "ground_truth": "The response should help the user reschedule their missed appointment to a new date and time.",
+      "should_abstain": false
+    },
+    {
+      "id": "book-15",
+      "query": "Why is my booking cancelled?",
+      "category": "booking",
+      "expected_source": "booking",
+      "expected_tool": "get_booking_status",
+      "ground_truth": "The response should provide the reason for the booking's cancellation based on its status.",
+      "should_abstain": false
+    },
+    {
+      "id": "faq-01",
+      "query": "What is your cancellation policy?",
+      "category": "policy",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "ground_truth": "You can cancel your booking up to a certain time before the scheduled slot for a full refund. Please refer to our detailed cancellation policy.",
+      "should_abstain": false
+    },
+    {
+      "id": "faq-02",
+      "query": "If I cancel my booking, how long does the refund take?",
+      "category": "policy",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "ground_truth": "Refunds typically take 5-7 business days to process and reflect in your original payment method.",
+      "should_abstain": false
+    },
+    {
+      "id": "faq-03",
+      "query": "How does the home sample collection process work?",
+      "category": "policy",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "ground_truth": "A trained phlebotomist will arrive at your provided address at the scheduled time to collect your sample securely.",
+      "should_abstain": false
+    },
+    {
+      "id": "faq-04",
+      "query": "What does it mean if my sample needs to be resampled?",
+      "category": "policy",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "ground_truth": "Resampling means the initial sample provided was insufficient or compromised, and we need to collect a new sample to run the tests accurately.",
+      "should_abstain": false
+    },
+    {
+      "id": "faq-05",
+      "query": "What payment methods do you accept?",
+      "category": "policy",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "ground_truth": "We accept credit/debit cards, UPI, net banking, and digital wallets.",
+      "should_abstain": false
+    },
+    {
+      "id": "faq-06",
+      "query": "What are the rules for rescheduling an appointment?",
+      "category": "policy",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "ground_truth": "You can reschedule your appointment at least 2 hours before the scheduled time slot subject to availability.",
+      "should_abstain": false
+    },
+    {
+      "id": "faq-07",
+      "query": "How are the reports delivered to me?",
+      "category": "policy",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "ground_truth": "Reports are sent via email, SMS link, and can also be downloaded directly from your account on our platform.",
+      "should_abstain": false
+    },
+    {
+      "id": "faq-08",
+      "query": "How far in advance can I book a slot?",
+      "category": "policy",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "ground_truth": "You can book a slot up to 7 days in advance.",
+      "should_abstain": false
+    },
+    {
+      "id": "faq-09",
+      "query": "Can I use wallet credits to pay for my test?",
+      "category": "policy",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "ground_truth": "Yes, if you have DocNow wallet credits, you can apply them at checkout to pay for your tests.",
+      "should_abstain": false
+    },
+    {
+      "id": "faq-10",
+      "query": "Can I cancel my test after the phlebotomist arrives at my location?",
+      "category": "policy",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "ground_truth": "If you cancel after the phlebotomist arrives, a visiting charge may be deducted from your refund according to our policy.",
+      "should_abstain": false
+    },
+    {
+      "id": "edge-01",
+      "query": "Can you help me book a flight to Mumbai?",
+      "category": "edge",
+      "expected_source": null,
+      "expected_tool": null,
+      "ground_truth": null,
+      "should_abstain": true
+    },
+    {
+      "id": "edge-02",
+      "query": "What is the weather like in Bangalore today?",
+      "category": "edge",
+      "expected_source": null,
+      "expected_tool": null,
+      "ground_truth": null,
+      "should_abstain": true
+    },
+    {
+      "id": "edge-03",
+      "query": "What is the current stock price of Apple?",
+      "category": "edge",
+      "expected_source": null,
+      "expected_tool": null,
+      "ground_truth": null,
+      "should_abstain": true
+    },
+    {
+      "id": "edge-04",
+      "query": "Can you write me a prescription for antibiotics?",
+      "category": "edge",
+      "expected_source": null,
+      "expected_tool": null,
+      "ground_truth": null,
+      "should_abstain": true
+    },
+    {
+      "id": "edge-05",
+      "query": "Write a poem about blood tests.",
+      "category": "edge",
+      "expected_source": null,
+      "expected_tool": null,
+      "ground_truth": null,
+      "should_abstain": true
+    },
+    {
+      "id": "edge-06",
+      "query": "What are some good restaurants near me?",
+      "category": "edge",
+      "expected_source": null,
+      "expected_tool": null,
+      "ground_truth": null,
+      "should_abstain": true
+    },
+    {
+      "id": "edge-07",
+      "query": "Can you help me solve this algebra homework problem?",
+      "category": "edge",
+      "expected_source": null,
+      "expected_tool": null,
+      "ground_truth": null,
+      "should_abstain": true
+    },
+    {
+      "id": "edge-08",
+      "query": "What do you think about the current political situation?",
+      "category": "edge",
+      "expected_source": null,
+      "expected_tool": null,
+      "ground_truth": null,
+      "should_abstain": true
+    },
+    {
+      "id": "edge-09",
+      "query": "Do you offer plumbing services as well?",
+      "category": "edge",
+      "expected_source": null,
+      "expected_tool": null,
+      "ground_truth": null,
+      "should_abstain": true
+    },
+    {
+      "id": "edge-10",
+      "query": "I'm feeling very sad today, what should I do?",
+      "category": "edge",
+      "expected_source": null,
+      "expected_tool": null,
+      "ground_truth": null,
+      "should_abstain": true
+    }
+  ]
+}

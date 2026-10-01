@@ -81,6 +81,27 @@ services:
       - server
     command: npm run dev -- --hostname 0.0.0.0
 
+  ai-support:
+    build:
+      context: ./ai-support
+    environment:
+      SUPPORT_DATABASE_URL: postgresql://docnow:docnow@postgres:5432/docnow
+      SUPPORT_EXPRESS_API_URL: http://server:5000/api
+      SUPPORT_GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      SUPPORT_JWT_SECRET: ${JWT_SECRET}
+      SUPPORT_LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      SUPPORT_LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      SUPPORT_LANGFUSE_BASE_URL: ${LANGFUSE_BASE_URL:-https://cloud.langfuse.com}
+      SUPPORT_ENABLED: ${SUPPORT_ENABLED:-true}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      server:
+        condition: service_started
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
 volumes:
   postgres_data:
   redis_data:
