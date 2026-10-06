@@ -32,6 +32,27 @@ async function view(db: PrismaClient, id: string) {
     return { status: c.status, refundPaise: refund?.amountPaise ?? 0, refundStatus: refund?.status ?? null };
 }
 
+/** The refund for cancelling now, from the rules copied at booking and the server clock. */
+export function estimateRefund(c: { startsAt: Date; policySnapshot: unknown }, paidPaise: number, now: Date) {
+    const rules = c.policySnapshot as Rules;
+    const hoursBefore = (c.startsAt.getTime() - now.getTime()) / 3_600_000;
+    const percent = pickRefundPercent(rules.refundTiers, hoursBefore);
+    return { percent, refundPaise: refundForPercent(paidPaise, percent) };
+}
+
+/** What cancelling would refund right now. The real cancel uses the same estimate. */
+export async function cancelPreview(userId: string, consultationId: string, deps: CancelDeps = {}) {
+    const db = deps.db ?? prisma;
+    const now = (deps.now ?? (() => new Date()))();
+    const c = await db.consultation.findFirst({ where: { id: consultationId, userId }, include: { payments: true } });
+    if (!c) throw new DoctorError(404, 'Not found');
+    if (c.status === 'PENDING_PAYMENT') return { percent: 0, refundPaise: 0, paidPaise: 0 };
+    if (!(CANCELLABLE as readonly string[]).includes(c.status)) throw new DoctorError(409, 'This consultation can no longer be cancelled');
+    const payment = c.payments.find((p) => p.razorpayPaymentId && p.razorpayPaymentId === c.confirmingPaymentId);
+    if (!payment) throw new DoctorError(409, 'No confirmed payment found for this consultation');
+    return { ...estimateRefund(c, payment.amountPaise, now), paidPaise: payment.amountPaise };
+}
+
 export async function cancelConsultation(consultationId: string, actor: CancelActor, rawReason: string | undefined, deps: CancelDeps = {}) {
     const db = deps.db ?? prisma;
     const now = (deps.now ?? (() => new Date()))();
@@ -63,9 +84,7 @@ export async function cancelConsultation(consultationId: string, actor: CancelAc
     const payment = c.payments.find((p) => p.razorpayPaymentId && p.razorpayPaymentId === c.confirmingPaymentId);
     if (!payment) throw new DoctorError(409, 'No confirmed payment found for this consultation');
 
-    const rules = c.policySnapshot as unknown as Rules;
-    const hoursBefore = (c.startsAt.getTime() - now.getTime()) / 3_600_000;
-    const refundPaise = refundForPercent(payment.amountPaise, pickRefundPercent(rules.refundTiers, hoursBefore));
+    const { refundPaise } = estimateRefund(c, payment.amountPaise, now);
 
     const record = await db.$transaction(async (tx) => {
         const res = await tx.consultation.updateMany({

@@ -34,6 +34,7 @@ import invoiceRoutes from './routes/invoices';
 import healthRoutes from './routes/health';
 import heroSlidesRoutes from './routes/heroSlides';
 import { campAdminRoutes, campPublicRoutes } from './modules/camps';
+import { buildCorsOptions } from './utils/corsOptions';
 import { consultPublicRoutes, consultPatientRoutes, doctorRoutes, consultAdminRoutes } from './modules/consultations';
 
 import { registerBookingStrategy } from './services/bookingStrategyRegistry';
@@ -69,16 +70,7 @@ function parseAllowedOrigins() {
 }
 
 const allowedOrigins = parseAllowedOrigins();
-app.use(cors({
-    origin(origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-
-        return callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-}));
+app.use(cors(buildCorsOptions(allowedOrigins)));
 
 app.use(requestContextMiddleware);
 app.use(cookieParser());

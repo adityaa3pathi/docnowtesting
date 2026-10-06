@@ -149,11 +149,42 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
     return response(consultation, orderId);
 }
 
+const viewInclude = {
+    doctor: { select: { displayName: true, specialty: { select: { name: true } } } },
+    patient: { select: { name: true } },
+    slot: { select: { endsAt: true } },
+    payments: { orderBy: { createdAt: 'desc' as const } },
+    refunds: { orderBy: { createdAt: 'desc' as const } },
+} satisfies Prisma.ConsultationInclude;
+
+type BookingRow = Prisma.ConsultationGetPayload<{ include: typeof viewInclude }>;
+
+/** What the patient screens need: the booking, who and when, and where payment and refund stand. */
+function toView(c: BookingRow) {
+    const live = c.refunds.filter((r) => !(r.status === 'FAILED' && r.failureConfirmed));
+    return {
+        ...response(c, c.payments[0]?.razorpayOrderId),
+        startsAt: c.startsAt,
+        endsAt: c.slot.endsAt,
+        doctorId: c.doctorId,
+        doctorName: c.doctor.displayName,
+        specialty: c.doctor.specialty.name,
+        patientId: c.patientId,
+        patientName: c.patient.name,
+        paymentCaptured: c.payments.some((p) => p.status === 'CAPTURED'),
+        underStaffCheck: c.reviewReason !== null,
+        refundPaise: live.reduce((sum, r) => sum + r.amountPaise, 0),
+        refundStatus: c.refunds[0]?.status ?? null,
+    };
+}
+
 export async function getBooking(userId: string, consultationId: string, db: PrismaClient = prisma) {
-    const c = await db.consultation.findFirst({
-        where: { id: consultationId, userId },
-        include: { payments: { orderBy: { createdAt: 'desc' }, take: 1 } },
-    });
+    const c = await db.consultation.findFirst({ where: { id: consultationId, userId }, include: viewInclude });
     if (!c) throw new DoctorError(404, 'Not found');
-    return { ...response(c, c.payments[0]?.razorpayOrderId), startsAt: c.startsAt, doctorId: c.doctorId, patientId: c.patientId };
+    return toView(c);
+}
+
+export async function listBookings(userId: string, db: PrismaClient = prisma, limit = 50) {
+    const rows = await db.consultation.findMany({ where: { userId }, include: viewInclude, orderBy: { createdAt: 'desc' }, take: limit });
+    return rows.map(toView);
 }

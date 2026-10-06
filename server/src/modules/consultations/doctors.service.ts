@@ -42,6 +42,25 @@ export async function registerDoctor(userId: string, data: {
     }
 }
 
+/** A rejected doctor fixes the application and sends it back for review. */
+export async function resubmitDoctor(userId: string, data: {
+    displayName: string; specialtyId: string; qualification: string; registrationNumber: string;
+    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; photoUrl?: string;
+}) {
+    const current = await prisma.doctorProfile.findUnique({ where: { userId } });
+    if (!current) throw new DoctorError(404, 'No doctor profile');
+    if (current.status !== 'REJECTED') throw new DoctorError(409, 'Only a rejected application can be resubmitted');
+    await assertActiveSpecialty(data.specialtyId);
+    try {
+        return await prisma.doctorProfile.update({
+            where: { id: current.id },
+            data: { ...data, status: 'PENDING', statusReason: null, reviewedById: null, reviewedAt: null },
+        });
+    } catch (e) {
+        mapUniqueError(e);
+    }
+}
+
 export async function adminCreateDoctor(adminId: string, data: {
     mobile: string; displayName: string; specialtyId: string; qualification: string; registrationNumber: string;
     registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; photoUrl?: string;

@@ -7,8 +7,8 @@ import { z } from 'zod';
 import { authMiddleware, AuthRequest } from '../../middleware/auth';
 import { consultCsrfGuard } from '../../middleware/consultCsrf';
 import { rateLimiter } from '../../middleware/rateLimiter';
-import { createBooking, getBooking } from './consultations.booking';
-import { cancelConsultation } from './consultations.cancellation';
+import { createBooking, getBooking, listBookings } from './consultations.booking';
+import { cancelConsultation, cancelPreview } from './consultations.cancellation';
 import { verifyAndConfirm } from './consultations.payments';
 import { sendConsultError } from './consultations.http';
 
@@ -28,6 +28,20 @@ consultPatientRoutes.post('/bookings', ...patient, rateLimiter(5, 60, 'consult_b
         const parse = bookingSchema.safeParse(req.body);
         if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
         res.status(201).json(await createBooking({ userId: req.userId!, ...parse.data }));
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.get('/bookings', ...patient, async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await listBookings(req.userId!));
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.get('/bookings/:id/cancel-preview', ...patient, async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        res.json(await cancelPreview(req.userId!, id.data));
     } catch (e) { fail(res, e); }
 });
 

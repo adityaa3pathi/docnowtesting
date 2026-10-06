@@ -11,6 +11,8 @@ import { z } from 'zod';
 import { prisma } from '../../db';
 import { authMiddleware, AuthRequest } from '../../middleware/auth';
 import { requireDoctor } from '../../middleware/requireDoctor';
+import { consultCsrfGuard } from '../../middleware/consultCsrf';
+import { getActivePolicy } from './consultations.policy.service';
 import { requireSuperAdmin } from '../../middleware/adminAuth';
 import { rateLimiter } from '../../middleware/rateLimiter';
 import { getClientIP } from '../../utils/adminHelpers';
@@ -22,7 +24,7 @@ import { DoctorError } from './doctors.status';
 import { policyRoutes } from './consultations.policy.routes';
 import { reviewRoutes } from './consultations.review.routes';
 import {
-    addLeave, adminCreateDoctor, registerDoctor, removeLeave, reviewDoctor, setAvailability, setSlotBlocked,
+    addLeave, adminCreateDoctor, registerDoctor, removeLeave, resubmitDoctor, reviewDoctor, setAvailability, setSlotBlocked,
 } from './doctors.service';
 
 function fail(res: Response, e: unknown, label: string) {
@@ -89,8 +91,11 @@ consultPublicRoutes.get('/doctors/:id', async (req, res) => {
 
 consultPublicRoutes.get('/doctors/:id/slots', async (req, res) => {
     try {
+        // Slots inside the lead time cannot be booked, so they are not offered.
+        const { rules } = await getActivePolicy();
+        const earliest = new Date(Date.now() + rules.minLeadMinutes * 60_000);
         const slots = await prisma.slot.findMany({
-            where: { doctorId: req.params.id, status: 'AVAILABLE', startsAt: { gt: new Date() }, doctor: { status: 'APPROVED' } },
+            where: { doctorId: req.params.id, status: 'AVAILABLE', startsAt: { gt: earliest }, doctor: { status: 'APPROVED' } },
             select: { id: true, startsAt: true, endsAt: true },
             orderBy: { startsAt: 'asc' },
         });
@@ -108,6 +113,14 @@ doctorRoutes.post('/register', authMiddleware, rateLimiter(5, 3600, 'doctor_regi
         if (!parse.success) return bad(res, parse);
         res.status(201).json(await registerDoctor(req.userId!, parse.data));
     } catch (e) { fail(res, e, 'register'); }
+});
+
+doctorRoutes.post('/resubmit', authMiddleware, consultCsrfGuard, rateLimiter(5, 3600, 'doctor_resubmit'), async (req: AuthRequest, res: Response) => {
+    try {
+        const parse = registerDoctorSchema.safeParse(req.body);
+        if (!parse.success) return bad(res, parse);
+        res.json(await resubmitDoctor(req.userId!, parse.data));
+    } catch (e) { fail(res, e, 'resubmit'); }
 });
 
 // Open to pending and rejected doctors so they can see their application status.
