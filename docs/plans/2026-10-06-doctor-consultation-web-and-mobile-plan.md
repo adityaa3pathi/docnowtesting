@@ -190,6 +190,12 @@ Scope doc Phase 5.
 - Offline-friendly lists (cache last prescriptions and reports).
 - Hindi and English with in-app language switch.
 
+**Libraries added for in-app lab booking (Phase 6, agreed 2026-10-06)**
+- Report PDFs: `expo-file-system` + `expo-sharing`. Preview in the app, save or share to WhatsApp. The server gives a short-lived signed S3 link.
+- Address and pincode: manual entry plus a server serviceability check. `expo-location` adds an optional "use my location" button.
+- Tests: keep Vitest for pure logic. Add `jest-expo` + `@testing-library/react-native` when screen tests start. Mocks needed for Reanimated and Expo modules.
+- Push: `expo-notifications` for phlebotomist assigned or on the way, sample collected, report ready. Needs server work: store device tokens and send pushes. Android needs Firebase. Dev build only, not Expo Go. WhatsApp messages stay too.
+
 **Look and feel:** same tokens as web (purple `#4b2192`, Inter, rounded cards). Keep a shared token file.
 
 ## 8. Risks and open questions
