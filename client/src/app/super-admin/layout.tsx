@@ -31,6 +31,10 @@ import {
     Package,
     Tent,
     Sliders,
+    Stethoscope,
+    Tags,
+    Scale,
+    ClipboardCheck,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,6 +60,10 @@ const navItems = [
     { id: 'settings', label: 'System Settings', icon: Settings, href: '/super-admin/settings' },
     { id: 'camps', label: 'Health Camps', icon: Tent, href: '/super-admin/camps' },
     { id: 'failed-orders', label: 'Failed Orders', icon: AlertTriangle, href: '/super-admin/failed-orders' },
+    { id: 'consult-doctors', label: 'Consult Doctors', icon: Stethoscope, href: '/super-admin/consult-doctors' },
+    { id: 'consult-specialties', label: 'Specialties', icon: Tags, href: '/super-admin/consult-specialties' },
+    { id: 'consult-rules', label: 'Consult Rules', icon: Scale, href: '/super-admin/consult-rules' },
+    { id: 'consult-review', label: 'Consult Review', icon: ClipboardCheck, href: '/super-admin/consult-review' },
     { id: 'audit', label: 'Audit Logs', icon: FileText, href: '/super-admin/audit-logs' },
 ];
 
