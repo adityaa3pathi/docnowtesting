@@ -3,8 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
     ShoppingCart, User, Users, Menu, X, MapPin, Search,
-    Navigation, Loader2, Shield, Phone, LogOut, Delete, Building2, Tent,
-} from 'lucide-react';
+    Navigation, Loader2, Shield, Phone, LogOut, Delete, Building2, Tent, Stethoscope } from 'lucide-react';
 import { Button, Input } from './ui';
 import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
@@ -46,6 +45,7 @@ const callbackCities = Array.from(new Set([...metroCities.map((city) => city.nam
 
 // Desktop nav links (3 only — "Get a Callback" is rendered as a button separately)
 const desktopNavLinks = [
+    { label: 'Consult a Doctor', href: '/consult' },
     { label: 'Health Camps', href: '/camps' },
     { label: 'About Us', href: '/about' },
 ];
@@ -580,6 +580,14 @@ export function Header() {
                         >
                             <Search className="w-4 h-4 text-gray-400" />
                             Packages
+                        </Link>
+                        <Link
+                            href="/consult"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname.startsWith('/consult') ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
+                        >
+                            <Stethoscope className="w-4 h-4 text-gray-400" />
+                            Consult a Doctor
                         </Link>
                         <Link
                             href="/camps"
