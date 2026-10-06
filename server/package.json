@@ -10,6 +10,7 @@
     "audit:high": "npm audit --audit-level=high",
     "test": "vitest run",
     "test:watch": "vitest",
+    "seed:doctors": "ts-node prisma/seed-doctors.ts",
     "start": "node dist/index.js",
     "test:legacy": "echo \"Error: no test specified\" && exit 1"
   },
@@ -17,8 +18,7 @@
   "author": "",
   "license": "ISC",
   "prisma": {
-    "seed": "ts-node prisma/seed.ts",
-    "seed:doctors": "ts-node prisma/seed-doctors.ts"
+    "seed": "ts-node prisma/seed.ts"
   },
   "type": "commonjs",
   "dependencies": {

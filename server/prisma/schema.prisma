@@ -42,16 +42,16 @@ enum RewardStatus {
 }
 
 enum PaymentStatus {
-  INITIATED // Order created, awaiting payment
-  AUTHORIZED // Payment verified, partner booking pending
-  PAID // Zero-amount: fully covered by wallet/promo
-  PROCESSING // Claimed by finalization service/reconciler
-  CONFIRMED // Partner booking success & payment success
-  PARTNER_FAILED // Payment OK, partner API failed
-  FAILED // Payment failed or signature invalid
-  CANCELLED // User cancelled or system rollback
-  EXPIRED // Abandoned: no payment within TTL
-  REFUNDED // Max partner retries exhausted, money returned
+  INITIATED       // Order created, awaiting payment
+  AUTHORIZED      // Payment verified, partner booking pending
+  PAID            // Zero-amount: fully covered by wallet/promo
+  PROCESSING      // Claimed by finalization service/reconciler
+  CONFIRMED       // Partner booking success & payment success
+  PARTNER_FAILED  // Payment OK, partner API failed
+  FAILED          // Payment failed or signature invalid
+  CANCELLED       // User cancelled or system rollback
+  EXPIRED         // Abandoned: no payment within TTL
+  REFUNDED        // Max partner retries exhausted, money returned
 }
 
 enum ManagerOrderStatus {
@@ -83,42 +83,42 @@ enum CorporateInquiryStatus {
 // ============================================
 
 model User {
-  id         String    @id @default(uuid())
-  name       String?
-  email      String?   @unique
-  mobile     String    @unique
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  isVerified Boolean   @default(false)
-  gender     String?
-  age        Int?
-  dob        DateTime?
-  password   String?
-
+  id            String     @id @default(uuid())
+  name          String?
+  email         String?    @unique
+  mobile        String     @unique
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  isVerified    Boolean    @default(false)
+  gender        String?
+  age           Int?
+  dob           DateTime?
+  password      String?
+  
   // New fields for Admin & Referral
-  role         Role       @default(USER)
-  status       UserStatus @default(ACTIVE)
-  referralCode String?    @unique
-  referredById String?
-
+  role          Role       @default(USER)
+  status        UserStatus @default(ACTIVE)
+  referralCode  String?    @unique
+  referredById  String?
+  
   // Relations
-  addresses              Address[]
-  bookings               Booking[]
-  patients               Patient[]
-  cart                   Cart?
-  wallet                 Wallet?
-  referredBy             User?             @relation("Referrals", fields: [referredById], references: [id])
-  referrals              User[]            @relation("Referrals")
-  referralRewardsEarned  ReferralReward[]  @relation("ReferrerRewards")
-  auditLogs              AdminAuditLog[]
-  promoRedemptions       PromoRedemption[]
-  managerOrders          ManagerOrder[]    @relation("ManagerOrders")
-  customerOrders         ManagerOrder[]    @relation("CustomerOrders")
-  managerCreatedBookings Booking[]         @relation("ManagerCreatedBookings")
+  addresses     Address[]
+  bookings      Booking[]
+  patients      Patient[]
+  cart          Cart?
+  wallet        Wallet?
+  referredBy    User?      @relation("Referrals", fields: [referredById], references: [id])
+  referrals     User[]     @relation("Referrals")
+  referralRewardsEarned ReferralReward[] @relation("ReferrerRewards")
+  auditLogs     AdminAuditLog[]
+  promoRedemptions PromoRedemption[]
+  managerOrders           ManagerOrder[] @relation("ManagerOrders")
+  customerOrders          ManagerOrder[] @relation("CustomerOrders")
+  managerCreatedBookings  Booking[]      @relation("ManagerCreatedBookings")
 
   // Session management
-  tokenVersion Int       @default(0) // Increment to force-logout all sessions
-  sessions     Session[]
+  tokenVersion  Int        @default(0)   // Increment to force-logout all sessions
+  sessions      Session[]
 
   // AI Support Agent
   supportConversations SupportConversation[]
@@ -130,19 +130,19 @@ model User {
 model Session {
   id               String    @id @default(uuid())
   userId           String
-  refreshTokenHash String // SHA-256 hash of the refresh token
-  familyId         String // Groups tokens in a rotation chain
+  refreshTokenHash String              // SHA-256 hash of the refresh token
+  familyId         String              // Groups tokens in a rotation chain
   expiresAt        DateTime
-  revokedAt        DateTime? // Non-null = revoked
-  replacedById     String?   @unique // Points to next token in rotation chain
+  revokedAt        DateTime?           // Non-null = revoked
+  replacedById     String?   @unique   // Points to next token in rotation chain
   createdAt        DateTime  @default(now())
   ipAddress        String?
   userAgent        String?
   clientType       String    @default("web") // "web" or "mobile"
 
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  replacedBy      Session? @relation("TokenRotation", fields: [replacedById], references: [id])
-  replacesSession Session? @relation("TokenRotation")
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replacedBy       Session?  @relation("TokenRotation", fields: [replacedById], references: [id])
+  replacesSession  Session?  @relation("TokenRotation")
 
   @@index([userId, revokedAt])
   @@index([familyId])
@@ -189,11 +189,11 @@ model Booking {
   id                String        @id @default(uuid())
   userId            String
   partnerBookingId  String?
-  partnerStatus     String? // Raw Healthians BS code (e.g. "BS008")
+  partnerStatus     String?           // Raw Healthians BS code (e.g. "BS008")
   status            String
   slotDate          String
   slotTime          String
-  partnerSlotId     String? // Actual Healthians slot stm_id
+  partnerSlotId     String?       // Actual Healthians slot stm_id
   totalAmount       Float
   paymentStatus     PaymentStatus @default(INITIATED)
   razorpayOrderId   String?       @unique
@@ -203,53 +203,53 @@ model Booking {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
   addressId         String?
-  billingName       String? // Optional billing name for invoice
-  billingGender     String? // Gender of billing person (for Healthians)
-  idempotencyKey    String?       @unique // Prevent double-initiate
+  billingName       String?           // Optional billing name for invoice
+  billingGender     String?           // Gender of billing person (for Healthians)
+  idempotencyKey    String?       @unique  // Prevent double-initiate
   address           Address?      @relation(fields: [addressId], references: [id])
 
   // Camp support
-  campId String?
-  camp   Camp?   @relation(fields: [campId], references: [id])
+  campId            String?
+  camp              Camp?         @relation(fields: [campId], references: [id])
 
-  createdByManagerId String? // Reference to manager who created this
-  managerOrder       ManagerOrder? // One-to-one relation
-  creatorUser        User?         @relation("ManagerCreatedBookings", fields: [createdByManagerId], references: [id])
+  createdByManagerId   String?       // Reference to manager who created this
+  managerOrder         ManagerOrder? // One-to-one relation
+  creatorUser          User?         @relation("ManagerCreatedBookings", fields: [createdByManagerId], references: [id])
 
   // Leased atomic claim fields
-  processingAttemptId String? // UUID lease token — set during PROCESSING claim
-  processingStartedAt DateTime? // When PROCESSING was claimed — used for stale lease detection
+  processingAttemptId  String?       // UUID lease token — set during PROCESSING claim
+  processingStartedAt  DateTime?     // When PROCESSING was claimed — used for stale lease detection
 
   // Address snapshot — immutable copy of address at booking time
-  addressLine    String?
-  addressCity    String?
-  addressPincode String?
-  addressLat     String?
-  addressLong    String?
+  addressLine       String?
+  addressCity       String?
+  addressPincode    String?
+  addressLat        String?
+  addressLong       String?
 
-  user            User          @relation(fields: [userId], references: [id])
-  items           BookingItem[]
-  reports         Report[]
-  rescheduledToId String?       @unique
-  partnerRetry    PartnerRetry?
+  user              User          @relation(fields: [userId], references: [id])
+  items             BookingItem[]
+  reports           Report[]
+  rescheduledToId   String?       @unique
+  partnerRetry      PartnerRetry?
 
   // Phlebo tracking (from Healthians webhook)
   phleboName        String?
-  phleboPhone       String? // Masked number
+  phleboPhone       String?           // Masked number
   phleboTrackingUrl String?
 
   // Price Breakdown
-  discountAmount Float @default(0)
-  walletAmount   Float @default(0)
-  finalAmount    Float @default(0)
+  discountAmount    Float         @default(0)
+  walletAmount      Float         @default(0)
+  finalAmount       Float         @default(0)
+  
+  promoCodeId       String?
+  promoCode         PromoCode?    @relation(fields: [promoCodeId], references: [id])
+  redemption        PromoRedemption?
 
-  promoCodeId String?
-  promoCode   PromoCode?       @relation(fields: [promoCodeId], references: [id])
-  redemption  PromoRedemption?
-
-  @@index([paymentStatus, updatedAt]) // Reconciler queries
-  @@index([userId, paymentStatus]) // Active booking check
-  @@index([partnerStatus]) // Webhook/reconciler/debug queries
+  @@index([paymentStatus, updatedAt])     // Reconciler queries
+  @@index([userId, paymentStatus])        // Active booking check
+  @@index([partnerStatus])               // Webhook/reconciler/debug queries
 }
 
 model BookingItem {
@@ -267,15 +267,15 @@ model BookingItem {
 model Report {
   id               String    @id @default(uuid())
   bookingId        String
-  vendorCustomerId String    @default("") // Healthians vendor_customer_id → maps to patient
-  sourceUrl        String // Original signed URL (expires, for debug/retry)
-  storageKey       String? // Canonical: "reports/{bookingId}/{id}.pdf"
+  vendorCustomerId String    @default("")      // Healthians vendor_customer_id → maps to patient
+  sourceUrl        String                      // Original signed URL (expires, for debug/retry)
+  storageKey       String?                     // Canonical: "reports/{bookingId}/{id}.pdf"
   fetchStatus      String    @default("PENDING") // PENDING | STORED | FAILED
-  fetchError       String? // Last error if download failed
-  fetchedAt        DateTime? // When we successfully stored the file
-  isFullReport     Boolean   @default(false) // Healthians full_report flag
-  verifiedAt       DateTime? // From Healthians verified_at
-  fileSize         Int? // PDF file size in bytes
+  fetchError       String?                     // Last error if download failed
+  fetchedAt        DateTime?                   // When we successfully stored the file
+  isFullReport     Boolean   @default(false)   // Healthians full_report flag
+  verifiedAt       DateTime?                   // From Healthians verified_at
+  fileSize         Int?                        // PDF file size in bytes
   generatedAt      DateTime  @default(now())
   booking          Booking   @relation(fields: [bookingId], references: [id])
 
@@ -357,19 +357,19 @@ model WalletLedger {
   id            String     @id @default(uuid())
   walletId      String
   type          LedgerType
-  amount        Float // Actual signed amount (+/-)
-  balanceAfter  Float // Running balance after this transaction
+  amount        Float      // Actual signed amount (+/-)
+  balanceAfter  Float      // Running balance after this transaction
   description   String
-  referenceType String? // REFERRAL | TOPUP | REFUND | ORDER | ADMIN
-  referenceId   String? // ID of related entity
+  referenceType String?    // REFERRAL | TOPUP | REFUND | ORDER | ADMIN
+  referenceId   String?    // ID of related entity
   createdAt     DateTime   @default(now())
-  createdById   String? // Admin userId for adjustments
+  createdById   String?    // Admin userId for adjustments
   ipAddress     String?
-
-  wallet Wallet @relation(fields: [walletId], references: [id])
-
-  @@unique([referenceType, referenceId]) // Prevent double-refund at DB level
+  
+  wallet        Wallet     @relation(fields: [walletId], references: [id])
+  
   @@index([walletId, createdAt])
+  @@unique([referenceType, referenceId]) // Prevent double-refund at DB level
 }
 
 // ============================================
@@ -383,13 +383,13 @@ model ReferralReward {
   rewardType      RewardType
   amount          Float
   status          RewardStatus @default(PENDING)
-  triggerEvent    String // SIGNUP | FIRST_ORDER_COMPLETE
-  triggerEntityId String? // bookingId for order completion
+  triggerEvent    String       // SIGNUP | FIRST_ORDER_COMPLETE
+  triggerEntityId String?      // bookingId for order completion
   processedAt     DateTime?
   createdAt       DateTime     @default(now())
-
-  referrer User @relation("ReferrerRewards", fields: [referrerId], references: [id])
-
+  
+  referrer        User         @relation("ReferrerRewards", fields: [referrerId], references: [id])
+  
   @@unique([referrerId, refereeId, rewardType])
   @@index([refereeId, rewardType])
 }
@@ -403,7 +403,7 @@ model SystemConfig {
   key       String   @unique
   value     String
   updatedAt DateTime @updatedAt
-  updatedBy String? // Admin userId who last updated
+  updatedBy String?  // Admin userId who last updated
 }
 
 // ============================================
@@ -414,17 +414,17 @@ model AdminAuditLog {
   id            String   @id @default(uuid())
   adminId       String
   adminName     String
-  action        String // WALLET_CREDIT | WALLET_DEBIT | CONFIG_UPDATE | USER_BLOCK etc.
-  entity        String // User | Wallet | Config | Order
+  action        String   // WALLET_CREDIT | WALLET_DEBIT | CONFIG_UPDATE | USER_BLOCK etc.
+  entity        String   // User | Wallet | Config | Order
   targetId      String?
   oldValue      Json?
   newValue      Json?
   ipAddress     String?
   isDestructive Boolean  @default(false)
   createdAt     DateTime @default(now())
-
-  admin User @relation(fields: [adminId], references: [id])
-
+  
+  admin         User     @relation(fields: [adminId], references: [id])
+  
   @@index([adminId, createdAt])
   @@index([entity, targetId])
 }
@@ -434,10 +434,10 @@ model AdminAuditLog {
 // ============================================
 
 model WebhookEvent {
-  eventId   String   @id // Razorpay event ID - unique by design
+  eventId   String   @id  // Razorpay event ID - unique by design
   processed Boolean  @default(true)
   createdAt DateTime @default(now())
-
+  
   @@index([createdAt])
 }
 
@@ -446,18 +446,18 @@ model WebhookEvent {
 // ============================================
 
 model WebhookEventV2 {
-  id          String   @id @default(uuid())
-  payloadHash String   @unique // SHA-256 of raw body
-  source      String // "razorpay" | "healthians"
-  eventType   String? // e.g. "status_updated", "report_uploaded"
-  bookingId   String? // Partner booking ID for cross-ref
-  rawPayload  Json? // Full payload for replay/debugging
-  processed   Boolean  @default(false) // false until business logic completes
-  createdAt   DateTime @default(now())
+  id           String   @id @default(uuid())
+  payloadHash  String   @unique              // SHA-256 of raw body
+  source       String                        // "razorpay" | "healthians"
+  eventType    String?                       // e.g. "status_updated", "report_uploaded"
+  bookingId    String?                       // Partner booking ID for cross-ref
+  rawPayload   Json?                         // Full payload for replay/debugging
+  processed    Boolean  @default(false)      // false until business logic completes
+  createdAt    DateTime @default(now())
 
   @@index([source, createdAt])
   @@index([bookingId])
-  @@index([processed, createdAt]) // Dead-letter detection
+  @@index([processed, createdAt])            // Dead-letter detection
 }
 
 // ============================================
@@ -465,39 +465,39 @@ model WebhookEventV2 {
 // ============================================
 
 model PromoCode {
-  id            String       @id @default(uuid())
-  code          String       @unique // Case-insensitive storage (uppercase)
-  description   String?
-  discountType  DiscountType
-  discountValue Float
-  maxDiscount   Float? // Cap for percentage discount
-  minOrderValue Float        @default(0)
-
-  maxRedemptions Int? // Global limit (null = unlimited)
-  maxPerUser     Int  @default(1) // Per-user limit (how many times each user can redeem)
-  redeemedCount  Int  @default(0) // Atomic counter
-
-  startsAt  DateTime  @default(now())
-  expiresAt DateTime?
-  isActive  Boolean   @default(true)
-
-  redemptions PromoRedemption[]
-  bookings    Booking[]
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id              String   @id @default(uuid())
+  code            String   @unique // Case-insensitive storage (uppercase)
+  description     String?
+  discountType    DiscountType
+  discountValue   Float
+  maxDiscount     Float?   // Cap for percentage discount
+  minOrderValue   Float    @default(0)
+  
+  maxRedemptions  Int?     // Global limit (null = unlimited)
+  maxPerUser      Int      @default(1) // Per-user limit (how many times each user can redeem)
+  redeemedCount   Int      @default(0) // Atomic counter
+  
+  startsAt        DateTime @default(now())
+  expiresAt       DateTime?
+  isActive        Boolean  @default(true)
+  
+  redemptions     PromoRedemption[]
+  bookings        Booking[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model PromoRedemption {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   userId      String
   promoCodeId String
-  bookingId   String?  @unique // Optional if redemption happens before booking creation, but usually locked to booking
-  redeemedAt  DateTime @default(now())
-
-  user      User      @relation(fields: [userId], references: [id])
-  promoCode PromoCode @relation(fields: [promoCodeId], references: [id])
-  booking   Booking?  @relation(fields: [bookingId], references: [id])
-
+  bookingId   String?   @unique // Optional if redemption happens before booking creation, but usually locked to booking
+  redeemedAt  DateTime  @default(now())
+  
+  user        User      @relation(fields: [userId], references: [id])
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id])
+  booking     Booking?  @relation(fields: [bookingId], references: [id])
+  
   @@index([userId, promoCodeId])
 }
 
@@ -534,40 +534,40 @@ enum CatalogItemType {
 }
 
 model CatalogItem {
-  id          String          @id @default(uuid())
-  partnerCode String          @unique // Healthians deal_id — canonical key
-  name        String
-  searchName  String          @default("") // Lowercase, stripped of hyphens/spaces/special chars for fuzzy search
-  type        CatalogItemType @default(TEST)
-
+  id               String             @id @default(uuid())
+  partnerCode      String             @unique   // Healthians deal_id — canonical key
+  name             String
+  searchName       String             @default("")  // Lowercase, stripped of hyphens/spaces/special chars for fuzzy search
+  type             CatalogItemType    @default(TEST)
+  
   // Pricing: manager-set
-  partnerPrice    Float // Healthians base price (reference only)
-  displayPrice    Float // Manager price shown to users
-  discountedPrice Float? // Optional sale price
-
+  partnerPrice     Float              // Healthians base price (reference only)
+  displayPrice     Float              // Manager price shown to users
+  discountedPrice  Float?             // Optional sale price
+  
   // Metadata
-  description        String?
-  parameters         String? // e.g. "Includes 60+ parameters"
-  sampleType         String? // e.g. "Blood"
-  reportTime         String? // e.g. "24-48 hours"
-  partnerData        Json? // Raw Healthians response for reference
-  detailsData        Json? // Cached normalized Healthians detail metadata for cards/detail pages
-  detailsFetchedAt   DateTime?
+  description      String?
+  parameters       String?            // e.g. "Includes 60+ parameters"
+  sampleType       String?            // e.g. "Blood"
+  reportTime       String?            // e.g. "24-48 hours"
+  partnerData      Json?              // Raw Healthians response for reference
+  detailsData      Json?              // Cached normalized Healthians detail metadata for cards/detail pages
+  detailsFetchedAt DateTime?
   detailsFetchStatus String?
   detailsFetchError  String?
-
-  isEnabled Boolean @default(true)
-
+  
+  isEnabled        Boolean            @default(true)
+  
   // Landing page featured controls
-  isFeatured    Boolean @default(false)
-  featuredOrder Int? // Lower = appears first on landing page
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  categories CatalogItemCategory[]
-  campItems  CampCatalogItem[]
-
+  isFeatured       Boolean            @default(false)
+  featuredOrder    Int?               // Lower = appears first on landing page
+  
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  
+  categories       CatalogItemCategory[]
+  campItems        CampCatalogItem[]
+  
   @@index([isEnabled])
   @@index([type, isEnabled])
   @@index([isFeatured, type, featuredOrder])
@@ -575,52 +575,51 @@ model CatalogItem {
 }
 
 model Category {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  slug        String   @unique
+  id          String              @id @default(uuid())
+  name        String              @unique
+  slug        String              @unique
   description String?
-  sortOrder   Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  items CatalogItemCategory[]
-
+  sortOrder   Int                 @default(0)
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  
+  items       CatalogItemCategory[]
+  
   @@index([isActive, sortOrder])
 }
 
 model CatalogItemCategory {
-  id            String @id @default(uuid())
+  id            String      @id @default(uuid())
   catalogItemId String
   categoryId    String
-  sortOrder     Int    @default(0)
-
-  catalogItem CatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
-  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
+  sortOrder     Int         @default(0)
+  
+  catalogItem   CatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+  category      Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
   @@unique([catalogItemId, categoryId])
   @@index([categoryId, sortOrder])
 }
-
 model ManagerOrder {
-  id                 String             @id @default(uuid())
-  bookingId          String             @unique
-  managerId          String
-  customerId         String
-  status             ManagerOrderStatus @default(CREATED)
-  collectionMode     CollectionMode?
-  totalAmount        Float
-  razorpayLinkId     String?
-  razorpayLinkUrl    String?
-  confirmedAt        DateTime?
-  cancelledAt        DateTime?
+  id              String             @id @default(uuid())
+  bookingId       String             @unique
+  managerId       String
+  customerId      String
+  status          ManagerOrderStatus @default(CREATED)
+  collectionMode  CollectionMode?
+  totalAmount     Float
+  razorpayLinkId  String?
+  razorpayLinkUrl String?
+  confirmedAt     DateTime?
+  cancelledAt     DateTime?
   cancellationReason String?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 
-  booking  Booking @relation(fields: [bookingId], references: [id])
-  manager  User    @relation("ManagerOrders", fields: [managerId], references: [id])
-  customer User    @relation("CustomerOrders", fields: [customerId], references: [id])
+  booking         Booking            @relation(fields: [bookingId], references: [id])
+  manager         User               @relation("ManagerOrders", fields: [managerId], references: [id])
+  customer        User               @relation("CustomerOrders", fields: [customerId], references: [id])
 
   @@index([managerId, status])
   @@index([customerId])
@@ -631,22 +630,22 @@ model ManagerOrder {
 // ============================================
 
 model Camp {
-  id          String   @id @default(uuid())
+  id          String            @id @default(uuid())
   name        String
   description String?
-  location    String // Physical venue address
+  location    String            // Physical venue address
   city        String
   pincode     String
   startDate   DateTime
   endDate     DateTime
-  price       Float // Single patient price
-  familyPrice Float // Family/group price (2+ patients)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  price       Float             // Single patient price
+  familyPrice Float             // Family/group price (2+ patients)
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
-  items    CampCatalogItem[]
-  bookings Booking[]
+  items       CampCatalogItem[]
+  bookings    Booking[]
 
   @@index([isActive, startDate])
   @@index([city])
@@ -698,16 +697,16 @@ model HeroSlide {
 // ============================================
 
 model KnowledgeChunk {
-  id        String                      @id @default(uuid())
-  source    String // "catalog" | "faq" | "policy" | "booking_help"
-  sourceId  String? // CatalogItem.id for catalog chunks; null for static docs
-  title     String
-  content   String // The actual text chunk (200-500 tokens)
-  embedding Unsupported("vector(768)")? // Gemini text-embedding-004 = 768 dims
-  metadata  Json? // Structured data: { price, type, partnerCode, ... }
-  version   Int                         @default(1) // For re-embedding tracking
-  createdAt DateTime                    @default(now())
-  updatedAt DateTime                    @updatedAt
+  id         String                          @id @default(uuid())
+  source     String                          // "catalog" | "faq" | "policy" | "booking_help"
+  sourceId   String?                         // CatalogItem.id for catalog chunks; null for static docs
+  title      String
+  content    String                          // The actual text chunk (200-500 tokens)
+  embedding  Unsupported("vector(768)")?     // Gemini text-embedding-004 = 768 dims
+  metadata   Json?                           // Structured data: { price, type, partnerCode, ... }
+  version    Int              @default(1)    // For re-embedding tracking
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
 
   @@index([source])
   @@index([sourceId])
@@ -716,13 +715,13 @@ model KnowledgeChunk {
 model SupportConversation {
   id        String   @id @default(uuid())
   userId    String
-  status    String   @default("ACTIVE") // ACTIVE | RESOLVED | ESCALATED
-  summary   String? // Auto-generated topic summary
+  status    String   @default("ACTIVE")      // ACTIVE | RESOLVED | ESCALATED
+  summary   String?                          // Auto-generated topic summary
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  messages SupportMessage[]
-  user     User             @relation(fields: [userId], references: [id])
+  messages  SupportMessage[]
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId, status])
   @@index([createdAt])
@@ -731,22 +730,23 @@ model SupportConversation {
 model SupportMessage {
   id              String   @id @default(uuid())
   conversationId  String
-  role            String // "user" | "assistant" | "system"
+  role            String                     // "user" | "assistant" | "system"
   content         String
-  sources         Json? // Retrieved chunks used
-  actionsTaken    Json? // Actions executed
-  verifierVerdict String? // GROUNDED | PARTIALLY_GROUNDED | UNGROUNDED
+  sources         Json?                      // Retrieved chunks used
+  actionsTaken    Json?                      // Actions executed
+  verifierVerdict String?                    // GROUNDED | PARTIALLY_GROUNDED | UNGROUNDED
   wasAbstained    Boolean  @default(false)
   tokenCount      Int?
   latencyMs       Int?
   langfuseTraceId String?
-  feedbackScore   Int? // 1 = thumbs down, 5 = thumbs up
+  feedbackScore   Int?                       // 1 = thumbs down, 5 = thumbs up
   createdAt       DateTime @default(now())
 
-  conversation SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversation    SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
 }
+
 
 // ============================================
 // DOCTOR CONSULTATION
