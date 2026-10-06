@@ -6,7 +6,7 @@ import { prisma } from '../../db';
 import { DoctorError } from './doctors.status';
 import type { ConsultationStatus } from './consultations.types';
 
-export const LIVE: ConsultationStatus[] = ['CONFIRMED', 'RESCHEDULED', 'WAITING', 'IN_PROGRESS'];
+const LIVE: ConsultationStatus[] = ['CONFIRMED', 'RESCHEDULED', 'WAITING', 'IN_PROGRESS'];
 const ENDED: ConsultationStatus[] = ['COMPLETED', 'CANCELLED', 'NO_SHOW_PATIENT', 'NO_SHOW_DOCTOR', 'REFUNDED'];
 
 export const doctorListQuery = z.object({
