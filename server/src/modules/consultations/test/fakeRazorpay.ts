@@ -20,6 +20,24 @@ export class FakeRazorpay implements ConsultRazorpay {
         return this.payments.get(orderId) ?? [];
     }
 
+    async fetchPayment(paymentId: string) {
+        if (this.unreachable) throw new RazorpayError('network', 'unreachable');
+        for (const list of this.payments.values()) {
+            const found = list.find((p) => p.id === paymentId);
+            if (found) return found;
+        }
+        throw new RazorpayError('api', 'not found', 400);
+    }
+
+    captured: string[] = [];
+    async capturePayment(paymentId: string, amountPaise: number) {
+        const p = await this.fetchPayment(paymentId);
+        p.status = 'captured';
+        p.amount = amountPaise;
+        this.captured.push(paymentId);
+        return p;
+    }
+
     addPayment(orderId: string, p: Partial<RazorpayPayment> & { id: string }) {
         const list = this.payments.get(orderId) ?? [];
         list.push({ status: 'captured', amount: 0, currency: 'INR', order_id: orderId, ...p });

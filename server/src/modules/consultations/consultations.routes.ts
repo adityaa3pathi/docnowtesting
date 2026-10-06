@@ -8,6 +8,7 @@ import { authMiddleware, AuthRequest } from '../../middleware/auth';
 import { consultCsrfGuard } from '../../middleware/consultCsrf';
 import { rateLimiter } from '../../middleware/rateLimiter';
 import { createBooking, getBooking } from './consultations.booking';
+import { verifyAndConfirm } from './consultations.payments';
 import { DoctorError } from './doctors.status';
 
 const bookingSchema = z.object({
@@ -38,5 +39,21 @@ consultPatientRoutes.get('/bookings/:id', ...patient, async (req: AuthRequest, r
         const id = z.string().uuid().safeParse(req.params.id);
         if (!id.success) return res.status(404).json({ error: 'Not found' });
         res.json(await getBooking(req.userId!, id.data));
+    } catch (e) { fail(res, e); }
+});
+
+const verifySchema = z.object({
+    razorpay_order_id: z.string().max(64).optional(),
+    razorpay_payment_id: z.string().regex(/^pay_[A-Za-z0-9]{6,40}$/, 'Invalid payment id'),
+    razorpay_signature: z.string().regex(/^[0-9a-f]{64}$/i, 'Invalid signature'),
+});
+
+consultPatientRoutes.post('/bookings/:id/verify', ...patient, rateLimiter(10, 60, 'consult_verify'), async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        const parse = verifySchema.safeParse(req.body);
+        if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
+        res.json(await verifyAndConfirm(req.userId!, id.data, parse.data));
     } catch (e) { fail(res, e); }
 });

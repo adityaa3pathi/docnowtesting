@@ -24,3 +24,32 @@ export async function expireHold(tx: Tx, consultationId: string): Promise<boolea
     await tx.slot.updateMany({ where: { id: c.slotId, status: 'BOOKED' }, data: { status: 'AVAILABLE' } });
     return true;
 }
+
+export class SlotLost extends Error {}
+
+/** Pending payment to confirmed, once, recording which payment did it. False when another caller won. */
+export async function confirmPending(tx: Tx, consultationId: string, paymentId: string): Promise<boolean> {
+    const res = await tx.consultation.updateMany({
+        where: { id: consultationId, status: 'PENDING_PAYMENT', confirmingPaymentId: null },
+        data: { status: 'CONFIRMED', confirmingPaymentId: paymentId, reviewReason: null },
+    });
+    return res.count === 1;
+}
+
+/**
+ * Late payment on an expired hold: take the slot back and confirm, or throw SlotLost so the whole
+ * transaction rolls back and the caller refunds instead.
+ */
+export async function reclaimExpired(tx: Tx, consultationId: string, slotId: string, paymentId: string): Promise<void> {
+    if (!(await holdSlot(tx, slotId))) throw new SlotLost();
+    try {
+        const res = await tx.consultation.updateMany({
+            where: { id: consultationId, status: 'EXPIRED', confirmingPaymentId: null },
+            data: { status: 'CONFIRMED', confirmingPaymentId: paymentId, reviewReason: null },
+        });
+        if (res.count !== 1) throw new SlotLost();
+    } catch (e) {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') throw new SlotLost();
+        throw e;
+    }
+}

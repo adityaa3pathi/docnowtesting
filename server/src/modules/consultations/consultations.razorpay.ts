@@ -24,6 +24,9 @@ export type RazorpayPayment = { id: string; status: string; amount: number; curr
 export interface ConsultRazorpay {
     createOrder(input: { amountPaise: number; receipt: string; notes: Record<string, string> }): Promise<{ id: string }>;
     fetchOrderPayments(orderId: string): Promise<RazorpayPayment[]>;
+    fetchPayment(paymentId: string): Promise<RazorpayPayment>;
+    /** Only needed when the account does not auto-capture. */
+    capturePayment(paymentId: string, amountPaise: number): Promise<RazorpayPayment>;
 }
 
 export function realConsultRazorpay(): ConsultRazorpay {
@@ -40,6 +43,20 @@ export function realConsultRazorpay(): ConsultRazorpay {
             try {
                 const res = await getRazorpay().orders.fetchPayments(orderId);
                 return (res.items ?? []) as unknown as RazorpayPayment[];
+            } catch (e) {
+                throw normalizeRazorpayError(e);
+            }
+        },
+        async fetchPayment(paymentId) {
+            try {
+                return (await getRazorpay().payments.fetch(paymentId)) as unknown as RazorpayPayment;
+            } catch (e) {
+                throw normalizeRazorpayError(e);
+            }
+        },
+        async capturePayment(paymentId, amountPaise) {
+            try {
+                return (await getRazorpay().payments.capture(paymentId, amountPaise, 'INR')) as unknown as RazorpayPayment;
             } catch (e) {
                 throw normalizeRazorpayError(e);
             }
