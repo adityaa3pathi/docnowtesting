@@ -17,6 +17,7 @@ enum Role {
   USER
   MANAGER
   SUPER_ADMIN
+  DOCTOR
 }
 
 enum UserStatus {
