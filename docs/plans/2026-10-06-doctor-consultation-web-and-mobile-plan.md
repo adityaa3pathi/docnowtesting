@@ -48,7 +48,7 @@ Sources: `docs/client/DocNow-Doctor-Consultation-Scope.html` (62 screens, 5 phas
 | D4 | Video | **100ms** (backup: Agora). | India-based, React Native SDK, free tier (about 10,000 min/month, verify). Estimated MVP load is about 30,000 call minutes/month (2,500 users, ~1,000 consults, 15 min, 2 people). |
 | D5 | Queue | BullMQ on real Redis. Keep Upstash for rate limit. | Timers must survive restarts. |
 | D6 | Push | Firebase Cloud Messaging (Android + iOS via APNs) | Needed for "doctor is ready" and reminders. |
-| D7 | Shared code | Small `packages/shared` (types, zod schemas, API client) | Stops web and mobile drifting apart. |
+| D7 | Mobile repo | **Mobile app lives in its own repo** (owner decision). Server publishes an OpenAPI spec; mobile generates its API client and types from it. | No shared package across repos. The spec keeps web, server and mobile in step. |
 | D8 | Scope doc says "no mobile apps" | **Overridden by this request.** Update scope doc. | Scope doc is now out of date. |
 
 D4 is decided: 100ms. Confirm current pricing before Phase 2 starts.
@@ -110,11 +110,11 @@ Each phase is usable on its own. Web and mobile advance together from Phase 3.
 - Add `DOCTOR` role and doctor guard.
 - Stand up BullMQ with real Redis. Add a worker folder entry next to `reconciler.ts`.
 - Add `success` / `warning` theme tokens. Re-colour support chat to brand purple.
-- Create `packages/shared` (types, zod schemas, API client). Move nothing yet. Start with consult types.
+- Add an OpenAPI spec for the consult API, generated from the server's zod schemas. Mobile repo reads it.
 - Create `modules/consultations/` skeleton.
 - Write the consultation state machine with tests.
 - Create the 100ms account and test a room.
-- Add mobile CI skeleton.
+- Create the mobile repo with its own CI (Expo build, lint, tests). Separate from this repo.
 
 ### Phase 1: Doctor supply and money (3 to 4 weeks)
 Scope doc Phase 1.
@@ -173,7 +173,7 @@ Scope doc Phase 5.
 
 ## 7. Mobile app plan
 
-**Stack:** Expo (React Native), TypeScript, Expo Router, React Query, `packages/shared` types and API client.
+**Stack:** Expo (React Native), TypeScript, Expo Router, React Query, API client and types generated from the server's OpenAPI spec. Lives in a separate repo.
 
 **Screens (patient, ~34):** map 1 to 1 from the scope doc.
 - Tabs: Home / Consult, My Health, Cart, Profile.
