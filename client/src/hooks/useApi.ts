@@ -2,25 +2,28 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { errorMessage } from '@/lib/consult/api';
 
-/** Loads data on mount and when `deps` change, with loading, error and a refetch. Ignores results after unmount. */
+/** Loads data on mount and when `deps` change, with loading, error and a refetch. Ignores results after unmount or when a newer request started. */
 export function useApi<T>(load: () => Promise<T>, deps: unknown[] = []) {
     const [data, setData] = useState<T | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const alive = useRef(true);
     const run = useRef(load);
+    const latest = useRef(0);
     run.current = load;
 
     const refetch = useCallback(async () => {
         setLoading(true);
         setError(null);
+        const mine = ++latest.current;
+        const current = () => alive.current && mine === latest.current;
         try {
             const result = await run.current();
-            if (alive.current) setData(result);
+            if (current()) setData(result);
         } catch (e) {
-            if (alive.current) setError(errorMessage(e));
+            if (current()) setError(errorMessage(e));
         } finally {
-            if (alive.current) setLoading(false);
+            if (current()) setLoading(false);
         }
     }, []);
 

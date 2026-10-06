@@ -5,7 +5,7 @@ import { secondsUntil, serverNow } from '@/lib/consult/time';
 import { openCheckout, type PaymentResult } from '@/lib/razorpayCheckout';
 import { forgetAttemptKey } from '@/lib/consult/idempotency';
 import {
-    POLL_INTERVAL_MS, afterVerifyError, announceThreshold, applyVerifyHint, clearSavedBooking, decide,
+    POLL_INTERVAL_MS, announceThreshold, applyVerifyHint, clearSavedBooking, decide,
     isFinalResult, loadSavedBooking, type Decision,
 } from '@/lib/consult/bookingFlow';
 import type { BookingView, VerifyOutcome } from '@/lib/consult/types';
@@ -104,7 +104,7 @@ export function useBookingFlow(id: string, enabled: boolean) {
                 const out = await consult.verify(id, res);
                 if (alive.current) setHint(out.outcome);
             } catch {
-                afterVerifyError();
+                // A failed verify says nothing about the payment, so the load below decides.
             }
             await load();
         },

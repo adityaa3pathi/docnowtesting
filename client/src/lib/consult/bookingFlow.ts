@@ -55,11 +55,6 @@ export function applyVerifyHint(decision: Decision, outcome: VerifyOutcome | nul
     return decision;
 }
 
-/** A failed or timed-out verify call says nothing about the payment, so we keep checking the booking. */
-export function afterVerifyError(): Decision {
-    return { kind: 'poll' };
-}
-
 export type CreateErrorAction =
     | { kind: 'slot_taken'; forgetKey: true }
     | { kind: 'ended'; forgetKey: true }
@@ -111,7 +106,7 @@ export function groupBookings(bookings: BookingView[], nowMs: number): BookingGr
     const unpaid: BookingView[] = [];
     const past: BookingView[] = [];
     for (const b of bookings) {
-        const live = ['CONFIRMED', 'RESCHEDULED', 'WAITING', 'IN_PROGRESS'].includes(b.status);
+        const live = BOOKED.includes(b.status) && b.status !== 'COMPLETED';
         const unsettled = (b.status === 'PENDING_PAYMENT' || b.status === 'EXPIRED') && (b.paymentCaptured || b.underStaffCheck);
         if ((live && Date.parse(b.endsAt) > nowMs) || unsettled) upcoming.push(b);
         else if (b.status === 'PENDING_PAYMENT' && Date.parse(b.holdExpiresAt) > nowMs) unpaid.push(b);

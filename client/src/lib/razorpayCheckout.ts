@@ -7,16 +7,24 @@ declare global {
 
 const SCRIPT_URL = 'https://checkout.razorpay.com/v1/checkout.js';
 
+let loading: Promise<boolean> | null = null;
+
 export function loadRazorpay(): Promise<boolean> {
     if (typeof window === 'undefined') return Promise.resolve(false);
     if (window.Razorpay) return Promise.resolve(true);
-    return new Promise((resolve) => {
+    if (loading) return loading;
+    loading = new Promise<boolean>((resolve) => {
         const script = document.createElement('script');
         script.src = SCRIPT_URL;
         script.onload = () => resolve(true);
-        script.onerror = () => resolve(false);
+        script.onerror = () => {
+            script.remove();
+            loading = null;
+            resolve(false);
+        };
         document.body.appendChild(script);
     });
+    return loading;
 }
 
 export interface PaymentResult {

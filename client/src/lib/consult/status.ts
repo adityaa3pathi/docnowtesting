@@ -7,21 +7,20 @@ export interface StatusInfo {
     tone: Tone;
     canCancel: boolean;
     /** True while the booking may still be paid or settled. */
-    open: boolean;
 }
 
 const STATUS: Record<ConsultationStatus, StatusInfo> = {
-    PENDING_PAYMENT: { label: 'Waiting for payment', tone: 'warning', canCancel: true, open: true },
-    CONFIRMED: { label: 'Confirmed', tone: 'success', canCancel: true, open: false },
-    RESCHEDULED: { label: 'Rescheduled', tone: 'info', canCancel: true, open: false },
-    WAITING: { label: 'Starting soon', tone: 'info', canCancel: true, open: false },
-    IN_PROGRESS: { label: 'In progress', tone: 'info', canCancel: false, open: false },
-    COMPLETED: { label: 'Completed', tone: 'muted', canCancel: false, open: false },
-    CANCELLED: { label: 'Cancelled', tone: 'muted', canCancel: false, open: false },
-    NO_SHOW_PATIENT: { label: 'Missed by patient', tone: 'muted', canCancel: false, open: false },
-    NO_SHOW_DOCTOR: { label: 'Missed by doctor', tone: 'danger', canCancel: false, open: false },
-    EXPIRED: { label: 'Hold ended', tone: 'muted', canCancel: false, open: true },
-    REFUNDED: { label: 'Refunded', tone: 'muted', canCancel: false, open: false },
+    PENDING_PAYMENT: { label: 'Waiting for payment', tone: 'warning', canCancel: true },
+    CONFIRMED: { label: 'Confirmed', tone: 'success', canCancel: true },
+    RESCHEDULED: { label: 'Rescheduled', tone: 'info', canCancel: true },
+    WAITING: { label: 'Starting soon', tone: 'info', canCancel: true },
+    IN_PROGRESS: { label: 'In progress', tone: 'info', canCancel: false },
+    COMPLETED: { label: 'Completed', tone: 'muted', canCancel: false },
+    CANCELLED: { label: 'Cancelled', tone: 'muted', canCancel: false },
+    NO_SHOW_PATIENT: { label: 'Missed by patient', tone: 'muted', canCancel: false },
+    NO_SHOW_DOCTOR: { label: 'Missed by doctor', tone: 'danger', canCancel: false },
+    EXPIRED: { label: 'Hold ended', tone: 'muted', canCancel: false },
+    REFUNDED: { label: 'Refunded', tone: 'muted', canCancel: false },
 };
 
 export const statusInfo = (status: ConsultationStatus): StatusInfo => STATUS[status];

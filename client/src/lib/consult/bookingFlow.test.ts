@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-    afterVerifyError, announceThreshold, applyVerifyHint, clearSavedBooking, decide, groupBookings, loadSavedBooking,
+    announceThreshold, applyVerifyHint, clearSavedBooking, decide, groupBookings, loadSavedBooking,
     mapCreateError, saveBooking, EXPIRED_GRACE_MS, CONFIRM_WINDOW_MS,
 } from './bookingFlow';
 import type { BookingView } from './types';
@@ -38,7 +38,6 @@ describe('decide', () => {
     });
 
     it('verify timed out but the booking later reads CONFIRMED: ends booked, never failed', () => {
-        expect(afterVerifyError()).toEqual({ kind: 'poll' });
         expect(decide(booking(), ctx(NOW + 3000, NOW))).toEqual({ kind: 'poll' });
         expect(decide(booking({ status: 'CONFIRMED', paymentCaptured: true }), ctx(NOW + 6000, NOW))).toEqual({ kind: 'result', result: 'booked' });
     });
