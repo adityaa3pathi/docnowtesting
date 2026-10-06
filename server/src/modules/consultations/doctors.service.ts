@@ -6,6 +6,7 @@
  */
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../db';
+import { expireHold } from './consultations.transitions';
 import { assertDoctorTransition, DoctorError } from './doctors.status';
 import { assertNoOverlap, computeSlots, Window } from './slots';
 
@@ -92,9 +93,14 @@ export async function reviewDoctor(
         if (to === 'APPROVED' && doctor.user.role === 'USER') {
             await tx.user.update({ where: { id: doctor.userId }, data: { role: 'DOCTOR' } });
         }
+        if (to !== 'APPROVED') {
+            // Unpaid holds go; paid consultations are left for staff.
+            const holds = await tx.consultation.findMany({ where: { doctorId, status: 'PENDING_PAYMENT' }, select: { id: true } });
+            for (const h of holds) await expireHold(tx, h.id);
+        }
         if (to !== 'APPROVED' && doctor.user.role === 'DOCTOR') {
             await tx.user.update({ where: { id: doctor.userId }, data: { role: 'USER' } });
-            await tx.slot.deleteMany({ where: { doctorId, status: 'AVAILABLE', startsAt: { gt: new Date() } } });
+            await clearFreeSlots(tx, { doctorId });
         }
         if (to === 'APPROVED') await ensureSlots(tx, doctorId);
         return updated;
@@ -102,6 +108,16 @@ export async function reviewDoctor(
 }
 
 // ── Hours, leave, slots ─────────────────────────────────
+
+/**
+ * Removes free future slots. A slot an old consultation still points at cannot be deleted,
+ * so it is blocked instead and never offered again.
+ */
+async function clearFreeSlots(tx: Tx, where: Prisma.SlotWhereInput) {
+    const base: Prisma.SlotWhereInput = { status: 'AVAILABLE', AND: [{ startsAt: { gt: new Date() } }, where] };
+    await tx.slot.deleteMany({ where: { ...base, consultations: { none: {} } } });
+    await tx.slot.updateMany({ where: base, data: { status: 'BLOCKED' } });
+}
 
 async function ensureSlots(tx: Tx, doctorId: string) {
     const doctor = await tx.doctorProfile.findUniqueOrThrow({ where: { id: doctorId } });
@@ -121,7 +137,7 @@ async function ensureSlots(tx: Tx, doctorId: string) {
 }
 
 async function rebuildSlots(tx: Tx, doctorId: string) {
-    await tx.slot.deleteMany({ where: { doctorId, status: 'AVAILABLE', startsAt: { gt: new Date() } } });
+    await clearFreeSlots(tx, { doctorId });
     await ensureSlots(tx, doctorId);
 }
 
@@ -143,9 +159,7 @@ export async function setAvailability(doctorId: string, windows: Window[], slotM
 export async function addLeave(doctorId: string, startsAt: Date, endsAt: Date, reason?: string) {
     return prisma.$transaction(async (tx) => {
         const leave = await tx.doctorLeave.create({ data: { doctorId, startsAt, endsAt, reason } });
-        await tx.slot.deleteMany({
-            where: { doctorId, status: 'AVAILABLE', startsAt: { lt: endsAt }, endsAt: { gt: startsAt } },
-        });
+        await clearFreeSlots(tx, { doctorId, startsAt: { lt: endsAt }, endsAt: { gt: startsAt } });
         const bookedConflicts = await tx.slot.count({
             where: { doctorId, status: 'BOOKED', startsAt: { lt: endsAt }, endsAt: { gt: startsAt } },
         });
