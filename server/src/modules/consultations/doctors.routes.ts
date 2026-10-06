@@ -21,6 +21,7 @@ import {
     leaveSchema, registerDoctorSchema, reviewReasonSchema, specialtySchema,
 } from './doctors.types';
 import { DoctorError } from './doctors.status';
+import { doctorListQuery, listDoctorConsultations } from './doctors.consultations';
 import { policyRoutes } from './consultations.policy.routes';
 import { reviewRoutes } from './consultations.review.routes';
 import {
@@ -169,6 +170,15 @@ doctorRoutes.get('/me/slots', ...mine, async (req: AuthRequest, res: Response) =
             orderBy: { startsAt: 'asc' },
         }));
     } catch (e) { fail(res, e, 'list my slots'); }
+});
+
+doctorRoutes.get('/me/consultations', ...mine, async (req: AuthRequest, res: Response) => {
+    try {
+        const parse = doctorListQuery.safeParse(req.query);
+        if (!parse.success) return bad(res, parse);
+        const id = await myDoctorId(req);
+        res.json(await listDoctorConsultations(id, parse.data));
+    } catch (e) { fail(res, e, 'list my consultations'); }
 });
 
 doctorRoutes.post('/me/slots/:id/block', ...mine, async (req: AuthRequest, res: Response) => {
