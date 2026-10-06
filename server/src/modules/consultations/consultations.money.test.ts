@@ -26,14 +26,10 @@ describe('feeFromBps', () => {
 
 describe('refundForPercent', () => {
     it('rounds half up once on the total and never exceeds paid', () => {
-        expect(refundForPercent(49999, 50, 0)).toBe(25000);
-        expect(refundForPercent(49999, 100, 0)).toBe(49999);
-        expect(refundForPercent(49999, 0, 0)).toBe(0);
-    });
-    it('caps by what is still refundable', () => {
-        expect(refundForPercent(10000, 100, 10000)).toBe(0);
-        expect(refundForPercent(10000, 100, 4000)).toBe(6000);
-        expect(refundForPercent(10000, 50, 8000)).toBe(2000);
+        expect(refundForPercent(49999, 50)).toBe(25000);
+        expect(refundForPercent(49999, 100)).toBe(49999);
+        expect(refundForPercent(49999, 0)).toBe(0);
+        expect(refundForPercent(100, 101)).toBe(100);
     });
 });
 

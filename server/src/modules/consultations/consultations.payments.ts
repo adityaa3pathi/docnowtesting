@@ -8,7 +8,7 @@ import { prisma } from '../../db';
 import { logAlert } from '../../utils/logger';
 import { verifyCheckoutSignature } from '../../utils/razorpaySignature';
 import { createRefundRecord, RefundReason } from './consultations.refunds';
-import { ConsultRazorpay, realConsultRazorpay } from './consultations.razorpay';
+import { ConsultRazorpay, normalizeRazorpayError, realConsultRazorpay } from './consultations.razorpay';
 import { confirmPending, reclaimExpired, SlotLost, Tx } from './consultations.transitions';
 import { OPEN_PAYMENT_STATUSES } from './consultations.types';
 import { DoctorError } from './doctors.status';
@@ -23,7 +23,7 @@ function inTx<T>(db: Db, fn: (tx: Tx) => Promise<T>): Promise<T> {
     return '$transaction' in db ? (db as PrismaClient).$transaction(fn) : fn(db as Tx);
 }
 
-/** Step 1, in its own short transaction: make sure a payment row carries this Razorpay payment id. */
+/** Step 1: make sure a payment row carries this Razorpay payment id. Safe to repeat and to run in a caller's transaction. */
 async function attachPayment(db: Db, fact: PaymentFact) {
     const known = await db.consultationPayment.findUnique({ where: { razorpayPaymentId: fact.paymentId } });
     if (known) return known;
@@ -134,7 +134,9 @@ export async function verifyAndConfirm(
         if (payment.order_id === orderId && payment.status === 'authorized') {
             payment = await razorpay.capturePayment(payment.id, c.feePaise);
         }
-    } catch {
+    } catch (e) {
+        const err = normalizeRazorpayError(e);
+        logAlert('consult_verify_razorpay_failed', { consultationId, kind: err.kind, status: err.status });
         throw new DoctorError(502, 'Could not confirm the payment with Razorpay. It will be confirmed shortly if it went through');
     }
     if (payment.order_id !== orderId || payment.status !== 'captured') throw new DoctorError(400, 'Payment is not complete');

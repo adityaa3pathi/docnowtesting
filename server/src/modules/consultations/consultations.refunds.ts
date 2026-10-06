@@ -110,14 +110,29 @@ export const MAX_REFUND_ATTEMPTS = 5;
 
 type RefundRunDeps = { db?: PrismaClient; razorpay?: ConsultRazorpay };
 
-/** Looks for a refund we may already have made, by our receipt or the record id in its notes. */
+/**
+ * Looks for a refund we may already have made, by our receipt or the record id in its notes.
+ * Refunds Razorpay marked failed do not count. Returns 'unknown' when the lookup itself fails.
+ */
 async function findMadeRefund(razorpay: ConsultRazorpay, paymentId: string, refund: { id: string; receipt: string }) {
     try {
         const list = await razorpay.listPaymentRefunds(paymentId);
-        return list.find((r) => r.receipt === refund.receipt || r.notes?.refundRecordId === refund.id) ?? null;
+        return list.find((r) => r.status !== 'failed' && (r.receipt === refund.receipt || r.notes?.refundRecordId === refund.id)) ?? null;
     } catch {
-        return null;
+        return 'unknown' as const;
     }
+}
+
+/**
+ * Reopens a refund staff chose to retry. The failed Razorpay refund is forgotten and a new receipt
+ * is used, so the runner sends a fresh one. Attempts restart at 1 so it looks for a made refund first.
+ */
+export async function reopenRefund(db: PrismaClient, refundId: string): Promise<boolean> {
+    const res = await db.consultationRefund.updateMany({
+        where: { id: refundId, OR: [{ status: 'FAILED' }, { status: 'PENDING', attempts: { gte: MAX_REFUND_ATTEMPTS } }] },
+        data: { status: 'PENDING', attempts: 1, failureConfirmed: false, lastError: null, razorpayRefundId: null, receipt: `rf_${randomUUID().replace(/-/g, '')}` },
+    });
+    return res.count === 1;
 }
 
 async function adopt(db: PrismaClient, refundId: string, made: RazorpayRefund): Promise<'processed' | 'pending'> {
@@ -146,6 +161,8 @@ export async function runRefund(refundId: string, deps: RefundRunDeps = {}): Pro
 
     if (r.attempts > 0 && !r.razorpayRefundId) {
         const made = await findMadeRefund(razorpay, r.payment.razorpayPaymentId, r);
+        // An earlier attempt may have sent the refund, so never send again without being able to look.
+        if (made === 'unknown') return 'pending';
         if (made) return adopt(db, r.id, made);
     }
     if (r.razorpayRefundId) return 'pending';
@@ -166,7 +183,7 @@ export async function runRefund(refundId: string, deps: RefundRunDeps = {}): Pro
             return 'failed';
         }
         const made = await findMadeRefund(razorpay, r.payment.razorpayPaymentId, r);
-        if (made) return adopt(db, r.id, made);
+        if (made && made !== 'unknown') return adopt(db, r.id, made);
         if (r.attempts + 1 >= MAX_REFUND_ATTEMPTS) {
             await markRefundFailed(db, r.id, err.message, false);
             logAlert('consult_refund_exhausted', { refundId: r.id, reason: err.message });

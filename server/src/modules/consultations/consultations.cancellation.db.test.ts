@@ -102,6 +102,18 @@ describeDb('cancellation and refunds (real Postgres)', () => {
             expect((await testDb.slot.findUniqueOrThrow({ where: { id: slot.id } })).status).toBe('AVAILABLE');
         });
 
+        it('cancels from the waiting state and refuses once the visit has started or was missed', async () => {
+            const a = await paid(30);
+            await testDb.consultation.update({ where: { id: a.id }, data: { status: 'WAITING' } });
+            expect((await doCancel(a)).status).toMatch(/CANCELLED|REFUNDED/);
+            const b = await paid(30);
+            await testDb.consultation.update({ where: { id: b.id }, data: { status: 'NO_SHOW_PATIENT' } });
+            await expect(doCancel(b)).rejects.toMatchObject({ status: 409 });
+            const c = await paid(30);
+            await testDb.consultation.update({ where: { id: c.id }, data: { status: 'IN_PROGRESS' } });
+            await expect(doCancel(c)).rejects.toMatchObject({ status: 409 });
+        });
+
         it('lets only the booker cancel, and returns not found for anyone else', async () => {
             const c = await paid(30);
             const stranger = await makeUser();
@@ -204,6 +216,35 @@ describeDb('cancellation and refunds (real Postgres)', () => {
             expect(row).toMatchObject({ status: 'FAILED', failureConfirmed: true });
             const another = await testDb.$transaction((tx) => refunds.createRefundRecord(tx, { consultationId: c.id, paymentId: pay.id, reason: 'DUPLICATE_PAYMENT' }));
             expect(another?.amountPaise).toBe(c.fee);
+        });
+
+        it('re-sends a refund that Razorpay marked failed when staff retry it', async () => {
+            const { c, pay } = await pending();
+            const old = await testDb.consultationRefund.findFirstOrThrow({ where: { consultationId: c.id } });
+            await testDb.consultationRefund.update({ where: { id: old.id }, data: { status: 'FAILED', failureConfirmed: true, razorpayRefundId: 'rfnd_old', attempts: 1 } });
+            razorpay.refunds.push({ id: 'rfnd_old', amount: old.amountPaise, status: 'failed', receipt: old.receipt, notes: { refundRecordId: old.id }, paymentId: pay.razorpayPaymentId! });
+            expect(await refunds.reopenRefund(testDb, old.id)).toBe(true);
+            expect(await refunds.runRefund(old.id, { razorpay })).toBe('processed');
+            expect(razorpay.refundCalls).toBe(1);
+            const after = await testDb.consultationRefund.findUniqueOrThrow({ where: { id: old.id } });
+            expect(after).toMatchObject({ status: 'PROCESSED', razorpayRefundId: 'rfnd_2' });
+            expect(after.receipt).not.toBe(old.receipt);
+        });
+
+        it('does not refund again when it cannot look up a refund an earlier attempt may have made', async () => {
+            const { record } = await pending();
+            razorpay.refundScript = ['timeout'];
+            razorpay.unreachable = false;
+            const realList = razorpay.listPaymentRefunds.bind(razorpay);
+            razorpay.listPaymentRefunds = async () => { throw new RazorpayError('network', 'down'); };
+            expect(await refunds.runRefund(record.id, { razorpay })).toBe('pending');
+            expect(razorpay.refundCalls).toBe(1);
+            expect(await refunds.runRefund(record.id, { razorpay })).toBe('pending');
+            expect(razorpay.refundCalls).toBe(1);
+            razorpay.listPaymentRefunds = realList;
+            expect(await refunds.runRefund(record.id, { razorpay })).toBe('processed');
+            expect(razorpay.refundCalls).toBe(1);
+            expect(razorpay.refunds).toHaveLength(1);
         });
 
         it('does not send the same refund twice when two runners start at once', async () => {

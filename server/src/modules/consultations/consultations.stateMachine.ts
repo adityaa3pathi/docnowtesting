@@ -1,8 +1,8 @@
 /**
  * Consultation State Machine
  *
- * Call assertTransition() before every consultation status update.
- * Mirrors utils/paymentStateMachine.ts so both behave the same way.
+ * The allowed moves between consultation statuses. The writes themselves are conditional updates
+ * in consultations.transitions.ts and its callers; keep the two in step and test them together.
  */
 import { ConsultationStatus as S } from './consultations.types';
 

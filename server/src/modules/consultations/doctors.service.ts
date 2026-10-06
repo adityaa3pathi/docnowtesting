@@ -100,7 +100,7 @@ export async function reviewDoctor(
             await tx.user.update({ where: { id: doctor.userId }, data: { role: 'USER' } });
             await clearFreeSlots(tx, { doctorId });
         }
-        if (to === 'APPROVED') await ensureSlots(tx, doctorId);
+        if (to === 'APPROVED') await rebuildSlots(tx, doctorId);
         return updated;
     });
 }
@@ -117,15 +117,16 @@ async function clearFreeSlots(tx: Tx, where: Prisma.SlotWhereInput) {
     await tx.slot.updateMany({ where: base, data: { status: 'BLOCKED' } });
 }
 
-async function ensureSlots(tx: Tx, doctorId: string) {
+async function wantedSlots(tx: Tx, doctorId: string) {
     const doctor = await tx.doctorProfile.findUniqueOrThrow({ where: { id: doctorId } });
     const [windows, leaves] = await Promise.all([
         tx.doctorAvailability.findMany({ where: { doctorId } }),
         tx.doctorLeave.findMany({ where: { doctorId, endsAt: { gt: new Date() } } }),
     ]);
-    const ranges = computeSlots({
-        windows, leaves, slotMinutes: doctor.slotMinutes, from: new Date(), days: SLOT_HORIZON_DAYS,
-    });
+    return computeSlots({ windows, leaves, slotMinutes: doctor.slotMinutes, from: new Date(), days: SLOT_HORIZON_DAYS });
+}
+
+async function createMissingSlots(tx: Tx, doctorId: string, ranges: { startsAt: Date; endsAt: Date }[]) {
     if (ranges.length === 0) return 0;
     const res = await tx.slot.createMany({
         data: ranges.map((r) => ({ doctorId, startsAt: r.startsAt, endsAt: r.endsAt })),
@@ -134,9 +135,23 @@ async function ensureSlots(tx: Tx, doctorId: string) {
     return res.count;
 }
 
+async function ensureSlots(tx: Tx, doctorId: string) {
+    return createMissingSlots(tx, doctorId, await wantedSlots(tx, doctorId));
+}
+
+/**
+ * Brings free slots in line with the doctor's hours and leave. Slots still wanted are left alone;
+ * blocked slots with booking history that are wanted again (after suspension or leave) are reopened.
+ */
 async function rebuildSlots(tx: Tx, doctorId: string) {
-    await clearFreeSlots(tx, { doctorId });
-    await ensureSlots(tx, doctorId);
+    const wanted = await wantedSlots(tx, doctorId);
+    const starts = wanted.map((r) => r.startsAt);
+    await clearFreeSlots(tx, { doctorId, startsAt: { notIn: starts } });
+    await tx.slot.updateMany({
+        where: { doctorId, status: 'BLOCKED', startsAt: { in: starts }, consultations: { some: {} } },
+        data: { status: 'AVAILABLE' },
+    });
+    await createMissingSlots(tx, doctorId, wanted);
 }
 
 export async function setAvailability(doctorId: string, windows: Window[], slotMinutes?: number) {
@@ -169,7 +184,7 @@ export async function removeLeave(doctorId: string, leaveId: string) {
     await prisma.$transaction(async (tx) => {
         const res = await tx.doctorLeave.deleteMany({ where: { id: leaveId, doctorId } });
         if (res.count === 0) throw new DoctorError(404, 'Leave not found');
-        await ensureSlots(tx, doctorId);
+        await rebuildSlots(tx, doctorId);
     });
 }
 

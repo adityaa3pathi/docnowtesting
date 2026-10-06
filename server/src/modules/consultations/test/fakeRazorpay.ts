@@ -52,7 +52,10 @@ export class FakeRazorpay implements ConsultRazorpay {
         return { id: order.id };
     }
 
+    orderLookups = 0;
+
     async fetchOrderPayments(orderId: string) {
+        this.orderLookups++;
         if (this.unreachable) throw new RazorpayError('network', 'unreachable');
         if (this.failOrderLookups.has(orderId)) throw new RazorpayError('api', 'lookup failed', 400);
         return this.payments.get(orderId) ?? [];

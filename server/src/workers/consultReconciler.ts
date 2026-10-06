@@ -19,6 +19,8 @@ export const LIMITS = {
     openPaymentMinAgeMs: 3 * 60_000,
     orphanMinAgeMs: 2 * 60_000,
     lookbackMs: 48 * 3_600_000,
+    expiredRecheckMs: 60 * 60_000,
+    freshOrderMs: 2 * 3_600_000,
     refundMinAgeMs: 60_000,
     unprocessedEventMs: 10 * 60_000,
     flaggedMs: 60 * 60_000,
@@ -85,18 +87,26 @@ export async function runConsultCycle(deps: CycleDeps = {}) {
     });
 
     // 3. Open payments whose notice never arrived, including late ones on expired holds.
+    // Orders on live holds, and expired ones under 2 hours old, are checked every cycle. Older
+    // expired ones only hourly, oldest check first, so abandoned orders cannot crowd out real ones.
+    const recheckBefore = new Date(now.getTime() - LIMITS.expiredRecheckMs);
+    const freshAfter = new Date(now.getTime() - LIMITS.freshOrderMs);
     const open = await db.consultationPayment.findMany({
         where: {
             status: 'CREATED',
             razorpayPaymentId: null,
             createdAt: { lt: new Date(now.getTime() - LIMITS.openPaymentMinAgeMs), gt: new Date(now.getTime() - LIMITS.lookbackMs) },
-            consultation: { status: { in: OPEN_PAYMENT_STATUSES } },
+            OR: [
+                { consultation: { status: 'PENDING_PAYMENT' } },
+                { consultation: { status: 'EXPIRED' }, OR: [{ updatedAt: { lt: recheckBefore } }, { createdAt: { gt: freshAfter } }] },
+            ],
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { updatedAt: 'asc' },
         take: LIMITS.batch,
     });
     await each('open', open, async (p) => {
-        await confirmCaptured(p.razorpayOrderId);
+        const found = await confirmCaptured(p.razorpayOrderId);
+        if (found === 0) await db.consultationPayment.updateMany({ where: { id: p.id }, data: { updatedAt: now } });
     });
 
     // 4. Pending refunds: send the ones never sent, poll the ones in flight.

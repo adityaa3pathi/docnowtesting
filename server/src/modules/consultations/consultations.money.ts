@@ -16,8 +16,7 @@ export function remainingRefundable(paidPaise: number, refundedPaise: number): n
     return Math.max(0, paidPaise - refundedPaise);
 }
 
-/** Refund for a whole-number percentage of what was paid, capped by what is still refundable. */
-export function refundForPercent(paidPaise: number, percent: number, alreadyRefundedPaise: number): number {
-    const raw = Math.floor((paidPaise * percent + 50) / 100);
-    return Math.min(raw, remainingRefundable(paidPaise, alreadyRefundedPaise));
+/** Refund for a whole-number percentage of what was paid. Never more than was paid. */
+export function refundForPercent(paidPaise: number, percent: number): number {
+    return Math.min(paidPaise, Math.floor((paidPaise * percent + 50) / 100));
 }

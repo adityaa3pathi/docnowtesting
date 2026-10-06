@@ -19,6 +19,22 @@ export function normalizeRazorpayError(e: unknown): RazorpayError {
     return new RazorpayError('network', e instanceof Error ? e.message : 'Razorpay unreachable');
 }
 
+const DEFAULT_TIMEOUT_MS = 10_000;
+const MONEY_TIMEOUT_MS = 15_000;
+
+/** The SDK has no timeout, so a hung Razorpay call would stall the request or the repair job. */
+export async function withTimeout<T>(fn: () => Promise<T>, ms: number): Promise<T> {
+    let timer: NodeJS.Timeout | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new RazorpayError('network', 'Razorpay request timed out')), ms);
+    });
+    try {
+        return await Promise.race([fn(), timeout]);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 export type RazorpayPayment = { id: string; status: string; amount: number; currency: string; order_id: string };
 
 export type RazorpayRefund = { id: string; amount: number; status: string; receipt?: string | null; notes?: Record<string, string> | null };
@@ -40,7 +56,7 @@ export function realConsultRazorpay(): ConsultRazorpay {
     return {
         async createOrder({ amountPaise, receipt, notes }) {
             try {
-                const order = await getRazorpay().orders.create({ amount: amountPaise, currency: 'INR', receipt, notes });
+                const order = await withTimeout(() => getRazorpay().orders.create({ amount: amountPaise, currency: 'INR', receipt, notes }), DEFAULT_TIMEOUT_MS);
                 return { id: order.id };
             } catch (e) {
                 throw normalizeRazorpayError(e);
@@ -48,7 +64,7 @@ export function realConsultRazorpay(): ConsultRazorpay {
         },
         async fetchOrderPayments(orderId) {
             try {
-                const res = await getRazorpay().orders.fetchPayments(orderId);
+                const res = await withTimeout(() => getRazorpay().orders.fetchPayments(orderId), DEFAULT_TIMEOUT_MS);
                 return (res.items ?? []) as unknown as RazorpayPayment[];
             } catch (e) {
                 throw normalizeRazorpayError(e);
@@ -56,14 +72,14 @@ export function realConsultRazorpay(): ConsultRazorpay {
         },
         async createRefund({ paymentId, amountPaise, receipt, notes }) {
             try {
-                return (await getRazorpay().payments.refund(paymentId, { amount: amountPaise, receipt, notes } as any)) as unknown as RazorpayRefund;
+                return (await withTimeout(() => getRazorpay().payments.refund(paymentId, { amount: amountPaise, receipt, notes } as any), MONEY_TIMEOUT_MS)) as unknown as RazorpayRefund;
             } catch (e) {
                 throw normalizeRazorpayError(e);
             }
         },
         async listPaymentRefunds(paymentId) {
             try {
-                const res = await getRazorpay().payments.fetchMultipleRefund(paymentId);
+                const res = await withTimeout(() => getRazorpay().payments.fetchMultipleRefund(paymentId), DEFAULT_TIMEOUT_MS);
                 return (res.items ?? []) as unknown as RazorpayRefund[];
             } catch (e) {
                 throw normalizeRazorpayError(e);
@@ -71,14 +87,14 @@ export function realConsultRazorpay(): ConsultRazorpay {
         },
         async fetchRefund(paymentId, refundId) {
             try {
-                return (await getRazorpay().payments.fetchRefund(paymentId, refundId)) as unknown as RazorpayRefund;
+                return (await withTimeout(() => getRazorpay().payments.fetchRefund(paymentId, refundId), DEFAULT_TIMEOUT_MS)) as unknown as RazorpayRefund;
             } catch (e) {
                 throw normalizeRazorpayError(e);
             }
         },
         async findOrderByReceipt(receipt) {
             try {
-                const res = await getRazorpay().orders.all({ receipt } as any);
+                const res = await withTimeout(() => getRazorpay().orders.all({ receipt } as any), DEFAULT_TIMEOUT_MS);
                 const order = (res.items ?? [])[0] as { id: string; amount: number } | undefined;
                 return order ? { id: order.id, amount: order.amount } : null;
             } catch (e) {
@@ -87,14 +103,14 @@ export function realConsultRazorpay(): ConsultRazorpay {
         },
         async fetchPayment(paymentId) {
             try {
-                return (await getRazorpay().payments.fetch(paymentId)) as unknown as RazorpayPayment;
+                return (await withTimeout(() => getRazorpay().payments.fetch(paymentId), DEFAULT_TIMEOUT_MS)) as unknown as RazorpayPayment;
             } catch (e) {
                 throw normalizeRazorpayError(e);
             }
         },
         async capturePayment(paymentId, amountPaise) {
             try {
-                return (await getRazorpay().payments.capture(paymentId, amountPaise, 'INR')) as unknown as RazorpayPayment;
+                return (await withTimeout(() => getRazorpay().payments.capture(paymentId, amountPaise, 'INR'), MONEY_TIMEOUT_MS)) as unknown as RazorpayPayment;
             } catch (e) {
                 throw normalizeRazorpayError(e);
             }

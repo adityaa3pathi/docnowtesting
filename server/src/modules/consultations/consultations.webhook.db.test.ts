@@ -103,6 +103,23 @@ describeDb('consultation webhook (real Postgres)', () => {
         expect(await status(b.res.consultationId)).toBe('REFUNDED');
     });
 
+    it('marks a refund failed on refund.failed and frees its amount for another refund', async () => {
+        const b = await booked();
+        await payments.confirmPayment({ paymentId: 'pay_hook0000001', orderId: b.orderId, amountPaise: b.fee, currency: 'INR' });
+        const pay = await testDb.consultationPayment.findUniqueOrThrow({ where: { razorpayPaymentId: 'pay_hook0000001' } });
+        const record = await testDb.consultationRefund.create({
+            data: { consultationId: b.res.consultationId, paymentId: pay.id, reason: 'ADMIN', amountPaise: b.fee, receipt: 'rf_receipt_fail' },
+        });
+        await send({
+            event: 'refund.failed',
+            payload: { refund: { entity: { id: 'rfnd_f1', receipt: 'rf_receipt_fail', payment_id: 'pay_hook0000001', amount: b.fee, status: 'failed' } } },
+        });
+        const after = await testDb.consultationRefund.findUniqueOrThrow({ where: { id: record.id } });
+        expect(after).toMatchObject({ status: 'FAILED', failureConfirmed: true, razorpayRefundId: 'rfnd_f1' });
+        const again = await testDb.$transaction((tx) => import('./consultations.refunds').then((m) => m.createRefundRecord(tx, { consultationId: b.res.consultationId, paymentId: pay.id, reason: 'DUPLICATE_PAYMENT' })));
+        expect(again?.amountPaise).toBe(b.fee);
+    });
+
     it('records a refund made by hand in the dashboard as external', async () => {
         const b = await booked();
         await payments.confirmPayment({ paymentId: 'pay_hook0000001', orderId: b.orderId, amountPaise: b.fee, currency: 'INR' });

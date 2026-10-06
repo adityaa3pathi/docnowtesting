@@ -5,6 +5,7 @@
 import { createHash, randomUUID } from 'crypto';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '../../db';
+import { logAlert } from '../../utils/logger';
 import { feeFromBps, toPaise } from './consultations.money';
 import { getActivePolicy } from './consultations.policy.service';
 import { ConsultRazorpay, normalizeRazorpayError, realConsultRazorpay } from './consultations.razorpay';
@@ -38,7 +39,10 @@ async function existingBooking(db: PrismaClient, input: BookingInput, requestHas
     });
     if (!found) return null;
     if (found.requestHash !== requestHash) throw new DoctorError(409, 'This idempotency key was used for a different request');
-    return response(found, found.payments[0]?.razorpayOrderId);
+    const orderId = found.payments[0]?.razorpayOrderId;
+    if (found.status !== 'PENDING_PAYMENT') throw new DoctorError(409, 'This booking has ended. Start a new booking with a new idempotency key');
+    if (!orderId) throw new DoctorError(409, 'This booking is still being set up. Try again in a moment');
+    return response(found, orderId);
 }
 
 /** Expires a lapsed hold on a booked slot, but only after Razorpay confirms nothing was paid. */
@@ -136,6 +140,8 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
         });
         orderId = order.id;
     } catch (e) {
+        const err = normalizeRazorpayError(e);
+        logAlert('consult_order_creation_failed', { consultationId: consultation.id, kind: err.kind, status: err.status });
         await db.$transaction((tx) => expireHold(tx, consultation.id));
         throw new DoctorError(502, 'Payment service unavailable. Please try again');
     }

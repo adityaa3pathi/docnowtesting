@@ -12,7 +12,7 @@ import { rateLimiter } from '../../middleware/rateLimiter';
 import { getClientIP } from '../../utils/adminHelpers';
 import { cancelConsultation } from './consultations.cancellation';
 import { confirmPayment } from './consultations.payments';
-import { createRefundRecord, MAX_REFUND_ATTEMPTS, runRefund } from './consultations.refunds';
+import { createRefundRecord, MAX_REFUND_ATTEMPTS, reopenRefund, runRefund } from './consultations.refunds';
 import { OPEN_PAYMENT_STATUSES } from './consultations.types';
 import { DoctorError } from './doctors.status';
 import { sendConsultError } from './consultations.http';
@@ -77,12 +77,7 @@ reviewRoutes.post('/review/refunds/:id/retry', ...admin, async (req: AuthRequest
         const parse = reasonSchema.safeParse(req.body);
         if (!id.success) return res.status(404).json({ error: 'Not found' });
         if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
-        // Attempts restart at 1 so the runner first looks for a refund an earlier attempt may have made.
-        const reopened = await prisma.consultationRefund.updateMany({
-            where: { id: id.data, OR: [{ status: 'FAILED' }, { status: 'PENDING', attempts: { gte: MAX_REFUND_ATTEMPTS } }] },
-            data: { status: 'PENDING', attempts: 1, failureConfirmed: false, lastError: null },
-        });
-        if (reopened.count !== 1) throw new DoctorError(409, 'This refund does not need staff action');
+        if (!(await reopenRefund(prisma, id.data))) throw new DoctorError(409, 'This refund does not need staff action');
         const outcome = await runRefund(id.data);
         await audit(req, 'CONSULT_REFUND_RETRY', 'ConsultationRefund', id.data, { reason: parse.data.reason, outcome });
         res.json({ outcome });

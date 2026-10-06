@@ -122,6 +122,36 @@ describeDb('consultation repair job (real Postgres)', () => {
         expect(await status(b.id)).toBe('REFUNDED');
     });
 
+    it('moves a pending refund that Razorpay shows as failed to failed', async () => {
+        const b = await booked();
+        await payments.confirmPayment({ paymentId: 'pay_job000000007', orderId: b.orderId, amountPaise: b.fee, currency: 'INR' });
+        const pay = await testDb.consultationPayment.findFirstOrThrow({ where: { consultationId: b.id } });
+        const r = await testDb.consultationRefund.create({
+            data: { consultationId: b.id, paymentId: pay.id, reason: 'ADMIN', amountPaise: b.fee, receipt: 'rf_job_fail', razorpayRefundId: 'rfnd_88' },
+        });
+        razorpay.refunds.push({ id: 'rfnd_88', amount: b.fee, status: 'failed', receipt: 'rf_job_fail', paymentId: 'pay_job000000007' });
+        await age('ConsultationRefund', r.id, 5);
+        await cycle();
+        expect(await testDb.consultationRefund.findUniqueOrThrow({ where: { id: r.id } })).toMatchObject({ status: 'FAILED', failureConfirmed: true });
+    });
+
+    it('re-checks an old abandoned order only hourly, and a fresh one every cycle', async () => {
+        const b = await booked();
+        await lapse(b.id);
+        await cycle();
+        const row = await testDb.consultationPayment.findFirstOrThrow({ where: { consultationId: b.id } });
+        await ageCreated('ConsultationPayment', row.id, 4 * 60);
+        await age('ConsultationPayment', row.id, 4 * 60);
+        razorpay.orderLookups = 0;
+        await cycle();
+        expect(razorpay.orderLookups).toBe(1);
+        await cycle();
+        expect(razorpay.orderLookups).toBe(1);
+        await age('ConsultationPayment', row.id, 90);
+        await cycle();
+        expect(razorpay.orderLookups).toBe(2);
+    });
+
     it('does not let one bad row stop the batch', async () => {
         const bad = await booked();
         const good = await booked();

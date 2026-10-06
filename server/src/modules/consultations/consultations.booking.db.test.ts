@@ -211,6 +211,36 @@ describeDb('consultation booking (real Postgres)', () => {
         await expect(service.addLeave(w.doctor.profile.id, new Date(Date.now() - 3600_000), new Date(Date.now() + 90 * 24 * 3600_000))).resolves.toBeTruthy();
     });
 
+    it('refuses a replay of a booking that failed at Razorpay, and one still being set up', async () => {
+        const w = await world();
+        razorpay.failCreateOrder = true;
+        await expect(book(w, 'key-replay-1234')).rejects.toMatchObject({ status: 502 });
+        razorpay.failCreateOrder = false;
+        await expect(book(w, 'key-replay-1234')).rejects.toMatchObject({ status: 409 });
+        const fresh = await world();
+        const held = await book(fresh, 'key-replay-5678');
+        await testDb.consultationPayment.deleteMany({ where: { consultationId: held.consultationId } });
+        await expect(book(fresh, 'key-replay-5678')).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('keeps free slots that are still in the new hours and blocks the ones that fall outside', async () => {
+        const { istDayStart } = await import('./slots');
+        const w = await world();
+        const dayStart = istDayStart(new Date(Date.now() + 2 * 86_400_000));
+        const startsAt = new Date(dayStart.getTime() + 10 * 3_600_000);
+        const dow = new Date(dayStart.getTime() + 330 * 60_000).getUTCDay();
+        const slot = await testDb.slot.create({ data: { doctorId: w.doctor.profile.id, startsAt, endsAt: new Date(startsAt.getTime() + 15 * 60_000) } });
+        const first = await booking.createBooking({ userId: w.user.id, patientId: w.patient.id, slotId: slot.id, idempotencyKey: 'key-keepslot12' }, { razorpay });
+        await testDb.consultation.update({ where: { id: first.consultationId }, data: { holdExpiresAt: new Date(Date.now() - 60_000) } });
+        await testDb.$transaction((tx) => import('./consultations.transitions').then((m) => m.expireHold(tx, first.consultationId)));
+        await service.setAvailability(w.doctor.profile.id, [{ dayOfWeek: dow, startMinute: 600, endMinute: 615 }]);
+        expect((await testDb.slot.findUniqueOrThrow({ where: { id: slot.id } })).status).toBe('AVAILABLE');
+        await service.setAvailability(w.doctor.profile.id, [{ dayOfWeek: dow, startMinute: 700, endMinute: 715 }]);
+        expect((await testDb.slot.findUniqueOrThrow({ where: { id: slot.id } })).status).toBe('BLOCKED');
+        await service.setAvailability(w.doctor.profile.id, [{ dayOfWeek: dow, startMinute: 600, endMinute: 615 }]);
+        expect((await testDb.slot.findUniqueOrThrow({ where: { id: slot.id } })).status).toBe('AVAILABLE');
+    });
+
     describe('routes', () => {
         const post = (token: string | null, body: unknown, headers: Record<string, string> = {}) =>
             fetch(`${server.url}/consult/bookings`, {
@@ -246,11 +276,12 @@ describeDb('consultation booking (real Postgres)', () => {
             expect(mine.status).toBe(200);
         });
 
-        it('creates a booking through the route', async () => {
-            // Uses the real Razorpay client, so only the failure path is asserted: no Razorpay keys in tests.
+        it('answers 502 and frees the slot when Razorpay is unavailable', async () => {
             const w = await world();
             const res = await post(tokenFor(w.user as any), { slotId: w.slot.id, patientId: w.patient.id, idempotencyKey: 'key-route123' });
-            expect([201, 502]).toContain(res.status);
+            // No Razorpay credentials in tests, so order creation fails: the hold is released and 502 returned.
+            expect(res.status).toBe(502);
+            expect((await testDb.slot.findUniqueOrThrow({ where: { id: w.slot.id } })).status).toBe('AVAILABLE');
             expect((await policy.getActivePolicy()).version).toBe(1);
         });
     });

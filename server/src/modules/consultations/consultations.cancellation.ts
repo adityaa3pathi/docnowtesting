@@ -65,7 +65,7 @@ export async function cancelConsultation(consultationId: string, actor: CancelAc
 
     const rules = c.policySnapshot as unknown as Rules;
     const hoursBefore = (c.startsAt.getTime() - now.getTime()) / 3_600_000;
-    const refundPaise = refundForPercent(payment.amountPaise, pickRefundPercent(rules.refundTiers, hoursBefore), 0);
+    const refundPaise = refundForPercent(payment.amountPaise, pickRefundPercent(rules.refundTiers, hoursBefore));
 
     const record = await db.$transaction(async (tx) => {
         const res = await tx.consultation.updateMany({
