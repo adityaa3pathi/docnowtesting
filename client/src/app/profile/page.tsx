@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut, ChevronRight, IndianRupee } from 'lucide-react';
+import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut, ChevronRight, IndianRupee, Stethoscope } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -194,6 +194,18 @@ export default function ProfilePage() {
                     >
                         <ReferralTab />
                     </BentoCard>
+
+                    {/* Doctor consultations */}
+                    <Link href="/consult/my" className="col-span-2 row-span-1 sm:col-span-4 min-h-0">
+                        <BentoCard
+                            className="border-none shadow-md"
+                            gradient="from-[#4b2192] to-indigo-500"
+                            title="My consultations"
+                            icon={<Stethoscope className="w-4 h-4" />}
+                            subtitle="Doctor visits and refunds"
+                            isLink
+                        />
+                    </Link>
 
                     {/* Manager/Admin Area - Desktop only */}
                     {(isManager || isSuperAdmin) && (
