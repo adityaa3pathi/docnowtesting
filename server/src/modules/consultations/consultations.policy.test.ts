@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_RULES, pickRefundPercent, validateRules, Rules } from './consultations.policy';
+import { DEFAULT_RULES, hasSharpRefundDrop, pickRefundPercent, validateRules, Rules } from './consultations.policy';
 
 const rules = (patch: Partial<Rules> = {}): Rules => ({ ...DEFAULT_RULES, ...patch });
 
@@ -60,5 +60,24 @@ describe('validateRules', () => {
         expect(validateRules(rules({ uploadLimitMb: 5000 }))).toMatch(/upload/i);
         expect(validateRules(rules({ patientNoShowWaitMinutes: 0 }))).toMatch(/wait/i);
         expect(validateRules(rules({ doctorNoShowWaitMinutes: 600 }))).toMatch(/wait/i);
+    });
+});
+
+describe('hasSharpRefundDrop', () => {
+    const lower = (percent: number): Rules => ({
+        ...DEFAULT_RULES,
+        refundTiers: [
+            { minHoursBefore: 24, percent },
+            { minHoursBefore: 6, percent: Math.min(percent, 50) },
+            { minHoursBefore: 0, percent: 0 },
+        ],
+    });
+    it('flags a drop of 30 points or more on the same tier', () => {
+        expect(hasSharpRefundDrop(DEFAULT_RULES, lower(60))).toBe(true);
+    });
+    it('ignores small drops, increases and unchanged rules', () => {
+        expect(hasSharpRefundDrop(DEFAULT_RULES, lower(90))).toBe(false);
+        expect(hasSharpRefundDrop(lower(60), DEFAULT_RULES)).toBe(false);
+        expect(hasSharpRefundDrop(DEFAULT_RULES, DEFAULT_RULES)).toBe(false);
     });
 });

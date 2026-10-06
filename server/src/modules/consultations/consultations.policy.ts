@@ -70,3 +70,12 @@ export function pickRefundPercent(tiers: RefundTier[], hoursBefore: number): num
     const match = sorted.find((t) => hoursBefore >= t.minHoursBefore);
     return (match ?? sorted[sorted.length - 1]).percent;
 }
+
+/** True when any tier's refund percent falls by 30 points or more, which staff should see at once. */
+export function hasSharpRefundDrop(before: Rules, after: Rules, threshold = 30): boolean {
+    return before.refundTiers.some((old) => {
+        const next = after.refundTiers.find((t) => t.minHoursBefore === old.minHoursBefore);
+        const nextPercent = next ? next.percent : pickRefundPercent(after.refundTiers, old.minHoursBefore);
+        return old.percent - nextPercent >= threshold;
+    });
+}

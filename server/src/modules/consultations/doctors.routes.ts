@@ -19,6 +19,7 @@ import {
     leaveSchema, registerDoctorSchema, reviewReasonSchema, specialtySchema,
 } from './doctors.types';
 import { DoctorError } from './doctors.status';
+import { policyRoutes } from './consultations.policy.routes';
 import {
     addLeave, adminCreateDoctor, registerDoctor, removeLeave, reviewDoctor, setAvailability, setSlotBlocked,
 } from './doctors.service';
@@ -197,6 +198,7 @@ doctorRoutes.delete('/me/leave/:id', ...mine, async (req: AuthRequest, res: Resp
 // ── Super admin ─────────────────────────────────────────
 
 export const consultAdminRoutes = Router();
+consultAdminRoutes.use('/policy', policyRoutes);
 const admin = [authMiddleware, requireSuperAdmin] as const;
 
 consultAdminRoutes.get('/doctors', ...admin, async (req: AuthRequest, res: Response) => {
