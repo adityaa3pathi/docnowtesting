@@ -1,0 +1,180 @@
+/**
+ * Doctor Service
+ *
+ * Sign-up, admin-created profiles, approval, weekly hours, leave and slot generation.
+ * Roles follow status: DOCTOR is granted on approval and removed on suspend or reject.
+ */
+import { Prisma } from '@prisma/client';
+import { prisma } from '../../db';
+import { assertDoctorTransition, DoctorError } from './doctors.status';
+import { assertNoOverlap, computeSlots, Window } from './slots';
+
+export const SLOT_HORIZON_DAYS = 14;
+
+type Tx = Prisma.TransactionClient;
+
+async function assertActiveSpecialty(specialtyId: string) {
+    const s = await prisma.specialty.findUnique({ where: { id: specialtyId } });
+    if (!s || !s.isActive) throw new DoctorError(400, 'Specialty not found');
+}
+
+function mapUniqueError(e: unknown): never {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new DoctorError(409, 'This registration number is already registered');
+    }
+    throw e;
+}
+
+// ── Sign-up and admin create ────────────────────────────
+
+export async function registerDoctor(userId: string, data: {
+    displayName: string; specialtyId: string; qualification: string; registrationNumber: string;
+    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; photoUrl?: string;
+}) {
+    await assertActiveSpecialty(data.specialtyId);
+    if (await prisma.doctorProfile.findUnique({ where: { userId } })) {
+        throw new DoctorError(409, 'You have already registered as a doctor');
+    }
+    try {
+        // Fee is set by admin on approval; 0 keeps the profile unbookable until then.
+        return await prisma.doctorProfile.create({ data: { ...data, userId, consultationFee: 0 } });
+    } catch (e) {
+        mapUniqueError(e);
+    }
+}
+
+export async function adminCreateDoctor(adminId: string, data: {
+    mobile: string; displayName: string; specialtyId: string; qualification: string; registrationNumber: string;
+    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; photoUrl?: string;
+    consultationFee: number; slotMinutes: number;
+}) {
+    await assertActiveSpecialty(data.specialtyId);
+    const { mobile, ...profile } = data;
+    try {
+        return await prisma.$transaction(async (tx) => {
+            let user = await tx.user.findUnique({ where: { mobile }, include: { doctorProfile: true } });
+            if (user?.doctorProfile) throw new DoctorError(409, 'This mobile number is already a doctor');
+            if (user && user.role !== 'USER') throw new DoctorError(409, 'This account has a staff role and cannot be a doctor');
+            if (!user) {
+                user = await tx.user.create({ data: { mobile, name: profile.displayName, role: 'DOCTOR' }, include: { doctorProfile: true } });
+            } else {
+                await tx.user.update({ where: { id: user.id }, data: { role: 'DOCTOR' } });
+            }
+            return tx.doctorProfile.create({
+                data: { ...profile, userId: user.id, status: 'APPROVED', createdByAdminId: adminId, reviewedById: adminId, reviewedAt: new Date() },
+            });
+        });
+    } catch (e) {
+        mapUniqueError(e);
+    }
+}
+
+// ── Review ──────────────────────────────────────────────
+
+export async function reviewDoctor(
+    adminId: string,
+    doctorId: string,
+    to: 'APPROVED' | 'REJECTED' | 'SUSPENDED',
+    reason?: string,
+) {
+    const doctor = await prisma.doctorProfile.findUnique({ where: { id: doctorId }, include: { user: true } });
+    if (!doctor) throw new DoctorError(404, 'Doctor not found');
+    assertDoctorTransition(doctor.status, to);
+    if (to === 'APPROVED' && doctor.consultationFee <= 0) {
+        throw new DoctorError(400, 'Set a consultation fee before approving');
+    }
+
+    return prisma.$transaction(async (tx) => {
+        const updated = await tx.doctorProfile.update({
+            where: { id: doctorId },
+            data: { status: to, statusReason: to === 'APPROVED' ? null : reason, reviewedById: adminId, reviewedAt: new Date() },
+        });
+        if (to === 'APPROVED' && doctor.user.role === 'USER') {
+            await tx.user.update({ where: { id: doctor.userId }, data: { role: 'DOCTOR' } });
+        }
+        if (to !== 'APPROVED' && doctor.user.role === 'DOCTOR') {
+            await tx.user.update({ where: { id: doctor.userId }, data: { role: 'USER' } });
+            await tx.slot.deleteMany({ where: { doctorId, status: 'AVAILABLE', startsAt: { gt: new Date() } } });
+        }
+        if (to === 'APPROVED') await ensureSlots(tx, doctorId);
+        return updated;
+    });
+}
+
+// ── Hours, leave, slots ─────────────────────────────────
+
+async function ensureSlots(tx: Tx, doctorId: string) {
+    const doctor = await tx.doctorProfile.findUniqueOrThrow({ where: { id: doctorId } });
+    const [windows, leaves] = await Promise.all([
+        tx.doctorAvailability.findMany({ where: { doctorId } }),
+        tx.doctorLeave.findMany({ where: { doctorId, endsAt: { gt: new Date() } } }),
+    ]);
+    const ranges = computeSlots({
+        windows, leaves, slotMinutes: doctor.slotMinutes, from: new Date(), days: SLOT_HORIZON_DAYS,
+    });
+    if (ranges.length === 0) return 0;
+    const res = await tx.slot.createMany({
+        data: ranges.map((r) => ({ doctorId, startsAt: r.startsAt, endsAt: r.endsAt })),
+        skipDuplicates: true,
+    });
+    return res.count;
+}
+
+async function rebuildSlots(tx: Tx, doctorId: string) {
+    await tx.slot.deleteMany({ where: { doctorId, status: 'AVAILABLE', startsAt: { gt: new Date() } } });
+    await ensureSlots(tx, doctorId);
+}
+
+export async function setAvailability(doctorId: string, windows: Window[], slotMinutes?: number) {
+    try {
+        assertNoOverlap(windows);
+    } catch (e: any) {
+        throw new DoctorError(400, e.message);
+    }
+    return prisma.$transaction(async (tx) => {
+        await tx.doctorAvailability.deleteMany({ where: { doctorId } });
+        if (windows.length) await tx.doctorAvailability.createMany({ data: windows.map((w) => ({ ...w, doctorId })) });
+        if (slotMinutes) await tx.doctorProfile.update({ where: { id: doctorId }, data: { slotMinutes } });
+        await rebuildSlots(tx, doctorId);
+        return tx.doctorAvailability.findMany({ where: { doctorId }, orderBy: [{ dayOfWeek: 'asc' }, { startMinute: 'asc' }] });
+    });
+}
+
+export async function addLeave(doctorId: string, startsAt: Date, endsAt: Date, reason?: string) {
+    return prisma.$transaction(async (tx) => {
+        const leave = await tx.doctorLeave.create({ data: { doctorId, startsAt, endsAt, reason } });
+        await tx.slot.deleteMany({
+            where: { doctorId, status: 'AVAILABLE', startsAt: { lt: endsAt }, endsAt: { gt: startsAt } },
+        });
+        const bookedConflicts = await tx.slot.count({
+            where: { doctorId, status: 'BOOKED', startsAt: { lt: endsAt }, endsAt: { gt: startsAt } },
+        });
+        return { leave, bookedConflicts };
+    });
+}
+
+export async function removeLeave(doctorId: string, leaveId: string) {
+    await prisma.$transaction(async (tx) => {
+        const res = await tx.doctorLeave.deleteMany({ where: { id: leaveId, doctorId } });
+        if (res.count === 0) throw new DoctorError(404, 'Leave not found');
+        await ensureSlots(tx, doctorId);
+    });
+}
+
+export async function setSlotBlocked(doctorId: string, slotId: string, blocked: boolean) {
+    const res = await prisma.slot.updateMany({
+        where: { id: slotId, doctorId, status: blocked ? 'AVAILABLE' : 'BLOCKED', startsAt: { gt: new Date() } },
+        data: { status: blocked ? 'BLOCKED' : 'AVAILABLE' },
+    });
+    if (res.count === 0) throw new DoctorError(409, blocked ? 'Slot is not available to block' : 'Slot is not blocked');
+}
+
+/** Daily job: keep the rolling slot window full for every approved doctor. */
+export async function extendAllDoctorSlots() {
+    const doctors = await prisma.doctorProfile.findMany({ where: { status: 'APPROVED' }, select: { id: true } });
+    let created = 0;
+    for (const d of doctors) {
+        created += await prisma.$transaction((tx) => ensureSlots(tx, d.id));
+    }
+    return { doctors: doctors.length, created };
+}

@@ -34,6 +34,7 @@ import invoiceRoutes from './routes/invoices';
 import healthRoutes from './routes/health';
 import heroSlidesRoutes from './routes/heroSlides';
 import { campAdminRoutes, campPublicRoutes } from './modules/camps';
+import { consultPublicRoutes, doctorRoutes, consultAdminRoutes } from './modules/consultations';
 
 import { registerBookingStrategy } from './services/bookingStrategyRegistry';
 import { HomeCollectionStrategy } from './services/homeCollectionStrategy';
@@ -139,6 +140,9 @@ app.use('/api/promos', promoRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/camps', campPublicRoutes);
+app.use('/api/consult', consultPublicRoutes);
+app.use('/api/doctor', doctorRoutes);
+app.use('/api/admin/consult', consultAdminRoutes);
 app.use('/api/hero-slides', heroSlidesRoutes);
 
 
@@ -203,8 +207,10 @@ app.use((err: any, req: RequestWithContext, res: Response, next: NextFunction) =
 });
 
 import { startReconciler } from './workers/reconciler';
+import { startSlotGenerator } from './workers/slotGenerator';
 
 app.listen(PORT, () => {
     logger.info({ port: PORT, nodeEnv: process.env.NODE_ENV }, 'server_started');
     startReconciler();
+    startSlotGenerator();
 });

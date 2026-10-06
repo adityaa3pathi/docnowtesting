@@ -17,7 +17,8 @@
   "author": "",
   "license": "ISC",
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "ts-node prisma/seed.ts",
+    "seed:doctors": "ts-node prisma/seed-doctors.ts"
   },
   "type": "commonjs",
   "dependencies": {
