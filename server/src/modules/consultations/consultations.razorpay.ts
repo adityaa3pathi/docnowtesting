@@ -21,10 +21,14 @@ export function normalizeRazorpayError(e: unknown): RazorpayError {
 
 export type RazorpayPayment = { id: string; status: string; amount: number; currency: string; order_id: string };
 
+export type RazorpayRefund = { id: string; amount: number; status: string; receipt?: string | null; notes?: Record<string, string> | null };
+
 export interface ConsultRazorpay {
     createOrder(input: { amountPaise: number; receipt: string; notes: Record<string, string> }): Promise<{ id: string }>;
     fetchOrderPayments(orderId: string): Promise<RazorpayPayment[]>;
     fetchPayment(paymentId: string): Promise<RazorpayPayment>;
+    createRefund(input: { paymentId: string; amountPaise: number; receipt: string; notes: Record<string, string> }): Promise<RazorpayRefund>;
+    listPaymentRefunds(paymentId: string): Promise<RazorpayRefund[]>;
     /** Only needed when the account does not auto-capture. */
     capturePayment(paymentId: string, amountPaise: number): Promise<RazorpayPayment>;
 }
@@ -43,6 +47,21 @@ export function realConsultRazorpay(): ConsultRazorpay {
             try {
                 const res = await getRazorpay().orders.fetchPayments(orderId);
                 return (res.items ?? []) as unknown as RazorpayPayment[];
+            } catch (e) {
+                throw normalizeRazorpayError(e);
+            }
+        },
+        async createRefund({ paymentId, amountPaise, receipt, notes }) {
+            try {
+                return (await getRazorpay().payments.refund(paymentId, { amount: amountPaise, receipt, notes } as any)) as unknown as RazorpayRefund;
+            } catch (e) {
+                throw normalizeRazorpayError(e);
+            }
+        },
+        async listPaymentRefunds(paymentId) {
+            try {
+                const res = await getRazorpay().payments.fetchMultipleRefund(paymentId);
+                return (res.items ?? []) as unknown as RazorpayRefund[];
             } catch (e) {
                 throw normalizeRazorpayError(e);
             }

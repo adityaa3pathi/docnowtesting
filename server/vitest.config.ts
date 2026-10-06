@@ -5,6 +5,7 @@ export default defineConfig({
         environment: 'node',
         globals: true,
         include: ['src/**/*.test.ts'],
+        setupFiles: ['./src/modules/consultations/test/env.ts'],
         clearMocks: true,
         restoreMocks: true,
         // Database suites share one test database and reset it, so files must not run at the same time.

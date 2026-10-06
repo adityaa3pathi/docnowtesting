@@ -8,6 +8,7 @@ import { authMiddleware, AuthRequest } from '../../middleware/auth';
 import { consultCsrfGuard } from '../../middleware/consultCsrf';
 import { rateLimiter } from '../../middleware/rateLimiter';
 import { createBooking, getBooking } from './consultations.booking';
+import { cancelConsultation } from './consultations.cancellation';
 import { verifyAndConfirm } from './consultations.payments';
 import { DoctorError } from './doctors.status';
 
@@ -55,5 +56,17 @@ consultPatientRoutes.post('/bookings/:id/verify', ...patient, rateLimiter(10, 60
         const parse = verifySchema.safeParse(req.body);
         if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
         res.json(await verifyAndConfirm(req.userId!, id.data, parse.data));
+    } catch (e) { fail(res, e); }
+});
+
+const cancelSchema = z.object({ reason: z.string().max(200).optional() });
+
+consultPatientRoutes.post('/bookings/:id/cancel', ...patient, rateLimiter(5, 60, 'consult_cancel'), async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        const parse = cancelSchema.safeParse(req.body ?? {});
+        if (!parse.success) return res.status(400).json({ error: 'Invalid reason' });
+        res.json(await cancelConsultation(id.data, { kind: 'booker', userId: req.userId! }, parse.data.reason));
     } catch (e) { fail(res, e); }
 });

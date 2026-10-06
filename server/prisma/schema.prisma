@@ -974,6 +974,7 @@ model ConsultationRefund {
   receipt          String              @unique
   attempts         Int                 @default(0)
   lastError        String?
+  failureConfirmed Boolean             @default(false)
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
 

@@ -15,7 +15,7 @@ import { DoctorError } from './doctors.status';
 export type PaymentFact = { paymentId: string; orderId: string; amountPaise: number; currency: string };
 export type ConfirmOutcome = 'confirmed' | 'reclaimed' | 'already' | 'refund_created' | 'flagged' | 'unknown_order';
 export type Db = PrismaClient | Tx;
-export type ConfirmDeps = { db?: Db; now?: () => Date };
+export type ConfirmDeps = { db?: Db; now?: () => Date; acceptAmount?: boolean };
 
 /** Runs in a transaction of its own, or inside the caller's when given one. */
 function inTx<T>(db: Db, fn: (tx: Tx) => Promise<T>): Promise<T> {
@@ -54,7 +54,7 @@ export async function confirmPayment(fact: PaymentFact, deps: ConfirmDeps = {}):
     const payment = await attachPayment(db, fact);
     if (!payment) return 'unknown_order';
 
-    if (fact.amountPaise !== expectedPaise || fact.currency !== 'INR') {
+    if (!deps.acceptAmount && (fact.amountPaise !== expectedPaise || fact.currency !== 'INR')) {
         await db.consultation.updateMany({
             where: { id: payment.consultationId, status: { in: ['PENDING_PAYMENT', 'EXPIRED'] } },
             data: { reviewReason: 'amount_mismatch' },

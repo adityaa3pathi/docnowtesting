@@ -1,9 +1,30 @@
-import { ConsultRazorpay, RazorpayError, RazorpayPayment } from '../consultations.razorpay';
+import { ConsultRazorpay, RazorpayError, RazorpayPayment, RazorpayRefund } from '../consultations.razorpay';
 
 /** In-memory Razorpay for tests. Set failures and payments directly on the instance. */
 export class FakeRazorpay implements ConsultRazorpay {
     orders: { id: string; amountPaise: number; receipt: string; notes: Record<string, string> }[] = [];
     payments = new Map<string, RazorpayPayment[]>();
+    refunds: (RazorpayRefund & { paymentId: string })[] = [];
+    /** Queue of outcomes for the next createRefund calls: an error to throw, or 'timeout' (refund made, then a network error). */
+    refundScript: (RazorpayError | 'timeout')[] = [];
+    refundCalls = 0;
+    refundStatus = 'processed';
+
+    async createRefund(input: { paymentId: string; amountPaise: number; receipt: string; notes: Record<string, string> }) {
+        this.refundCalls++;
+        const next = this.refundScript.shift();
+        if (next instanceof RazorpayError) throw next;
+        const refund = { id: `rfnd_${this.refunds.length + 1}`, amount: input.amountPaise, status: this.refundStatus, receipt: input.receipt, notes: input.notes, paymentId: input.paymentId };
+        this.refunds.push(refund);
+        if (next === 'timeout') throw new RazorpayError('network', 'timed out');
+        return refund;
+    }
+
+    async listPaymentRefunds(paymentId: string) {
+        if (this.unreachable) throw new RazorpayError('network', 'unreachable');
+        return this.refunds.filter((r) => r.paymentId === paymentId);
+    }
+
     failCreateOrder = false;
     unreachable = false;
 

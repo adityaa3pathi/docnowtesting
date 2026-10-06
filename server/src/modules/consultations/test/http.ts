@@ -12,6 +12,10 @@ export function useTestJwtSecret() {
     // Empty values stop dotenv from filling real Upstash settings, so rate limits stay in memory.
     process.env.UPSTASH_REDIS_REST_URL = '';
     process.env.UPSTASH_REDIS_REST_TOKEN = '';
+    // Blank Razorpay credentials so no test can reach the real API with keys from .env.
+    process.env.RAZORPAY_KEY_ID = '';
+    process.env.RAZORPAY_KEY_SECRET = '';
+    process.env.RAZORPAY_WEBHOOK_SECRET = '';
 }
 
 export function tokenFor(user: { id: string; tokenVersion: number }) {
