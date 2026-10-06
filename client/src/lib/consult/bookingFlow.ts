@@ -7,6 +7,8 @@ import type { BookingView, ConsultationStatus, VerifyOutcome } from './types';
 export const POLL_INTERVAL_MS = 3000;
 export const CONFIRM_WINDOW_MS = 60_000;
 export const EXPIRED_GRACE_MS = 120_000;
+export const LATE_WATCH_INTERVAL_MS = 15_000;
+export const LATE_WATCH_MAX_TICKS = 40;
 
 export type ResultKind = 'booked' | 'refund' | 'checking' | 'hold_ended' | 'still_confirming' | 'closed';
 

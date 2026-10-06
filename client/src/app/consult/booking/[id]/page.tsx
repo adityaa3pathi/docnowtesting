@@ -107,7 +107,14 @@ function BookingDetail() {
                 )}
                 {decision.kind === 'poll' && (
                     <>
-                        <ConfirmingNotice />
+                        {paidButUnsettled || booking.paymentCaptured || flow.paidHere ? (
+                            <ConfirmingNotice />
+                        ) : (
+                            <div role="status" className="rounded-2xl bg-gray-100 p-4 text-gray-800">
+                                <p className="font-bold">Checking your booking</p>
+                                <p className="mt-1 text-sm">The payment window has ended. We are making sure no payment is on the way.</p>
+                            </div>
+                        )}
                         {summary}
                         <Button size="lg" className="w-full" disabled>Pay</Button>
                     </>

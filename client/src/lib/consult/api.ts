@@ -37,7 +37,7 @@ export const consult = {
     createBooking: (body: { slotId: string; patientId: string; idempotencyKey: string }) =>
         api.post<CreateBookingResponse>('/consult/bookings', body).then(data),
     bookings: () => api.get<BookingView[]>('/consult/bookings').then(data),
-    booking: (id: string) => api.get<BookingView>(`/consult/bookings/${id}`).then(data),
+    booking: (id: string) => api.get<BookingView>(`/consult/bookings/${id}`, { timeout: 10_000 }).then(data),
     verify: (id: string, body: { razorpay_order_id?: string; razorpay_payment_id: string; razorpay_signature: string }) =>
         api.post<VerifyResponse>(`/consult/bookings/${id}/verify`, body).then(data),
     cancelPreview: (id: string) => api.get<CancelPreview>(`/consult/bookings/${id}/cancel-preview`).then(data),

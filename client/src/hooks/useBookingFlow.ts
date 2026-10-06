@@ -5,10 +5,12 @@ import { secondsUntil, serverNow } from '@/lib/consult/time';
 import { openCheckout, type PaymentResult } from '@/lib/razorpayCheckout';
 import { forgetAttemptKey } from '@/lib/consult/idempotency';
 import {
-    POLL_INTERVAL_MS, announceThreshold, applyVerifyHint, clearSavedBooking, decide,
+    LATE_WATCH_INTERVAL_MS, LATE_WATCH_MAX_TICKS, POLL_INTERVAL_MS, announceThreshold, applyVerifyHint, clearSavedBooking, decide,
     isFinalResult, loadSavedBooking, type Decision,
 } from '@/lib/consult/bookingFlow';
 import type { BookingView, VerifyOutcome } from '@/lib/consult/types';
+
+const DISMISS_RECHECK_MS = [3000, 4000];
 
 /** Drives one booking from the pay screen to a settled result. The server's booking is the truth. */
 export function useBookingFlow(id: string, enabled: boolean) {
@@ -34,6 +36,7 @@ export function useBookingFlow(id: string, enabled: boolean) {
             return view;
         } catch (e) {
             if (alive.current) setError({ message: errorMessage(e), status: errorStatus(e) });
+            if (errorStatus(e) === 404 && loadSavedBooking()?.id === id) clearSavedBooking();
             return null;
         } finally {
             if (alive.current) setLoading(false);
@@ -75,6 +78,20 @@ export function useBookingFlow(id: string, enabled: boolean) {
     }, [polling, load]);
 
     const result = decision?.kind === 'result' ? decision.result : null;
+
+    // A late webhook can still settle these, so keep checking slowly for a while.
+    const lateWatch = result === 'still_confirming' || result === 'hold_ended';
+    useEffect(() => {
+        if (!lateWatch) return;
+        let ticks = 0;
+        const t = setInterval(() => {
+            ticks += 1;
+            if (ticks > LATE_WATCH_MAX_TICKS) clearInterval(t);
+            else void load();
+        }, LATE_WATCH_INTERVAL_MS);
+        return () => clearInterval(t);
+    }, [lateWatch, load]);
+
     useEffect(() => {
         if (!result || !isFinalResult(result)) return;
         const saved = loadSavedBooking();
@@ -139,10 +156,18 @@ export function useBookingFlow(id: string, enabled: boolean) {
             description: `Consultation with ${fresh.doctorName}`,
             onPaid: (res) => void onPaid(res),
             onDismiss: () => {
-                // Closing the popup proves nothing about payment, so ask the server.
-                payInFlight.current = false;
-                setOpening(false);
-                void load();
+                // Closing the popup proves nothing about payment, so ask the server a few times
+                // before offering Pay again; a UPI payment can land after the popup closes.
+                void (async () => {
+                    for (const wait of DISMISS_RECHECK_MS) {
+                        await load();
+                        if (!alive.current) return;
+                        await new Promise((r) => setTimeout(r, wait));
+                    }
+                    await load();
+                    payInFlight.current = false;
+                    if (alive.current) setOpening(false);
+                })();
             },
             onFailed: () => {
                 setPayNote('That attempt did not complete. You can try again while the hold lasts. If money was taken, it will show in My consultations.');
