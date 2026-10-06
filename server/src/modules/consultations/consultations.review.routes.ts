@@ -1,8 +1,6 @@
 /**
- * Staff routes for consultation money: cancel on a patient's behalf and resolve the queue of
- * flagged payments and failed refunds. Super admin only, CSRF-guarded like the patient routes
- * (R20), reason required, actor and IP in the admin audit log. Money moves only through the
- * same refund lock and confirm step as everything else.
+ * Staff routes for consultation money: cancel for a patient, and resolve flagged payments and
+ * failed refunds. Super admin, cookie-CSRF guarded, reason required, actor and IP audited.
  */
 import { Router, Response } from 'express';
 import { z } from 'zod';
@@ -15,7 +13,9 @@ import { getClientIP } from '../../utils/adminHelpers';
 import { cancelConsultation } from './consultations.cancellation';
 import { confirmPayment } from './consultations.payments';
 import { createRefundRecord, MAX_REFUND_ATTEMPTS, runRefund } from './consultations.refunds';
+import { OPEN_PAYMENT_STATUSES } from './consultations.types';
 import { DoctorError } from './doctors.status';
+import { sendConsultError } from './consultations.http';
 
 export const reviewRoutes = Router();
 const admin = [authMiddleware, requireSuperAdmin, consultCsrfGuard, rateLimiter(30, 60, 'consult_admin')] as const;
@@ -23,11 +23,7 @@ const reasonSchema = z.object({ reason: z.string().trim().min(3, 'A reason is re
 const resolveSchema = reasonSchema.extend({ action: z.enum(['confirm', 'refund']) });
 const idParam = z.string().uuid();
 
-function fail(res: Response, e: unknown) {
-    if (e instanceof DoctorError) return res.status(e.status).json({ error: e.message });
-    console.error('[ConsultReview] request failed:', e);
-    return res.status(500).json({ error: 'Internal Server Error' });
-}
+const fail = (res: Response, e: unknown) => sendConsultError(res, e, '[ConsultReview]');
 
 async function audit(req: AuthRequest, action: string, entity: string, targetId: string, newValue: object) {
     await prisma.adminAuditLog.create({
@@ -47,7 +43,7 @@ reviewRoutes.get('/review', ...admin, async (_req: AuthRequest, res: Response) =
     try {
         const [flagged, refunds] = await Promise.all([
             prisma.consultation.findMany({
-                where: { reviewReason: { not: null }, status: { in: ['PENDING_PAYMENT', 'EXPIRED'] } },
+                where: { reviewReason: { not: null }, status: { in: OPEN_PAYMENT_STATUSES } },
                 select: { id: true, status: true, reviewReason: true, feePaise: true, updatedAt: true },
                 orderBy: { updatedAt: 'asc' },
                 take: 100,

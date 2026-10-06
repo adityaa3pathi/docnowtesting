@@ -16,16 +16,16 @@ export type RefundDb = Pick<Tx, 'consultationRefund' | 'consultation'>;
 export type RefundReason = 'PATIENT_CANCEL' | 'DOCTOR_NO_SHOW' | 'LATE_PAYMENT_SLOT_LOST' | 'PAID_AFTER_CANCEL' | 'DUPLICATE_PAYMENT' | 'ADMIN' | 'EXTERNAL';
 
 /**
- * Creates a pending refund for `requestedPaise` (or everything still refundable when omitted).
- * Returns the existing record when this payment already has one for the reason, and null when
- * nothing is left to refund. Must run inside a transaction.
+ * Creates a pending refund for `requestedPaise`, or everything still refundable when omitted.
+ * Returns the existing record for this payment and reason, or null when nothing is left to refund.
+ * Must run inside a transaction.
  */
 export async function createRefundRecord(
     tx: Tx,
     input: { consultationId: string; paymentId: string; reason: RefundReason; requestedPaise?: number },
 ) {
-    await tx.$queryRaw`SELECT id FROM "ConsultationPayment" WHERE id = ${input.paymentId} FOR UPDATE`;
-    const payment = await tx.consultationPayment.findUniqueOrThrow({ where: { id: input.paymentId } });
+    const [payment] = await tx.$queryRaw<{ amountPaise: number }[]>`SELECT "amountPaise" FROM "ConsultationPayment" WHERE id = ${input.paymentId} FOR UPDATE`;
+    if (!payment) throw new Error('Payment not found');
 
     const existing = await tx.consultationRefund.findUnique({ where: { paymentId_reason: { paymentId: input.paymentId, reason: input.reason } } });
     if (existing) return existing;
@@ -72,6 +72,11 @@ export async function markRefundProcessed(tx: RefundDb, refundId: string): Promi
     }
 }
 
+/** Marks a pending refund failed. `confirmed` is true only when Razorpay itself reported the failure. */
+export async function markRefundFailed(db: RefundDb, refundId: string, lastError: string, confirmed: boolean): Promise<void> {
+    await db.consultationRefund.updateMany({ where: { id: refundId, status: 'PENDING' }, data: { status: 'FAILED', failureConfirmed: confirmed, lastError } });
+}
+
 /**
  * Applies a Razorpay refund event. Matches by Razorpay id, then by our receipt. A refund made by hand
  * in the dashboard is recorded as an external refund. Statuses only move forward.
@@ -94,7 +99,7 @@ export async function applyRefundEvent(tx: Tx, ev: RefundEvent): Promise<'update
     }
     if (ev.status === 'processed') await markRefundProcessed(tx, refund.id);
     if (ev.status === 'failed') {
-        await tx.consultationRefund.updateMany({ where: { id: refund.id, status: 'PENDING' }, data: { status: 'FAILED', failureConfirmed: true, lastError: 'Razorpay reported the refund failed' } });
+        await markRefundFailed(tx, refund.id, 'Razorpay reported the refund failed', true);
     }
     return external ? 'external' : 'updated';
 }
@@ -156,14 +161,14 @@ export async function runRefund(refundId: string, deps: RefundRunDeps = {}): Pro
     } catch (e) {
         const err = normalizeRazorpayError(e);
         if (err.kind === 'api' && err.status && err.status >= 400 && err.status < 500) {
-            await db.consultationRefund.updateMany({ where: { id: r.id, status: 'PENDING' }, data: { status: 'FAILED', failureConfirmed: true, lastError: err.message } });
+            await markRefundFailed(db, r.id, err.message, true);
             logAlert('consult_refund_failed', { refundId: r.id, reason: err.message });
             return 'failed';
         }
         const made = await findMadeRefund(razorpay, r.payment.razorpayPaymentId, r);
         if (made) return adopt(db, r.id, made);
         if (r.attempts + 1 >= MAX_REFUND_ATTEMPTS) {
-            await db.consultationRefund.updateMany({ where: { id: r.id, status: 'PENDING' }, data: { status: 'FAILED', failureConfirmed: false, lastError: err.message } });
+            await markRefundFailed(db, r.id, err.message, false);
             logAlert('consult_refund_exhausted', { refundId: r.id, reason: err.message });
             return 'failed';
         }

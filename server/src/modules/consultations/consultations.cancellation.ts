@@ -9,6 +9,7 @@ import { refundForPercent } from './consultations.money';
 import { pickRefundPercent, Rules } from './consultations.policy';
 import { ConsultRazorpay } from './consultations.razorpay';
 import { createRefundRecord, runRefund } from './consultations.refunds';
+import { releaseSlot } from './consultations.transitions';
 import { DoctorError } from './doctors.status';
 
 export type CancelActor = { kind: 'booker'; userId: string } | { kind: 'admin'; adminId: string };
@@ -49,7 +50,7 @@ export async function cancelConsultation(consultationId: string, actor: CancelAc
                 where: { id: c.id, status: 'PENDING_PAYMENT' },
                 data: { status: 'CANCELLED', cancelledBy, cancelReason: reason, cancelledAt: now },
             });
-            if (res.count === 1) await tx.slot.updateMany({ where: { id: c.slotId, status: 'BOOKED' }, data: { status: 'AVAILABLE' } });
+            if (res.count === 1) await releaseSlot(tx, c.slotId);
         });
         return view(db, c.id);
     }
@@ -72,7 +73,7 @@ export async function cancelConsultation(consultationId: string, actor: CancelAc
             data: { status: 'CANCELLED', cancelledBy, cancelReason: reason, cancelledAt: now },
         });
         if (res.count !== 1) return null;
-        await tx.slot.updateMany({ where: { id: c.slotId, status: 'BOOKED' }, data: { status: 'AVAILABLE' } });
+        await releaseSlot(tx, c.slotId);
         if (refundPaise <= 0) return null;
         return createRefundRecord(tx, {
             consultationId: c.id,

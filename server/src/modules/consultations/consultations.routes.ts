@@ -1,6 +1,6 @@
 /**
  * Patient consultation routes, mounted at /api/consult. Every route resolves records through the
- * signed-in user, so another user's ids return 404. Cookie requests need a CSRF token (R20).
+ * signed-in user, so another user's ids return 404. Cookie requests need a CSRF token.
  */
 import { Router, Response } from 'express';
 import { z } from 'zod';
@@ -10,7 +10,7 @@ import { rateLimiter } from '../../middleware/rateLimiter';
 import { createBooking, getBooking } from './consultations.booking';
 import { cancelConsultation } from './consultations.cancellation';
 import { verifyAndConfirm } from './consultations.payments';
-import { DoctorError } from './doctors.status';
+import { sendConsultError } from './consultations.http';
 
 const bookingSchema = z.object({
     slotId: z.string().uuid('Invalid slot'),
@@ -21,11 +21,7 @@ const bookingSchema = z.object({
 export const consultPatientRoutes = Router();
 const patient = [authMiddleware, consultCsrfGuard] as const;
 
-function fail(res: Response, e: unknown) {
-    if (e instanceof DoctorError) return res.status(e.status).json({ error: e.message });
-    console.error('[Consult] request failed:', e);
-    return res.status(500).json({ error: 'Internal Server Error' });
-}
+const fail = (res: Response, e: unknown) => sendConsultError(res, e, '[Consult]');
 
 consultPatientRoutes.post('/bookings', ...patient, rateLimiter(5, 60, 'consult_book'), async (req: AuthRequest, res: Response) => {
     try {

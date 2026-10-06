@@ -10,6 +10,7 @@ import { verifyCheckoutSignature } from '../../utils/razorpaySignature';
 import { createRefundRecord, RefundReason } from './consultations.refunds';
 import { ConsultRazorpay, realConsultRazorpay } from './consultations.razorpay';
 import { confirmPending, reclaimExpired, SlotLost, Tx } from './consultations.transitions';
+import { OPEN_PAYMENT_STATUSES } from './consultations.types';
 import { DoctorError } from './doctors.status';
 
 export type PaymentFact = { paymentId: string; orderId: string; amountPaise: number; currency: string };
@@ -56,7 +57,7 @@ export async function confirmPayment(fact: PaymentFact, deps: ConfirmDeps = {}):
 
     if (!deps.acceptAmount && (fact.amountPaise !== expectedPaise || fact.currency !== 'INR')) {
         await db.consultation.updateMany({
-            where: { id: payment.consultationId, status: { in: ['PENDING_PAYMENT', 'EXPIRED'] } },
+            where: { id: payment.consultationId, status: { in: OPEN_PAYMENT_STATUSES } },
             data: { reviewReason: 'amount_mismatch' },
         });
         logAlert('consult_payment_amount_mismatch', { paymentId: fact.paymentId, orderId: fact.orderId, got: fact.amountPaise, expected: expectedPaise });
@@ -124,6 +125,8 @@ export async function verifyAndConfirm(
     if (!verifyCheckoutSignature(orderId, body.razorpay_payment_id, body.razorpay_signature, process.env.RAZORPAY_KEY_SECRET)) {
         throw new DoctorError(400, 'Invalid payment signature');
     }
+    // A repeated tap on a payment that already confirmed this booking needs no Razorpay call.
+    if (c.confirmingPaymentId === body.razorpay_payment_id) return { outcome: 'already' as const, status: c.status };
 
     let payment;
     try {

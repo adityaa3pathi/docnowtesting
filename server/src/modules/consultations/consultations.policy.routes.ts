@@ -1,6 +1,6 @@
 /**
  * Admin routes for consultation rules. Mounted at /api/admin/consult/policy.
- * Super admin only; cookie requests need a CSRF token even with the mobile header (R20).
+ * Super admin only; cookie requests need a CSRF token even with the mobile header.
  */
 import { Router, Response } from 'express';
 import { z } from 'zod';
@@ -10,7 +10,7 @@ import { consultCsrfGuard } from '../../middleware/consultCsrf';
 import { rateLimiter } from '../../middleware/rateLimiter';
 import { getClientIP } from '../../utils/adminHelpers';
 import { getActivePolicy, listPolicyVersions, updatePolicy } from './consultations.policy.service';
-import { DoctorError } from './doctors.status';
+import { sendConsultError } from './consultations.http';
 
 const updateSchema = z.object({
     reason: z.string().trim().min(3, 'A reason is required').max(300),
@@ -29,11 +29,7 @@ const updateSchema = z.object({
 export const policyRoutes = Router();
 const admin = [authMiddleware, requireSuperAdmin, consultCsrfGuard] as const;
 
-function fail(res: Response, e: unknown) {
-    if (e instanceof DoctorError) return res.status(e.status).json({ error: e.message });
-    console.error('[ConsultPolicy] failed:', e);
-    return res.status(500).json({ error: 'Internal Server Error' });
-}
+const fail = (res: Response, e: unknown) => sendConsultError(res, e, '[ConsultPolicy]');
 
 policyRoutes.get('/', ...admin, async (_req: AuthRequest, res: Response) => {
     try {

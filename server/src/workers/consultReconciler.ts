@@ -8,8 +8,9 @@ import { PrismaClient } from '@prisma/client';
 import { Redis } from '@upstash/redis';
 import { prisma } from '../db';
 import { confirmPayment } from '../modules/consultations/consultations.payments';
-import { ConsultRazorpay, realConsultRazorpay } from '../modules/consultations/consultations.razorpay';
-import { MAX_REFUND_ATTEMPTS, markRefundProcessed, runRefund } from '../modules/consultations/consultations.refunds';
+import { ConsultRazorpay, RazorpayPayment, realConsultRazorpay } from '../modules/consultations/consultations.razorpay';
+import { MAX_REFUND_ATTEMPTS, markRefundFailed, markRefundProcessed, runRefund } from '../modules/consultations/consultations.refunds';
+import { OPEN_PAYMENT_STATUSES } from '../modules/consultations/consultations.types';
 import { expireHold } from '../modules/consultations/consultations.transitions';
 import { logAlert, logger } from '../utils/logger';
 
@@ -48,7 +49,12 @@ export async function runConsultCycle(deps: CycleDeps = {}) {
             }
         }
     }
-    const capturedOn = async (orderId: string) => (await razorpay.fetchOrderPayments(orderId)).filter((p) => p.status === 'captured');
+    // One lookup per order per cycle, so a hold expired in step 2 is not asked about again in step 3.
+    const lookups = new Map<string, Promise<RazorpayPayment[]>>();
+    const capturedOn = async (orderId: string) => {
+        if (!lookups.has(orderId)) lookups.set(orderId, razorpay.fetchOrderPayments(orderId));
+        return (await lookups.get(orderId)!).filter((p) => p.status === 'captured');
+    };
     const confirmCaptured = async (orderId: string) => {
         const captured = await capturedOn(orderId);
         for (const p of captured) await confirmPayment({ paymentId: p.id, orderId, amountPaise: p.amount, currency: p.currency }, { db, now: () => now });
@@ -57,7 +63,8 @@ export async function runConsultCycle(deps: CycleDeps = {}) {
 
     // 1. A crash after creating the order but before storing its id: find the order by receipt.
     const orphans = await db.consultation.findMany({
-        where: { status: { in: ['PENDING_PAYMENT', 'EXPIRED'] }, payments: { none: {} }, createdAt: { lt: new Date(now.getTime() - LIMITS.orphanMinAgeMs), gt: new Date(now.getTime() - LIMITS.lookbackMs) } },
+        where: { status: { in: OPEN_PAYMENT_STATUSES }, payments: { none: {} }, createdAt: { lt: new Date(now.getTime() - LIMITS.orphanMinAgeMs), gt: new Date(now.getTime() - LIMITS.lookbackMs) } },
+        orderBy: { createdAt: 'desc' },
         take: LIMITS.batch,
     });
     await each('orphan', orphans, async (c) => {
@@ -83,8 +90,9 @@ export async function runConsultCycle(deps: CycleDeps = {}) {
             status: 'CREATED',
             razorpayPaymentId: null,
             createdAt: { lt: new Date(now.getTime() - LIMITS.openPaymentMinAgeMs), gt: new Date(now.getTime() - LIMITS.lookbackMs) },
-            consultation: { status: { in: ['PENDING_PAYMENT', 'EXPIRED'] } },
+            consultation: { status: { in: OPEN_PAYMENT_STATUSES } },
         },
+        orderBy: { createdAt: 'desc' },
         take: LIMITS.batch,
     });
     await each('open', open, async (p) => {
@@ -105,7 +113,7 @@ export async function runConsultCycle(deps: CycleDeps = {}) {
         const live = await razorpay.fetchRefund(r.payment.razorpayPaymentId!, r.razorpayRefundId);
         if (live.status === 'processed') await db.$transaction((tx) => markRefundProcessed(tx, r.id));
         if (live.status === 'failed') {
-            await db.consultationRefund.updateMany({ where: { id: r.id, status: 'PENDING' }, data: { status: 'FAILED', failureConfirmed: true, lastError: 'Razorpay reported the refund failed' } });
+            await markRefundFailed(db, r.id, 'Razorpay reported the refund failed', true);
         }
     });
 
@@ -115,7 +123,7 @@ export async function runConsultCycle(deps: CycleDeps = {}) {
     });
     if (stuckEvents > 0) alert('consult_webhook_events_unprocessed', { count: stuckEvents });
     const flagged = await db.consultation.count({
-        where: { reviewReason: { not: null }, status: { in: ['PENDING_PAYMENT', 'EXPIRED'] }, updatedAt: { lt: new Date(now.getTime() - LIMITS.flaggedMs) } },
+        where: { reviewReason: { not: null }, status: { in: OPEN_PAYMENT_STATUSES }, updatedAt: { lt: new Date(now.getTime() - LIMITS.flaggedMs) } },
     });
     if (flagged > 0) alert('consult_payments_awaiting_staff', { count: flagged });
     if (razorpayDown) alert('consult_reconciler_razorpay_unreachable');

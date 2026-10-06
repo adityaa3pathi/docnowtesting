@@ -29,12 +29,15 @@ async function belongsToConsultations(db: PrismaClient, e: Entities): Promise<{ 
     const marked = isConsultNote(e.order?.notes) || isConsultNote(e.payment?.notes) || isConsultNote(e.refund?.notes);
     const orderId = e.order?.id ?? e.payment?.order_id;
     const paymentId = e.payment?.id ?? e.refund?.payment_id;
-    const hit =
-        (orderId && (await db.consultationPayment.findFirst({ where: { razorpayOrderId: orderId }, select: { id: true } }))) ||
-        (paymentId && (await db.consultationPayment.findUnique({ where: { razorpayPaymentId: paymentId }, select: { id: true } }))) ||
-        (e.refund?.id && (await db.consultationRefund.findUnique({ where: { razorpayRefundId: e.refund.id }, select: { id: true } }))) ||
-        (e.refund?.receipt && (await db.consultationRefund.findUnique({ where: { receipt: e.refund.receipt }, select: { id: true } })));
-    return { ours: marked || !!hit, marked };
+    if (marked) return { ours: true, marked };
+
+    const lookups: Promise<unknown>[] = [];
+    if (orderId) lookups.push(db.consultationPayment.findFirst({ where: { razorpayOrderId: orderId }, select: { id: true } }));
+    if (paymentId) lookups.push(db.consultationPayment.findUnique({ where: { razorpayPaymentId: paymentId }, select: { id: true } }));
+    if (e.refund?.id) lookups.push(db.consultationRefund.findUnique({ where: { razorpayRefundId: e.refund.id }, select: { id: true } }));
+    if (e.refund?.receipt) lookups.push(db.consultationRefund.findUnique({ where: { receipt: e.refund.receipt }, select: { id: true } }));
+    const hit = (await Promise.all(lookups)).some(Boolean);
+    return { ours: hit, marked };
 }
 
 /** Only event type, ids, amounts and status are stored, never payer contact or card details. */
@@ -71,11 +74,10 @@ export async function tryHandleConsultEvent(payload: any, eventIdHeader: string 
         let result = 'ignored';
         const payment = e.payment;
         if ((event === 'payment.captured' || event === 'order.paid') && payment?.status === 'captured') {
-            const confirmed = await confirmPayment(
+            result = await confirmPayment(
                 { paymentId: payment.id, orderId: payment.order_id, amountPaise: payment.amount, currency: payment.currency },
                 { db: tx },
             );
-            result = confirmed;
         } else if (event.startsWith('refund.') && e.refund) {
             const status = event.endsWith('processed') ? 'processed' : event.endsWith('failed') ? 'failed' : 'created';
             result = await applyRefundEvent(tx, {

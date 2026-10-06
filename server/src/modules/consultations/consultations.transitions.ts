@@ -6,6 +6,11 @@ import { Prisma } from '@prisma/client';
 
 export type Tx = Prisma.TransactionClient;
 
+/** Frees a booked slot. A no-op when it is not booked. */
+export function releaseSlot(tx: Tx, slotId: string) {
+    return tx.slot.updateMany({ where: { id: slotId, status: 'BOOKED' }, data: { status: 'AVAILABLE' } });
+}
+
 /** Moves a slot from available to booked. False means someone else holds it. */
 export async function holdSlot(tx: Tx, slotId: string): Promise<boolean> {
     const res = await tx.slot.updateMany({ where: { id: slotId, status: 'AVAILABLE' }, data: { status: 'BOOKED' } });
@@ -21,7 +26,7 @@ export async function expireHold(tx: Tx, consultationId: string): Promise<boolea
         data: { status: 'EXPIRED' },
     });
     if (res.count !== 1) return false;
-    await tx.slot.updateMany({ where: { id: c.slotId, status: 'BOOKED' }, data: { status: 'AVAILABLE' } });
+    await releaseSlot(tx, c.slotId);
     return true;
 }
 

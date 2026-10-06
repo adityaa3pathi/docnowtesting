@@ -22,6 +22,9 @@ export const ConsultationType = {
 
 export type ConsultationType = (typeof ConsultationType)[keyof typeof ConsultationType];
 
+/** Consultations whose payment may still arrive or be unresolved. */
+export const OPEN_PAYMENT_STATUSES: ConsultationStatus[] = ['PENDING_PAYMENT', 'EXPIRED'];
+
 /** Statuses that hold a slot. Must match the partial unique index in the consult payments migration. */
 export const ACTIVE_CONSULTATION_STATUSES: ConsultationStatus[] = [
     'PENDING_PAYMENT',

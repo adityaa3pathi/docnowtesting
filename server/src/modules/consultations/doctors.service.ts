@@ -6,13 +6,11 @@
  */
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../db';
-import { expireHold } from './consultations.transitions';
+import { expireHold, Tx } from './consultations.transitions';
 import { assertDoctorTransition, DoctorError } from './doctors.status';
 import { assertNoOverlap, computeSlots, Window } from './slots';
 
 export const SLOT_HORIZON_DAYS = 14;
-
-type Tx = Prisma.TransactionClient;
 
 async function assertActiveSpecialty(specialtyId: string) {
     const s = await prisma.specialty.findUnique({ where: { id: specialtyId } });
