@@ -7,5 +7,7 @@ export default defineConfig({
         include: ['src/**/*.test.ts'],
         clearMocks: true,
         restoreMocks: true,
+        // Database suites share one test database and reset it, so files must not run at the same time.
+        fileParallelism: !process.env.TEST_DATABASE_URL,
     },
 });

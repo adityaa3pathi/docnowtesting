@@ -21,3 +21,15 @@ export const ConsultationType = {
 } as const;
 
 export type ConsultationType = (typeof ConsultationType)[keyof typeof ConsultationType];
+
+/** Statuses that hold a slot. Must match the partial unique index in the consult payments migration. */
+export const ACTIVE_CONSULTATION_STATUSES: ConsultationStatus[] = [
+    'PENDING_PAYMENT',
+    'CONFIRMED',
+    'RESCHEDULED',
+    'WAITING',
+    'IN_PROGRESS',
+    'COMPLETED',
+    'NO_SHOW_PATIENT',
+    'NO_SHOW_DOCTOR',
+];
