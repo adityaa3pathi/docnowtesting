@@ -28,9 +28,10 @@ export function CancelDialog({ open, bookingId, unpaid, onClose, onCancelled }: 
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [result, setResult] = useState<CancelResult | null>(null);
+    const [wasUnpaid, setWasUnpaid] = useState(false);
 
     useEffect(() => {
-        if (!open || unpaid) return;
+        if (!open || unpaid || result) return;
         let alive = true;
         setPreview(null);
         setPreviewError(null);
@@ -38,11 +39,12 @@ export function CancelDialog({ open, bookingId, unpaid, onClose, onCancelled }: 
         return () => {
             alive = false;
         };
-    }, [open, unpaid, bookingId]);
+    }, [open, unpaid, bookingId, result]);
 
     async function confirm() {
         setBusy(true);
         setError(null);
+        setWasUnpaid(unpaid);
         try {
             setResult(await consult.cancel(bookingId, reason.trim() || undefined));
             onCancelled();
@@ -71,7 +73,7 @@ export function CancelDialog({ open, bookingId, unpaid, onClose, onCancelled }: 
                             <DialogDescription>
                                 {result.refundPaise > 0
                                     ? `Refund: ${formatPaise(result.refundPaise)}.`
-                                    : unpaid
+                                    : wasUnpaid
                                       ? 'The time was released. Nothing was charged.'
                                       : 'No refund applies to this cancellation.'}
                             </DialogDescription>

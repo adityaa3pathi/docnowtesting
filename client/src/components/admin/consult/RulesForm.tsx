@@ -8,6 +8,7 @@ import { ErrorState, LoadingBlock } from '@/components/consult/States';
 import { Badge } from '@/components/consult/Badge';
 import { useApi } from '@/hooks/useApi';
 import { admin, errorMessage } from '@/lib/consult/api';
+import { formatIstDateTime } from '@/lib/consult/time';
 import { CEILINGS, sortTiers, validateRules, versionChanged } from '@/lib/consult/rules';
 import type { ConsultRules, PolicyResponse } from '@/lib/consult/types';
 import { RefundTiersEditor } from './RefundTiersEditor';
@@ -124,7 +125,7 @@ function Loaded({ policy, reload }: { policy: PolicyResponse; reload: () => Prom
                             <div className="flex flex-wrap items-center gap-2">
                                 <span className="font-semibold text-gray-900">Version {v.version}</span>
                                 {v.isActive && <Badge tone="success">In use</Badge>}
-                                <span className="text-xs text-gray-500">{new Date(v.createdAt).toLocaleString('en-IN')}</span>
+                                <span className="text-xs text-gray-500">{formatIstDateTime(v.createdAt)}</span>
                             </div>
                             {v.reason && <p className="mt-1 text-sm text-gray-700">{v.reason}</p>}
                             <p className="mt-1 text-xs text-gray-500">

@@ -3,12 +3,11 @@ import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button, Card } from '@/components/ui';
 import { doctor as doctorApi, errorMessage } from '@/lib/consult/api';
-import { validateWeek, windowsToForm, type WeekForm } from '@/lib/consult/availability';
+import { SLOT_OPTIONS, validateWeek, windowsToForm, type WeekForm } from '@/lib/consult/availability';
 import { WEEKDAYS } from '@/lib/consult/time';
 import type { DoctorMe } from '@/lib/consult/types';
 import { useDoctor } from './DoctorContext';
 
-const SLOT_OPTIONS = [10, 15, 20, 30, 45, 60];
 const timeClass = 'h-11 w-24 rounded-xl border border-border bg-white px-3 text-center text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20';
 
 export function WeeklyHours() {

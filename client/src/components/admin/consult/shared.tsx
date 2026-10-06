@@ -39,4 +39,4 @@ export function Field({ label, htmlFor, error, hint, children }: { label: string
     );
 }
 
-export const SLOT_OPTIONS = [10, 15, 20, 30, 45, 60];
+export { SLOT_OPTIONS } from '@/lib/consult/availability';

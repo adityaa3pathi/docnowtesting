@@ -2,6 +2,8 @@
 import type { AvailabilityWindow } from './types';
 import { minutesToTime, timeToMinutes, WEEKDAYS } from './time';
 
+export const SLOT_OPTIONS = [10, 15, 20, 30, 45, 60];
+
 export interface TimeRange {
     start: string;
     end: string;

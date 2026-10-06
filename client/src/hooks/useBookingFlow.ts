@@ -23,6 +23,7 @@ export function useBookingFlow(id: string, enabled: boolean) {
     const [announcement, setAnnouncement] = useState('');
     const alive = useRef(true);
     const lastSeconds = useRef<number | null>(null);
+    const payInFlight = useRef(false);
 
     const load = useCallback(async () => {
         try {
@@ -63,7 +64,7 @@ export function useBookingFlow(id: string, enabled: boolean) {
 
     // A payment seen on the server starts the 60 second confirming window.
     useEffect(() => {
-        if (booking?.paymentCaptured && confirmStartedAt === null) setConfirmStartedAt(Date.now());
+        if (booking?.paymentCaptured && confirmStartedAt === null) setConfirmStartedAt(serverNow());
     }, [booking?.paymentCaptured, confirmStartedAt]);
 
     const polling = decision?.kind === 'poll';
@@ -99,7 +100,7 @@ export function useBookingFlow(id: string, enabled: boolean) {
     const onPaid = useCallback(
         async (res: PaymentResult) => {
             setPayNote(null);
-            setConfirmStartedAt(Date.now());
+            setConfirmStartedAt(serverNow());
             try {
                 const out = await consult.verify(id, res);
                 if (alive.current) setHint(out.outcome);
@@ -112,11 +113,21 @@ export function useBookingFlow(id: string, enabled: boolean) {
     );
 
     const pay = useCallback(async () => {
-        if (!booking || opening) return;
+        if (!booking || opening || payInFlight.current) return;
+        payInFlight.current = true;
         setPayNote(null);
         const fresh = await load();
-        if (!fresh || decide(fresh, { nowMs: serverNow(), confirmStartedAt }).kind !== 'pay') return;
+        if (!fresh) {
+            payInFlight.current = false;
+            setPayNote('We could not check your booking. Check your connection and try again.');
+            return;
+        }
+        if (decide(fresh, { nowMs: serverNow(), confirmStartedAt }).kind !== 'pay') {
+            payInFlight.current = false;
+            return;
+        }
         if (!fresh.razorpayOrderId || !fresh.keyId) {
+            payInFlight.current = false;
             setPayNote('This booking is not ready for payment. Please try again in a moment.');
             return;
         }
@@ -129,6 +140,7 @@ export function useBookingFlow(id: string, enabled: boolean) {
             onPaid: (res) => void onPaid(res),
             onDismiss: () => {
                 // Closing the popup proves nothing about payment, so ask the server.
+                payInFlight.current = false;
                 setOpening(false);
                 void load();
             },
@@ -138,6 +150,7 @@ export function useBookingFlow(id: string, enabled: boolean) {
             },
         });
         if (!opened) {
+            payInFlight.current = false;
             setOpening(false);
             setPayNote('We could not open the payment window. Check your connection and try again.');
         }

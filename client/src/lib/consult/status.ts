@@ -6,7 +6,6 @@ export interface StatusInfo {
     label: string;
     tone: Tone;
     canCancel: boolean;
-    /** True while the booking may still be paid or settled. */
 }
 
 const STATUS: Record<ConsultationStatus, StatusInfo> = {
