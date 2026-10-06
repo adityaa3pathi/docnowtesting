@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '@/lib/api';
 
 interface HeroSlide {
@@ -14,114 +13,104 @@ interface HeroSlide {
 }
 
 /**
- * Desktop Hero Carousel — Client Island
- * 
- * Renders dynamically loaded CMS slides on the right side of the hero section
- * on desktop viewports (lg and up). When no slides are uploaded or available,
- * returns null to ensure the hero background is 100% seamless with zero shade distortion.
+ * Full-Bleed Hero Carousel — Client Island
+ *
+ * Renders CMS-managed banner images as the full background of the hero section
+ * on md: screens and up (≥768px). On mobile, returns null so the server-rendered
+ * purple gradient shows through. Failed images are silently removed from rotation.
  */
 export function HeroCarousel() {
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const [imgError, setImgError] = useState(false);
+  const [loadedIds, setLoadedIds] = useState<Set<string>>(new Set());
+  const [failedIds, setFailedIds] = useState<Set<string>>(new Set());
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Fetch slides from API
   useEffect(() => {
     async function fetchSlides() {
       try {
         const res = await api.get('/hero-slides');
         if (res.data?.slides?.length > 0) {
           const withImages = res.data.slides.filter(
-            (s: HeroSlide) => s.desktopImageUrl || s.mobileImageUrl
+            (s: HeroSlide) => s.desktopImageUrl
           );
           if (withImages.length > 0) setSlides(withImages);
         }
       } catch {
-        // Fallback: hero section displays default pure gradient background
-      } finally {
-        setIsLoading(false);
+        // Fallback: hero section displays default purple gradient
       }
     }
     fetchSlides();
   }, []);
 
-  useEffect(() => {
-    setImgLoaded(false);
-    setImgError(false);
-  }, [currentIndex]);
+  // Compute valid slides (exclude failed ones)
+  const validSlides = slides.filter((s) => !failedIds.has(s.id));
 
+  // Handle image load success
+  const handleImageLoad = useCallback((id: string) => {
+    setLoadedIds((prev) => new Set(prev).add(id));
+  }, []);
+
+  // Handle image load failure — silently remove from rotation
+  const handleImageError = useCallback((id: string) => {
+    setFailedIds((prev) => new Set(prev).add(id));
+  }, []);
+
+  // Auto-play (5.5s interval) — no pause on hover
   const handleNext = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % slides.length);
-  }, [slides.length]);
+    setCurrentIndex((prev) => (prev + 1) % Math.max(validSlides.length, 1));
+  }, [validSlides.length]);
 
-  const handlePrev = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
-  }, [slides.length]);
-
-  // Auto-play (5.5s interval)
   useEffect(() => {
-    if (isPaused || slides.length <= 1) return;
+    if (validSlides.length <= 1) return;
     timerRef.current = setInterval(handleNext, 5500);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isPaused, slides.length, handleNext]);
+  }, [validSlides.length, handleNext]);
 
-  // When no slides are configured or still loading with no data, return null
-  if (slides.length === 0) {
+  // Reset index if it goes out of bounds after a slide is removed
+  useEffect(() => {
+    if (validSlides.length > 0 && currentIndex >= validSlides.length) {
+      setCurrentIndex(0);
+    }
+  }, [validSlides.length, currentIndex]);
+
+  // No valid slides — return null, let the purple gradient show
+  if (validSlides.length === 0) {
     return null;
   }
 
-  const current = slides[currentIndex] || slides[0];
-
   return (
     <div
-      className="hidden lg:block absolute top-0 right-0 bottom-0 w-[45%] overflow-hidden z-10 pointer-events-auto"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+      className="hidden md:block absolute inset-0 overflow-hidden z-0"
       aria-label="Hero banner carousel"
     >
-      {/* Slide image */}
-      {!imgError && (
+      {/* All slide images stacked — crossfade via opacity */}
+      {validSlides.map((slide, idx) => (
         <img
-          key={current.id}
-          src={current.desktopImageUrl || current.mobileImageUrl || ''}
-          alt={current.imageAlt || 'Doctor and healthcare professional'}
-          onLoad={() => setImgLoaded(true)}
-          onError={() => setImgError(true)}
-          className={`w-full h-full object-cover object-center transition-opacity duration-500 ease-in-out ${
-            imgLoaded ? 'opacity-100' : 'opacity-0'
+          key={slide.id}
+          src={slide.desktopImageUrl || ''}
+          alt={slide.imageAlt || 'Healthcare banner'}
+          loading={idx === 0 ? 'eager' : 'lazy'}
+          onLoad={() => handleImageLoad(slide.id)}
+          onError={() => handleImageError(slide.id)}
+          className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ease-in-out ${
+            idx === currentIndex && loadedIds.has(slide.id)
+              ? 'opacity-100'
+              : 'opacity-0'
           }`}
         />
-      )}
+      ))}
 
-      {/* Desktop Navigation Arrows */}
-      {slides.length > 1 && imgLoaded && (
-        <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex items-center justify-between pointer-events-none z-20">
-          <button
-            onClick={handlePrev}
-            aria-label="Previous slide"
-            className="pointer-events-auto p-2.5 rounded-full bg-black/25 hover:bg-black/45 active:scale-95 text-white backdrop-blur-md transition-all shadow-md"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <button
-            onClick={handleNext}
-            aria-label="Next slide"
-            className="pointer-events-auto p-2.5 rounded-full bg-black/25 hover:bg-black/45 active:scale-95 text-white backdrop-blur-md transition-all shadow-md"
-          >
-            <ChevronRight size={20} />
-          </button>
-        </div>
-      )}
+      {/* Dark overlay for text readability — left-heavy gradient */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/30 to-transparent z-[1]" />
 
-      {/* Slide Indicator Dots */}
-      {slides.length > 1 && imgLoaded && (
-        <div className="absolute bottom-6 inset-x-0 flex items-center justify-center gap-2 z-20">
-          {slides.map((_, idx) => (
+      {/* Dot indicators */}
+      {validSlides.length > 1 && (
+        <div className="absolute bottom-6 inset-x-0 flex items-center justify-center gap-2 z-[2]">
+          {validSlides.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setCurrentIndex(idx)}

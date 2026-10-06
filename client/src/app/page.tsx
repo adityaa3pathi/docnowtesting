@@ -60,12 +60,12 @@ export default function Home() {
   return (
     <main className="flex flex-col min-h-screen bg-white pb-20 md:pb-0">
 
-      {/* ═══════════ HERO — pure server HTML with desktop carousel ═══════════ */}
+      {/* ═══════════ HERO — purple gradient fallback + full-bleed image carousel ═══════════ */}
       <section
         className="relative pb-16 md:pb-24 lg:pb-32"
         style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}
       >
-        {/* Desktop Carousel — Only renders on desktop (lg: and up) */}
+        {/* Full-bleed carousel background — md: and up only, z-0 behind content */}
         <HeroCarousel />
 
         <div className="max-w-[1380px] mx-auto px-6 lg:px-16 pt-4 pb-8 lg:pb-16 relative z-10">
