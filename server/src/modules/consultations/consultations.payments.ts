@@ -9,15 +9,21 @@ import { logAlert } from '../../utils/logger';
 import { verifyCheckoutSignature } from '../../utils/razorpaySignature';
 import { createRefundRecord, RefundReason } from './consultations.refunds';
 import { ConsultRazorpay, realConsultRazorpay } from './consultations.razorpay';
-import { confirmPending, reclaimExpired, SlotLost } from './consultations.transitions';
+import { confirmPending, reclaimExpired, SlotLost, Tx } from './consultations.transitions';
 import { DoctorError } from './doctors.status';
 
 export type PaymentFact = { paymentId: string; orderId: string; amountPaise: number; currency: string };
 export type ConfirmOutcome = 'confirmed' | 'reclaimed' | 'already' | 'refund_created' | 'flagged' | 'unknown_order';
-export type ConfirmDeps = { db?: PrismaClient; now?: () => Date };
+export type Db = PrismaClient | Tx;
+export type ConfirmDeps = { db?: Db; now?: () => Date };
+
+/** Runs in a transaction of its own, or inside the caller's when given one. */
+function inTx<T>(db: Db, fn: (tx: Tx) => Promise<T>): Promise<T> {
+    return '$transaction' in db ? (db as PrismaClient).$transaction(fn) : fn(db as Tx);
+}
 
 /** Step 1, in its own short transaction: make sure a payment row carries this Razorpay payment id. */
-async function attachPayment(db: PrismaClient, fact: PaymentFact) {
+async function attachPayment(db: Db, fact: PaymentFact) {
     const known = await db.consultationPayment.findUnique({ where: { razorpayPaymentId: fact.paymentId } });
     if (known) return known;
     const orderRow = await db.consultationPayment.findFirst({ where: { razorpayOrderId: fact.orderId }, orderBy: { createdAt: 'asc' } });
@@ -29,27 +35,16 @@ async function attachPayment(db: PrismaClient, fact: PaymentFact) {
     });
     if (claimed.count === 1) return db.consultationPayment.findUniqueOrThrow({ where: { id: orderRow.id } });
 
-    try {
-        return await db.consultationPayment.create({
-            data: {
-                consultationId: orderRow.consultationId,
-                razorpayOrderId: fact.orderId,
-                razorpayPaymentId: fact.paymentId,
-                amountPaise: fact.amountPaise,
-                status: 'CAPTURED',
-                capturedAt: new Date(),
-            },
-        });
-    } catch (e) {
-        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
-            return db.consultationPayment.findUniqueOrThrow({ where: { razorpayPaymentId: fact.paymentId } });
-        }
-        throw e;
-    }
+    // ON CONFLICT instead of a caught error: a failed insert would abort a surrounding transaction.
+    await db.$executeRaw`
+        INSERT INTO "ConsultationPayment" ("id", "consultationId", "razorpayOrderId", "razorpayPaymentId", "amountPaise", "status", "capturedAt", "updatedAt")
+        VALUES (gen_random_uuid()::text, ${orderRow.consultationId}, ${fact.orderId}, ${fact.paymentId}, ${fact.amountPaise}, 'CAPTURED', now(), now())
+        ON CONFLICT ("razorpayPaymentId") DO NOTHING`;
+    return db.consultationPayment.findUniqueOrThrow({ where: { razorpayPaymentId: fact.paymentId } });
 }
 
 export async function confirmPayment(fact: PaymentFact, deps: ConfirmDeps = {}): Promise<ConfirmOutcome> {
-    const db = deps.db ?? prisma;
+    const db: Db = deps.db ?? prisma;
     const now = (deps.now ?? (() => new Date()))();
 
     const orderRow = await db.consultationPayment.findFirst({ where: { razorpayOrderId: fact.orderId }, include: { consultation: true } });
@@ -68,7 +63,7 @@ export async function confirmPayment(fact: PaymentFact, deps: ConfirmDeps = {}):
         return 'flagged';
     }
 
-    return db.$transaction(async (tx): Promise<ConfirmOutcome> => {
+    return inTx(db, async (tx): Promise<ConfirmOutcome> => {
         const c = await tx.consultation.findUniqueOrThrow({ where: { id: payment.consultationId } });
         const refund = async (reason: RefundReason): Promise<ConfirmOutcome> => {
             await createRefundRecord(tx, { consultationId: c.id, paymentId: payment.id, reason });
@@ -113,7 +108,7 @@ export async function verifyAndConfirm(
     userId: string,
     consultationId: string,
     body: VerifyInput,
-    deps: ConfirmDeps & { razorpay?: ConsultRazorpay } = {},
+    deps: { db?: PrismaClient; now?: () => Date; razorpay?: ConsultRazorpay } = {},
 ) {
     const db = deps.db ?? prisma;
     const razorpay = deps.razorpay ?? realConsultRazorpay();
