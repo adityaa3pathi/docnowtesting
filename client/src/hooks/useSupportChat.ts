@@ -50,7 +50,7 @@ export function useSupportChat() {
                 {
                     id: 'welcome',
                     role: 'assistant',
-                    content: 'Hello! I am DocNow\\'s AI support assistant. How can I help you today?',
+                    content: 'Hello! I am DocNow\'s AI support assistant. How can I help you today?',
                     createdAt: new Date().toISOString(),
                 }
             ]);
