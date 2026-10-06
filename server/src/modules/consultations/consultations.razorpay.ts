@@ -29,6 +29,9 @@ export interface ConsultRazorpay {
     fetchPayment(paymentId: string): Promise<RazorpayPayment>;
     createRefund(input: { paymentId: string; amountPaise: number; receipt: string; notes: Record<string, string> }): Promise<RazorpayRefund>;
     listPaymentRefunds(paymentId: string): Promise<RazorpayRefund[]>;
+    fetchRefund(paymentId: string, refundId: string): Promise<RazorpayRefund>;
+    /** Finds an order by the receipt we stored before creating it. */
+    findOrderByReceipt(receipt: string): Promise<{ id: string; amount: number } | null>;
     /** Only needed when the account does not auto-capture. */
     capturePayment(paymentId: string, amountPaise: number): Promise<RazorpayPayment>;
 }
@@ -62,6 +65,22 @@ export function realConsultRazorpay(): ConsultRazorpay {
             try {
                 const res = await getRazorpay().payments.fetchMultipleRefund(paymentId);
                 return (res.items ?? []) as unknown as RazorpayRefund[];
+            } catch (e) {
+                throw normalizeRazorpayError(e);
+            }
+        },
+        async fetchRefund(paymentId, refundId) {
+            try {
+                return (await getRazorpay().payments.fetchRefund(paymentId, refundId)) as unknown as RazorpayRefund;
+            } catch (e) {
+                throw normalizeRazorpayError(e);
+            }
+        },
+        async findOrderByReceipt(receipt) {
+            try {
+                const res = await getRazorpay().orders.all({ receipt } as any);
+                const order = (res.items ?? [])[0] as { id: string; amount: number } | undefined;
+                return order ? { id: order.id, amount: order.amount } : null;
             } catch (e) {
                 throw normalizeRazorpayError(e);
             }

@@ -25,6 +25,22 @@ export class FakeRazorpay implements ConsultRazorpay {
         return this.refunds.filter((r) => r.paymentId === paymentId);
     }
 
+    /** Order ids whose payment lookup should fail, to prove one bad row does not stop a batch. */
+    failOrderLookups = new Set<string>();
+
+    async fetchRefund(paymentId: string, refundId: string) {
+        if (this.unreachable) throw new RazorpayError('network', 'unreachable');
+        const found = this.refunds.find((r) => r.paymentId === paymentId && r.id === refundId);
+        if (!found) throw new RazorpayError('api', 'not found', 400);
+        return found;
+    }
+
+    async findOrderByReceipt(receipt: string) {
+        if (this.unreachable) throw new RazorpayError('network', 'unreachable');
+        const order = this.orders.find((o) => o.receipt === receipt);
+        return order ? { id: order.id, amount: order.amountPaise } : null;
+    }
+
     failCreateOrder = false;
     unreachable = false;
 
@@ -38,6 +54,7 @@ export class FakeRazorpay implements ConsultRazorpay {
 
     async fetchOrderPayments(orderId: string) {
         if (this.unreachable) throw new RazorpayError('network', 'unreachable');
+        if (this.failOrderLookups.has(orderId)) throw new RazorpayError('api', 'lookup failed', 400);
         return this.payments.get(orderId) ?? [];
     }
 

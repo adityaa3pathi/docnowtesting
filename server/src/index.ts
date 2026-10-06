@@ -209,9 +209,11 @@ app.use((err: any, req: RequestWithContext, res: Response, next: NextFunction) =
 
 import { startReconciler } from './workers/reconciler';
 import { startSlotGenerator } from './workers/slotGenerator';
+import { startConsultReconciler } from './workers/consultReconciler';
 
 app.listen(PORT, () => {
     logger.info({ port: PORT, nodeEnv: process.env.NODE_ENV }, 'server_started');
     startReconciler();
     startSlotGenerator();
+    startConsultReconciler();
 });
