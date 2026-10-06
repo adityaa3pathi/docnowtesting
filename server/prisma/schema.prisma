@@ -125,6 +125,7 @@ model User {
 
   // Doctor Consultation
   doctorProfile DoctorProfile?
+  consultations Consultation[]
 }
 
 model Session {
@@ -169,6 +170,7 @@ model Patient {
   dob          DateTime?
   bookingItems BookingItem[]
   cartItems    CartItem[]
+  consultations Consultation[]
   user         User          @relation(fields: [userId], references: [id])
 }
 
@@ -802,6 +804,7 @@ model DoctorProfile {
   availability DoctorAvailability[]
   leaves       DoctorLeave[]
   slots        Slot[]
+  consultations Consultation[]
 
   @@unique([registrationNumber, registrationCouncil])
   @@index([status, specialtyId])
@@ -837,7 +840,146 @@ model Slot {
   endsAt   DateTime
   status   SlotStatus    @default(AVAILABLE)
   doctor   DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  consultations Consultation[]
 
   @@unique([doctorId, startsAt])
   @@index([doctorId, status, startsAt])
+}
+
+
+// ============================================
+// DOCTOR CONSULTATION: PAYMENTS
+// ============================================
+// Two indexes below are raw SQL in the migration because Prisma cannot express partial unique
+// indexes: Consultation(slotId) for active statuses, and ConsultPolicy(isActive) where active.
+// A refund amount check (amountPaise > 0) lives there too. Do not drop them in a generated migration.
+
+enum ConsultationStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  RESCHEDULED
+  WAITING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW_PATIENT
+  NO_SHOW_DOCTOR
+  EXPIRED
+  REFUNDED
+}
+
+enum ConsultationType {
+  VIDEO
+  AUDIO
+  CHAT
+}
+
+enum ConsultPaymentStatus {
+  CREATED
+  CAPTURED
+  FAILED
+}
+
+enum ConsultRefundStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+enum ConsultRefundReason {
+  PATIENT_CANCEL
+  DOCTOR_NO_SHOW
+  LATE_PAYMENT_SLOT_LOST
+  PAID_AFTER_CANCEL
+  DUPLICATE_PAYMENT
+  ADMIN
+  EXTERNAL
+}
+
+model ConsultPolicy {
+  id          String   @id @default(uuid())
+  version     Int      @unique
+  isActive    Boolean  @default(false)
+  rules       Json
+  reason      String?
+  createdById String?
+  createdAt   DateTime @default(now())
+}
+
+model Consultation {
+  id                  String             @id @default(uuid())
+  userId              String
+  patientId           String
+  doctorId            String
+  slotId              String
+  type                ConsultationType   @default(VIDEO)
+  status              ConsultationStatus @default(PENDING_PAYMENT)
+  feePaise            Int
+  platformFeePaise    Int
+  policyId            String
+  policySnapshot      Json
+  holdExpiresAt       DateTime
+  startsAt            DateTime
+  idempotencyKey      String
+  requestHash         String
+  orderReceipt        String             @unique
+  confirmingPaymentId String?
+  reviewReason        String?
+  cancelledBy         String?
+  cancelReason        String?
+  cancelledAt         DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  user     User                  @relation(fields: [userId], references: [id])
+  patient  Patient               @relation(fields: [patientId], references: [id])
+  doctor   DoctorProfile         @relation(fields: [doctorId], references: [id])
+  slot     Slot                  @relation(fields: [slotId], references: [id])
+  payments ConsultationPayment[]
+  refunds  ConsultationRefund[]
+
+  @@unique([userId, idempotencyKey])
+  @@index([slotId])
+  @@index([status, holdExpiresAt])
+  @@index([userId, createdAt])
+  @@index([doctorId, startsAt])
+}
+
+model ConsultationPayment {
+  id                String               @id @default(uuid())
+  consultationId    String
+  razorpayOrderId   String
+  razorpayPaymentId String?              @unique
+  amountPaise       Int
+  status            ConsultPaymentStatus @default(CREATED)
+  capturedAt        DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  consultation Consultation         @relation(fields: [consultationId], references: [id])
+  refunds      ConsultationRefund[]
+
+  @@index([razorpayOrderId])
+  @@index([consultationId])
+}
+
+model ConsultationRefund {
+  id               String              @id @default(uuid())
+  consultationId   String
+  paymentId        String
+  reason           ConsultRefundReason
+  amountPaise      Int
+  status           ConsultRefundStatus @default(PENDING)
+  razorpayRefundId String?             @unique
+  receipt          String              @unique
+  attempts         Int                 @default(0)
+  lastError        String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  consultation Consultation        @relation(fields: [consultationId], references: [id])
+  payment      ConsultationPayment @relation(fields: [paymentId], references: [id])
+
+  @@unique([paymentId, reason])
+  @@index([status, updatedAt])
 }

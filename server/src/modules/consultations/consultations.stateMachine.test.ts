@@ -15,6 +15,18 @@ describe('consultation state machine', () => {
         expect(canTransition(S.RESCHEDULED, S.CONFIRMED)).toBe(true);
     });
 
+    it('lets an unpaid hold expire and a late payment revive it', () => {
+        expect(canTransition(S.PENDING_PAYMENT, S.EXPIRED)).toBe(true);
+        expect(canTransition(S.EXPIRED, S.CONFIRMED)).toBe(true);
+        expect(canTransition(S.EXPIRED, S.COMPLETED)).toBe(false);
+        expect(canTransition(S.EXPIRED, S.REFUNDED)).toBe(false);
+    });
+
+    it('does not expire a paid consultation', () => {
+        expect(canTransition(S.CONFIRMED, S.EXPIRED)).toBe(false);
+        expect(canTransition(S.WAITING, S.EXPIRED)).toBe(false);
+    });
+
     it('allows refunds after cancel and both no-shows', () => {
         for (const from of [S.CANCELLED, S.NO_SHOW_PATIENT, S.NO_SHOW_DOCTOR]) {
             expect(canTransition(from, S.REFUNDED)).toBe(true);

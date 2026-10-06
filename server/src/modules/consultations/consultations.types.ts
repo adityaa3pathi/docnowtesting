@@ -8,6 +8,7 @@ export const ConsultationStatus = {
     CANCELLED: 'CANCELLED',
     NO_SHOW_PATIENT: 'NO_SHOW_PATIENT',
     NO_SHOW_DOCTOR: 'NO_SHOW_DOCTOR',
+    EXPIRED: 'EXPIRED',
     REFUNDED: 'REFUNDED',
 } as const;
 
