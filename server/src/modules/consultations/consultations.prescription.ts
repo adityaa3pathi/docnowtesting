@@ -1,6 +1,6 @@
 /**
- * Doctor notes and prescriptions. Notes stay editable until the prescription is issued; a
- * prescription is written once and never changed, with doctor and patient details frozen in it.
+ * Doctor notes and prescriptions. Notes stay editable until the first prescription is issued. A
+ * prescription's content never changes; a correction voids it and issues the next version.
  */
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
@@ -39,14 +39,22 @@ export const prescriptionSchema = z.object({
 
 export type RecommendedTest = { code: string; name: string };
 
+export const reissueSchema = z.object({
+    reason: z.string().trim().min(5, 'Say briefly why the prescription is being corrected').max(300),
+    prescription: prescriptionSchema,
+});
+
+const REISSUE_WINDOW_MS = 7 * 24 * 3_600_000;
+const current = { where: { voidedAt: null } } as const;
+
 async function doctorConsultation(doctorId: string, consultationId: string) {
     const c = await prisma.consultation.findFirst({
         where: { id: consultationId, doctorId },
-        select: { id: true, status: true, prescription: { select: { id: true } } },
+        select: { id: true, status: true, startsAt: true, prescriptions: { ...current, select: { id: true, version: true } } },
     });
     if (!c) throw new DoctorError(404, 'Not found');
     if (!WRITABLE.includes(c.status)) throw new DoctorError(409, 'Notes open once the consultation has started');
-    return c;
+    return { ...c, current: c.prescriptions[0] ?? null };
 }
 
 export async function getDoctorRecord(doctorId: string, consultationId: string) {
@@ -55,16 +63,22 @@ export async function getDoctorRecord(doctorId: string, consultationId: string) 
         select: {
             id: true, status: true, type: true, startsAt: true, slot: { select: { endsAt: true } },
             patient: { select: { name: true, age: true, gender: true } },
-            note: true, prescription: true,
+            note: true, prescriptions: { orderBy: { version: 'desc' } },
         },
     });
     if (!c) throw new DoctorError(404, 'Not found');
-    return c;
+    const { prescriptions, ...rest } = c;
+    const voided = prescriptions.filter((p) => p.voidedAt);
+    return {
+        ...rest,
+        prescription: prescriptions.find((p) => !p.voidedAt) ?? null,
+        previousVersions: voided.map((p) => ({ id: p.id, version: p.version, issuedAt: p.issuedAt, voidedAt: p.voidedAt, voidReason: p.voidReason })),
+    };
 }
 
 export async function saveNotes(doctorId: string, consultationId: string, data: z.infer<typeof noteSchema>) {
     const c = await doctorConsultation(doctorId, consultationId);
-    if (c.prescription) throw new DoctorError(409, 'Notes are locked once the prescription is issued');
+    if (c.current) throw new DoctorError(409, 'Notes are locked once the prescription is issued');
     return prisma.consultationNote.upsert({
         where: { consultationId },
         update: data,
@@ -72,8 +86,8 @@ export async function saveNotes(doctorId: string, consultationId: string, data: 
     });
 }
 
-export async function issuePrescription(doctorId: string, consultationId: string, input: z.infer<typeof prescriptionSchema>) {
-    await doctorConsultation(doctorId, consultationId);
+/** Checks the tests against the catalog and freezes doctor and patient details as they are now. */
+async function buildContent(consultationId: string, input: z.infer<typeof prescriptionSchema>) {
     const codes = [...new Set(input.testCodes)];
     const items = await prisma.catalogItem.findMany({
         where: { partnerCode: { in: codes }, isEnabled: true },
@@ -90,21 +104,49 @@ export async function issuePrescription(doctorId: string, consultationId: string
             patient: { select: { name: true, age: true, gender: true } },
         },
     });
+    return {
+        consultationId,
+        medicines: input.medicines,
+        recommendedTests: tests,
+        advice: input.advice,
+        doctorSnapshot: { ...c.doctor, specialty: c.doctor.specialty.name },
+        patientSnapshot: c.patient,
+    };
+}
+
+const alreadyIssued = (e: unknown) => e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002';
+
+export async function issuePrescription(doctorId: string, consultationId: string, input: z.infer<typeof prescriptionSchema>) {
+    const c = await doctorConsultation(doctorId, consultationId);
+    if (c.current) throw new DoctorError(409, 'A prescription has already been issued');
+    const data = await buildContent(consultationId, input);
     try {
-        return await prisma.prescription.create({
-            data: {
-                consultationId,
-                medicines: input.medicines,
-                recommendedTests: tests,
-                advice: input.advice,
-                doctorSnapshot: { ...c.doctor, specialty: c.doctor.specialty.name },
-                patientSnapshot: c.patient,
-            },
+        return await prisma.prescription.create({ data });
+    } catch (e) {
+        if (alreadyIssued(e)) throw new DoctorError(409, 'A prescription has already been issued');
+        throw e;
+    }
+}
+
+/** Voids the current version and issues the next one, in one transaction, within 7 days of the visit. */
+export async function reissuePrescription(doctorId: string, consultationId: string, input: z.infer<typeof reissueSchema>, now = new Date()) {
+    const c = await doctorConsultation(doctorId, consultationId);
+    if (!c.current) throw new DoctorError(409, 'There is no prescription to correct');
+    if (now.getTime() - c.startsAt.getTime() > REISSUE_WINDOW_MS) {
+        throw new DoctorError(409, 'Prescriptions can be corrected only within 7 days of the consultation');
+    }
+    const data = await buildContent(consultationId, input.prescription);
+    try {
+        return await prisma.$transaction(async (tx) => {
+            const voided = await tx.prescription.updateMany({
+                where: { id: c.current!.id, voidedAt: null },
+                data: { voidedAt: now, voidReason: input.reason },
+            });
+            if (voided.count !== 1) throw new DoctorError(409, 'The prescription changed meanwhile; reload and try again');
+            return tx.prescription.create({ data: { ...data, version: c.current!.version + 1 } });
         });
     } catch (e) {
-        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
-            throw new DoctorError(409, 'A prescription has already been issued');
-        }
+        if (alreadyIssued(e)) throw new DoctorError(409, 'The prescription changed meanwhile; reload and try again');
         throw e;
     }
 }
@@ -112,7 +154,7 @@ export async function issuePrescription(doctorId: string, consultationId: string
 /** The patient's view: the prescription for their own consultation, or 404. */
 export async function getPatientPrescription(userId: string, consultationId: string) {
     const p = await prisma.prescription.findFirst({
-        where: { consultationId, consultation: { userId } },
+        where: { consultationId, voidedAt: null, consultation: { userId } },
         include: { consultation: { select: { startsAt: true, patientId: true } } },
     });
     if (!p) throw new DoctorError(404, 'No prescription yet');

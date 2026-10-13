@@ -28,12 +28,14 @@ const rowSelect = {
     doctor: { select: { id: true, displayName: true, specialty: { select: { name: true } } } },
     patient: { select: { name: true } },
     user: { select: { mobile: true } },
-    prescription: { select: { issuedAt: true } },
+    prescriptions: { where: { voidedAt: null }, select: { issuedAt: true, version: true } },
 } satisfies Prisma.ConsultationSelect;
 
 type Row = Prisma.ConsultationGetPayload<{ select: typeof rowSelect }>;
 
-const toRow = ({ prescription, slot, ...c }: Row) => ({ ...c, endsAt: slot.endsAt, prescriptionIssuedAt: prescription?.issuedAt ?? null });
+const toRow = ({ prescriptions, slot, ...c }: Row) => ({
+    ...c, endsAt: slot.endsAt, prescriptionIssuedAt: prescriptions[0]?.issuedAt ?? null, prescriptionVersion: prescriptions[0]?.version ?? null,
+});
 
 export async function listAppointments(q: z.infer<typeof appointmentsQuery>) {
     const { day, start, end } = istDayRange(q.date);

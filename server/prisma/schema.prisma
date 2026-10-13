@@ -944,7 +944,7 @@ model Consultation {
   payments     ConsultationPayment[]
   refunds      ConsultationRefund[]
   note          ConsultationNote?
-  prescription  Prescription?
+  prescriptions Prescription[]
   notifications ConsultationNotification[]
 
   @@unique([userId, idempotencyKey])
@@ -1013,10 +1013,14 @@ model ConsultationNote {
   consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
 }
 
-// A legal record: written once, never updated. The PDF is rendered from these fields on request.
+// A legal record: content is written once. A correction voids it and adds the next version;
+// raw SQL in the migration allows only one unvoided version per consultation.
 model Prescription {
   id               String       @id @default(uuid())
-  consultationId   String       @unique
+  consultationId   String
+  version          Int          @default(1)
+  voidedAt         DateTime?
+  voidReason       String?
   medicines        Json // [{ name, dose, frequency, duration, instructions }]
   recommendedTests Json // [{ code, name }] from the catalog at issue time
   advice           String?
@@ -1024,6 +1028,8 @@ model Prescription {
   patientSnapshot  Json // name, age, gender at issue time
   issuedAt         DateTime     @default(now())
   consultation     Consultation @relation(fields: [consultationId], references: [id], onDelete: Restrict)
+
+  @@unique([consultationId, version])
 }
 
 // One row per message per person, claimed before sending, so a message never goes out twice.

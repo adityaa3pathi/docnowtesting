@@ -13,6 +13,7 @@ type Patient = { name: string; age: number | null; gender: string | null };
 
 export type PrescriptionForPdf = {
     id: string;
+    version: number;
     issuedAt: Date;
     medicines: unknown;
     recommendedTests: unknown;
@@ -99,7 +100,7 @@ export function renderPrescriptionPdf(p: PrescriptionForPdf): Promise<Buffer> {
 
     doc.fillColor(MUTED).font('Helvetica').fontSize(8.5).text(
         `Issued electronically by Dr. ${doctor.displayName} through DocNow on ${istDateTime(p.issuedAt)}. ` +
-        `Prescription ID ${p.id}. This prescription follows a teleconsultation.`,
+        `Prescription ID ${p.id}${p.version > 1 ? `, version ${p.version}, which replaces all earlier versions` : ''}. This prescription follows a teleconsultation.`,
         left, doc.y, { width },
     );
 

@@ -165,6 +165,44 @@ describeDb('video consultations: join, notes, prescription (real Postgres)', () 
             await expect(rx.saveNotes(b.doctor.profile.id, b.c.id, { advice: 'edit' })).rejects.toMatchObject({ status: 409 });
         });
 
+        it('corrects a prescription by voiding it and issuing the next version', async () => {
+            const b = await started();
+            const first = await rx.issuePrescription(b.doctor.profile.id, b.c.id, { medicines: [{ name: 'Amoxicillin 250mg', dose: '1', frequency: 'TDS', duration: '5 days', instructions: '' }], testCodes: [] });
+            const url = `${doctorApp.url}/doctor/me/consultations/${b.c.id}/prescription/reissue`;
+            const body = { reason: 'Wrong strength written', prescription: { medicines: [{ name: 'Amoxicillin 500mg', dose: '1', frequency: 'TDS', duration: '5 days' }], testCodes: [] } };
+            const res = await post(url, tokenFor(b.doctor.user as any), body);
+            expect(res.status).toBe(201);
+            expect(await res.json()).toMatchObject({ version: 2, voidedAt: null });
+
+            const old = await testDb.prescription.findUniqueOrThrow({ where: { id: first.id } });
+            expect(old).toMatchObject({ voidReason: 'Wrong strength written', medicines: first.medicines });
+            expect(old.voidedAt).not.toBeNull();
+            const record = await rx.getDoctorRecord(b.doctor.profile.id, b.c.id);
+            expect(record.prescription?.version).toBe(2);
+            expect(record.previousVersions).toMatchObject([{ version: 1, voidReason: 'Wrong strength written' }]);
+            const patientView = await rx.getPatientPrescription(b.user.id, b.c.id);
+            expect((patientView.medicines as any[])[0].name).toBe('Amoxicillin 500mg');
+        });
+
+        it('refuses a correction without a reason, without a prescription, or after 7 days', async () => {
+            const b = await started();
+            const p = { medicines: [], testCodes: [], advice: 'Rest' };
+            await expect(rx.reissuePrescription(b.doctor.profile.id, b.c.id, { reason: 'typo fix', prescription: p })).rejects.toMatchObject({ status: 409 });
+            await rx.issuePrescription(b.doctor.profile.id, b.c.id, p);
+            const noReason = await post(`${doctorApp.url}/doctor/me/consultations/${b.c.id}/prescription/reissue`, tokenFor(b.doctor.user as any), { reason: '', prescription: p });
+            expect(noReason.status).toBe(400);
+            const late = new Date(b.c.startsAt.getTime() + 8 * 24 * 3_600_000);
+            await expect(rx.reissuePrescription(b.doctor.profile.id, b.c.id, { reason: 'typo fix', prescription: p }, late)).rejects.toMatchObject({ status: 409 });
+        });
+
+        it('lets the database hold only one current version', async () => {
+            const b = await started();
+            await rx.issuePrescription(b.doctor.profile.id, b.c.id, { medicines: [], testCodes: [], advice: 'Rest' });
+            await expect(testDb.prescription.create({
+                data: { consultationId: b.c.id, version: 2, medicines: [], recommendedTests: [], doctorSnapshot: {}, patientSnapshot: {} },
+            })).rejects.toThrow();
+        });
+
         it('rejects unknown or disabled tests and empty prescriptions', async () => {
             const b = await started();
             await catalogTest('RXT-OFF', false);

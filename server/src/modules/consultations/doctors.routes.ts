@@ -25,7 +25,7 @@ import { doctorListQuery, listDoctorConsultations } from './doctors.consultation
 import { policyRoutes } from './consultations.policy.routes';
 import { reviewRoutes } from './consultations.review.routes';
 import { doctorJoin, endConsultation } from './consultations.room';
-import { getDoctorRecord, issuePrescription, noteSchema, prescriptionSchema, saveNotes } from './consultations.prescription';
+import { getDoctorRecord, issuePrescription, noteSchema, prescriptionSchema, reissuePrescription, reissueSchema, saveNotes } from './consultations.prescription';
 import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
 import { appointmentsQuery, getAppointment, listAppointments } from './consultations.appointments';
 import {
@@ -264,6 +264,14 @@ doctorRoutes.post('/me/consultations/:id/prescription', ...mineWrite, rateLimite
         if (!parse.success) return bad(res, parse);
         res.status(201).json(await issuePrescription(await myDoctorId(req), consultId(req), parse.data));
     } catch (e) { fail(res, e, 'issue prescription'); }
+});
+
+doctorRoutes.post('/me/consultations/:id/prescription/reissue', ...mineWrite, rateLimiter(10, 60, 'doctor_rx'), async (req: AuthRequest, res: Response) => {
+    try {
+        const parse = reissueSchema.safeParse(req.body);
+        if (!parse.success) return bad(res, parse);
+        res.status(201).json(await reissuePrescription(await myDoctorId(req), consultId(req), parse.data));
+    } catch (e) { fail(res, e, 'reissue prescription'); }
 });
 
 doctorRoutes.get('/me/consultations/:id/prescription.pdf', ...mine, async (req: AuthRequest, res: Response) => {
