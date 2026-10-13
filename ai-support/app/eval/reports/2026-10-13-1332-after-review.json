@@ -1,0 +1,1312 @@
+{
+  "label": "after-review",
+  "run_at_ist": "13-10-2026 13:32 IST",
+  "llm_model": "gemini-3.5-flash-lite",
+  "embedding_model": "gemini-embedding-001",
+  "judge_model": "groq/openai/gpt-oss-120b",
+  "relevance_threshold": 0.58,
+  "keyword_search": true,
+  "scores": {
+    "abstention_accuracy": 0.92,
+    "false_abstention_rate": 0.075,
+    "missed_abstention_rate": 0.1,
+    "groundedness_score": 0.58,
+    "source_hit_rate": 0.96,
+    "tool_choice_accuracy": 0.7666666666666667,
+    "error_rate": 0.08,
+    "p50_latency_ms": 3946,
+    "p95_latency_ms": 37860,
+    "faithfulness": null,
+    "answer_relevancy": null,
+    "context_precision": null,
+    "context_recall": null
+  },
+  "results": [
+    {
+      "query_id": "cat-01",
+      "category": "catalog",
+      "query": "I want to test for diabetes, what do you have?",
+      "response": "We have a few great options for diabetes testing at DocNow:\n\n1. **Diabetes Screening Package** (Package) — **₹699** (MRP: ₹999)\n   - *Includes:* Fasting Blood Sugar, HbA1c, Urine Sugar, and Average Blood Glucose (4 tests).\n   - *Sample:* Blood & Urine\n   - *Fasting:* 10-12 hours fasting required\n   - *Report Time:* 24 hours\n\n2. **HbA1c (Glycosylated Haemoglobin)** (Test) — **₹399** (MRP: ₹550)\n   - *Description:* Shows your average blood sugar over the past 3 months.\n   - *Fasting:* No fasting required\n   - *Report Time:* 24 hours\n\n3. **Fasting Blood Sugar (FBS)** (Test) — **₹99** (MRP: ₹150)\n   - *Fasting:* 8-10 hours fasting required\n   - *Report Time:* 6 hours\n\n4. **Post Prandial Blood Sugar (PPBS)** (Test) — **₹99** (MRP: ₹150)\n   - *Fasting:* Sample taken 2 hours after a meal\n   - *Report Time:* 6 hours\n\nWould you like to book one of these options for a doorstep sample collection?",
+      "retrieved_contexts": [
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose",
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Post Prandial Blood Sugar (PPBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose 2 hours after a meal. Used with FBS to check for diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: Sample taken 2 hours after a meal",
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "We have tests for diabetes including Fasting Blood Sugar, Post Prandial Blood Sugar, and HbA1c.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 4647,
+      "error": null
+    },
+    {
+      "query_id": "cat-02",
+      "category": "catalog",
+      "query": "How much does a thyroid test cost?",
+      "response": "We offer a couple of options for thyroid testing:\n\n* **TSH (Thyroid Stimulating Hormone):** ₹249 (MRP: ₹350) - A single test to screen thyroid function.\n* **Thyroid Profile (T3, T4, TSH):** ₹449 (MRP: ₹600) - Checks thyroid function with Total T3, Total T4, and TSH. \n\nBoth tests require a blood sample and have a report time of 24 hours (no fasting required for the Thyroid Profile). Would you like to book one of these tests?",
+      "retrieved_contexts": [
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "The thyroid profile test costs are listed in our catalog. A standard Thyroid Profile (T3, T4, TSH) is available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3946,
+      "error": null
+    },
+    {
+      "query_id": "cat-03",
+      "category": "catalog",
+      "query": "Do you have a Complete Blood Count (CBC) test?",
+      "response": "Yes, we do! Here are the details for our Complete Blood Count (CBC) test:\n\n* **Price:** ₹299 (MRP: ₹400)\n* **Description:** Counts red cells, white cells, platelets, and haemoglobin. Screens for anaemia and infection.\n* **Parameters:** 24 parameters\n* **Sample Type:** Blood\n* **Report Time:** 12 hours\n* **Fasting Required:** No fasting required\n\nWould you like help booking this test?",
+      "retrieved_contexts": [
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Antenatal Profile\nType: PACKAGE\nPrice: ₹1799 (MRP: ₹2499)\nDescription: Recommended tests during pregnancy.\nParameters: Includes 35 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nIncluded Tests: Complete Blood Count, Blood Group and Rh, Thyroid Profile, VDRL, HIV, HBsAg, Blood Sugar, Urine Routine",
+        "Test Name: Vitamin B12\nType: TEST\nPrice: ₹699 (MRP: ₹1100)\nDescription: Measures vitamin B12 levels to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "Yes, we offer the Complete Blood Count (CBC) test.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 4398,
+      "error": null
+    },
+    {
+      "query_id": "cat-04",
+      "category": "catalog",
+      "query": "I need a liver function test, when can I get it done?",
+      "response": "You can book the **Liver Function Test (LFT)** with DocNow for **₹549** (MRP: ₹800). \n\nHere are the key details for the test:\n* **Report Time:** Within 24 hours of sample collection.\n* **Sample Type:** Blood.\n* **Fasting Requirement:** 8-10 hours fasting is recommended.\n* **Parameters:** 11 parameters checking bilirubin, SGOT, SGPT, ALP, albumin, and total protein.\n\nWould you like to go ahead and schedule your doorstep sample collection?",
+      "retrieved_contexts": [
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Kidney Function Test (KFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks kidney health: urea, creatinine, uric acid, BUN and electrolytes.\nParameters: 9 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "We offer the Liver Function Test (LFT). You can book a slot for home collection at your convenience.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 4325,
+      "error": null
+    },
+    {
+      "query_id": "cat-05",
+      "category": "catalog",
+      "query": "Can you check my Vitamin D levels?",
+      "response": "We offer the **Vitamin D (25-OH)** test to check for vitamin D deficiency. Here are the details:\n\n* **Price:** ₹899 (MRP: ₹1400)\n* **Sample Type:** Blood\n* **Report Time:** 24 hours\n* **Fasting Required:** No fasting required\n\nWould you like to book this test for you?",
+      "retrieved_contexts": [
+        "Test Name: Vitamin D (25-OH)\nType: TEST\nPrice: ₹899 (MRP: ₹1400)\nDescription: Measures 25-hydroxy vitamin D to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Vitamin B12\nType: TEST\nPrice: ₹699 (MRP: ₹1100)\nDescription: Measures vitamin B12 levels to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Iron Studies\nType: TEST\nPrice: ₹599 (MRP: ₹900)\nDescription: Serum iron, TIBC and transferrin saturation to check iron deficiency.\nParameters: 4 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Post Prandial Blood Sugar (PPBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose 2 hours after a meal. Used with FBS to check for diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: Sample taken 2 hours after a meal"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "Yes, we offer Vitamin D (25-OH) tests to check your levels.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "PARTIALLY_GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3607,
+      "error": null
+    },
+    {
+      "query_id": "cat-06",
+      "category": "catalog",
+      "query": "What's included in the full body checkup?",
+      "response": "We offer two full body checkup packages:\n\n1. **Basic Full Body Checkup (₹1299)**\n   * **Parameters:** 62 parameters\n   * **Includes:** Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, and Urine Routine.\n   * **Fasting:** 10-12 hours required.\n   * **Report Time:** 24-48 hours.\n\n2. **Advanced Full Body Checkup (₹2999)**\n   * **Parameters:** 91 parameters\n   * **Includes:** Everything in the basic checkup plus Vitamin D, Vitamin B12, HbA1c, Iron Studies, and cardiac risk markers (hs-CRP).\n   * **Fasting:** 10-12 hours required.\n   * **Report Time:** 24-48 hours.\n\nBoth packages include convenient home sample collection for blood and urine! Let me know if you'd like to book one.",
+      "retrieved_contexts": [
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "faq",
+        "catalog"
+      ],
+      "ground_truth": "A full body checkup typically includes CBC, Lipid Profile, Liver Function, Kidney Function, Thyroid, and blood sugar tests.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3940,
+      "error": null
+    },
+    {
+      "query_id": "cat-07",
+      "category": "catalog",
+      "query": "Do I need to fast before a lipid profile test?",
+      "response": "Yes, a fasting period of 10-12 hours is required before taking a Lipid Profile test.",
+      "retrieved_contexts": [
+        "Test Name: Lipid Profile\nType: TEST\nPrice: ₹499 (MRP: ₹700)\nDescription: Measures total cholesterol, HDL, LDL, VLDL and triglycerides to assess heart risk.\nParameters: 8 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "Yes, a lipid profile test usually requires 10-12 hours of fasting.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [],
+      "latency_ms": 55420,
+      "error": null
+    },
+    {
+      "query_id": "cat-08",
+      "category": "catalog",
+      "query": "How long does it take to get the report for a blood test?",
+      "response": "Diagnostic reports are typically delivered within 24-48 hours after sample collection, though the exact time can vary depending on the test type. For example, some specific tests may be ready sooner (such as a CBC in 12 hours or PPBS in 6 hours), while specialized tests may take longer. You can download your report as a PDF from the \"Reports\" section of your DocNow account, and you will also receive a WhatsApp notification as soon as it is ready.",
+      "retrieved_contexts": [
+        "Diagnostic reports are typically delivered within 24-48 hours after sample collection, though the exact time varies by test type. Some specialized tests may take longer. Reports are delivered as downloadable PDF files in the Reports section of your DocNow account. You'll also receive a WhatsApp notification when your report is ready.",
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "Test Name: Post Prandial Blood Sugar (PPBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose 2 hours after a meal. Used with FBS to check for diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: Sample taken 2 hours after a meal",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine"
+      ],
+      "retrieved_sources": [
+        "faq",
+        "catalog",
+        "catalog",
+        "faq",
+        "catalog"
+      ],
+      "ground_truth": "Report times vary by test, but most routine blood test reports are delivered within 24 hours.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [],
+      "latency_ms": 4614,
+      "error": null
+    },
+    {
+      "query_id": "cat-09",
+      "category": "catalog",
+      "query": "What is the difference between the basic and advanced full body checkup?",
+      "response": "Here is the difference between the Basic and Advanced Full Body Checkups:\n\n* **Basic Full Body Checkup (₹1299):** Covers routine screening with 62 parameters. It includes a Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, and Urine Routine.\n* **Advanced Full Body Checkup (₹2999):** A more comprehensive package with 91 parameters. In addition to everything in the basic checkup, it includes vitamins (Vitamin D, Vitamin B12), HbA1c, iron studies, and cardiac risk markers (hs-CRP). \n\nBoth packages require a blood and urine sample, a 10-12 hour fasting period, and have a report turnaround time of 24-48 hours.",
+      "retrieved_contexts": [
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep. We partner with certified laboratories (including Healthians) to offer a wide range of diagnostic tests, health packages, and profiles. Our phlebotomists are trained professionals who collect samples safely at your home. For support, contact us at +91 9649089089 or docnowhealthcare@gmail.com. Visit docnow.in for more information.",
+        "If you cancel before sample collection, you receive a full automatic refund via Razorpay. If the partner lab fails to fulfill your booking, an automatic refund is also initiated. Refund timeline: 5-7 business days for credit/debit cards and netbanking payments, instant for UPI and digital wallets. DocNow wallet credits used in the order are restored immediately upon cancellation. Promo code usage is also restored so you can reuse the code."
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "faq",
+        "policy"
+      ],
+      "ground_truth": "The advanced checkup includes additional parameters like Vitamin D, Vitamin B12, and advanced cardiac risk markers compared to the basic package.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 4514,
+      "error": null
+    },
+    {
+      "query_id": "cat-10",
+      "category": "catalog",
+      "query": "What is the cheapest test you have for diabetes?",
+      "response": "Based on our catalog, the cheapest individual test for diabetes is the **Fasting Blood Sugar (FBS)**, priced at **₹99** (MRP: ₹150).",
+      "retrieved_contexts": [
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose",
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required",
+        "Test Name: Post Prandial Blood Sugar (PPBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose 2 hours after a meal. Used with FBS to check for diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: Sample taken 2 hours after a meal",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "Fasting Blood Sugar (FBS) is generally our most affordable test for diabetes screening.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3606,
+      "error": null
+    },
+    {
+      "query_id": "cat-11",
+      "category": "catalog",
+      "query": "I am a 45 year old man, what tests should I take?",
+      "response": "Based on your age, we recommend the **Men's Health Checkup (40+)** package. \n\nHere are the details for the package:\n* **Price:** ₹2499 (MRP: ₹3999)\n* **Description:** Designed specifically for men over 40, covering diabetes, heart, liver, kidney, thyroid, and PSA screening.\n* **Parameters:** Includes 78 parameters (such as HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, and Complete Blood Count).\n* **Sample Type:** Blood and Urine (collected safely at your home by our trained phlebotomists).\n* **Fasting Required:** 10-12 hours fasting required.\n* **Report Time:** 48 hours.\n\nWould you like to book this test or know more about our other packages?",
+      "retrieved_contexts": [
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose",
+        "DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep. We partner with certified laboratories (including Healthians) to offer a wide range of diagnostic tests, health packages, and profiles. Our phlebotomists are trained professionals who collect samples safely at your home. For support, contact us at +91 9649089089 or docnowhealthcare@gmail.com. Visit docnow.in for more information.",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "faq",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "For a 45-year-old man, a comprehensive full body checkup including cardiac markers, diabetes screen, lipid profile, and prostate-specific antigen (PSA) is recommended.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 4151,
+      "error": null
+    },
+    {
+      "query_id": "cat-12",
+      "category": "catalog",
+      "query": "Are there any test recommendations for pregnant women?",
+      "response": "I don't have the information in my current catalog regarding specific test recommendations for pregnant women. If you'd like, I can help you with our available tests, such as the Liver Function Test, TSH, Vitamin D, Iron Studies, or our Basic Full Body Checkup.",
+      "retrieved_contexts": [
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Vitamin D (25-OH)\nType: TEST\nPrice: ₹899 (MRP: ₹1400)\nDescription: Measures 25-hydroxy vitamin D to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Iron Studies\nType: TEST\nPrice: ₹599 (MRP: ₹900)\nDescription: Serum iron, TIBC and transferrin saturation to check iron deficiency.\nParameters: 4 parameters\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "We have antenatal profiles that include CBC, Blood Grouping, Thyroid, VDRL, HIV, and blood sugar tests suitable for pregnant women.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 4038,
+      "error": null
+    },
+    {
+      "query_id": "cat-13",
+      "category": "catalog",
+      "query": "Is there a discount on the advanced health package?",
+      "response": "Yes, there is a discount on the Advanced Full Body Checkup! It is currently priced at **₹2999**, which is marked down from its MRP of **₹4499**.",
+      "retrieved_contexts": [
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose",
+        "Test Name: Antenatal Profile\nType: PACKAGE\nPrice: ₹1799 (MRP: ₹2499)\nDescription: Recommended tests during pregnancy.\nParameters: Includes 35 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nIncluded Tests: Complete Blood Count, Blood Group and Rh, Thyroid Profile, VDRL, HIV, HBsAg, Blood Sugar, Urine Routine",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "You can view the discounted price for the advanced health package in our catalog.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 37670,
+      "error": null
+    },
+    {
+      "query_id": "cat-14",
+      "category": "catalog",
+      "query": "What type of sample is needed for the CBC test?",
+      "response": "For the Complete Blood Count (CBC) test, a blood sample is required.",
+      "retrieved_contexts": [
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "Test Name: Vitamin B12\nType: TEST\nPrice: ₹699 (MRP: ₹1100)\nDescription: Measures vitamin B12 levels to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Kidney Function Test (KFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks kidney health: urea, creatinine, uric acid, BUN and electrolytes.\nParameters: 9 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Iron Studies\nType: TEST\nPrice: ₹599 (MRP: ₹900)\nDescription: Serum iron, TIBC and transferrin saturation to check iron deficiency.\nParameters: 4 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "The CBC test requires a blood sample.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "get_product_details"
+      ],
+      "latency_ms": 3443,
+      "error": null
+    },
+    {
+      "query_id": "cat-15",
+      "category": "catalog",
+      "query": "Can you search for an HbA1c test for me?",
+      "response": "Yes, I can help you with that! Here is the HbA1c test available with DocNow:\n\n**HbA1c (Glycosylated Haemoglobin)**\n* **Type:** Test\n* **Price:** ₹399 (MRP: ₹550)\n* **Description:** Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\n* **Sample Type:** Blood\n* **Report Time:** 24 hours\n* **Fasting Required:** No fasting required\n\nWe also offer it as part of our **Diabetes Screening Package** (₹699) and the **Advanced Full Body Checkup** (₹2999) if you're looking for a more comprehensive test. \n\nWould you like to book one of these for a doorstep sample collection?",
+      "retrieved_contexts": [
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "Test Name: Vitamin B12\nType: TEST\nPrice: ₹699 (MRP: ₹1100)\nDescription: Measures vitamin B12 levels to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "Yes, we offer the HbA1c test which measures your average blood sugar over the past 3 months.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3885,
+      "error": null
+    },
+    {
+      "query_id": "book-01",
+      "category": "booking",
+      "query": "Can you check the status of my booking #12345?",
+      "response": "I've checked the status of your booking (#12345):\n\n* **Status:** Sample Collector Assigned\n* **Tests:** Complete Blood Count (CBC)\n* **Scheduled Slot:** Tomorrow 09:00-10:00\n* **Phlebotomist:** Ravi K.\n\nA phlebotomist has been assigned and will arrive during your scheduled time slot. You can track their status from the booking details page. Please let me know if you need any further assistance!",
+      "retrieved_contexts": [
+        "After a phlebotomist is assigned to your booking, you can track their status from the booking details page. You'll see the phlebotomist's name and a masked contact number for privacy. You'll receive a WhatsApp notification when the phlebotomist is assigned and when they're on their way.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment."
+      ],
+      "retrieved_sources": [
+        "faq",
+        "booking_help",
+        "policy",
+        "policy",
+        "booking_help"
+      ],
+      "ground_truth": "The response should provide the current status (e.g., confirmed, pending, completed) of booking #12345.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "get_booking_status"
+      ],
+      "latency_ms": 3788,
+      "error": null
+    },
+    {
+      "query_id": "book-02",
+      "category": "booking",
+      "query": "I want to cancel my booking for tomorrow.",
+      "response": "Please confirm: do you want me to cancel this booking (no details)? Reply YES to continue, or anything else to stop.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should assist the user in cancelling their upcoming booking.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "cancel_booking"
+      ],
+      "latency_ms": 1237,
+      "error": null
+    },
+    {
+      "query_id": "book-03",
+      "category": "booking",
+      "query": "Can I reschedule my appointment to next Monday?",
+      "response": "Please confirm: do you want me to reschedule this booking (no details)? Reply YES to continue, or anything else to stop.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should guide the user to reschedule their appointment to next Monday.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "reschedule_booking"
+      ],
+      "latency_ms": 1155,
+      "error": null
+    },
+    {
+      "query_id": "book-04",
+      "category": "booking",
+      "query": "List all my upcoming bookings.",
+      "response": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should display a list of all upcoming bookings for the user.",
+      "should_abstain": false,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 36604,
+      "error": "Error calling Gemini API: ClientError(\"429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\\\nPlease retry in 9.502775881s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}\"); Verification failed — defaulting to UNGROUNDED for safety: ClientError(\"429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\\\nPlease retry in 9.502775881s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}\")"
+    },
+    {
+      "query_id": "book-05",
+      "category": "booking",
+      "query": "When will the phlebotomist arrive for my booking today?",
+      "response": "To find out when your phlebotomist will arrive today, please check your booking status on the booking details page or in the \"My Bookings\" section. \n\nDepending on your status:\n* If it shows **Sample Collector Assigned**, they are scheduled to arrive during your selected slot time. \n* You can also track their status and see if they are on their way through WhatsApp notifications or the booking details page. \n\nIf you need help checking a specific order status, please let me know your order details!",
+      "retrieved_contexts": [
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "After a phlebotomist is assigned to your booking, you can track their status from the booking details page. You'll see the phlebotomist's name and a masked contact number for privacy. You'll receive a WhatsApp notification when the phlebotomist is assigned and when they're on their way.",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "DocNow supports booking tests for multiple family members in a single order. You can add family members (patients) from your profile. Each test in your cart can be assigned to a different patient. During checkout, specify which family member each test is for. The phlebotomist will collect samples from all patients during the same visit."
+      ],
+      "retrieved_sources": [
+        "booking_help",
+        "faq",
+        "booking_help",
+        "faq",
+        "booking_help"
+      ],
+      "ground_truth": "The response should provide the expected arrival time or status of the phlebotomist for today's booking.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "get_booking_status"
+      ],
+      "latency_ms": 20580,
+      "error": null
+    },
+    {
+      "query_id": "book-06",
+      "category": "booking",
+      "query": "Are there any slots available for tomorrow morning?",
+      "response": "Yes, time slots can be booked up to 7 days in advance, with morning slots starting from 6:00 AM. You can select your preferred collection time during checkout. Please note that exact slot availability depends on your location and the specific tests selected.",
+      "retrieved_contexts": [
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "After a phlebotomist is assigned to your booking, you can track their status from the booking details page. You'll see the phlebotomist's name and a masked contact number for privacy. You'll receive a WhatsApp notification when the phlebotomist is assigned and when they're on their way."
+      ],
+      "retrieved_sources": [
+        "faq",
+        "policy",
+        "booking_help",
+        "policy",
+        "faq"
+      ],
+      "ground_truth": "The response should list the available time slots for home collection tomorrow morning.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "PARTIALLY_GROUNDED",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [],
+      "latency_ms": 3385,
+      "error": null
+    },
+    {
+      "query_id": "book-07",
+      "category": "booking",
+      "query": "My booking status says pending, what does that mean?",
+      "response": "For your reference, the booking statuses we track are: Order Booked, Sample Collector Assigned, Sample Collector Reached Home, Sample Collected, Sample Received at Lab, Report Generated, and Report Available.",
+      "retrieved_contexts": [
+        "After a phlebotomist is assigned to your booking, you can track their status from the booking details page. You'll see the phlebotomist's name and a masked contact number for privacy. You'll receive a WhatsApp notification when the phlebotomist is assigned and when they're on their way.",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused."
+      ],
+      "retrieved_sources": [
+        "faq",
+        "booking_help",
+        "booking_help",
+        "policy",
+        "policy"
+      ],
+      "ground_truth": "The response should explain that a pending status means the booking is awaiting confirmation or payment.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "PARTIALLY_GROUNDED",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [],
+      "latency_ms": 4485,
+      "error": null
+    },
+    {
+      "query_id": "book-08",
+      "category": "booking",
+      "query": "I need to cancel booking number 98765.",
+      "response": "Please confirm: do you want me to cancel this booking (booking_id: 98765)? Reply YES to continue, or anything else to stop.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should confirm the cancellation process for booking #98765.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "cancel_booking"
+      ],
+      "latency_ms": 1242,
+      "error": null
+    },
+    {
+      "query_id": "book-09",
+      "category": "booking",
+      "query": "What time is my appointment for the CBC test?",
+      "response": "Your appointment for the Complete Blood Count (CBC) test (Booking ID: 12345) is scheduled for **tomorrow from 09:00 AM to 10:00 AM**. \n\nPhlebotomist Ravi K. has been assigned to collect your sample.",
+      "retrieved_contexts": [
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Test Name: Vitamin B12\nType: TEST\nPrice: ₹699 (MRP: ₹1100)\nDescription: Measures vitamin B12 levels to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended"
+      ],
+      "retrieved_sources": [
+        "faq",
+        "catalog",
+        "booking_help",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "The response should look up the user's bookings and provide the appointment time for their CBC test.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 3962,
+      "error": null
+    },
+    {
+      "query_id": "book-10",
+      "category": "booking",
+      "query": "Can you change my booking time from 9 AM to 11 AM?",
+      "response": "Please confirm: do you want me to reschedule this booking (slotTime: 11:00 AM)? Reply YES to continue, or anything else to stop.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should process the rescheduling of the booking from 9 AM to 11 AM if slots are available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "reschedule_booking"
+      ],
+      "latency_ms": 1429,
+      "error": null
+    },
+    {
+      "query_id": "book-11",
+      "category": "booking",
+      "query": "Has a phlebotomist been assigned to my booking?",
+      "response": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should indicate whether a phlebotomist has been assigned and provide their details if available.",
+      "should_abstain": false,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 37476,
+      "error": "Error calling Gemini API: ClientError(\"429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\\\nPlease retry in 2.752854623s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '2s'}]}}\"); Verification failed — defaulting to UNGROUNDED for safety: ClientError(\"429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\\\nPlease retry in 2.752854623s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '2s'}]}}\")"
+    },
+    {
+      "query_id": "book-12",
+      "category": "booking",
+      "query": "Show me my past bookings.",
+      "response": "Here are your recent bookings based on our system: * **Booking ID 12345** * **Tests:** Complete Blood Count (CBC) * **Status:** Sample Collector Assigned * **Slot:** Tomorrow 09:00 - 10:00 * **Phlebotomist:** Ravi K. * **Patient:** Self * **Booking ID 98765** * **Tests:** Lipid Profile * **Status:** Order Booked * **Slot:** Saturday 08:00 - 09:00 * **Patient:** Self * **Booking ID 55501** * **Tests:** Thyroid Profile (T3, T4, TSH) * **Status:** Cancelled * **Slot:** Last Monday 07:00 - 08:00 * **Patient:** Mother Let me know if you need help with any of these appointments!",
+      "retrieved_contexts": [
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "After a phlebotomist is assigned to your booking, you can track their status from the booking details page. You'll see the phlebotomist's name and a masked contact number for privacy. You'll receive a WhatsApp notification when the phlebotomist is assigned and when they're on their way.",
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF."
+      ],
+      "retrieved_sources": [
+        "policy",
+        "policy",
+        "faq",
+        "catalog",
+        "booking_help"
+      ],
+      "ground_truth": "The response should display the user's booking history.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 11556,
+      "error": null
+    },
+    {
+      "query_id": "book-13",
+      "category": "booking",
+      "query": "Is 8 AM available for home collection this Saturday?",
+      "response": "Morning time slots start from 6:00 AM, and you can book slots up to 7 days in advance. However, specific slot availability (such as 8 AM this Saturday) depends on your location and the tests you select. You can view the exact available times during checkout.",
+      "retrieved_contexts": [
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused."
+      ],
+      "retrieved_sources": [
+        "faq",
+        "policy",
+        "booking_help",
+        "faq",
+        "policy"
+      ],
+      "ground_truth": "The response should confirm if the 8 AM slot is available for this Saturday.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [],
+      "latency_ms": 3759,
+      "error": null
+    },
+    {
+      "query_id": "book-14",
+      "category": "booking",
+      "query": "I missed my appointment, can I reschedule it?",
+      "response": "Please confirm: do you want me to reschedule this booking (no details)? Reply YES to continue, or anything else to stop.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should help the user reschedule their missed appointment to a new date and time.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "reschedule_booking"
+      ],
+      "latency_ms": 1319,
+      "error": null
+    },
+    {
+      "query_id": "book-15",
+      "category": "booking",
+      "query": "Why is my booking cancelled?",
+      "response": "I don't have the specific details on why your individual booking was cancelled based on the available information. \n\nHowever, generally, cancellations can happen if you requested one (which is available for free as long as your booking is in 'Order Booked' or 'Sample Collector Assigned' status) or if the partner lab failed to fulfill your booking (in which case an automatic refund is initiated). \n\nIf you'd like me to look into your specific account or booking, please provide more details, or check your booking status on the DocNow app/website.",
+      "retrieved_contexts": [
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "After a phlebotomist is assigned to your booking, you can track their status from the booking details page. You'll see the phlebotomist's name and a masked contact number for privacy. You'll receive a WhatsApp notification when the phlebotomist is assigned and when they're on their way.",
+        "If you cancel before sample collection, you receive a full automatic refund via Razorpay. If the partner lab fails to fulfill your booking, an automatic refund is also initiated. Refund timeline: 5-7 business days for credit/debit cards and netbanking payments, instant for UPI and digital wallets. DocNow wallet credits used in the order are restored immediately upon cancellation. Promo code usage is also restored so you can reuse the code."
+      ],
+      "retrieved_sources": [
+        "policy",
+        "policy",
+        "booking_help",
+        "faq",
+        "policy"
+      ],
+      "ground_truth": "The response should provide the reason for the booking's cancellation based on its status.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "get_booking_status"
+      ],
+      "latency_ms": 3747,
+      "error": null
+    },
+    {
+      "query_id": "faq-01",
+      "category": "policy",
+      "query": "What is your cancellation policy?",
+      "response": "Here is our cancellation policy:\n\n* **When you can cancel:** Free cancellation is available as long as your booking is in the 'Order Booked' or 'Sample Collector Assigned' status. \n* **When you cannot cancel:** Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Additionally, camp bookings cannot be cancelled online.\n* **Refunds:** When you cancel, you will receive a full automatic refund via Razorpay. \n  * **Timeline:** 5–7 business days for credit/debit cards and netbanking; instant for UPI and digital wallets.\n* **Credits and Promos:** Any DocNow wallet credits and promo codes used in the booking are restored immediately and can be reused.",
+      "retrieved_contexts": [
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "If you cancel before sample collection, you receive a full automatic refund via Razorpay. If the partner lab fails to fulfill your booking, an automatic refund is also initiated. Refund timeline: 5-7 business days for credit/debit cards and netbanking payments, instant for UPI and digital wallets. DocNow wallet credits used in the order are restored immediately upon cancellation. Promo code usage is also restored so you can reuse the code.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "DocNow accepts UPI, credit/debit cards, netbanking, and digital wallets via Razorpay. You can also apply DocNow wallet credits or promo codes for discounts. If a promo code or wallet balance fully covers your order amount, no additional payment gateway transaction is needed. All prices shown on the platform include applicable taxes. DocNow may offer discounted prices on selected tests and packages."
+      ],
+      "retrieved_sources": [
+        "policy",
+        "policy",
+        "policy",
+        "booking_help",
+        "policy"
+      ],
+      "ground_truth": "You can cancel your booking up to a certain time before the scheduled slot for a full refund. Please refer to our detailed cancellation policy.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "policy",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 4979,
+      "error": null
+    },
+    {
+      "query_id": "faq-02",
+      "category": "policy",
+      "query": "If I cancel my booking, how long does the refund take?",
+      "response": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "Refunds typically take 5-7 business days to process and reflect in your original payment method.",
+      "should_abstain": false,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": "policy",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 37860,
+      "error": "Error calling Gemini API: ClientError(\"429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\\\nPlease retry in 4.684484115s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '4s'}]}}\"); Verification failed — defaulting to UNGROUNDED for safety: ClientError(\"429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\\\nPlease retry in 4.684484115s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '4s'}]}}\")"
+    },
+    {
+      "query_id": "faq-03",
+      "category": "policy",
+      "query": "How does the home sample collection process work?",
+      "response": "Here is how the DocNow home sample collection process works:\n\n1. **Browse and Select:** Choose the tests or health packages you need on DocNow and add them to your cart.\n2. **Schedule:** Select a convenient date and time slot for your appointment.\n3. **Payment:** Complete your payment securely via UPI, card, netbanking, or wallet.\n4. **Phlebotomist Arrival:** A certified, trained phlebotomist will arrive at your home during your scheduled time slot.\n5. **Sample Collection:** The sample is collected safely and transported to our partner laboratory (such as Healthians).\n6. **Digital Report:** Your diagnostic report is delivered digitally as a downloadable PDF in your account, and you will receive WhatsApp notifications at every key step of the process (booking confirmation, phlebotomist assignment, and report availability).",
+      "retrieved_contexts": [
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep. We partner with certified laboratories (including Healthians) to offer a wide range of diagnostic tests, health packages, and profiles. Our phlebotomists are trained professionals who collect samples safely at your home. For support, contact us at +91 9649089089 or docnowhealthcare@gmail.com. Visit docnow.in for more information.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Diagnostic reports are typically delivered within 24-48 hours after sample collection, though the exact time varies by test type. Some specialized tests may take longer. Reports are delivered as downloadable PDF files in the Reports section of your DocNow account. You'll also receive a WhatsApp notification when your report is ready.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused."
+      ],
+      "retrieved_sources": [
+        "faq",
+        "faq",
+        "booking_help",
+        "faq",
+        "policy"
+      ],
+      "ground_truth": "A trained phlebotomist will arrive at your provided address at the scheduled time to collect your sample securely.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 21082,
+      "error": null
+    },
+    {
+      "query_id": "faq-04",
+      "category": "policy",
+      "query": "What does it mean if my sample needs to be resampled?",
+      "response": "Sometimes the laboratory needs a fresh sample due to quality issues such as hemolysis (blood sample breaking down), clotting, or other factors. \n\nWhen your status changes to 'Resample Required', a phlebotomist will be reassigned to collect a new sample completely free of charge, and you do not need to make any additional payment.",
+      "retrieved_contexts": [
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "If you cancel before sample collection, you receive a full automatic refund via Razorpay. If the partner lab fails to fulfill your booking, an automatic refund is also initiated. Refund timeline: 5-7 business days for credit/debit cards and netbanking payments, instant for UPI and digital wallets. DocNow wallet credits used in the order are restored immediately upon cancellation. Promo code usage is also restored so you can reuse the code.",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet."
+      ],
+      "retrieved_sources": [
+        "booking_help",
+        "policy",
+        "booking_help",
+        "policy",
+        "faq"
+      ],
+      "ground_truth": "Resampling means the initial sample provided was insufficient or compromised, and we need to collect a new sample to run the tests accurately.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "booking_help",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 3790,
+      "error": null
+    },
+    {
+      "query_id": "faq-05",
+      "category": "policy",
+      "query": "What payment methods do you accept?",
+      "response": "DocNow accepts the following payment methods via Razorpay:\n* UPI\n* Credit and debit cards\n* Netbanking\n* Digital wallets\n\nYou can also apply DocNow wallet credits or promo codes to your order. If your wallet balance or promo code fully covers the amount, no additional payment gateway transaction is needed.",
+      "retrieved_contexts": [
+        "DocNow accepts UPI, credit/debit cards, netbanking, and digital wallets via Razorpay. You can also apply DocNow wallet credits or promo codes for discounts. If a promo code or wallet balance fully covers your order amount, no additional payment gateway transaction is needed. All prices shown on the platform include applicable taxes. DocNow may offer discounted prices on selected tests and packages.",
+        "DocNow wallet credits can be earned through referrals and promotional campaigns. Credits are applied automatically during checkout to reduce your payable amount. Promo codes can be entered during checkout for additional discounts. Each promo code has usage limits (per-user and global). If your wallet balance and/or promo discount fully cover the order, no payment gateway transaction is needed.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required."
+      ],
+      "retrieved_sources": [
+        "policy",
+        "booking_help",
+        "faq",
+        "booking_help",
+        "policy"
+      ],
+      "ground_truth": "We accept credit/debit cards, UPI, net banking, and digital wallets.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "policy",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 4551,
+      "error": null
+    },
+    {
+      "query_id": "faq-06",
+      "category": "policy",
+      "query": "What are the rules for rescheduling an appointment?",
+      "response": "Here are the rules for rescheduling your appointment with DocNow:\n\n* **Timing:** You can reschedule your appointment anytime before your sample is collected. \n* **Restrictions:** You cannot reschedule if your booking status is *Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled,* or *Refunded*. Additionally, camp bookings cannot be rescheduled online.\n* **Slot Availability:** Available time slots can be booked up to 7 days in advance, starting from 6:00 AM.\n* **Process & Cost:** When you reschedule, a new booking reference is created, and your old booking will be marked as 'Rescheduled'. There is **no additional payment required**.\n* **How to do it:** You can change your appointment time directly from the 'My Bookings' section as long as your sample has not been collected yet.",
+      "retrieved_contexts": [
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused."
+      ],
+      "retrieved_sources": [
+        "policy",
+        "faq",
+        "booking_help",
+        "booking_help",
+        "policy"
+      ],
+      "ground_truth": "You can reschedule your appointment at least 2 hours before the scheduled time slot subject to availability.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "policy",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 4214,
+      "error": null
+    },
+    {
+      "query_id": "faq-07",
+      "category": "policy",
+      "query": "How are the reports delivered to me?",
+      "response": "Your diagnostic reports are delivered digitally as downloadable PDF files in the Reports section of your DocNow account. You will also receive a WhatsApp notification when your report is ready. Reports are typically delivered within 24-48 hours after sample collection, though specialized tests may take longer.",
+      "retrieved_contexts": [
+        "Diagnostic reports are typically delivered within 24-48 hours after sample collection, though the exact time varies by test type. Some specialized tests may take longer. Reports are delivered as downloadable PDF files in the Reports section of your DocNow account. You'll also receive a WhatsApp notification when your report is ready.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "After a phlebotomist is assigned to your booking, you can track their status from the booking details page. You'll see the phlebotomist's name and a masked contact number for privacy. You'll receive a WhatsApp notification when the phlebotomist is assigned and when they're on their way.",
+        "DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep. We partner with certified laboratories (including Healthians) to offer a wide range of diagnostic tests, health packages, and profiles. Our phlebotomists are trained professionals who collect samples safely at your home. For support, contact us at +91 9649089089 or docnowhealthcare@gmail.com. Visit docnow.in for more information."
+      ],
+      "retrieved_sources": [
+        "faq",
+        "faq",
+        "booking_help",
+        "faq",
+        "faq"
+      ],
+      "ground_truth": "Reports are sent via email, SMS link, and can also be downloaded directly from your account on our platform.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 4054,
+      "error": null
+    },
+    {
+      "query_id": "faq-08",
+      "category": "policy",
+      "query": "How far in advance can I book a slot?",
+      "response": "You can book a time slot up to 7 days in advance. Morning slots start from 6:00 AM, and you can select your preferred collection time during checkout.",
+      "retrieved_contexts": [
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF."
+      ],
+      "retrieved_sources": [
+        "faq",
+        "policy",
+        "faq",
+        "policy",
+        "booking_help"
+      ],
+      "ground_truth": "You can book a slot up to 7 days in advance.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 37441,
+      "error": null
+    },
+    {
+      "query_id": "faq-09",
+      "category": "policy",
+      "query": "Can I use wallet credits to pay for my test?",
+      "response": "Yes, you can use DocNow wallet credits to pay for your test! Wallet credits are applied automatically during checkout to reduce your payable amount. If your wallet balance (and/or a promo code) fully covers your order, no additional payment gateway transaction is needed.",
+      "retrieved_contexts": [
+        "DocNow wallet credits can be earned through referrals and promotional campaigns. Credits are applied automatically during checkout to reduce your payable amount. Promo codes can be entered during checkout for additional discounts. Each promo code has usage limits (per-user and global). If your wallet balance and/or promo discount fully cover the order, no payment gateway transaction is needed.",
+        "DocNow accepts UPI, credit/debit cards, netbanking, and digital wallets via Razorpay. You can also apply DocNow wallet credits or promo codes for discounts. If a promo code or wallet balance fully covers your order amount, no additional payment gateway transaction is needed. All prices shown on the platform include applicable taxes. DocNow may offer discounted prices on selected tests and packages.",
+        "If you cancel before sample collection, you receive a full automatic refund via Razorpay. If the partner lab fails to fulfill your booking, an automatic refund is also initiated. Refund timeline: 5-7 business days for credit/debit cards and netbanking payments, instant for UPI and digital wallets. DocNow wallet credits used in the order are restored immediately upon cancellation. Promo code usage is also restored so you can reuse the code.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused."
+      ],
+      "retrieved_sources": [
+        "booking_help",
+        "policy",
+        "policy",
+        "faq",
+        "policy"
+      ],
+      "ground_truth": "Yes, if you have DocNow wallet credits, you can apply them at checkout to pay for your tests.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "booking_help",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 3534,
+      "error": null
+    },
+    {
+      "query_id": "faq-10",
+      "category": "policy",
+      "query": "Can I cancel my test after the phlebotomist arrives at my location?",
+      "response": "No, cancellation is no longer possible once the phlebotomist has reached your home. Free cancellation is only available while your booking is in the 'Order Booked' or 'Sample Collector Assigned' status.",
+      "retrieved_contexts": [
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "After a phlebotomist is assigned to your booking, you can track their status from the booking details page. You'll see the phlebotomist's name and a masked contact number for privacy. You'll receive a WhatsApp notification when the phlebotomist is assigned and when they're on their way.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet."
+      ],
+      "retrieved_sources": [
+        "booking_help",
+        "policy",
+        "faq",
+        "faq",
+        "faq"
+      ],
+      "ground_truth": "If you cancel after the phlebotomist arrives, a visiting charge may be deducted from your refund according to our policy.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "policy",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 3330,
+      "error": null
+    },
+    {
+      "query_id": "edge-01",
+      "category": "edge",
+      "query": "Can you help me book a flight to Mumbai?",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 1344,
+      "error": null
+    },
+    {
+      "query_id": "edge-02",
+      "category": "edge",
+      "query": "What is the weather like in Bangalore today?",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 1087,
+      "error": null
+    },
+    {
+      "query_id": "edge-03",
+      "category": "edge",
+      "query": "What is the current stock price of Apple?",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 1033,
+      "error": null
+    },
+    {
+      "query_id": "edge-04",
+      "category": "edge",
+      "query": "Can you write me a prescription for antibiotics?",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 1056,
+      "error": null
+    },
+    {
+      "query_id": "edge-05",
+      "category": "edge",
+      "query": "Write a poem about blood tests.",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 1169,
+      "error": null
+    },
+    {
+      "query_id": "edge-06",
+      "category": "edge",
+      "query": "What are some good restaurants near me?",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 1077,
+      "error": null
+    },
+    {
+      "query_id": "edge-07",
+      "category": "edge",
+      "query": "Can you help me solve this algebra homework problem?",
+      "response": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 53270,
+      "error": "Error calling Gemini API: ClientError(\"429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\\\nPlease retry in 12.000292521s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '12s'}]}}\"); Intent classification failed: ClientError(\"429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\\\nPlease retry in 12.000292521s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '12s'}]}}\")"
+    },
+    {
+      "query_id": "edge-08",
+      "category": "edge",
+      "query": "What do you think about the current political situation?",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 1271,
+      "error": null
+    },
+    {
+      "query_id": "edge-09",
+      "category": "edge",
+      "query": "Do you offer plumbing services as well?",
+      "response": "No, we do not offer plumbing services.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": false,
+      "verifier_verdict": "PARTIALLY_GROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 6470,
+      "error": null
+    },
+    {
+      "query_id": "edge-10",
+      "category": "edge",
+      "query": "I'm feeling very sad today, what should I do?",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 1124,
+      "error": null
+    }
+  ]
+}

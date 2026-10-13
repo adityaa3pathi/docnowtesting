@@ -99,7 +99,7 @@ class TestOrchestrator:
             response = await handle_message("what's the weather?", agent_context, mock_db, settings)
 
         assert response.was_abstained is True
-        assert "support" in response.content.lower() or "don't have" in response.content.lower()
+        assert "only help with docnow" in response.content.lower()
 
     @pytest.mark.asyncio
     async def test_off_topic_abstains_even_with_close_chunks(self, mock_db, settings, agent_context):

@@ -46,6 +46,7 @@ import { legacyCookieCleanup } from './middleware/legacyCookieCleanup';
 import { requestContextMiddleware } from './middleware/requestContext';
 import { logger } from './utils/logger';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import { rateLimiter } from './middleware/rateLimiter';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -103,6 +104,8 @@ app.use(csrfProtection);
 
 // Proxy AI support requests to Python FastAPI service
 const AI_SUPPORT_URL = process.env.AI_SUPPORT_URL || 'http://localhost:8000';
+// Each chat message costs several Gemini calls, so cap bursts and daily use per caller.
+app.use('/api/support/chat', rateLimiter(10, 60, 'support_chat_min'), rateLimiter(100, 24 * 60 * 60, 'support_chat_day'));
 app.use('/api/support', createProxyMiddleware({
     target: AI_SUPPORT_URL,
     changeOrigin: true,

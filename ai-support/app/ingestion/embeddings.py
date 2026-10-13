@@ -11,8 +11,12 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Gemini embeds questions and stored passages differently; mixing them up hurts search.
+QUERY = "RETRIEVAL_QUERY"
+DOCUMENT = "RETRIEVAL_DOCUMENT"
 
-async def generate_embedding(text: str, settings: Settings) -> list[float]:
+
+async def generate_embedding(text: str, settings: Settings, task_type: str) -> list[float]:
     """Generate a single embedding vector using Gemini.
 
     Uses gemini-embedding-001 model with configurable dimensions (default 768).
@@ -23,7 +27,7 @@ async def generate_embedding(text: str, settings: Settings) -> list[float]:
         response = await client.aio.models.embed_content(
             model=settings.embedding_model,
             contents=text,
-            config={"output_dimensionality": settings.embedding_dimensions},
+            config={"output_dimensionality": settings.embedding_dimensions, "task_type": task_type},
         )
         values = response.embeddings[0].values
         return list(values)
@@ -35,6 +39,7 @@ async def generate_embedding(text: str, settings: Settings) -> list[float]:
 async def generate_embeddings_batch(
     texts: list[str],
     settings: Settings,
+    task_type: str,
     batch_size: int = 20,
 ) -> list[list[float]]:
     """Generate embeddings for multiple texts in batches.
@@ -50,7 +55,7 @@ async def generate_embeddings_batch(
             response = await client.aio.models.embed_content(
                 model=settings.embedding_model,
                 contents=batch,
-                config={"output_dimensionality": settings.embedding_dimensions},
+                config={"output_dimensionality": settings.embedding_dimensions, "task_type": task_type},
             )
             for emb in response.embeddings:
                 all_embeddings.append(list(emb.values))

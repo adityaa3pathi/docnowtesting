@@ -63,7 +63,7 @@ def ragas_metrics(results: list[EvalResult], settings: Any, judge_model: str) ->
     from ragas import EvaluationDataset, RunConfig, evaluate
     from ragas.embeddings import LangchainEmbeddingsWrapper
     from ragas.llms import LangchainLLMWrapper
-    from ragas.metrics import answer_relevancy, context_precision, context_recall, faithfulness
+    from ragas.metrics import AnswerRelevancy, context_precision, context_recall, faithfulness
 
     rows = [
         {
@@ -86,7 +86,8 @@ def ragas_metrics(results: list[EvalResult], settings: Any, judge_model: str) ->
     )
     result = evaluate(
         EvaluationDataset.from_list(rows),
-        metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
+        # Groq rejects n>1 per request, so ask for one generated question per answer.
+        metrics=[faithfulness, AnswerRelevancy(strictness=1), context_precision, context_recall],
         llm=llm,
         embeddings=embeddings,
         # Free tiers cap requests per minute; a few slow workers beat many timed-out ones.

@@ -28,7 +28,9 @@ class Settings(BaseSettings):
     langfuse_base_url: str = "https://cloud.langfuse.com"
 
     # Agent configuration
-    relevance_threshold: float = 0.7
+    # Tuned on the golden set with query/document embedding types (13-10-2026):
+    # off-topic tops out at 0.61, answerable starts at 0.61. Re-tune if the embedding setup changes.
+    relevance_threshold: float = 0.58
     max_tokens: int = 4000
     max_conversation_turns: int = 10
 

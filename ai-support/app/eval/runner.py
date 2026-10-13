@@ -90,7 +90,11 @@ async def run_query(q: dict, kb: InMemoryKnowledgeBase, settings: Settings) -> E
         verifier_verdict=resp.verifier_verdict if resp else None,
         expected_source=q.get("expected_source"),
         expected_tool=q.get("expected_tool"),
-        tools_called=[a.tool for a in resp.actions_taken] if resp else [],
+        # A write tool waiting for the user's "yes" still counts as the right choice.
+        tools_called=[a.tool for a in resp.actions_taken]
+        + ([resp.pending_action.tool_name] if resp.pending_action else [])
+        if resp
+        else [],
         latency_ms=int((time.monotonic() - start) * 1000),
         error=error,
     )
@@ -129,7 +133,7 @@ async def run(args: argparse.Namespace) -> int:
     # Query embeddings go through the same disk cache, so reruns only pay for LLM calls.
     with (
         patch("app.agents.action.httpx", fake_httpx),
-        patch("app.agents.retrieval.generate_embedding", lambda text, _s: cache.embed(text)),
+        patch("app.agents.retrieval.generate_embedding", lambda text, _s, _task: cache.embed(text)),
     ):
         results = await asyncio.gather(*(bounded(q) for q in queries))
 

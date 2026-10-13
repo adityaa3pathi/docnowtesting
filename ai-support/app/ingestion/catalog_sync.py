@@ -8,7 +8,7 @@ from typing import Any
 
 from app.config import Settings
 from app.database import Database
-from app.ingestion.embeddings import generate_embedding
+from app.ingestion.embeddings import DOCUMENT, generate_embedding
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +108,7 @@ async def sync_catalog(db: Database, settings: Settings) -> dict[str, int]:
                 continue
 
             # Generate embedding
-            embedding = await generate_embedding(text, settings)
+            embedding = await generate_embedding(text, settings, DOCUMENT)
 
             # Build metadata
             metadata = json.dumps({
