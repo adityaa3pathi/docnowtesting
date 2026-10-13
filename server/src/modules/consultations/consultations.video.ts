@@ -1,68 +1,67 @@
 /**
- * 100ms video. The server makes rooms and signs short-lived join tokens; the keys never leave it.
- * The 100ms template must define the roles in VideoRole.
+ * LiveKit video. The server makes rooms and signs short-lived join tokens; the keys never leave it.
+ * Audio roles may publish only the microphone, so an audio booking stays audio on every client.
  */
-import jwt from 'jsonwebtoken';
-import { randomUUID } from 'crypto';
+import { AccessToken, RoomServiceClient, TrackSource } from 'livekit-server-sdk';
 import { DoctorError } from './doctors.status';
 
 export type VideoRole = 'doctor' | 'patient' | 'doctor-audio' | 'patient-audio';
 
 export interface ConsultVideo {
+    /** Address the client connects to. */
+    url(): string;
     createRoom(name: string): Promise<string>;
-    joinToken(roomId: string, userId: string, role: VideoRole): string;
+    joinToken(roomId: string, userId: string, displayName: string, role: VideoRole): Promise<string>;
     /** Removes everyone still in the room, so the other side's screen knows the call is over. */
     endRoom(roomId: string): Promise<void>;
 }
 
-const HMS_API = 'https://api.100ms.live/v2';
 const JOIN_TOKEN_TTL = '2h';
+const EMPTY_ROOM_SECONDS = 10 * 60;
+// Doctor and patient, plus room for one rejoin overlapping a dropped connection on each side.
+const MAX_PARTICIPANTS = 4;
 
-function hmsKeys() {
-    const accessKey = process.env.HMS_ACCESS_KEY;
-    const secret = process.env.HMS_SECRET;
-    const templateId = process.env.HMS_TEMPLATE_ID;
-    if (!accessKey || !secret || !templateId) throw new DoctorError(503, 'Video calls are not set up yet');
-    return { accessKey, secret, templateId };
+function liveKitKeys() {
+    const url = process.env.LIVEKIT_URL;
+    const apiKey = process.env.LIVEKIT_API_KEY;
+    const apiSecret = process.env.LIVEKIT_API_SECRET;
+    if (!url || !apiKey || !apiSecret) throw new DoctorError(503, 'Video calls are not set up yet');
+    return { url, apiKey, apiSecret, host: url.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:') };
 }
 
-function managementToken(accessKey: string, secret: string) {
-    return jwt.sign({ access_key: accessKey, type: 'management', version: 2 }, secret, {
-        algorithm: 'HS256', expiresIn: '5m', jwtid: randomUUID(),
-    });
-}
+const rooms = () => {
+    const { host, apiKey, apiSecret } = liveKitKeys();
+    return new RoomServiceClient(host, apiKey, apiSecret);
+};
 
 export function realConsultVideo(): ConsultVideo {
     return {
+        url: () => liveKitKeys().url,
         async createRoom(name) {
-            const { accessKey, secret, templateId } = hmsKeys();
-            const res = await fetch(`${HMS_API}/rooms`, {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${managementToken(accessKey, secret)}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, template_id: templateId }),
-                signal: AbortSignal.timeout(10_000),
+            const room = await rooms().createRoom({ name, emptyTimeout: EMPTY_ROOM_SECONDS, maxParticipants: MAX_PARTICIPANTS });
+            return room.name;
+        },
+        async joinToken(roomId, userId, displayName, role) {
+            const { apiKey, apiSecret } = liveKitKeys();
+            const token = new AccessToken(apiKey, apiSecret, { identity: userId, name: displayName, ttl: JOIN_TOKEN_TTL });
+            const audioOnly = role.endsWith('-audio');
+            token.addGrant({
+                room: roomId,
+                roomJoin: true,
+                canSubscribe: true,
+                canPublish: true,
+                canPublishData: false,
+                canPublishSources: audioOnly ? [TrackSource.MICROPHONE] : [TrackSource.MICROPHONE, TrackSource.CAMERA],
             });
-            if (!res.ok) throw new Error(`100ms create room failed: HTTP ${res.status}`);
-            const room = (await res.json()) as { id?: string };
-            if (!room.id) throw new Error('100ms create room returned no id');
-            return room.id;
+            return token.toJwt();
         },
         async endRoom(roomId) {
-            const { accessKey, secret } = hmsKeys();
-            const res = await fetch(`${HMS_API}/active-rooms/${encodeURIComponent(roomId)}/end-room`, {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${managementToken(accessKey, secret)}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reason: 'Consultation ended by the doctor', lock: false }),
-                signal: AbortSignal.timeout(10_000),
-            });
-            // 404 means nobody is in the room any more, which is the goal.
-            if (!res.ok && res.status !== 404) throw new Error(`100ms end room failed: HTTP ${res.status}`);
-        },
-        joinToken(roomId, userId, role) {
-            const { accessKey, secret } = hmsKeys();
-            return jwt.sign({ access_key: accessKey, room_id: roomId, user_id: userId, role, type: 'app', version: 2 }, secret, {
-                algorithm: 'HS256', expiresIn: JOIN_TOKEN_TTL, jwtid: randomUUID(),
-            });
+            try {
+                await rooms().deleteRoom(roomId);
+            } catch (e: any) {
+                // A room that is already gone is the goal.
+                if (e?.status !== 404 && !/not found/i.test(String(e?.message))) throw e;
+            }
         },
     };
 }

@@ -105,7 +105,7 @@ describeDb('video consultations: join, notes, prescription (real Postgres)', () 
             expect(res.status).toBe(404);
         });
 
-        it('answers 503 through the route while 100ms keys are missing', async () => {
+        it('answers 503 through the route while video keys are missing', async () => {
             const b = await confirmed(2);
             const res = await post(`${patientApp.url}/consult/bookings/${b.c.id}/join`, tokenFor(b.user as any));
             expect(res.status).toBe(503);

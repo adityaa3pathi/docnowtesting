@@ -17,10 +17,12 @@ type Deps = { video?: ConsultVideo; now?: Date };
 const select = {
     id: true, status: true, type: true, roomId: true, startsAt: true, doctorJoinedAt: true, patientJoinedAt: true,
     policySnapshot: true, slot: { select: { endsAt: true } },
+    patient: { select: { name: true } }, doctor: { select: { displayName: true } },
 } as const;
 type Joinable = {
     id: string; status: ConsultationStatus; type: string; roomId: string | null; startsAt: Date;
     doctorJoinedAt: Date | null; patientJoinedAt: Date | null; policySnapshot: unknown; slot: { endsAt: Date };
+    patient: { name: string }; doctor: { displayName: string };
 };
 
 /** The no-show waits saved with the booking, so a later policy edit never changes a booked consultation. */
@@ -41,7 +43,7 @@ function checkJoinable(c: Joinable, now: Date) {
     if (now.getTime() > c.slot.endsAt.getTime() + JOIN_LATE_MS) throw new DoctorError(409, 'This consultation has ended');
 }
 
-// 100ms returns the existing room for a repeated name, so two first joins still meet in one room.
+// The room name is fixed per consultation, so two first joins still meet in one room.
 async function ensureRoom(c: Joinable, video: ConsultVideo): Promise<string> {
     if (c.roomId) return c.roomId;
     const roomId = await video.createRoom(`consult-${c.id}`);
@@ -73,7 +75,7 @@ export async function patientJoin(userId: string, consultationId: string, deps: 
     ]);
     await assertStillJoinable(c.id);
     const r = role('patient', c.type);
-    return { roomId, role: r, token: video.joinToken(roomId, userId, r) };
+    return { url: video.url(), roomId, role: r, token: await video.joinToken(roomId, userId, c.patient.name, r) };
 }
 
 export async function doctorJoin(doctorId: string, doctorUserId: string, consultationId: string, deps: Deps = {}) {
@@ -93,7 +95,7 @@ export async function doctorJoin(doctorId: string, doctorUserId: string, consult
     ]);
     await assertStillJoinable(c.id);
     const r = role('doctor', c.type);
-    return { roomId, role: r, token: video.joinToken(roomId, doctorUserId, r) };
+    return { url: video.url(), roomId, role: r, token: await video.joinToken(roomId, doctorUserId, `Dr. ${c.doctor.displayName}`, r) };
 }
 
 export async function endConsultation(doctorId: string, consultationId: string, deps: Deps = {}) {

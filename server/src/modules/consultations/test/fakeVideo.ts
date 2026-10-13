@@ -1,6 +1,6 @@
 import { ConsultVideo, VideoRole } from '../consultations.video';
 
-/** In-memory 100ms: rooms are counted, tokens are readable strings. */
+/** In-memory video provider: rooms are counted, tokens are readable strings. */
 export class FakeVideo implements ConsultVideo {
     roomsCreated: string[] = [];
     roomsEnded: string[] = [];
@@ -14,7 +14,11 @@ export class FakeVideo implements ConsultVideo {
         this.roomsEnded.push(roomId);
     }
 
-    joinToken(roomId: string, userId: string, role: VideoRole) {
-        return `token:${roomId}:${userId}:${role}`;
+    url() {
+        return 'wss://fake.livekit.test';
+    }
+
+    async joinToken(roomId: string, userId: string, displayName: string, role: VideoRole) {
+        return `token:${roomId}:${userId}:${displayName}:${role}`;
     }
 }
