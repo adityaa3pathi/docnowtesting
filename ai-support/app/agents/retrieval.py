@@ -1,27 +1,28 @@
-"""Retrieval Agent — RAG over catalog + knowledge base using pgvector."""
+"""Retrieval Agent — hybrid RAG: pgvector + BM25, merged by reciprocal rank fusion."""
 from __future__ import annotations
 
 import logging
 from typing import Any
 
-from langfuse.decorators import observe
+from langfuse import observe
 
+from app.agents.keyword import rrf_fuse
 from app.ingestion.embeddings import generate_embedding
 from app.models import RetrievalResult, RetrievedChunk
 
 logger = logging.getLogger(__name__)
 
 TOP_K = 5
+CANDIDATES = 20
 
 
 @observe(name="retrieval-agent")
 async def retrieve(query: str, db: Any, settings: Any) -> RetrievalResult:
     """Retrieve relevant knowledge chunks for a user query.
 
-    1. Generate embedding for the query
-    2. Cosine similarity search via pgvector
-    3. Filter by relevance threshold (grounded abstention gate)
-    4. Return top-K results
+    1. Dense search via pgvector, filtered by relevance threshold (abstention gate)
+    2. BM25 keyword search over the same chunks
+    3. Fuse both rankings with RRF and return top-K
 
     If NO chunk clears the relevance threshold, should_abstain=True.
     """
@@ -31,33 +32,30 @@ async def retrieve(query: str, db: Any, settings: Any) -> RetrievalResult:
         embedding = await generate_embedding(query, settings)
         threshold = settings.relevance_threshold
 
-        raw_results = await db.vector_search(embedding, limit=TOP_K * 2)
+        dense = await db.vector_search(embedding, limit=CANDIDATES)
+        relevant = [r for r in dense if r.get("similarity", 0.0) >= threshold]
+        # Abstention stays a dense-similarity decision; BM25 only adds and reorders.
+        if not relevant:
+            return RetrievalResult(should_abstain=True, query_embedding=embedding)
 
-        chunks: list[RetrievedChunk] = []
-        max_similarity = 0.0
-
-        for row in raw_results:
-            similarity = row.get("similarity", 0.0)
-            if similarity >= threshold:
-                chunks.append(
-                    RetrievedChunk(
-                        id=row["id"],
-                        source=row.get("source", "unknown"),
-                        title=row.get("title", ""),
-                        content=row.get("content", ""),
-                        similarity=similarity,
-                        metadata=row.get("metadata"),
-                    )
-                )
-                if similarity > max_similarity:
-                    max_similarity = similarity
-
-        should_abstain = len(chunks) == 0
+        keyword = await db.keyword_search(query, limit=CANDIDATES)
+        dense_sim = {r["id"]: r.get("similarity", 0.0) for r in dense}
+        chunks = [
+            RetrievedChunk(
+                id=row["id"],
+                source=row.get("source", "unknown"),
+                title=row.get("title", ""),
+                content=row.get("content", ""),
+                similarity=dense_sim.get(row["id"], 0.0),
+                metadata=row.get("metadata"),
+            )
+            for row in rrf_fuse(relevant, keyword)[:TOP_K]
+        ]
 
         return RetrievalResult(
-            chunks=chunks[:TOP_K],
-            should_abstain=should_abstain,
-            max_similarity=max_similarity,
+            chunks=chunks,
+            should_abstain=False,
+            max_similarity=max(r["similarity"] for r in relevant),
             query_embedding=embedding,
         )
 

@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import Settings
 from app.database import Database
-from app.observability import init_langfuse
+from app.observability import init_langfuse, shutdown_langfuse
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI):
     init_langfuse(settings)
     logger.info("AI Support service ready (enabled=%s)", settings.enabled)
     yield
+    shutdown_langfuse()
     await db.disconnect()
     logger.info("AI Support service stopped")
 

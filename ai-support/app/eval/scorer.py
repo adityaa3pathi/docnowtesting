@@ -1,98 +1,112 @@
-from dataclasses import dataclass
-from typing import List, Dict, Optional, Any
-import pandas as pd
-from datasets import Dataset
+"""Scores eval results: our own metrics plus RAGAS with a Gemini or Groq judge."""
+from __future__ import annotations
 
-try:
-    from ragas import evaluate
-    from ragas.metrics import (
-        faithfulness,
-        answer_relevancy,
-        context_precision,
-        context_recall,
-    )
-    from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-except ImportError:
-    pass
+import logging
+from dataclasses import dataclass, field
+from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
+
+RAGAS_METRICS = ["faithfulness", "answer_relevancy", "context_precision", "context_recall"]
+GROQ_PREFIX = "groq/"
+
 
 @dataclass
 class EvalResult:
+    query_id: str
+    category: str
     query: str
     response: str
-    retrieved_contexts: List[str]
+    retrieved_contexts: list[str]
+    retrieved_sources: list[str]
     ground_truth: Optional[str]
     should_abstain: bool
     was_abstained: bool
-    verifier_verdict: str
+    verifier_verdict: Optional[str]
+    expected_source: Optional[str]
+    expected_tool: Optional[str]
+    tools_called: list[str] = field(default_factory=list)
+    latency_ms: int = 0
+    error: Optional[str] = None
 
-async def score_results(results: List[EvalResult]) -> Dict[str, float]:
-    """Scores a list of EvalResults using RAGAS and custom metrics."""
-    
-    # Custom Metrics
-    total = len(results)
-    if total == 0:
-        return {}
 
-    correct_abstentions = 0
-    grounded_count = 0
-    
-    ragas_data = {
-        "question": [],
-        "answer": [],
-        "contexts": [],
-        "ground_truth": []
+def _rate(hits: int, total: int) -> Optional[float]:
+    return hits / total if total else None
+
+
+def custom_metrics(results: list[EvalResult]) -> dict[str, Any]:
+    """Metrics that need no judge model."""
+    answerable = [r for r in results if not r.should_abstain]
+    with_source = [r for r in answerable if r.expected_source]
+    with_tool = [r for r in results if r.expected_tool]
+    latencies = sorted(r.latency_ms for r in results)
+
+    return {
+        "abstention_accuracy": _rate(sum(r.should_abstain == r.was_abstained for r in results), len(results)),
+        "false_abstention_rate": _rate(sum(r.was_abstained for r in answerable), len(answerable)),
+        "missed_abstention_rate": _rate(
+            sum(not r.was_abstained for r in results if r.should_abstain),
+            sum(r.should_abstain for r in results),
+        ),
+        "groundedness_score": _rate(sum(r.verifier_verdict == "GROUNDED" for r in results), len(results)),
+        "source_hit_rate": _rate(sum(r.expected_source in r.retrieved_sources for r in with_source), len(with_source)),
+        "tool_choice_accuracy": _rate(sum(r.expected_tool in r.tools_called for r in with_tool), len(with_tool)),
+        "error_rate": _rate(sum(r.error is not None for r in results), len(results)),
+        "p50_latency_ms": latencies[len(latencies) // 2] if latencies else None,
+        "p95_latency_ms": latencies[min(len(latencies) - 1, int(len(latencies) * 0.95))] if latencies else None,
     }
 
-    for res in results:
-        # Abstention accuracy
-        if res.should_abstain == res.was_abstained:
-            correct_abstentions += 1
-            
-        # Groundedness score
-        if res.verifier_verdict == "GROUNDED":
-            grounded_count += 1
-            
-        # Prepare data for RAGAS (only for queries that shouldn't abstain and have ground truth)
-        if not res.should_abstain and res.ground_truth:
-            ragas_data["question"].append(res.query)
-            ragas_data["answer"].append(res.response if not res.was_abstained else "I cannot answer this.")
-            ragas_data["contexts"].append(res.retrieved_contexts if res.retrieved_contexts else [""])
-            ragas_data["ground_truth"].append(res.ground_truth)
-            
-    abstention_accuracy = correct_abstentions / total if total > 0 else 0.0
-    groundedness_score = grounded_count / total if total > 0 else 0.0
 
-    scores = {
-        "abstention_accuracy": abstention_accuracy,
-        "groundedness_score": groundedness_score,
-        "faithfulness": 0.0,
-        "answer_relevancy": 0.0,
-        "context_precision": 0.0,
-        "context_recall": 0.0
-    }
+def ragas_metrics(results: list[EvalResult], settings: Any, judge_model: str) -> dict[str, Optional[float]]:
+    """RAGAS over answerable queries with a reference answer. Raises on failure, never fakes a 0."""
+    from langchain_google_genai import GoogleGenerativeAIEmbeddings
+    from ragas import EvaluationDataset, RunConfig, evaluate
+    from ragas.embeddings import LangchainEmbeddingsWrapper
+    from ragas.llms import LangchainLLMWrapper
+    from ragas.metrics import answer_relevancy, context_precision, context_recall, faithfulness
 
-    # Run RAGAS if we have valid data
-    if len(ragas_data["question"]) > 0:
-        try:
-            dataset = Dataset.from_dict(ragas_data)
-            
-            # Use Google GenAI for evaluation
-            eval_llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
-            eval_embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-            
-            ragas_result = evaluate(
-                dataset,
-                metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
-                llm=eval_llm,
-                embeddings=eval_embeddings
-            )
-            
-            # Update scores with RAGAS results
-            for metric in ["faithfulness", "answer_relevancy", "context_precision", "context_recall"]:
-                if metric in ragas_result:
-                    scores[metric] = float(ragas_result[metric])
-                    
-        except Exception as e:
-            print(f"Error running RAGAS evaluation: {e}")
+    rows = [
+        {
+            "user_input": r.query,
+            "response": r.response,
+            "retrieved_contexts": r.retrieved_contexts or [""],
+            "reference": r.ground_truth,
+        }
+        for r in results
+        if not r.should_abstain and r.ground_truth
+    ]
+    if not rows:
+        return {m: None for m in RAGAS_METRICS}
 
-    return scores
+    llm = LangchainLLMWrapper(_judge_chat_model(settings, judge_model))
+    embeddings = LangchainEmbeddingsWrapper(
+        GoogleGenerativeAIEmbeddings(
+            model=f"models/{settings.embedding_model}", google_api_key=settings.gemini_api_key
+        )
+    )
+    result = evaluate(
+        EvaluationDataset.from_list(rows),
+        metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
+        llm=llm,
+        embeddings=embeddings,
+        # Free tiers cap requests per minute; a few slow workers beat many timed-out ones.
+        run_config=RunConfig(max_workers=2, timeout=180, max_retries=6, max_wait=60),
+        show_progress=False,
+    )
+    frame = result.to_pandas()
+    # A NaN means the judge failed on that row; report the mean of the rows it did score.
+    return {m: float(frame[m].mean()) if m in frame and frame[m].notna().any() else None for m in RAGAS_METRICS}
+
+
+def _judge_chat_model(settings: Any, judge_model: str) -> Any:
+    """'groq/<model>' grades on Groq; anything else grades on Gemini."""
+    if judge_model.startswith(GROQ_PREFIX):
+        if not settings.groq_api_key:
+            raise RuntimeError("judge is on Groq but SUPPORT_GROQ_API_KEY is not set")
+        from langchain_groq import ChatGroq
+
+        return ChatGroq(model=judge_model[len(GROQ_PREFIX):], temperature=0, api_key=settings.groq_api_key)
+
+    from langchain_google_genai import ChatGoogleGenerativeAI
+
+    return ChatGoogleGenerativeAI(model=judge_model, temperature=0, google_api_key=settings.gemini_api_key)

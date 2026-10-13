@@ -5,7 +5,7 @@ import logging
 from typing import Any
 
 import httpx
-from langfuse.decorators import observe
+from langfuse import observe
 
 from app.models import ActionResult, AgentContext, Intent
 from app.tools.registry import TOOL_REGISTRY

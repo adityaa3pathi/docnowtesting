@@ -16,7 +16,7 @@ import logging
 import time
 from typing import Any
 
-from langfuse.decorators import observe
+from langfuse import observe
 
 from app.agents.llm import call_gemini
 from app.agents.retrieval import retrieve
@@ -28,6 +28,7 @@ from app.models import (
     RetrievedChunk,
     SupportResponse,
 )
+from app.observability import current_trace_id
 from app.prompts.intent import INTENT_CLASSIFICATION_PROMPT
 from app.prompts.system import DRAFT_GENERATION_PROMPT, ORCHESTRATOR_SYSTEM_PROMPT
 from app.prompts.verifier import ABSTENTION_MESSAGE
@@ -132,6 +133,17 @@ async def handle_message(
 
     This is the main entry point called by the chat route handler.
     """
+    response = await _run_pipeline(message, ctx, db, settings)
+    response.langfuse_trace_id = current_trace_id()
+    return response
+
+
+async def _run_pipeline(
+    message: str,
+    ctx: AgentContext,
+    db: Any,
+    settings: Any,
+) -> SupportResponse:
     start_time = time.monotonic()
 
     try:
@@ -161,8 +173,9 @@ async def handle_message(
                 latency_ms=latency_ms,
             )
 
-        # 4. Off-topic + no relevant context → abstain
-        if retrieval.should_abstain and intent.intent == "OFF_TOPIC":
+        # 4. Off-topic → abstain. Off-topic questions score as close to the catalog
+        # as real ones (eval 13-10-2026), so similarity alone cannot gate this.
+        if intent.intent == "OFF_TOPIC":
             latency_ms = int((time.monotonic() - start_time) * 1000)
             return SupportResponse(
                 content=ABSTENTION_MESSAGE,

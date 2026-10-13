@@ -9,7 +9,7 @@ import json
 import logging
 from typing import Any
 
-from langfuse.decorators import observe
+from langfuse import observe
 
 from app.agents.llm import call_gemini
 from app.models import ActionResult, RetrievalResult, VerificationResult
@@ -62,9 +62,14 @@ async def verify(
         )
 
         result = json.loads(response_text)
+        verdict = result.get("verdict") or "UNGROUNDED"
+        cleaned = result.get("cleaned_response")
+        # The prompt returns null when nothing is grounded; never let an unchecked draft through.
+        if not cleaned and verdict != "GROUNDED":
+            verdict = "UNGROUNDED"
         return VerificationResult(
-            verdict=result.get("verdict", "UNGROUNDED"),
-            cleaned_response=result.get("cleaned_response", draft),
+            verdict=verdict,
+            cleaned_response=cleaned or draft,
             reasoning=result.get("reasoning", ""),
             claims_checked=result.get("claims_checked", 0),
             claims_grounded=result.get("claims_grounded", 0),
