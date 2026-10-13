@@ -13,7 +13,7 @@ from langfuse import observe
 
 from app.agents.llm import call_gemini
 from app.models import ActionResult, RetrievalResult, VerificationResult
-from app.prompts.verifier import VERIFIER_PROMPT
+from app.prompts.verifier import VERIFIER_PROMPT, VERIFIER_SCHEMA
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ async def verify(
             settings=settings,
             system_prompt="You are a factual verification agent. Return valid JSON only.",
             temperature=0,
-            response_mime_type="application/json",
+            response_json_schema=VERIFIER_SCHEMA,
         )
 
         result = json.loads(response_text)

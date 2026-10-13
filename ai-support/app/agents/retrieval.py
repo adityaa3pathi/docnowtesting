@@ -7,7 +7,7 @@ from typing import Any
 from langfuse import observe
 
 from app.agents.keyword import rrf_fuse
-from app.ingestion.embeddings import generate_embedding
+from app.ingestion.embeddings import QUERY, generate_embedding
 from app.models import RetrievalResult, RetrievedChunk
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ async def retrieve(query: str, db: Any, settings: Any) -> RetrievalResult:
     logger.info("Retrieving chunks for query: %s", query[:80])
 
     try:
-        embedding = await generate_embedding(query, settings)
+        embedding = await generate_embedding(query, settings, QUERY)
         threshold = settings.relevance_threshold
 
         dense = await db.vector_search(embedding, limit=CANDIDATES)

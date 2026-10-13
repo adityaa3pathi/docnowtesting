@@ -16,6 +16,7 @@ async def call_gemini(
     system_prompt: Optional[str] = None,
     temperature: float = 0.7,
     response_mime_type: Optional[str] = None,
+    response_json_schema: Optional[dict[str, Any]] = None,
 ) -> str:
     """Calls the Gemini API."""
     config_kwargs: dict[str, Any] = {"temperature": temperature}
@@ -23,6 +24,10 @@ async def call_gemini(
         config_kwargs["system_instruction"] = system_prompt
     if response_mime_type:
         config_kwargs["response_mime_type"] = response_mime_type
+    if response_json_schema:
+        # Gemini then guarantees the JSON shape instead of us hoping for it.
+        config_kwargs["response_mime_type"] = "application/json"
+        config_kwargs["response_json_schema"] = response_json_schema
 
     try:
         response = await get_genai_client(settings).aio.models.generate_content(

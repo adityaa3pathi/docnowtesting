@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from typing import Any
 
@@ -29,9 +30,10 @@ from app.models import (
     SupportResponse,
 )
 from app.observability import current_trace_id
-from app.prompts.intent import INTENT_CLASSIFICATION_PROMPT
+from app.prompts.intent import INTENT_CLASSIFICATION_PROMPT, intent_schema
 from app.prompts.system import DRAFT_GENERATION_PROMPT, ORCHESTRATOR_SYSTEM_PROMPT
 from app.prompts.verifier import ABSTENTION_MESSAGE
+from app.tools.registry import TOOL_REGISTRY, render_tool_list
 
 logger = logging.getLogger(__name__)
 
@@ -44,19 +46,42 @@ GREETING_RESPONSE = (
     "How can I help you today?"
 )
 
+OFF_TOPIC_RESPONSE = (
+    "Sorry, I can only help with DocNow: lab tests and packages, your bookings, "
+    "and our policies. What can I help you with there?"
+)
+
+# Only a short, plain "yes" confirms a pending write; anything else drops it.
+_CONFIRM = re.compile(
+    r"^\s*(yes|y|yeah|yep|confirm|confirmed|ok|okay|sure|go ahead|do it|haan|haan ji|ha|ji)\s*(please)?[.!\s]*$",
+    re.IGNORECASE,
+)
+
+
+def _history_text(ctx: AgentContext) -> str:
+    return "\n".join(f"{m['role'].upper()}: {m['content']}" for m in ctx.conversation_history[-6:])
+
+
+def _confirmation_request(intent: Intent) -> str:
+    details = ", ".join(f"{k}: {v}" for k, v in intent.parameters.items()) or "no details"
+    action = "cancel this booking" if intent.tool_name == "cancel_booking" else "reschedule this booking"
+    return f"Please confirm: do you want me to {action} ({details})? Reply YES to continue, or anything else to stop."
+
 
 @observe(name="intent-classification")
 async def classify_intent(
     query: str,
     retrieval_summary: str,
-    is_authenticated: bool,
+    ctx: AgentContext,
     settings: Any,
 ) -> Intent:
     """Classify user intent using LLM."""
     prompt = INTENT_CLASSIFICATION_PROMPT.format(
         query=query,
         context_summary=retrieval_summary,
-        is_authenticated=str(is_authenticated),
+        is_authenticated=str(ctx.is_authenticated),
+        conversation_history=_history_text(ctx) or "(new conversation)",
+        tools=render_tool_list(),
     )
 
     try:
@@ -65,7 +90,7 @@ async def classify_intent(
             settings=settings,
             system_prompt="You are an intent classifier. Return valid JSON only.",
             temperature=0.1,
-            response_mime_type="application/json",
+            response_json_schema=intent_schema(TOOL_REGISTRY),
         )
         parsed = json.loads(result_text)
         return Intent(
@@ -99,9 +124,7 @@ async def generate_draft(
         if a.success
     )
 
-    history_text = "\n".join(
-        f"{m['role'].upper()}: {m['content']}" for m in ctx.conversation_history[-6:]
-    )
+    history_text = _history_text(ctx)
 
     prompt = DRAFT_GENERATION_PROMPT.format(
         query=query,
@@ -115,7 +138,8 @@ async def generate_draft(
             prompt=prompt,
             settings=settings,
             system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
-            temperature=0.7,
+            # Answers quote prices and policies; low temperature keeps them literal.
+            temperature=0.2,
         )
     except Exception:
         logger.exception("Draft generation failed")
@@ -155,10 +179,12 @@ async def _run_pipeline(
             f"{c.title} ({c.source}, sim={c.similarity:.2f})" for c in retrieval.chunks
         ) or "No relevant context found"
 
-        # 2. Classify intent
-        intent = await classify_intent(
-            message, retrieval_summary, ctx.is_authenticated, settings
-        )
+        # 2. A "yes" to the write action asked about last turn runs it; else classify
+        confirmed = ctx.pending_action is not None and bool(_CONFIRM.match(message))
+        if confirmed:
+            intent = ctx.pending_action
+        else:
+            intent = await classify_intent(message, retrieval_summary, ctx, settings)
         logger.info(
             "Intent: %s (tool=%s, action=%s, conf=%.2f)",
             intent.intent, intent.tool_name, intent.requires_action, intent.confidence,
@@ -178,7 +204,7 @@ async def _run_pipeline(
         if intent.intent == "OFF_TOPIC":
             latency_ms = int((time.monotonic() - start_time) * 1000)
             return SupportResponse(
-                content=ABSTENTION_MESSAGE,
+                content=OFF_TOPIC_RESPONSE,
                 was_abstained=True,
                 verifier_verdict="UNGROUNDED",
                 latency_ms=latency_ms,
@@ -186,7 +212,7 @@ async def _run_pipeline(
 
         # 5. Execute action if needed
         actions: list[ActionResult] = []
-        if intent.requires_action and intent.tool_name:
+        if (intent.requires_action or confirmed) and intent.tool_name:
             if not ctx.is_authenticated:
                 latency_ms = int((time.monotonic() - start_time) * 1000)
                 return SupportResponse(
@@ -197,6 +223,14 @@ async def _run_pipeline(
                     ),
                     was_abstained=False,
                     latency_ms=latency_ms,
+                )
+
+            tool_def = TOOL_REGISTRY.get(intent.tool_name)
+            if tool_def and tool_def.is_write and not confirmed:
+                return SupportResponse(
+                    content=_confirmation_request(intent),
+                    pending_action=intent,
+                    latency_ms=int((time.monotonic() - start_time) * 1000),
                 )
 
             from app.agents.action import execute_action

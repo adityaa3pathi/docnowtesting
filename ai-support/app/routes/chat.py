@@ -1,6 +1,7 @@
 """POST /api/support/chat — Main chat endpoint."""
 from __future__ import annotations
 
+import json
 import logging
 import time
 
@@ -12,6 +13,7 @@ from app.models import (
     AgentContext,
     ChatRequest,
     ChatResponse,
+    Intent,
     SourceRef,
 )
 
@@ -64,9 +66,11 @@ async def chat(request: Request, body: ChatRequest):
 
     # 3. Load conversation history
     history = []
+    pending_action = None
     if conversation_id != "ephemeral":
         messages = await db.get_conversation_messages(conversation_id, limit=20)
         history = [{"role": m["role"], "content": m["content"]} for m in messages]
+        pending_action = _pending_action(messages)
 
         # Check turn limit
         user_turns = sum(1 for m in history if m["role"] == "user")
@@ -94,6 +98,7 @@ async def chat(request: Request, body: ChatRequest):
         access_token=access_token,
         conversation_id=conversation_id,
         conversation_history=history,
+        pending_action=pending_action,
     )
 
     try:
@@ -115,6 +120,8 @@ async def chat(request: Request, body: ChatRequest):
             {"tool": a.tool, "success": a.success, "output_preview": str(a.output)[:200]}
             for a in response.actions_taken
         ]
+        if response.pending_action:
+            action_refs.append({"pending": response.pending_action.model_dump()})
         assistant_msg_id = await db.add_message(
             conversation_id=conversation_id,
             role="assistant",
@@ -174,3 +181,14 @@ def _summarize_action(action) -> str:
         "reschedule_booking": "Processed rescheduling",
     }
     return summaries.get(action.tool, f"Executed {action.tool}")
+
+
+def _pending_action(messages: list[dict]) -> Intent | None:
+    """The write action the last assistant message asked to confirm; stored server-side, never sent by the client."""
+    last = next((m for m in reversed(messages) if m["role"] == "assistant"), None)
+    if not last or not last.get("actionsTaken"):
+        return None
+    refs = last["actionsTaken"]
+    refs = json.loads(refs) if isinstance(refs, str) else refs
+    pending = next((r["pending"] for r in refs if isinstance(r, dict) and r.get("pending")), None)
+    return Intent.model_validate(pending) if pending else None

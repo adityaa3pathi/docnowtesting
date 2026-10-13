@@ -10,7 +10,7 @@ from typing import Any
 
 from app.agents.keyword import BM25Index
 from app.ingestion.catalog_sync import format_catalog_text
-from app.ingestion.embeddings import generate_embeddings_batch
+from app.ingestion.embeddings import DOCUMENT, QUERY, generate_embeddings_batch
 from app.ingestion.static_docs import STATIC_DOCUMENTS
 
 logger = logging.getLogger(__name__)
@@ -63,23 +63,23 @@ class EmbeddingCache:
         self.path = path
         self.data: dict[str, list[float]] = json.loads(path.read_text()) if path.exists() else {}
 
-    def _key(self, text: str) -> str:
-        raw = f"{self.settings.embedding_model}:{self.settings.embedding_dimensions}:{text}"
+    def _key(self, text: str, task_type: str) -> str:
+        raw = f"{self.settings.embedding_model}:{self.settings.embedding_dimensions}:{task_type}:{text}"
         return hashlib.sha256(raw.encode()).hexdigest()
 
-    async def embed_many(self, texts: list[str]) -> list[list[float]]:
-        missing = [t for t in dict.fromkeys(texts) if self._key(t) not in self.data]
+    async def embed_many(self, texts: list[str], task_type: str) -> list[list[float]]:
+        missing = [t for t in dict.fromkeys(texts) if self._key(t, task_type) not in self.data]
         if missing:
             logger.info("Embedding %d new texts", len(missing))
-            vectors = await generate_embeddings_batch(missing, self.settings)
+            vectors = await generate_embeddings_batch(missing, self.settings, task_type)
             for text, vec in zip(missing, vectors):
-                self.data[self._key(text)] = vec
+                self.data[self._key(text, task_type)] = vec
             self.path.parent.mkdir(parents=True, exist_ok=True)
             self.path.write_text(json.dumps(self.data))
-        return [self.data[self._key(t)] for t in texts]
+        return [self.data[self._key(t, task_type)] for t in texts]
 
     async def embed(self, text: str) -> list[float]:
-        return (await self.embed_many([text]))[0]
+        return (await self.embed_many([text], QUERY))[0]
 
 
 class InMemoryKnowledgeBase:
@@ -94,7 +94,7 @@ class InMemoryKnowledgeBase:
     @classmethod
     async def load(cls, cache: EmbeddingCache) -> InMemoryKnowledgeBase:
         chunks = build_chunks()
-        return cls(chunks, await cache.embed_many([c["content"] for c in chunks]))
+        return cls(chunks, await cache.embed_many([c["content"] for c in chunks], DOCUMENT))
 
     async def vector_search(self, embedding: list[float], limit: int = 10) -> list[dict[str, Any]]:
         scored = [

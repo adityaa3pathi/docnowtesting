@@ -19,6 +19,8 @@ class AgentContext(BaseModel):
     access_token: str | None = None
     conversation_id: str
     conversation_history: list[dict[str, str]] = Field(default_factory=list)
+    # A write action the assistant asked about in its last message, awaiting a "yes".
+    pending_action: Intent | None = None
 
 
 class RetrievedChunk(BaseModel):
@@ -82,6 +84,7 @@ class SupportResponse(BaseModel):
     latency_ms: int = 0
     token_count: int = 0
     langfuse_trace_id: str | None = None
+    pending_action: Intent | None = None
 
 
 # ──────────────────────────────────────────────
