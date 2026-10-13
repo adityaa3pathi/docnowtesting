@@ -43,7 +43,7 @@ import { csrfProtection } from './middleware/csrfProtection';
 import { legacyCookieCleanup } from './middleware/legacyCookieCleanup';
 import { requestContextMiddleware } from './middleware/requestContext';
 import { logger } from './utils/logger';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 import { rateLimiter } from './middleware/rateLimiter';
 
 const app = express();
@@ -116,6 +116,8 @@ app.use('/api/support/chat', rateLimiter(10, 60, 'support_chat_min'), rateLimite
 app.use('/api/support', createProxyMiddleware({
     target: AI_SUPPORT_URL,
     changeOrigin: true,
+    // express.json() already read the body; resend it or the AI gets nothing and the call times out.
+    on: { proxyReq: fixRequestBody },
 }));
 
 // Register booking strategies at boot
