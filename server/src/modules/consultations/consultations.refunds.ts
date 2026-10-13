@@ -11,7 +11,7 @@ import { remainingRefundable } from './consultations.money';
 import type { Tx } from './consultations.transitions';
 
 /** Either a client or a transaction: these helpers only use model delegates. */
-export type RefundDb = Pick<Tx, 'consultationRefund' | 'consultation'>;
+export type RefundDb = Pick<Tx, 'consultationRefund' | 'consultation' | 'slot'>;
 
 export type RefundReason = 'PATIENT_CANCEL' | 'DOCTOR_NO_SHOW' | 'LATE_PAYMENT_SLOT_LOST' | 'PAID_AFTER_CANCEL' | 'DUPLICATE_PAYMENT' | 'ADMIN' | 'EXTERNAL';
 
@@ -65,10 +65,15 @@ export async function markRefundProcessed(tx: RefundDb, refundId: string): Promi
     if (res.count !== 1) return;
     const refund = await tx.consultationRefund.findUniqueOrThrow({ where: { id: refundId } });
     if (REFUNDED_AFTER.includes(refund.reason)) {
-        await tx.consultation.updateMany({
+        const c = await tx.consultation.findUniqueOrThrow({ where: { id: refund.consultationId }, select: { status: true, slotId: true } });
+        const res = await tx.consultation.updateMany({
             where: { id: refund.consultationId, status: { in: ['CANCELLED', 'NO_SHOW_PATIENT', 'NO_SHOW_DOCTOR'] } },
             data: { status: 'REFUNDED' },
         });
+        // No-shows hold their slot and REFUNDED does not; a cancel already freed it.
+        if (res.count === 1 && c.status !== 'CANCELLED') {
+            await tx.slot.updateMany({ where: { id: c.slotId, status: 'BOOKED' }, data: { status: 'AVAILABLE' } });
+        }
     }
 }
 

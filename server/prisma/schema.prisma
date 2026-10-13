@@ -943,8 +943,9 @@ model Consultation {
   slot         Slot                  @relation(fields: [slotId], references: [id])
   payments     ConsultationPayment[]
   refunds      ConsultationRefund[]
-  note         ConsultationNote?
-  prescription Prescription?
+  note          ConsultationNote?
+  prescription  Prescription?
+  notifications ConsultationNotification[]
 
   @@unique([userId, idempotencyKey])
   @@index([slotId])
@@ -1023,4 +1024,22 @@ model Prescription {
   patientSnapshot  Json // name, age, gender at issue time
   issuedAt         DateTime     @default(now())
   consultation     Consultation @relation(fields: [consultationId], references: [id], onDelete: Restrict)
+}
+
+// One row per message per person, claimed before sending, so a message never goes out twice.
+model ConsultationNotification {
+  id             String       @id @default(uuid())
+  consultationId String
+  kind           String // CONFIRMED | REMINDER | JOIN_NOW | DOCTOR_NO_SHOW
+  recipient      String // patient | doctor
+  status         String       @default("SENDING") // SENDING | SENT | FAILED
+  attempts       Int          @default(1)
+  lastError      String?
+  providerId     String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  @@unique([consultationId, kind, recipient])
+  @@index([status, updatedAt])
 }

@@ -116,6 +116,8 @@ describeDb('video consultations: join, notes, prescription (real Postgres)', () 
             const b = await confirmed(2);
             await expect(room.endConsultation(b.doctor.profile.id, b.c.id, { video })).rejects.toMatchObject({ status: 409 });
             const { roomId } = await room.doctorJoin(b.doctor.profile.id, b.doctor.user.id, b.c.id, { video });
+            await expect(room.endConsultation(b.doctor.profile.id, b.c.id, { video })).rejects.toMatchObject({ status: 409 });
+            await room.patientJoin(b.user.id, b.c.id, { video });
             await room.endConsultation(b.doctor.profile.id, b.c.id, { video });
             expect(await status(b.c.id)).toBe('COMPLETED');
             expect(video.roomsEnded).toEqual([roomId]);
@@ -124,6 +126,7 @@ describeDb('video consultations: join, notes, prescription (real Postgres)', () 
         it('still completes through the route when the room cannot be closed', async () => {
             const b = await confirmed(2);
             const { roomId } = await room.doctorJoin(b.doctor.profile.id, b.doctor.user.id, b.c.id, { video });
+            await room.patientJoin(b.user.id, b.c.id, { video });
             const res = await post(`${doctorApp.url}/doctor/me/consultations/${b.c.id}/end`, tokenFor(b.doctor.user as any));
             expect(res.status).toBe(200);
             expect(await status(b.c.id)).toBe('COMPLETED');
