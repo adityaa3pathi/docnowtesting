@@ -19,7 +19,7 @@ from typing import Any
 
 from langfuse import observe
 
-from app.agents.llm import call_gemini
+from app.agents.llm import AIBusyError, call_gemini
 from app.agents.retrieval import retrieve
 from app.agents.verifier import verify
 from app.models import (
@@ -44,6 +44,11 @@ GREETING_RESPONSE = (
     "• Rescheduling or cancelling appointments\n"
     "• Answering questions about our policies\n\n"
     "How can I help you today?"
+)
+
+BUSY_RESPONSE = (
+    "Our AI assistant is busy right now. Please try again in a little while, "
+    "or contact our support team at +91 9649089089."
 )
 
 OFF_TOPIC_RESPONSE = (
@@ -100,6 +105,8 @@ async def classify_intent(
             requires_action=parsed.get("requires_action", False),
             confidence=parsed.get("confidence", 0.0),
         )
+    except AIBusyError:
+        raise
     except Exception:
         logger.exception("Intent classification failed")
         return Intent(intent="UNKNOWN", requires_action=False, confidence=0.0)
@@ -141,6 +148,8 @@ async def generate_draft(
             # Answers quote prices and policies; low temperature keeps them literal.
             temperature=0.2,
         )
+    except AIBusyError:
+        raise
     except Exception:
         logger.exception("Draft generation failed")
         return ABSTENTION_MESSAGE
@@ -268,6 +277,12 @@ async def _run_pipeline(
             latency_ms=latency_ms,
         )
 
+    except AIBusyError:
+        return SupportResponse(
+            content=BUSY_RESPONSE,
+            was_abstained=True,
+            latency_ms=int((time.monotonic() - start_time) * 1000),
+        )
     except Exception:
         logger.exception("Orchestrator error for conversation %s", ctx.conversation_id)
         latency_ms = int((time.monotonic() - start_time) * 1000)

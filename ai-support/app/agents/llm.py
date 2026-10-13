@@ -3,11 +3,15 @@ from __future__ import annotations
 import logging
 from typing import Any, Optional
 
-from google.genai import types
+from google.genai import errors, types
 
 from app.genai_client import get_genai_client
 
 logger = logging.getLogger(__name__)
+
+
+class AIBusyError(Exception):
+    """Gemini quota is used up; callers must not turn this into a normal answer."""
 
 
 async def call_gemini(
@@ -36,6 +40,12 @@ async def call_gemini(
             config=types.GenerateContentConfig(**config_kwargs),
         )
         return response.text
+    except errors.ClientError as exc:
+        if exc.code == 429:
+            logger.warning("Gemini quota exhausted: %s", exc.message)
+            raise AIBusyError from exc
+        logger.exception("Error calling Gemini API")
+        raise
     except Exception:
         logger.exception("Error calling Gemini API")
         raise

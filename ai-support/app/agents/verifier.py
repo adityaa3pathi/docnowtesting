@@ -11,7 +11,7 @@ from typing import Any
 
 from langfuse import observe
 
-from app.agents.llm import call_gemini
+from app.agents.llm import AIBusyError, call_gemini
 from app.models import ActionResult, RetrievalResult, VerificationResult
 from app.prompts.verifier import VERIFIER_PROMPT, VERIFIER_SCHEMA
 
@@ -75,6 +75,8 @@ async def verify(
             claims_grounded=result.get("claims_grounded", 0),
         )
 
+    except AIBusyError:
+        raise
     except Exception:
         logger.exception("Verification failed — defaulting to UNGROUNDED for safety")
         return VerificationResult(

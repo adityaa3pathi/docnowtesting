@@ -264,3 +264,16 @@ async def test_response_carries_langfuse_trace_id(mock_db, settings, agent_conte
         response = await handle_message("hi", agent_context, mock_db, settings)
 
     assert response.langfuse_trace_id == "trace-123"
+
+
+@pytest.mark.asyncio
+async def test_used_up_quota_returns_busy_message(mock_db, settings, agent_context):
+    from app.agents.llm import AIBusyError
+    from app.agents.orchestrator import BUSY_RESPONSE, handle_message
+
+    with patch("app.agents.orchestrator.retrieve", new_callable=AsyncMock, return_value=RetrievalResult()), patch(
+        "app.agents.orchestrator.call_gemini", new_callable=AsyncMock, side_effect=AIBusyError
+    ):
+        response = await handle_message("what is your refund policy", agent_context, mock_db, settings)
+
+    assert response.content == BUSY_RESPONSE

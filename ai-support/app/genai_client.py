@@ -13,8 +13,9 @@ def get_genai_client(settings: Any) -> genai.Client:
     """Return the process-wide client; use `.aio` for calls inside async code."""
     global _client
     if _client is None:
-        # Free tier caps calls per minute; wait out a 429 or 503 instead of failing the chat.
-        retry = types.HttpRetryOptions(attempts=5, initial_delay=2, max_delay=40, http_status_codes=[429, 503])
+        # One short retry rides out a brief 429/503; long waits hung the chat past
+        # the backend's timeout when the daily quota ran out (13-10-2026).
+        retry = types.HttpRetryOptions(attempts=2, initial_delay=2, max_delay=4, http_status_codes=[429, 503])
         _client = genai.Client(
             api_key=settings.gemini_api_key, http_options=types.HttpOptions(retry_options=retry)
         )
