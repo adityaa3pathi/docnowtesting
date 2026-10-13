@@ -7,7 +7,7 @@ import { useTestJwtSecret } from './test/http';
 useTestJwtSecret();
 
 const MIN = 60_000;
-const TEMPLATES = { CONFIRMED: 'c_tpl', REMINDER: 'r_tpl', JOIN_NOW: 'j_tpl', DOCTOR_NO_SHOW: 'n_tpl' };
+const TEMPLATES = { CONFIRMED: 'c_tpl', REMINDER: 'r_tpl', JOIN_NOW: 'j_tpl', DOCTOR_NO_SHOW: 'n_tpl', PATIENT_NO_SHOW: 'p_tpl' };
 
 describeDb('consultation timers: no-shows and messages (real Postgres)', () => {
     let noShow: typeof import('./consultations.noShow');
@@ -144,6 +144,16 @@ describeDb('consultation timers: no-shows and messages (real Postgres)', () => {
             const notice = sent.find((s) => s.template === 'n_tpl')!;
             expect(notice.mobile).toBe(b.user.mobile);
             expect(notice.components[0].parameters.map((p: any) => p.text)).toEqual(['Test Patient', 'Dr. Dr Test', 'Rs. 550.00']);
+        });
+
+        it('offers the same doctor again after a patient no-show', async () => {
+            const b = await paid(-11);
+            await room.doctorJoin(b.doctor.profile.id, b.doctor.user.id, b.c.id, { video, now: new Date(b.c.startsAt.getTime() + MIN) });
+            await noShow.settleNoShows({ razorpay });
+            await runNotices(new Date());
+            const notice = sent.find((s) => s.template === 'p_tpl')!;
+            expect(notice.mobile).toBe(b.user.mobile);
+            expect(notice.components[1].parameters[0].text).toBe(`consult/doctors/${b.doctor.profile.id}`);
         });
 
         it('retries a failed send while still due, and never sends twice', async () => {

@@ -61,7 +61,7 @@ export async function getDoctorRecord(doctorId: string, consultationId: string) 
     const c = await prisma.consultation.findFirst({
         where: { id: consultationId, doctorId },
         select: {
-            id: true, status: true, type: true, startsAt: true, slot: { select: { endsAt: true } },
+            id: true, status: true, type: true, startsAt: true, patientJoinedAt: true, doctorJoinedAt: true, slot: { select: { endsAt: true } },
             patient: { select: { name: true, age: true, gender: true } },
             note: true, prescriptions: { orderBy: { version: 'desc' } },
         },

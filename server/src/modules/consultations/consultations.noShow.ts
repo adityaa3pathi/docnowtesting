@@ -25,7 +25,7 @@ export async function settleNoShows(deps: Deps = {}) {
 
     const doctorCandidates = await db.consultation.findMany({
         where: { status: { in: ['CONFIRMED', 'WAITING'] }, doctorJoinedAt: null, startsAt: window },
-        select: { id: true, startsAt: true, policySnapshot: true, confirmingPaymentId: true, payments: { select: { id: true, razorpayPaymentId: true } } },
+        select: { id: true, doctorId: true, startsAt: true, policySnapshot: true, confirmingPaymentId: true, payments: { select: { id: true, razorpayPaymentId: true } } },
         take: BATCH,
     });
     for (const c of doctorCandidates) {
@@ -39,7 +39,11 @@ export async function settleNoShows(deps: Deps = {}) {
             if (res.count !== 1 || !payment) return { changed: res.count === 1, refund: null };
             return { changed: true, refund: await createRefundRecord(tx, { consultationId: c.id, paymentId: payment.id, reason: 'DOCTOR_NO_SHOW' }) };
         });
-        if (changed) doctors++;
+        if (changed) {
+            doctors++;
+            // Staff follow up with the doctor; repeat offenders show on the admin doctor list.
+            logAlert('consult_doctor_no_show', { consultationId: c.id, doctorId: c.doctorId });
+        }
         if (changed && !payment) logAlert('consult_doctor_no_show_without_payment', { consultationId: c.id });
         if (refund?.status === 'PENDING') {
             // The reconciler retries a refund that fails here.

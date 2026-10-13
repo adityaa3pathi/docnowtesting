@@ -9,7 +9,7 @@ import { logger } from '../../utils/logger';
 import { sendTemplateViaWhatsApp, type WappieTemplateComponent } from '../../services/wappieWhatsApp';
 import { JOIN_EARLY_MS, JOIN_LATE_MS } from './consultations.room';
 
-export type NoticeKind = 'CONFIRMED' | 'REMINDER' | 'JOIN_NOW' | 'DOCTOR_NO_SHOW';
+export type NoticeKind = 'CONFIRMED' | 'REMINDER' | 'JOIN_NOW' | 'DOCTOR_NO_SHOW' | 'PATIENT_NO_SHOW';
 type Recipient = 'patient' | 'doctor';
 type Send = (mobile: string, template: string, language: string, components: WappieTemplateComponent[]) => Promise<{ id: string }>;
 type Deps = { db?: PrismaClient; send?: Send; now?: Date; templates?: Partial<Record<NoticeKind, string>> };
@@ -25,6 +25,7 @@ function templatesFromEnv(): Partial<Record<NoticeKind, string>> {
         REMINDER: process.env.CONSULT_WA_TEMPLATE_REMINDER,
         JOIN_NOW: process.env.CONSULT_WA_TEMPLATE_JOIN_NOW,
         DOCTOR_NO_SHOW: process.env.CONSULT_WA_TEMPLATE_DOCTOR_NO_SHOW,
+        PATIENT_NO_SHOW: process.env.CONSULT_WA_TEMPLATE_PATIENT_NO_SHOW,
     };
 }
 
@@ -34,7 +35,7 @@ const istDateTime = (d: Date) =>
     }).format(d).replace(/\//g, '-').replace(',', '') + ' IST';
 
 const select = {
-    id: true, status: true, startsAt: true, createdAt: true,
+    id: true, status: true, startsAt: true, createdAt: true, doctorId: true,
     slot: { select: { endsAt: true } },
     patient: { select: { name: true } },
     user: { select: { mobile: true } },
@@ -53,6 +54,8 @@ function message(kind: NoticeKind, to: Recipient, c: Row): { body: string[]; pat
         case 'CONFIRMED': return { body: [name, other, when], path };
         case 'REMINDER': return { body: [name, other, when], path };
         case 'JOIN_NOW': return { body: [name, other], path };
+        // The link offers the same doctor again.
+        case 'PATIENT_NO_SHOW': return { body: [name, other], path: `consult/doctors/${c.doctorId}` };
         case 'DOCTOR_NO_SHOW': {
             const rupees = (c.refunds.reduce((s, r) => s + r.amountPaise, 0) / 100).toFixed(2);
             return { body: [name, other, `Rs. ${rupees}`], path };
@@ -81,6 +84,7 @@ export function dueNotices(
     // The refund often completes in the same run, moving the booking on to REFUNDED.
     const doctorMissed = c.status === 'NO_SHOW_DOCTOR' || (c.status === 'REFUNDED' && c.refunds.length > 0);
     if (doctorMissed) due.push(['DOCTOR_NO_SHOW', 'patient']);
+    if (c.status === 'NO_SHOW_PATIENT') due.push(['PATIENT_NO_SHOW', 'patient']);
     return due;
 }
 
@@ -108,7 +112,7 @@ export async function sendDueNotices(deps: Deps = {}) {
 
     const rows = await db.consultation.findMany({
         where: {
-            status: { in: ['CONFIRMED', 'WAITING', 'IN_PROGRESS', 'NO_SHOW_DOCTOR', 'REFUNDED'] },
+            status: { in: ['CONFIRMED', 'WAITING', 'IN_PROGRESS', 'NO_SHOW_DOCTOR', 'NO_SHOW_PATIENT', 'REFUNDED'] },
             startsAt: { gte: new Date(now.getTime() - LOOKBACK_MS) },
         },
         select,

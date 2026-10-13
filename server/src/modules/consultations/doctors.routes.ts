@@ -288,6 +288,21 @@ doctorRoutes.get('/me/consultations/:id/prescription.pdf', ...mine, async (req: 
 
 // ── Super admin ─────────────────────────────────────────
 
+/** Doctor no-shows in the last 30 days, counted after the refund moves them on to REFUNDED too. */
+async function doctorNoShowCounts(doctorIds: string[]) {
+    const rows = await prisma.consultation.findMany({
+        where: {
+            doctorId: { in: doctorIds },
+            startsAt: { gte: new Date(Date.now() - 30 * 24 * 3_600_000) },
+            OR: [{ status: 'NO_SHOW_DOCTOR' }, { refunds: { some: { reason: 'DOCTOR_NO_SHOW' } } }],
+        },
+        select: { doctorId: true },
+    });
+    const counts = new Map<string, number>();
+    for (const r of rows) counts.set(r.doctorId, (counts.get(r.doctorId) ?? 0) + 1);
+    return counts;
+}
+
 export const consultAdminRoutes = Router();
 consultAdminRoutes.use('/policy', policyRoutes);
 consultAdminRoutes.use(reviewRoutes);
@@ -297,11 +312,13 @@ consultAdminRoutes.get('/doctors', ...admin, async (req: AuthRequest, res: Respo
     try {
         const status = typeof req.query.status === 'string' ? req.query.status : undefined;
         const valid = ['PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED'];
-        res.json(await prisma.doctorProfile.findMany({
+        const doctors = await prisma.doctorProfile.findMany({
             where: { status: status && valid.includes(status) ? (status as any) : undefined },
             include: { specialty: true, user: { select: { mobile: true } } },
             orderBy: { createdAt: 'desc' },
-        }));
+        });
+        const noShows = await doctorNoShowCounts(doctors.map((d) => d.id));
+        res.json(doctors.map((d) => ({ ...d, noShows30d: noShows.get(d.id) ?? 0 })));
     } catch (e) { fail(res, e, 'admin list'); }
 });
 
