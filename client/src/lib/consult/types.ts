@@ -4,6 +4,8 @@ export type ConsultationStatus =
 
 export type DoctorStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
 
+export type ConsultationType = 'VIDEO' | 'AUDIO' | 'CHAT';
+
 export interface Specialty {
     id: string;
     name: string;
@@ -60,6 +62,8 @@ export interface BookingView extends CreateBookingResponse {
     underStaffCheck: boolean;
     refundPaise: number;
     refundStatus: 'PENDING' | 'PROCESSED' | 'FAILED' | null;
+    type: ConsultationType;
+    hasPrescription: boolean;
 }
 
 export type VerifyOutcome = 'confirmed' | 'reclaimed' | 'already' | 'refund_created' | 'flagged' | 'unknown_order';
@@ -174,4 +178,120 @@ export interface RefundNeedingStaff {
 export interface ReviewQueue {
     flaggedPayments: FlaggedPayment[];
     refundsNeedingStaff: RefundNeedingStaff[];
+}
+
+// ── Video room and prescriptions ────────────────────────
+
+export interface JoinResponse {
+    roomId: string;
+    role: string;
+    /** 100ms auth token for this person and room. */
+    token: string;
+}
+
+export interface Medicine {
+    name: string;
+    dose: string;
+    frequency: string;
+    duration: string;
+    instructions: string;
+}
+
+export interface RecommendedTest {
+    code: string;
+    name: string;
+}
+
+export interface Prescription {
+    id: string;
+    consultationId: string;
+    medicines: Medicine[];
+    recommendedTests: RecommendedTest[];
+    advice: string | null;
+    doctorSnapshot: { displayName: string; qualification: string; registrationNumber: string; registrationCouncil: string; specialty: string };
+    patientSnapshot: { name: string; age: number; gender: string };
+    issuedAt: string;
+}
+
+export interface PrescriptionInput {
+    medicines: Medicine[];
+    testCodes: string[];
+    advice?: string;
+}
+
+export interface ConsultNote {
+    complaints: string | null;
+    findings: string | null;
+    diagnosis: string | null;
+    advice: string | null;
+    followUpDays: number | null;
+    updatedAt: string;
+}
+
+export interface NoteInput {
+    complaints?: string;
+    findings?: string;
+    diagnosis?: string;
+    advice?: string;
+    followUpDays?: number | null;
+}
+
+export interface CartAddResult {
+    added: string[];
+    skipped: { code: string; reason: string }[];
+}
+
+export interface DoctorConsultationItem {
+    id: string;
+    startsAt: string;
+    endsAt: string;
+    status: ConsultationStatus;
+    type: ConsultationType;
+    patientName: string;
+}
+
+export interface DoctorConsultationPage {
+    items: DoctorConsultationItem[];
+    nextCursor: string | null;
+}
+
+export interface DoctorConsultationRecord {
+    id: string;
+    status: ConsultationStatus;
+    type: ConsultationType;
+    startsAt: string;
+    slot: { endsAt: string };
+    patient: { name: string; age: number; gender: string };
+    note: ConsultNote | null;
+    prescription: Prescription | null;
+}
+
+// ── Admin appointments ──────────────────────────────────
+
+export interface AdminAppointment {
+    id: string;
+    status: ConsultationStatus;
+    type: ConsultationType;
+    startsAt: string;
+    endsAt: string;
+    feePaise: number;
+    platformFeePaise: number;
+    patientJoinedAt: string | null;
+    doctorJoinedAt: string | null;
+    startedAt: string | null;
+    endedAt: string | null;
+    reviewReason: string | null;
+    doctor: { id: string; displayName: string; specialty: { name: string } };
+    patient: { name: string };
+    user: { mobile: string };
+    prescriptionIssuedAt: string | null;
+}
+
+export interface AdminAppointmentDetail extends AdminAppointment {
+    payments: { id: string; status: 'CREATED' | 'CAPTURED' | 'FAILED'; amountPaise: number; razorpayPaymentId: string | null; createdAt: string }[];
+    refunds: { id: string; status: 'PENDING' | 'PROCESSED' | 'FAILED'; amountPaise: number; createdAt: string }[];
+    cancelledBy: string | null;
+    cancelReason: string | null;
+    cancelledAt: string | null;
+    createdAt: string;
 }

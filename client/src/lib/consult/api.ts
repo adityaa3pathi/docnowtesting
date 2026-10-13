@@ -1,11 +1,12 @@
 /** One typed call per consultation route, so screens never write raw URLs. */
 import type { AxiosResponse } from 'axios';
-import api from '@/lib/api';
+import api, { downloadAuthenticatedFile } from '@/lib/api';
 import { recordServerDate } from './time';
 import type {
-    AdminDoctor, AvailabilityWindow, BookingView, CancelPreview, CancelResult, ConsultRules, CreateBookingResponse,
-    DoctorMe, DoctorProfileInput, DoctorPublicProfile, DoctorSummary, LeaveEntry, PolicyResponse, ReviewQueue,
-    Slot, Specialty, VerifyResponse,
+    AdminAppointment, AdminAppointmentDetail, AdminDoctor, AvailabilityWindow, BookingView, CancelPreview, CancelResult,
+    CartAddResult, ConsultNote, ConsultRules, ConsultationStatus, CreateBookingResponse, DoctorConsultationPage,
+    DoctorConsultationRecord, DoctorMe, DoctorProfileInput, DoctorPublicProfile, DoctorSummary, JoinResponse, LeaveEntry,
+    NoteInput, PolicyResponse, Prescription, PrescriptionInput, ReviewQueue, Slot, Specialty, VerifyResponse,
 } from './types';
 
 /** Reads the server's clock from every response, so hold countdowns do not depend on the device clock. */
@@ -42,6 +43,11 @@ export const consult = {
         api.post<VerifyResponse>(`/consult/bookings/${id}/verify`, body).then(data),
     cancelPreview: (id: string) => api.get<CancelPreview>(`/consult/bookings/${id}/cancel-preview`).then(data),
     cancel: (id: string, reason?: string) => api.post<CancelResult>(`/consult/bookings/${id}/cancel`, { reason }).then(data),
+    join: (id: string) => api.post<JoinResponse>(`/consult/bookings/${id}/join`).then(data),
+    prescription: (id: string) => api.get<Prescription>(`/consult/bookings/${id}/prescription`).then(data),
+    downloadPrescription: (id: string) =>
+        downloadAuthenticatedFile(`/consult/bookings/${id}/prescription.pdf`, 'docnow-prescription.pdf'),
+    addTestsToCart: (id: string) => api.post<CartAddResult>(`/consult/bookings/${id}/recommended-tests/cart`).then(data),
 };
 
 // ── Doctor ──────────────────────────────────────────────
@@ -56,6 +62,16 @@ export const doctor = {
     addLeave: (body: { startsAt: string; endsAt: string; reason?: string }) =>
         api.post<{ leave: LeaveEntry; bookedConflicts: number }>('/doctor/me/leave', body).then(data),
     removeLeave: (id: string) => api.delete(`/doctor/me/leave/${id}`).then(data),
+    consultations: (scope: 'upcoming' | 'past', cursor?: string) =>
+        api.get<DoctorConsultationPage>('/doctor/me/consultations', { params: { scope, cursor } }).then(data),
+    consultation: (id: string) => api.get<DoctorConsultationRecord>(`/doctor/me/consultations/${id}`).then(data),
+    join: (id: string) => api.post<JoinResponse>(`/doctor/me/consultations/${id}/join`).then(data),
+    end: (id: string) => api.post<{ status: ConsultationStatus }>(`/doctor/me/consultations/${id}/end`).then(data),
+    saveNotes: (id: string, body: NoteInput) => api.put<ConsultNote>(`/doctor/me/consultations/${id}/notes`, body).then(data),
+    issuePrescription: (id: string, body: PrescriptionInput) =>
+        api.post<Prescription>(`/doctor/me/consultations/${id}/prescription`, body).then(data),
+    downloadPrescription: (id: string) =>
+        downloadAuthenticatedFile(`/doctor/me/consultations/${id}/prescription.pdf`, 'docnow-prescription.pdf'),
 };
 
 // ── Admin ───────────────────────────────────────────────
@@ -84,4 +100,9 @@ export const admin = {
         api.post<{ outcome: string }>(`/admin/consult/review/refunds/${refundId}/retry`, { reason }).then(data),
     cancelConsultation: (consultationId: string, reason: string) =>
         api.post<CancelResult>(`/admin/consult/consultations/${consultationId}/cancel`, { reason }).then(data),
+    appointments: (q: { date: string; status?: string; doctorId?: string }) =>
+        api.get<{ date: string; items: AdminAppointment[] }>('/admin/consult/appointments', {
+            params: { date: q.date, status: q.status || undefined, doctorId: q.doctorId || undefined },
+        }).then(data),
+    appointment: (id: string) => api.get<AdminAppointmentDetail>(`/admin/consult/appointments/${id}`).then(data),
 };

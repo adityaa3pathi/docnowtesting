@@ -69,12 +69,18 @@ export async function doctorJoin(doctorId: string, doctorUserId: string, consult
     return { roomId, role: r, token: video.joinToken(roomId, doctorUserId, r) };
 }
 
-export async function endConsultation(doctorId: string, consultationId: string, now = new Date()) {
+export async function endConsultation(doctorId: string, consultationId: string, deps: Deps = {}) {
+    const now = deps.now ?? new Date();
     const res = await prisma.consultation.updateMany({
         where: { id: consultationId, doctorId, status: 'IN_PROGRESS' },
         data: { status: 'COMPLETED', endedAt: now },
     });
-    if (res.count === 1) return { status: 'COMPLETED' as const };
+    if (res.count === 1) {
+        const { roomId } = await prisma.consultation.findUniqueOrThrow({ where: { id: consultationId }, select: { roomId: true } });
+        // The consultation is already complete; a failed room close only leaves a stale call screen.
+        if (roomId) await (deps.video ?? realConsultVideo()).endRoom(roomId).catch((e) => console.error('[Consult] end room failed:', e));
+        return { status: 'COMPLETED' as const };
+    }
     const c = await prisma.consultation.findFirst({ where: { id: consultationId, doctorId }, select: { status: true } });
     if (!c) throw new DoctorError(404, 'Not found');
     throw new DoctorError(409, 'Only a consultation in progress can be ended');

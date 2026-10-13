@@ -7,11 +7,14 @@ import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthGate } from '@/contexts/AuthGateContext';
 import { useBookingFlow } from '@/hooks/useBookingFlow';
+import { consult } from '@/lib/consult/api';
 import { formatPaise } from '@/lib/consult/format';
 import { formatCountdown } from '@/lib/consult/bookingFlow';
 import { statusInfo } from '@/lib/consult/status';
 import { BookingSummary } from '@/components/consult/BookingSummary';
 import { CancelDialog } from '@/components/consult/CancelDialog';
+import { JoinPanel } from '@/components/consult/JoinPanel';
+import { PatientPrescription } from '@/components/consult/PatientPrescription';
 import { ConfirmingNotice, PaymentStatus } from '@/components/consult/PaymentStatus';
 import { ErrorState, LoadingBlock } from '@/components/consult/States';
 import { Button } from '@/components/ui';
@@ -124,6 +127,24 @@ function BookingDetail() {
                         <PaymentStatus result={decision.result} fresh={fresh} statusLabel={info.label} doctorId={booking.doctorId} />
                         {summary}
                         <RefundLine booking={booking} />
+                        <JoinPanel
+                            status={booking.status}
+                            type={booking.type}
+                            startsAt={booking.startsAt}
+                            endsAt={booking.endsAt}
+                            userName={booking.patientName}
+                            otherParty="doctor"
+                            join={() => consult.join(booking.consultationId)}
+                            onChange={() => void flow.refetch()}
+                        />
+                        {booking.hasPrescription ? (
+                            <PatientPrescription bookingId={booking.consultationId} />
+                        ) : (booking.status === 'IN_PROGRESS' || booking.status === 'COMPLETED') && (
+                            <div className="flex items-center justify-between gap-3 rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700">
+                                <p>Your prescription will show here once the doctor issues it.</p>
+                                <Button variant="outline" size="sm" onClick={() => void flow.refetch()}>Check again</Button>
+                            </div>
+                        )}
                     </>
                 )}
                 {canCancel && (

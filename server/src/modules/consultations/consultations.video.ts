@@ -11,6 +11,8 @@ export type VideoRole = 'doctor' | 'patient' | 'doctor-audio' | 'patient-audio';
 export interface ConsultVideo {
     createRoom(name: string): Promise<string>;
     joinToken(roomId: string, userId: string, role: VideoRole): string;
+    /** Removes everyone still in the room, so the other side's screen knows the call is over. */
+    endRoom(roomId: string): Promise<void>;
 }
 
 const HMS_API = 'https://api.100ms.live/v2';
@@ -44,6 +46,17 @@ export function realConsultVideo(): ConsultVideo {
             const room = (await res.json()) as { id?: string };
             if (!room.id) throw new Error('100ms create room returned no id');
             return room.id;
+        },
+        async endRoom(roomId) {
+            const { accessKey, secret } = hmsKeys();
+            const res = await fetch(`${HMS_API}/active-rooms/${encodeURIComponent(roomId)}/end-room`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${managementToken(accessKey, secret)}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: 'Consultation ended by the doctor', lock: false }),
+                signal: AbortSignal.timeout(10_000),
+            });
+            // 404 means nobody is in the room any more, which is the goal.
+            if (!res.ok && res.status !== 404) throw new Error(`100ms end room failed: HTTP ${res.status}`);
         },
         joinToken(roomId, userId, role) {
             const { accessKey, secret } = hmsKeys();

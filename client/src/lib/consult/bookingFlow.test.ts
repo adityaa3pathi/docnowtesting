@@ -13,7 +13,7 @@ function booking(over: Partial<BookingView> = {}): BookingView {
         consultationId: 'c1', status: 'PENDING_PAYMENT', razorpayOrderId: 'order_1', amountPaise: 49900, currency: 'INR',
         keyId: 'rzp_test', holdExpiresAt: iso(10 * 60_000), startsAt: iso(86_400_000), endsAt: iso(86_400_000 + 1_800_000),
         doctorId: 'd1', doctorName: 'Dr A', specialty: 'General', patientId: 'p1', patientName: 'Asha',
-        paymentCaptured: false, underStaffCheck: false, refundPaise: 0, refundStatus: null, ...over,
+        paymentCaptured: false, underStaffCheck: false, refundPaise: 0, refundStatus: null, type: 'VIDEO', hasPrescription: false, ...over,
     };
 }
 const ctx = (nowMs = NOW, confirmStartedAt: number | null = null) => ({ nowMs, confirmStartedAt });

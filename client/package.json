@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@100mslive/hms-video-store": "^0.15.3",
     "@fontsource-variable/inter": "^5.2.8",
     "@hookform/resolvers": "^5.4.0",
     "@radix-ui/react-dialog": "^1.1.15",

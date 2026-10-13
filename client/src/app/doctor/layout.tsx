@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ArrowLeft, CalendarOff, Clock, LayoutDashboard } from 'lucide-react';
+import { ArrowLeft, CalendarOff, Clock, LayoutDashboard, Stethoscope } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { DocnowLogo } from '@/components/DocnowLogo';
 import { ErrorState, LoadingBlock } from '@/components/consult/States';
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 
 const TOOLS = [
     { href: '/doctor', label: 'Home', icon: LayoutDashboard },
+    { href: '/doctor/consultations', label: 'Consultations', icon: Stethoscope },
     { href: '/doctor/availability', label: 'Hours', icon: Clock },
     { href: '/doctor/leave', label: 'Leave', icon: CalendarOff },
 ];
@@ -86,6 +87,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
         );
     }
 
+    const inRoom = /^\/doctor\/consultations\/[^/]+/.test(pathname);
     const isActive = (href: string) => (href === '/doctor' ? pathname === href : pathname.startsWith(href));
     const itemClass = (active: boolean) => cn(
         'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors',
@@ -110,7 +112,8 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
                 <header className="flex h-14 items-center border-b border-border bg-white px-4 md:hidden">
                     <DocnowLogo href="/" width={116} height={28} imageClassName="max-h-7 w-auto" />
                 </header>
-                <main className="mx-auto w-full max-w-3xl px-4 py-6 pb-28 md:px-8 md:pb-10">{body}</main>
+                {/* The consultation room needs room for the call beside the notes. */}
+                <main className={cn('mx-auto w-full px-4 py-6 pb-28 md:px-8 md:pb-10', inRoom ? 'max-w-6xl' : 'max-w-3xl')}>{body}</main>
             </div>
 
             <nav aria-label="Doctor menu" className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-white pb-[env(safe-area-inset-bottom)] md:hidden">
