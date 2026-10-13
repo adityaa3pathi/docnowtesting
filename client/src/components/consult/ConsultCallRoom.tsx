@@ -4,7 +4,7 @@ import { LoadingBlock } from './States';
 
 export type { ConsultCallRoomProps } from './CallRoomView';
 
-/** The 100ms SDK touches browser-only APIs on import, so it is never rendered on the server. */
+/** The LiveKit client needs browser media APIs, so the call screen is never rendered on the server. */
 export const ConsultCallRoom = dynamic(() => import('./CallRoomView'), {
     ssr: false,
     loading: () => <LoadingBlock label="Opening the call" />,

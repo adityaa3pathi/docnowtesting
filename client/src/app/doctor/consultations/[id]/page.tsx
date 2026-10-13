@@ -8,7 +8,6 @@ import { ConfirmDialog } from '@/components/consult/ConfirmDialog';
 import { JoinPanel } from '@/components/consult/JoinPanel';
 import { PrescriptionView } from '@/components/consult/PrescriptionView';
 import { ErrorState, LoadingBlock } from '@/components/consult/States';
-import { useDoctor } from '@/components/doctor/DoctorContext';
 import { NotesForm } from '@/components/doctor/NotesForm';
 import { PrescriptionBuilder } from '@/components/doctor/PrescriptionBuilder';
 import { useApi } from '@/hooks/useApi';
@@ -81,7 +80,6 @@ function IssuedPrescription({ record, prescription, onCorrect }: { record: Docto
 
 export default function DoctorConsultationRoomPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
-    const { doctor } = useDoctor();
     const { data: record, error, loading, refetch, setData } = useApi(() => doctorApi.consultation(id), [id]);
     const [ending, setEnding] = useState(false);
     // Bumped after ending, so the call panel remounts and its cleanup leaves the room.
@@ -131,7 +129,6 @@ export default function DoctorConsultationRoomPage({ params }: { params: Promise
                         type={record.type}
                         startsAt={record.startsAt}
                         endsAt={record.slot.endsAt}
-                        userName={doctor.displayName}
                         otherParty="patient"
                         join={() => doctorApi.join(record.id)}
                         onChange={() => void refetch()}

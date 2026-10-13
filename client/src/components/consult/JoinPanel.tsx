@@ -14,7 +14,6 @@ interface Props {
     type: ConsultationType;
     startsAt: string;
     endsAt: string;
-    userName: string;
     otherParty: 'doctor' | 'patient';
     join: () => Promise<JoinResponse>;
     /** Called after a successful join and after leaving, so the page can reload the status. */
@@ -24,20 +23,21 @@ interface Props {
 }
 
 /** Shows when the call opens, the Join button inside the window, then the call itself. */
-export function JoinPanel({ status, type, startsAt, endsAt, userName, otherParty, join, onChange, onCallChange }: Props) {
+export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, onChange, onCallChange }: Props) {
     const now = useServerNow();
-    const [token, setToken] = useState<string | null>(null);
+    const [call, setCall] = useState<JoinResponse | null>(null);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    if (token) {
+    if (call) {
         return (
             <ConsultCallRoom
-                token={token}
-                userName={userName}
+                url={call.url}
+                token={call.token}
+                role={call.role}
                 otherParty={otherParty}
                 onLeave={() => {
-                    setToken(null);
+                    setCall(null);
                     onCallChange?.(false);
                     onChange?.();
                 }}
@@ -54,8 +54,7 @@ export function JoinPanel({ status, type, startsAt, endsAt, userName, otherParty
         setBusy(true);
         setError(null);
         try {
-            const res = await join();
-            setToken(res.token);
+            setCall(await join());
             onCallChange?.(true);
             onChange?.();
         } catch (e) {

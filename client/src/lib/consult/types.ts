@@ -185,9 +185,12 @@ export interface ReviewQueue {
 // ── Video room and prescriptions ────────────────────────
 
 export interface JoinResponse {
+    /** LiveKit server URL (wss). */
+    url: string;
     roomId: string;
+    /** `doctor`, `patient`, or an `-audio` variant that may only publish the microphone. */
     role: string;
-    /** 100ms auth token for this person and room. */
+    /** LiveKit access token for this person and room; it carries their display name. */
     token: string;
 }
 

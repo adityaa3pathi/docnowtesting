@@ -132,7 +132,6 @@ function BookingDetail() {
                             type={booking.type}
                             startsAt={booking.startsAt}
                             endsAt={booking.endsAt}
-                            userName={booking.patientName}
                             otherParty="doctor"
                             join={() => consult.join(booking.consultationId)}
                             onChange={() => void flow.refetch()}
