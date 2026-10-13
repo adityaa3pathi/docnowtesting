@@ -928,15 +928,23 @@ model Consultation {
   cancelledBy         String?
   cancelReason        String?
   cancelledAt         DateTime?
+  // Video call: 100ms room made on first join; times record who joined and when.
+  roomId              String?            @unique
+  patientJoinedAt     DateTime?
+  doctorJoinedAt      DateTime?
+  startedAt           DateTime?
+  endedAt             DateTime?
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
-  user     User                  @relation(fields: [userId], references: [id])
-  patient  Patient               @relation(fields: [patientId], references: [id])
-  doctor   DoctorProfile         @relation(fields: [doctorId], references: [id])
-  slot     Slot                  @relation(fields: [slotId], references: [id])
-  payments ConsultationPayment[]
-  refunds  ConsultationRefund[]
+  user         User                  @relation(fields: [userId], references: [id])
+  patient      Patient               @relation(fields: [patientId], references: [id])
+  doctor       DoctorProfile         @relation(fields: [doctorId], references: [id])
+  slot         Slot                  @relation(fields: [slotId], references: [id])
+  payments     ConsultationPayment[]
+  refunds      ConsultationRefund[]
+  note         ConsultationNote?
+  prescription Prescription?
 
   @@unique([userId, idempotencyKey])
   @@index([slotId])
@@ -983,4 +991,36 @@ model ConsultationRefund {
 
   @@unique([paymentId, reason])
   @@index([status, updatedAt])
+}
+
+
+// ============================================
+// DOCTOR CONSULTATION: NOTES AND PRESCRIPTIONS
+// ============================================
+
+// The doctor's working notes; editable until the prescription is issued.
+model ConsultationNote {
+  id             String       @id @default(uuid())
+  consultationId String       @unique
+  complaints     String?
+  findings       String?
+  diagnosis      String?
+  advice         String?
+  followUpDays   Int?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+}
+
+// A legal record: written once, never updated. The PDF is rendered from these fields on request.
+model Prescription {
+  id               String       @id @default(uuid())
+  consultationId   String       @unique
+  medicines        Json // [{ name, dose, frequency, duration, instructions }]
+  recommendedTests Json // [{ code, name }] from the catalog at issue time
+  advice           String?
+  doctorSnapshot   Json // name, qualification, registration number and council at issue time
+  patientSnapshot  Json // name, age, gender at issue time
+  issuedAt         DateTime     @default(now())
+  consultation     Consultation @relation(fields: [consultationId], references: [id], onDelete: Restrict)
 }

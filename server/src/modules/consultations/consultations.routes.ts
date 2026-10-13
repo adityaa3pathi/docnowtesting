@@ -11,6 +11,9 @@ import { createBooking, getBooking, listBookings } from './consultations.booking
 import { cancelConsultation, cancelPreview } from './consultations.cancellation';
 import { verifyAndConfirm } from './consultations.payments';
 import { sendConsultError } from './consultations.http';
+import { patientJoin } from './consultations.room';
+import { addRecommendedTestsToCart, getPatientPrescription } from './consultations.prescription';
+import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
 
 const bookingSchema = z.object({
     slotId: z.string().uuid('Invalid slot'),
@@ -78,5 +81,42 @@ consultPatientRoutes.post('/bookings/:id/cancel', ...patient, rateLimiter(5, 60,
         const parse = cancelSchema.safeParse(req.body ?? {});
         if (!parse.success) return res.status(400).json({ error: 'Invalid reason' });
         res.json(await cancelConsultation(id.data, { kind: 'booker', userId: req.userId! }, parse.data.reason));
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.post('/bookings/:id/join', ...patient, rateLimiter(20, 60, 'consult_join'), async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        res.json(await patientJoin(req.userId!, id.data));
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.get('/bookings/:id/prescription', ...patient, async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        const { consultation, ...p } = await getPatientPrescription(req.userId!, id.data);
+        res.json(p);
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.get('/bookings/:id/prescription.pdf', ...patient, async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        const pdf = await renderPrescriptionPdf(await getPatientPrescription(req.userId!, id.data));
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="docnow-prescription-${id.data.slice(0, 8)}.pdf"`);
+        res.setHeader('Cache-Control', 'private, no-store');
+        res.send(pdf);
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.post('/bookings/:id/recommended-tests/cart', ...patient, rateLimiter(10, 60, 'consult_rx_cart'), async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        res.json(await addRecommendedTestsToCart(req.userId!, id.data));
     } catch (e) { fail(res, e); }
 });

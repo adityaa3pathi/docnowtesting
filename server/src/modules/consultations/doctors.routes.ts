@@ -24,6 +24,10 @@ import { DoctorError } from './doctors.status';
 import { doctorListQuery, listDoctorConsultations } from './doctors.consultations';
 import { policyRoutes } from './consultations.policy.routes';
 import { reviewRoutes } from './consultations.review.routes';
+import { doctorJoin, endConsultation } from './consultations.room';
+import { getDoctorRecord, issuePrescription, noteSchema, prescriptionSchema, saveNotes } from './consultations.prescription';
+import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
+import { appointmentsQuery, getAppointment, listAppointments } from './consultations.appointments';
 import {
     addLeave, adminCreateDoctor, registerDoctor, removeLeave, resubmitDoctor, reviewDoctor, setAvailability, setSlotBlocked,
 } from './doctors.service';
@@ -219,6 +223,61 @@ doctorRoutes.delete('/me/leave/:id', ...mine, async (req: AuthRequest, res: Resp
     } catch (e) { fail(res, e, 'remove leave'); }
 });
 
+// ── Doctor: the consultation room ───────────────────────
+
+const mineWrite = [...mine, consultCsrfGuard] as const;
+const consultId = (req: AuthRequest) => {
+    const id = z.string().uuid().safeParse(req.params.id);
+    if (!id.success) throw new DoctorError(404, 'Not found');
+    return id.data;
+};
+
+doctorRoutes.get('/me/consultations/:id', ...mine, async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await getDoctorRecord(await myDoctorId(req), consultId(req)));
+    } catch (e) { fail(res, e, 'get consultation'); }
+});
+
+doctorRoutes.post('/me/consultations/:id/join', ...mineWrite, rateLimiter(20, 60, 'doctor_join'), async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await doctorJoin(await myDoctorId(req), req.userId!, consultId(req)));
+    } catch (e) { fail(res, e, 'join'); }
+});
+
+doctorRoutes.post('/me/consultations/:id/end', ...mineWrite, async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await endConsultation(await myDoctorId(req), consultId(req)));
+    } catch (e) { fail(res, e, 'end'); }
+});
+
+doctorRoutes.put('/me/consultations/:id/notes', ...mineWrite, async (req: AuthRequest, res: Response) => {
+    try {
+        const parse = noteSchema.safeParse(req.body);
+        if (!parse.success) return bad(res, parse);
+        res.json(await saveNotes(await myDoctorId(req), consultId(req), parse.data));
+    } catch (e) { fail(res, e, 'save notes'); }
+});
+
+doctorRoutes.post('/me/consultations/:id/prescription', ...mineWrite, rateLimiter(10, 60, 'doctor_rx'), async (req: AuthRequest, res: Response) => {
+    try {
+        const parse = prescriptionSchema.safeParse(req.body);
+        if (!parse.success) return bad(res, parse);
+        res.status(201).json(await issuePrescription(await myDoctorId(req), consultId(req), parse.data));
+    } catch (e) { fail(res, e, 'issue prescription'); }
+});
+
+doctorRoutes.get('/me/consultations/:id/prescription.pdf', ...mine, async (req: AuthRequest, res: Response) => {
+    try {
+        const record = await getDoctorRecord(await myDoctorId(req), consultId(req));
+        if (!record.prescription) throw new DoctorError(404, 'No prescription yet');
+        const pdf = await renderPrescriptionPdf(record.prescription);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="docnow-prescription-${record.id.slice(0, 8)}.pdf"`);
+        res.setHeader('Cache-Control', 'private, no-store');
+        res.send(pdf);
+    } catch (e) { fail(res, e, 'prescription pdf'); }
+});
+
 // ── Super admin ─────────────────────────────────────────
 
 export const consultAdminRoutes = Router();
@@ -317,4 +376,21 @@ consultAdminRoutes.patch('/specialties/:id', ...admin, async (req: AuthRequest, 
         if (!parse.success) return bad(res, parse);
         res.json(await prisma.specialty.update({ where: { id: req.params.id as string }, data: parse.data }));
     } catch (e) { fail(res, e, 'update specialty'); }
+});
+
+// Appointments are read-only here, and leave out clinical notes and prescriptions.
+consultAdminRoutes.get('/appointments', ...admin, async (req: AuthRequest, res: Response) => {
+    try {
+        const parse = appointmentsQuery.safeParse(req.query);
+        if (!parse.success) return bad(res, parse);
+        res.json(await listAppointments(parse.data));
+    } catch (e) { fail(res, e, 'admin appointments'); }
+});
+
+consultAdminRoutes.get('/appointments/:id', ...admin, async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        res.json(await getAppointment(id.data));
+    } catch (e) { fail(res, e, 'admin appointment'); }
 });

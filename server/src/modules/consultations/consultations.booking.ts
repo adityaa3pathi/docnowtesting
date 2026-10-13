@@ -155,6 +155,7 @@ const viewInclude = {
     slot: { select: { endsAt: true } },
     payments: { orderBy: { createdAt: 'desc' as const } },
     refunds: { orderBy: { createdAt: 'desc' as const } },
+    prescription: { select: { id: true } },
 } satisfies Prisma.ConsultationInclude;
 
 type BookingRow = Prisma.ConsultationGetPayload<{ include: typeof viewInclude }>;
@@ -175,6 +176,7 @@ function toView(c: BookingRow) {
         underStaffCheck: c.reviewReason !== null,
         refundPaise: live.reduce((sum, r) => sum + r.amountPaise, 0),
         refundStatus: c.refunds[0]?.status ?? null,
+        hasPrescription: c.prescription !== null,
     };
 }
 
