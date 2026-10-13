@@ -177,6 +177,7 @@ function toView(c: BookingRow) {
         refundPaise: live.reduce((sum, r) => sum + r.amountPaise, 0),
         refundStatus: c.refunds[0]?.status ?? null,
         hasPrescription: c.prescription !== null,
+        type: c.type,
     };
 }
 
