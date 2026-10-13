@@ -102,6 +102,29 @@ class TestOrchestrator:
         assert "support" in response.content.lower() or "don't have" in response.content.lower()
 
     @pytest.mark.asyncio
+    async def test_off_topic_abstains_even_with_close_chunks(self, mock_db, settings, agent_context):
+        """Off-topic text can still score high against the catalog; intent decides."""
+        chunk = RetrievedChunk(id="c1", source="catalog", title="CBC", content="CBC test", similarity=0.94)
+        retrieval_result = RetrievalResult(chunks=[chunk], should_abstain=False, max_similarity=0.94)
+
+        with (
+            patch("app.agents.orchestrator.retrieve", new_callable=AsyncMock) as mock_retrieve,
+            patch("app.agents.orchestrator.classify_intent", new_callable=AsyncMock) as mock_classify,
+            patch("app.agents.orchestrator.generate_draft", new_callable=AsyncMock) as mock_draft,
+        ):
+            from app.models import Intent
+
+            mock_retrieve.return_value = retrieval_result
+            mock_classify.return_value = Intent(intent="OFF_TOPIC", requires_action=False, confidence=0.9)
+
+            from app.agents.orchestrator import handle_message
+
+            response = await handle_message("book me a flight to Mumbai", agent_context, mock_db, settings)
+
+        assert response.was_abstained is True
+        mock_draft.assert_not_called()
+
+    @pytest.mark.asyncio
     async def test_booking_action_requires_auth(self, mock_db, settings, unauthenticated_context):
         """Booking operations for unauthenticated users should prompt login."""
         retrieval_result = RetrievalResult(
@@ -225,3 +248,19 @@ class TestOrchestrator:
 
         assert response.was_abstained is False
         assert len(response.content) > 0
+
+
+@pytest.mark.asyncio
+async def test_response_carries_langfuse_trace_id(mock_db, settings, agent_context):
+    """The trace id is saved on the message so user feedback can be scored in Langfuse."""
+    from app.agents.orchestrator import handle_message
+    from app.models import SupportResponse
+
+    with (
+        patch("app.agents.orchestrator._run_pipeline", new_callable=AsyncMock) as mock_run,
+        patch("app.agents.orchestrator.current_trace_id", return_value="trace-123"),
+    ):
+        mock_run.return_value = SupportResponse(content="hi")
+        response = await handle_message("hi", agent_context, mock_db, settings)
+
+    assert response.langfuse_trace_id == "trace-123"

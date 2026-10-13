@@ -1,0 +1,1506 @@
+{
+  "label": "baseline",
+  "run_at_ist": "13-10-2026 12:48 IST",
+  "llm_model": "gemini-3.5-flash-lite",
+  "embedding_model": "gemini-embedding-001",
+  "judge_model": "groq/openai/gpt-oss-120b",
+  "relevance_threshold": 0.7,
+  "keyword_search": false,
+  "scores": {
+    "abstention_accuracy": 0.74,
+    "false_abstention_rate": 0.075,
+    "missed_abstention_rate": 1.0,
+    "groundedness_score": 0.78,
+    "source_hit_rate": 0.8,
+    "tool_choice_accuracy": 0.5,
+    "error_rate": 0.12,
+    "p50_latency_ms": 3617,
+    "p95_latency_ms": 45843,
+    "faithfulness": 0.6666594516594517,
+    "answer_relevancy": 0.8064914521895609,
+    "context_precision": 0.26607142854848215,
+    "context_recall": 0.21428571428571427
+  },
+  "results": [
+    {
+      "query_id": "cat-01",
+      "category": "catalog",
+      "query": "I want to test for diabetes, what do you have?",
+      "response": "To test for diabetes, we offer the **Advanced Full Body Checkup** package, which includes **HbA1c** (a key test for diabetes) along with 90 other parameters. \n\nHere are the details for the package:\n* **Price:** ₹2999 (MRP: ₹4499)\n* **Sample Type:** Blood, Urine\n* **Report Time:** 24-48 hours\n* **Fasting Required:** 10-12 hours fasting required\n\nWould you like to book this checkup, or is there a specific standalone diabetes test you are looking for?",
+      "retrieved_contexts": [
+        "Test Name: Urine Routine and Microscopy\nType: TEST\nPrice: ₹149 (MRP: ₹250)\nDescription: Physical, chemical and microscopic examination of urine.\nParameters: 20 parameters\nSample Type: Urine\nReport Time: 12 hours",
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "DocNow accepts UPI, credit/debit cards, netbanking, and digital wallets via Razorpay. You can also apply DocNow wallet credits or promo codes for discounts. If a promo code or wallet balance fully covers your order amount, no additional payment gateway transaction is needed. All prices shown on the platform include applicable taxes. DocNow may offer discounted prices on selected tests and packages.",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment."
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "policy",
+        "catalog",
+        "booking_help"
+      ],
+      "ground_truth": "We have tests for diabetes including Fasting Blood Sugar, Post Prandial Blood Sugar, and HbA1c.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 4523,
+      "error": null
+    },
+    {
+      "query_id": "cat-02",
+      "category": "catalog",
+      "query": "How much does a thyroid test cost?",
+      "response": "The TSH (Thyroid Stimulating Hormone) test costs ₹249 (MRP: ₹350).",
+      "retrieved_contexts": [
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "If you cancel before sample collection, you receive a full automatic refund via Razorpay. If the partner lab fails to fulfill your booking, an automatic refund is also initiated. Refund timeline: 5-7 business days for credit/debit cards and netbanking payments, instant for UPI and digital wallets. DocNow wallet credits used in the order are restored immediately upon cancellation. Promo code usage is also restored so you can reuse the code.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Test Name: Antenatal Profile\nType: PACKAGE\nPrice: ₹1799 (MRP: ₹2499)\nDescription: Recommended tests during pregnancy.\nParameters: Includes 35 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nIncluded Tests: Complete Blood Count, Blood Group and Rh, Thyroid Profile, VDRL, HIV, HBsAg, Blood Sugar, Urine Routine",
+        "Test Name: hs-CRP (High Sensitivity C-Reactive Protein)\nType: TEST\nPrice: ₹499 (MRP: ₹700)\nDescription: Marker of inflammation and heart risk.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "policy",
+        "policy",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "The thyroid profile test costs are listed in our catalog. A standard Thyroid Profile (T3, T4, TSH) is available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3171,
+      "error": null
+    },
+    {
+      "query_id": "cat-03",
+      "category": "catalog",
+      "query": "Do you have a Complete Blood Count (CBC) test?",
+      "response": "I'm sorry, but I don't have the information about a Complete Blood Count (CBC) test in my catalog. Currently, we offer the Kidney Function Test (KFT), Thyroid Profile (T3, T4, TSH), and Fasting Blood Sugar (FBS). Let me know if you would like details on any of these available tests!",
+      "retrieved_contexts": [
+        "After a phlebotomist is assigned to your booking, you can track their status from the booking details page. You'll see the phlebotomist's name and a masked contact number for privacy. You'll receive a WhatsApp notification when the phlebotomist is assigned and when they're on their way.",
+        "Test Name: Kidney Function Test (KFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks kidney health: urea, creatinine, uric acid, BUN and electrolytes.\nParameters: 9 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "DocNow wallet credits can be earned through referrals and promotional campaigns. Credits are applied automatically during checkout to reduce your payable amount. Promo codes can be entered during checkout for additional discounts. Each promo code has usage limits (per-user and global). If your wallet balance and/or promo discount fully cover the order, no payment gateway transaction is needed.",
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required"
+      ],
+      "retrieved_sources": [
+        "faq",
+        "catalog",
+        "booking_help",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "Yes, we offer the Complete Blood Count (CBC) test.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3323,
+      "error": null
+    },
+    {
+      "query_id": "cat-04",
+      "category": "catalog",
+      "query": "I need a liver function test, when can I get it done?",
+      "response": "I'm sorry, but we currently don't have a Liver Function Test (LFT) available in our catalog. \n\nWe do offer other tests such as Iron Studies, Complete Blood Count (CBC), Post Prandial Blood Sugar (PPBS), Urine Routine and Microscopy, and Vitamin B12. Let me know if you would like information on any of those!",
+      "retrieved_contexts": [
+        "Test Name: Iron Studies\nType: TEST\nPrice: ₹599 (MRP: ₹900)\nDescription: Serum iron, TIBC and transferrin saturation to check iron deficiency.\nParameters: 4 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Post Prandial Blood Sugar (PPBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose 2 hours after a meal. Used with FBS to check for diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: Sample taken 2 hours after a meal",
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "Test Name: Urine Routine and Microscopy\nType: TEST\nPrice: ₹149 (MRP: ₹250)\nDescription: Physical, chemical and microscopic examination of urine.\nParameters: 20 parameters\nSample Type: Urine\nReport Time: 12 hours",
+        "Test Name: Vitamin B12\nType: TEST\nPrice: ₹699 (MRP: ₹1100)\nDescription: Measures vitamin B12 levels to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "We offer the Liver Function Test (LFT). You can book a slot for home collection at your convenience.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "catalog_search"
+      ],
+      "latency_ms": 3311,
+      "error": null
+    },
+    {
+      "query_id": "cat-05",
+      "category": "catalog",
+      "query": "Can you check my Vitamin D levels?",
+      "response": "I'm sorry, but I don't have information about a Vitamin D test in our current catalog. We currently offer the Thyroid Profile, Liver Function Test (LFT), Kidney Function Test (KFT), and Fasting Blood Sugar (FBS).\n\nIf you have any questions about these available tests, please let me know!",
+      "retrieved_contexts": [
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Test Name: Kidney Function Test (KFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks kidney health: urea, creatinine, uric acid, BUN and electrolytes.\nParameters: 9 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "booking_help",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "Yes, we offer Vitamin D (25-OH) tests to check your levels.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3577,
+      "error": null
+    },
+    {
+      "query_id": "cat-06",
+      "category": "catalog",
+      "query": "What's included in the full body checkup?",
+      "response": "I'm sorry, but I don't have information about a \"full body checkup\" in my current catalog. \n\nHowever, we do offer specific tests and packages like the Diabetes Screening Package, Liver Function Test (LFT), Vitamin D, and Vitamin B12. Let me know if you would like details on any of these!",
+      "retrieved_contexts": [
+        "Test Name: Vitamin D (25-OH)\nType: TEST\nPrice: ₹899 (MRP: ₹1400)\nDescription: Measures 25-hydroxy vitamin D to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose",
+        "Test Name: Vitamin B12\nType: TEST\nPrice: ₹699 (MRP: ₹1100)\nDescription: Measures vitamin B12 levels to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "booking_help",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "A full body checkup typically includes CBC, Lipid Profile, Liver Function, Kidney Function, Thyroid, and blood sugar tests.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 37060,
+      "error": null
+    },
+    {
+      "query_id": "cat-07",
+      "category": "catalog",
+      "query": "Do I need to fast before a lipid profile test?",
+      "response": "Regarding the Advanced Full Body Checkup (which includes a lipid profile), a 10-12 hour fasting period is required, according to the available information.",
+      "retrieved_contexts": [
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Urine Routine and Microscopy\nType: TEST\nPrice: ₹149 (MRP: ₹250)\nDescription: Physical, chemical and microscopic examination of urine.\nParameters: 20 parameters\nSample Type: Urine\nReport Time: 12 hours",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "faq",
+        "catalog"
+      ],
+      "ground_truth": "Yes, a lipid profile test usually requires 10-12 hours of fasting.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "PARTIALLY_GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [],
+      "latency_ms": 5729,
+      "error": null
+    },
+    {
+      "query_id": "cat-08",
+      "category": "catalog",
+      "query": "How long does it take to get the report for a blood test?",
+      "response": "Report times vary depending on the specific blood test:\n\n* **Fasting Blood Sugar (FBS):** 6 hours\n* **Kidney Function Test (KFT):** 24 hours\n* **Thyroid Profile (T3, T4, TSH):** 24 hours",
+      "retrieved_contexts": [
+        "Test Name: Kidney Function Test (KFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks kidney health: urea, creatinine, uric acid, BUN and electrolytes.\nParameters: 9 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "DocNow supports booking tests for multiple family members in a single order. You can add family members (patients) from your profile. Each test in your cart can be assigned to a different patient. During checkout, specify which family member each test is for. The phlebotomist will collect samples from all patients during the same visit.",
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "booking_help",
+        "catalog",
+        "policy",
+        "catalog"
+      ],
+      "ground_truth": "Report times vary by test, but most routine blood test reports are delivered within 24 hours.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [],
+      "latency_ms": 2974,
+      "error": null
+    },
+    {
+      "query_id": "cat-09",
+      "category": "catalog",
+      "query": "What is the difference between the basic and advanced full body checkup?",
+      "response": "I'm sorry, but I don't have information in my current records regarding the difference between the basic and advanced full body checkup. If you have any other questions about our tests, home collection, booking, or policies, I'd be happy to help!",
+      "retrieved_contexts": [
+        "DocNow supports booking tests for multiple family members in a single order. You can add family members (patients) from your profile. Each test in your cart can be assigned to a different patient. During checkout, specify which family member each test is for. The phlebotomist will collect samples from all patients during the same visit.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "DocNow accepts UPI, credit/debit cards, netbanking, and digital wallets via Razorpay. You can also apply DocNow wallet credits or promo codes for discounts. If a promo code or wallet balance fully covers your order amount, no additional payment gateway transaction is needed. All prices shown on the platform include applicable taxes. DocNow may offer discounted prices on selected tests and packages.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused."
+      ],
+      "retrieved_sources": [
+        "booking_help",
+        "faq",
+        "catalog",
+        "policy",
+        "policy"
+      ],
+      "ground_truth": "The advanced checkup includes additional parameters like Vitamin D, Vitamin B12, and advanced cardiac risk markers compared to the basic package.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_packages"
+      ],
+      "latency_ms": 3343,
+      "error": null
+    },
+    {
+      "query_id": "cat-10",
+      "category": "catalog",
+      "query": "What is the cheapest test you have for diabetes?",
+      "response": "The cheapest test we have for diabetes in our current catalog is the **Post Prandial Blood Sugar (PPBS)** test, priced at **₹99** (MRP: ₹150).",
+      "retrieved_contexts": [
+        "DocNow wallet credits can be earned through referrals and promotional campaigns. Credits are applied automatically during checkout to reduce your payable amount. Promo codes can be entered during checkout for additional discounts. Each promo code has usage limits (per-user and global). If your wallet balance and/or promo discount fully cover the order, no payment gateway transaction is needed.",
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Post Prandial Blood Sugar (PPBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose 2 hours after a meal. Used with FBS to check for diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: Sample taken 2 hours after a meal",
+        "Test Name: Vitamin B12\nType: TEST\nPrice: ₹699 (MRP: ₹1100)\nDescription: Measures vitamin B12 levels to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count"
+      ],
+      "retrieved_sources": [
+        "booking_help",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "Fasting Blood Sugar (FBS) is generally our most affordable test for diabetes screening.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3265,
+      "error": null
+    },
+    {
+      "query_id": "cat-11",
+      "category": "catalog",
+      "query": "I am a 45 year old man, what tests should I take?",
+      "response": "Hello! For a 45-year-old man, we recommend the **Men's Health Checkup (40+)** package. \n\nHere are the details for this package:\n* **Price:** ₹2499 (MRP: ₹3999)\n* **Description:** Designed for men over 40, covering diabetes, heart, liver, kidney, thyroid, and PSA screening.\n* **Parameters:** 78 parameters (includes HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, and Complete Blood Count).\n* **Sample Type:** Blood and Urine\n* **Fasting Required:** 10-12 hours fasting required\n* **Report Time:** Within 48 hours\n\nLet me know if you would like to book this package or if you have any other questions!",
+      "retrieved_contexts": [
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required",
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "Test Name: Iron Studies\nType: TEST\nPrice: ₹599 (MRP: ₹900)\nDescription: Serum iron, TIBC and transferrin saturation to check iron deficiency.\nParameters: 4 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Post Prandial Blood Sugar (PPBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose 2 hours after a meal. Used with FBS to check for diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: Sample taken 2 hours after a meal"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "For a 45-year-old man, a comprehensive full body checkup including cardiac markers, diabetes screen, lipid profile, and prostate-specific antigen (PSA) is recommended.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3931,
+      "error": null
+    },
+    {
+      "query_id": "cat-12",
+      "category": "catalog",
+      "query": "Are there any test recommendations for pregnant women?",
+      "response": "I'm sorry, but I don't have information on specific test recommendations for pregnant women in my current database. \n\nHowever, we offer various diagnostic tests such as the Thyroid Profile and Lipid Profile for general health monitoring. If you have specific tests in mind, feel free to ask, and I'll be happy to provide details on pricing, fasting requirements, and report times!",
+      "retrieved_contexts": [
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Diagnostic reports are typically delivered within 24-48 hours after sample collection, though the exact time varies by test type. Some specialized tests may take longer. Reports are delivered as downloadable PDF files in the Reports section of your DocNow account. You'll also receive a WhatsApp notification when your report is ready.",
+        "Test Name: Lipid Profile\nType: TEST\nPrice: ₹499 (MRP: ₹700)\nDescription: Measures total cholesterol, HDL, LDL, VLDL and triglycerides to assess heart risk.\nParameters: 8 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability."
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "faq",
+        "catalog",
+        "policy",
+        "faq"
+      ],
+      "ground_truth": "We have antenatal profiles that include CBC, Blood Grouping, Thyroid, VDRL, HIV, and blood sugar tests suitable for pregnant women.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_tests"
+      ],
+      "latency_ms": 13968,
+      "error": null
+    },
+    {
+      "query_id": "cat-13",
+      "category": "catalog",
+      "query": "Is there a discount on the advanced health package?",
+      "response": "Yes, there is a discount on the Advanced Full Body Checkup! It is currently priced at **₹2999** (with an MRP of ₹4499).",
+      "retrieved_contexts": [
+        "If you cancel before sample collection, you receive a full automatic refund via Razorpay. If the partner lab fails to fulfill your booking, an automatic refund is also initiated. Refund timeline: 5-7 business days for credit/debit cards and netbanking payments, instant for UPI and digital wallets. DocNow wallet credits used in the order are restored immediately upon cancellation. Promo code usage is also restored so you can reuse the code.",
+        "Test Name: Urine Routine and Microscopy\nType: TEST\nPrice: ₹149 (MRP: ₹250)\nDescription: Physical, chemical and microscopic examination of urine.\nParameters: 20 parameters\nSample Type: Urine\nReport Time: 12 hours",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "policy",
+        "catalog",
+        "faq",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "You can view the discounted price for the advanced health package in our catalog.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "get_product_details"
+      ],
+      "latency_ms": 36266,
+      "error": null
+    },
+    {
+      "query_id": "cat-14",
+      "category": "catalog",
+      "query": "What type of sample is needed for the CBC test?",
+      "response": "I'm sorry, but I don't have the information regarding the sample type for the CBC test in my current catalog.",
+      "retrieved_contexts": [
+        "Test Name: Vitamin D (25-OH)\nType: TEST\nPrice: ₹899 (MRP: ₹1400)\nDescription: Measures 25-hydroxy vitamin D to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "DocNow accepts UPI, credit/debit cards, netbanking, and digital wallets via Razorpay. You can also apply DocNow wallet credits or promo codes for discounts. If a promo code or wallet balance fully covers your order amount, no additional payment gateway transaction is needed. All prices shown on the platform include applicable taxes. DocNow may offer discounted prices on selected tests and packages.",
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "Test Name: Lipid Profile\nType: TEST\nPrice: ₹499 (MRP: ₹700)\nDescription: Measures total cholesterol, HDL, LDL, VLDL and triglycerides to assess heart risk.\nParameters: 8 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "policy",
+        "catalog",
+        "booking_help",
+        "catalog"
+      ],
+      "ground_truth": "The CBC test requires a blood sample.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "get_product_details"
+      ],
+      "latency_ms": 3065,
+      "error": null
+    },
+    {
+      "query_id": "cat-15",
+      "category": "catalog",
+      "query": "Can you search for an HbA1c test for me?",
+      "response": "Yes, I found the HbA1c test for you! Here are the details:\n\n* **Test Name:** HbA1c (Glycosylated Haemoglobin)\n* **Price:** ₹399 (MRP: ₹550)\n* **Description:** Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\n* **Parameters:** 1 parameter\n* **Sample Type:** Blood\n* **Report Time:** 24 hours\n* **Fasting Required:** No fasting required\n\nWould you like help booking this test?",
+      "retrieved_contexts": [
+        "DocNow wallet credits can be earned through referrals and promotional campaigns. Credits are applied automatically during checkout to reduce your payable amount. Promo codes can be entered during checkout for additional discounts. Each promo code has usage limits (per-user and global). If your wallet balance and/or promo discount fully cover the order, no payment gateway transaction is needed.",
+        "Test Name: Kidney Function Test (KFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks kidney health: urea, creatinine, uric acid, BUN and electrolytes.\nParameters: 9 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "After a phlebotomist is assigned to your booking, you can track their status from the booking details page. You'll see the phlebotomist's name and a masked contact number for privacy. You'll receive a WhatsApp notification when the phlebotomist is assigned and when they're on their way.",
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required"
+      ],
+      "retrieved_sources": [
+        "booking_help",
+        "catalog",
+        "faq",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "Yes, we offer the HbA1c test which measures your average blood sugar over the past 3 months.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3243,
+      "error": null
+    },
+    {
+      "query_id": "book-01",
+      "category": "booking",
+      "query": "Can you check the status of my booking #12345?",
+      "response": "I'm sorry, but I don't have access to your live account data or booking status for order #12345 in the current system. \n\nYou can easily check the current status of your booking by logging into your DocNow account and visiting the **'My Bookings'** section. Let me know if you need help with anything else, such as rescheduling or understanding our policies!",
+      "retrieved_contexts": [
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Diagnostic reports are typically delivered within 24-48 hours after sample collection, though the exact time varies by test type. Some specialized tests may take longer. Reports are delivered as downloadable PDF files in the Reports section of your DocNow account. You'll also receive a WhatsApp notification when your report is ready.",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused."
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "faq",
+        "faq",
+        "catalog",
+        "policy"
+      ],
+      "ground_truth": "The response should provide the current status (e.g., confirmed, pending, completed) of booking #12345.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "check_booking_status"
+      ],
+      "latency_ms": 3628,
+      "error": null
+    },
+    {
+      "query_id": "book-02",
+      "category": "booking",
+      "query": "I want to cancel my booking for tomorrow.",
+      "response": "I currently don't have the specific steps for cancelling an appointment based on the available information.",
+      "retrieved_contexts": [
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "After a phlebotomist is assigned to your booking, you can track their status from the booking details page. You'll see the phlebotomist's name and a masked contact number for privacy. You'll receive a WhatsApp notification when the phlebotomist is assigned and when they're on their way.",
+        "DocNow supports booking tests for multiple family members in a single order. You can add family members (patients) from your profile. Each test in your cart can be assigned to a different patient. During checkout, specify which family member each test is for. The phlebotomist will collect samples from all patients during the same visit.",
+        "Test Name: Kidney Function Test (KFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks kidney health: urea, creatinine, uric acid, BUN and electrolytes.\nParameters: 9 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "DocNow accepts UPI, credit/debit cards, netbanking, and digital wallets via Razorpay. You can also apply DocNow wallet credits or promo codes for discounts. If a promo code or wallet balance fully covers your order amount, no additional payment gateway transaction is needed. All prices shown on the platform include applicable taxes. DocNow may offer discounted prices on selected tests and packages."
+      ],
+      "retrieved_sources": [
+        "faq",
+        "faq",
+        "booking_help",
+        "catalog",
+        "policy"
+      ],
+      "ground_truth": "The response should assist the user in cancelling their upcoming booking.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "PARTIALLY_GROUNDED",
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "cancel_booking"
+      ],
+      "latency_ms": 3160,
+      "error": null
+    },
+    {
+      "query_id": "book-03",
+      "category": "booking",
+      "query": "Can I reschedule my appointment to next Monday?",
+      "response": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should guide the user to reschedule their appointment to next Monday.",
+      "should_abstain": false,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "reschedule_appointment"
+      ],
+      "latency_ms": 6323,
+      "error": "Verification failed — defaulting to UNGROUNDED for safety: 1 validation error for VerificationResult\ncleaned_response\n  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.14/v/string_type"
+    },
+    {
+      "query_id": "book-04",
+      "category": "booking",
+      "query": "List all my upcoming bookings.",
+      "response": "Here are your upcoming bookings:\n\n1. **Booking ID: 12345**\n   * **Tests:** Complete Blood Count (CBC)\n   * **Status:** Sample Collector Assigned\n   * **Slot:** Tomorrow 09:00-10:00\n   * **Phlebotomist:** Ravi K.\n   * **Patient:** Self\n\n2. **Booking ID: 98765**\n   * **Tests:** Lipid Profile\n   * **Status:** Order Booked\n   * **Slot:** Saturday 08:00-09:00\n   * **Patient:** Self",
+      "retrieved_contexts": [
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Test Name: Urine Routine and Microscopy\nType: TEST\nPrice: ₹149 (MRP: ₹250)\nDescription: Physical, chemical and microscopic examination of urine.\nParameters: 20 parameters\nSample Type: Urine\nReport Time: 12 hours",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required"
+      ],
+      "retrieved_sources": [
+        "faq",
+        "catalog",
+        "catalog",
+        "policy",
+        "catalog"
+      ],
+      "ground_truth": "The response should display a list of all upcoming bookings for the user.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 16242,
+      "error": null
+    },
+    {
+      "query_id": "book-05",
+      "category": "booking",
+      "query": "When will the phlebotomist arrive for my booking today?",
+      "response": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the expected arrival time or status of the phlebotomist for today's booking.",
+      "should_abstain": false,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "get_booking_status"
+      ],
+      "latency_ms": 37500,
+      "error": "Verification failed — defaulting to UNGROUNDED for safety: 1 validation error for VerificationResult\ncleaned_response\n  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.14/v/string_type"
+    },
+    {
+      "query_id": "book-06",
+      "category": "booking",
+      "query": "Are there any slots available for tomorrow morning?",
+      "response": "I'm sorry, but I don't have the information regarding available time slots for tomorrow morning.",
+      "retrieved_contexts": [
+        "Test Name: Vitamin D (25-OH)\nType: TEST\nPrice: ₹899 (MRP: ₹1400)\nDescription: Measures 25-hydroxy vitamin D to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Vitamin B12\nType: TEST\nPrice: ₹699 (MRP: ₹1100)\nDescription: Measures vitamin B12 levels to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose",
+        "Test Name: PSA (Prostate Specific Antigen)\nType: TEST\nPrice: ₹649 (MRP: ₹900)\nDescription: Screens for prostate problems in men.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "booking_help",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "The response should list the available time slots for home collection tomorrow morning.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [
+        "get_available_slots"
+      ],
+      "latency_ms": 3444,
+      "error": null
+    },
+    {
+      "query_id": "book-07",
+      "category": "booking",
+      "query": "My booking status says pending, what does that mean?",
+      "response": "If you need help with your appointment, you can view your booking details and manage your appointments under the 'My Bookings' section in your account. Let me know if you have any other questions!",
+      "retrieved_contexts": [
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended"
+      ],
+      "retrieved_sources": [
+        "faq",
+        "policy",
+        "catalog",
+        "faq",
+        "catalog"
+      ],
+      "ground_truth": "The response should explain that a pending status means the booking is awaiting confirmation or payment.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "PARTIALLY_GROUNDED",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "get_booking_status"
+      ],
+      "latency_ms": 3054,
+      "error": null
+    },
+    {
+      "query_id": "book-08",
+      "category": "booking",
+      "query": "I need to cancel booking number 98765.",
+      "response": "I have successfully cancelled your booking (ID: 98765), and your refund has been initiated. Let me know if you need help with anything else!",
+      "retrieved_contexts": [
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Test Name: Vitamin D (25-OH)\nType: TEST\nPrice: ₹899 (MRP: ₹1400)\nDescription: Measures 25-hydroxy vitamin D to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "DocNow accepts UPI, credit/debit cards, netbanking, and digital wallets via Razorpay. You can also apply DocNow wallet credits or promo codes for discounts. If a promo code or wallet balance fully covers your order amount, no additional payment gateway transaction is needed. All prices shown on the platform include applicable taxes. DocNow may offer discounted prices on selected tests and packages.",
+        "Test Name: Lipid Profile\nType: TEST\nPrice: ₹499 (MRP: ₹700)\nDescription: Measures total cholesterol, HDL, LDL, VLDL and triglycerides to assess heart risk.\nParameters: 8 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required",
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose"
+      ],
+      "retrieved_sources": [
+        "booking_help",
+        "catalog",
+        "policy",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "The response should confirm the cancellation process for booking #98765.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "cancel_booking"
+      ],
+      "latency_ms": 3163,
+      "error": null
+    },
+    {
+      "query_id": "book-09",
+      "category": "booking",
+      "query": "What time is my appointment for the CBC test?",
+      "response": "I'm sorry, but I don't have the information regarding your appointment time for the CBC test in my system.",
+      "retrieved_contexts": [
+        "Test Name: Urine Routine and Microscopy\nType: TEST\nPrice: ₹149 (MRP: ₹250)\nDescription: Physical, chemical and microscopic examination of urine.\nParameters: 20 parameters\nSample Type: Urine\nReport Time: 12 hours",
+        "DocNow accepts UPI, credit/debit cards, netbanking, and digital wallets via Razorpay. You can also apply DocNow wallet credits or promo codes for discounts. If a promo code or wallet balance fully covers your order amount, no additional payment gateway transaction is needed. All prices shown on the platform include applicable taxes. DocNow may offer discounted prices on selected tests and packages.",
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment."
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "policy",
+        "catalog",
+        "catalog",
+        "booking_help"
+      ],
+      "ground_truth": "The response should look up the user's bookings and provide the appointment time for their CBC test.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "get_booking_status"
+      ],
+      "latency_ms": 3089,
+      "error": null
+    },
+    {
+      "query_id": "book-10",
+      "category": "booking",
+      "query": "Can you change my booking time from 9 AM to 11 AM?",
+      "response": "I'd be happy to help you with that! \n\nYou can reschedule your appointment before the sample is collected, as long as your booking status is not already Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded (camp bookings also cannot be rescheduled online). \n\nThere is no additional payment required for rescheduling, and new time slots are available up to 7 days ahead starting from 6:00 AM. \n\nCould you please provide your booking reference number so I can check your status and update the time for you?",
+      "retrieved_contexts": [
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required",
+        "Test Name: hs-CRP (High Sensitivity C-Reactive Protein)\nType: TEST\nPrice: ₹499 (MRP: ₹700)\nDescription: Marker of inflammation and heart risk.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "policy",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "The response should process the rescheduling of the booking from 9 AM to 11 AM if slots are available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "reschedule_booking"
+      ],
+      "latency_ms": 45843,
+      "error": null
+    },
+    {
+      "query_id": "book-11",
+      "category": "booking",
+      "query": "Has a phlebotomist been assigned to my booking?",
+      "response": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should indicate whether a phlebotomist has been assigned and provide their details if available.",
+      "should_abstain": false,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "check_booking_status"
+      ],
+      "latency_ms": 3793,
+      "error": "Verification failed — defaulting to UNGROUNDED for safety: 1 validation error for VerificationResult\ncleaned_response\n  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.14/v/string_type"
+    },
+    {
+      "query_id": "book-12",
+      "category": "booking",
+      "query": "Show me my past bookings.",
+      "response": "I don't have the information to view your past bookings. Is there anything else I can help you with, such as finding a test or checking a current policy?",
+      "retrieved_contexts": [
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "policy",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "The response should display the user's booking history.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "get_user_bookings"
+      ],
+      "latency_ms": 3549,
+      "error": null
+    },
+    {
+      "query_id": "book-13",
+      "category": "booking",
+      "query": "Is 8 AM available for home collection this Saturday?",
+      "response": "I'm sorry, but I don't have the information regarding real-time slot availability for specific dates and times like this Saturday at 8 AM. Let me know if you need help with anything else.",
+      "retrieved_contexts": [
+        "After a phlebotomist is assigned to your booking, you can track their status from the booking details page. You'll see the phlebotomist's name and a masked contact number for privacy. You'll receive a WhatsApp notification when the phlebotomist is assigned and when they're on their way.",
+        "If you cancel before sample collection, you receive a full automatic refund via Razorpay. If the partner lab fails to fulfill your booking, an automatic refund is also initiated. Refund timeline: 5-7 business days for credit/debit cards and netbanking payments, instant for UPI and digital wallets. DocNow wallet credits used in the order are restored immediately upon cancellation. Promo code usage is also restored so you can reuse the code.",
+        "DocNow supports booking tests for multiple family members in a single order. You can add family members (patients) from your profile. Each test in your cart can be assigned to a different patient. During checkout, specify which family member each test is for. The phlebotomist will collect samples from all patients during the same visit.",
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required"
+      ],
+      "retrieved_sources": [
+        "faq",
+        "policy",
+        "booking_help",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "The response should confirm if the 8 AM slot is available for this Saturday.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "PARTIALLY_GROUNDED",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [
+        "check_available_slots"
+      ],
+      "latency_ms": 4031,
+      "error": null
+    },
+    {
+      "query_id": "book-14",
+      "category": "booking",
+      "query": "I missed my appointment, can I reschedule it?",
+      "response": "However, if you need help checking a status, please let me know and I'd be happy to assist you!",
+      "retrieved_contexts": [
+        "Test Name: Vitamin D (25-OH)\nType: TEST\nPrice: ₹899 (MRP: ₹1400)\nDescription: Measures 25-hydroxy vitamin D to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Vitamin B12\nType: TEST\nPrice: ₹699 (MRP: ₹1100)\nDescription: Measures vitamin B12 levels to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "Test Name: Post Prandial Blood Sugar (PPBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose 2 hours after a meal. Used with FBS to check for diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: Sample taken 2 hours after a meal",
+        "Test Name: Kidney Function Test (KFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks kidney health: urea, creatinine, uric acid, BUN and electrolytes.\nParameters: 9 parameters\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "booking_help",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "The response should help the user reschedule their missed appointment to a new date and time.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "PARTIALLY_GROUNDED",
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "reschedule_appointment"
+      ],
+      "latency_ms": 3808,
+      "error": null
+    },
+    {
+      "query_id": "book-15",
+      "category": "booking",
+      "query": "Why is my booking cancelled?",
+      "response": "I'm sorry, but I don't have the information on why a specific booking was cancelled based on the provided policies and details. \n\nIf you need further assistance with your booking status, please let me know your booking reference, and I can check the details available in your account.",
+      "retrieved_contexts": [
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required",
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "policy",
+        "catalog"
+      ],
+      "ground_truth": "The response should provide the reason for the booking's cancellation based on its status.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "get_booking_status"
+      ],
+      "latency_ms": 3617,
+      "error": null
+    },
+    {
+      "query_id": "faq-01",
+      "category": "policy",
+      "query": "What is your cancellation policy?",
+      "response": "I'm sorry, but I don't have the information regarding our cancellation policy in my current records. If you need help with anything else, such as booking tests or checking report times, please let me know!",
+      "retrieved_contexts": [
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: PSA (Prostate Specific Antigen)\nType: TEST\nPrice: ₹649 (MRP: ₹900)\nDescription: Screens for prostate problems in men.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "You can cancel your booking up to a certain time before the scheduled slot for a full refund. Please refer to our detailed cancellation policy.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "policy",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 52752,
+      "error": "Error calling Gemini API: ClientError(\"429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\\\nPlease retry in 6.795239988s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '6s'}]}}\"); Intent classification failed: ClientError(\"429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\\\nPlease retry in 6.795239988s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '6s'}]}}\")"
+    },
+    {
+      "query_id": "faq-02",
+      "category": "policy",
+      "query": "If I cancel my booking, how long does the refund take?",
+      "response": "When you cancel your booking, a full refund is issued automatically via Razorpay with the following timelines:\n\n* **Credit/Debit Cards & Netbanking:** 5-7 business days\n* **UPI & Wallets:** Instant\n\nAdditionally, any DocNow wallet credits or promo codes used in the booking will be restored immediately.",
+      "retrieved_contexts": [
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused."
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "policy"
+      ],
+      "ground_truth": "Refunds typically take 5-7 business days to process and reflect in your original payment method.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "policy",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 3830,
+      "error": null
+    },
+    {
+      "query_id": "faq-03",
+      "category": "policy",
+      "query": "How does the home sample collection process work?",
+      "response": "Here is how our doorstep sample collection process works at DocNow:\n\n1. **Browse and Select:** Choose the tests or health packages you need on DocNow.\n2. **Book a Slot:** Add them to your cart and select a convenient date and time slot (morning slots start from 6:00 AM, and you can book up to 7 days in advance).\n3. **Make Payment:** Complete your payment securely via UPI, card, netbanking, or wallet.\n4. **Sample Collection:** A certified phlebotomist will arrive at your home at the scheduled time to collect the sample safely.\n5. **Lab Testing:** The sample is then transported securely to our partner laboratory.\n6. **Digital Reports:** Your diagnostic report will be delivered digitally as a downloadable PDF in your DocNow account.\n\nYou will also receive helpful WhatsApp notifications for your booking confirmation, phlebotomist assignment, and when your report is ready!",
+      "retrieved_contexts": [
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "Diagnostic reports are typically delivered within 24-48 hours after sample collection, though the exact time varies by test type. Some specialized tests may take longer. Reports are delivered as downloadable PDF files in the Reports section of your DocNow account. You'll also receive a WhatsApp notification when your report is ready.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet."
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "policy",
+        "faq",
+        "faq",
+        "faq"
+      ],
+      "ground_truth": "A trained phlebotomist will arrive at your provided address at the scheduled time to collect your sample securely.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "tools_called": [
+        "get_faq"
+      ],
+      "latency_ms": 4597,
+      "error": null
+    },
+    {
+      "query_id": "faq-04",
+      "category": "policy",
+      "query": "What does it mean if my sample needs to be resampled?",
+      "response": "I'm sorry, but I don't have the information on what it means if your sample needs to be resampled. If you need help with anything else regarding test bookings, reports, or our policies, please let me know!",
+      "retrieved_contexts": [
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Diagnostic reports are typically delivered within 24-48 hours after sample collection, though the exact time varies by test type. Some specialized tests may take longer. Reports are delivered as downloadable PDF files in the Reports section of your DocNow account. You'll also receive a WhatsApp notification when your report is ready."
+      ],
+      "retrieved_sources": [
+        "policy",
+        "catalog",
+        "catalog",
+        "faq",
+        "faq"
+      ],
+      "ground_truth": "Resampling means the initial sample provided was insufficient or compromised, and we need to collect a new sample to run the tests accurately.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "booking_help",
+      "expected_tool": null,
+      "tools_called": [
+        "get_faq"
+      ],
+      "latency_ms": 3607,
+      "error": null
+    },
+    {
+      "query_id": "faq-05",
+      "category": "policy",
+      "query": "What payment methods do you accept?",
+      "response": "Based on our refund policy, refunds are processed for credit/debit cards, netbanking, UPI, and digital wallets.",
+      "retrieved_contexts": [
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Antenatal Profile\nType: PACKAGE\nPrice: ₹1799 (MRP: ₹2499)\nDescription: Recommended tests during pregnancy.\nParameters: Includes 35 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nIncluded Tests: Complete Blood Count, Blood Group and Rh, Thyroid Profile, VDRL, HIV, HBsAg, Blood Sugar, Urine Routine",
+        "If you cancel before sample collection, you receive a full automatic refund via Razorpay. If the partner lab fails to fulfill your booking, an automatic refund is also initiated. Refund timeline: 5-7 business days for credit/debit cards and netbanking payments, instant for UPI and digital wallets. DocNow wallet credits used in the order are restored immediately upon cancellation. Promo code usage is also restored so you can reuse the code.",
+        "Test Name: Urine Routine and Microscopy\nType: TEST\nPrice: ₹149 (MRP: ₹250)\nDescription: Physical, chemical and microscopic examination of urine.\nParameters: 20 parameters\nSample Type: Urine\nReport Time: 12 hours",
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "policy",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "We accept credit/debit cards, UPI, net banking, and digital wallets.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "PARTIALLY_GROUNDED",
+      "expected_source": "policy",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 3681,
+      "error": null
+    },
+    {
+      "query_id": "faq-06",
+      "category": "policy",
+      "query": "What are the rules for rescheduling an appointment?",
+      "response": "You can reschedule your appointment from the 'My Bookings' section, as long as your sample has not been collected yet.",
+      "retrieved_contexts": [
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Test Name: PSA (Prostate Specific Antigen)\nType: TEST\nPrice: ₹649 (MRP: ₹900)\nDescription: Screens for prostate problems in men.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "faq",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "You can reschedule your appointment at least 2 hours before the scheduled time slot subject to availability.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "policy",
+      "expected_tool": null,
+      "tools_called": [
+        "reschedule_appointment"
+      ],
+      "latency_ms": 3490,
+      "error": null
+    },
+    {
+      "query_id": "faq-07",
+      "category": "policy",
+      "query": "How are the reports delivered to me?",
+      "response": "I'm sorry, but I don't have the information on how reports are delivered. \n\nHowever, if you are looking at our test catalog, please note that most of our test reports are typically generated within 24 hours of sample collection. Let me know if you need help finding any tests or packages!",
+      "retrieved_contexts": [
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Vitamin D (25-OH)\nType: TEST\nPrice: ₹899 (MRP: ₹1400)\nDescription: Measures 25-hydroxy vitamin D to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Iron Studies\nType: TEST\nPrice: ₹599 (MRP: ₹900)\nDescription: Serum iron, TIBC and transferrin saturation to check iron deficiency.\nParameters: 4 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "Reports are sent via email, SMS link, and can also be downloaded directly from your account on our platform.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 38896,
+      "error": null
+    },
+    {
+      "query_id": "faq-08",
+      "category": "policy",
+      "query": "How far in advance can I book a slot?",
+      "response": "I'm sorry, but I don't have the information on how far in advance you can book a slot. \n\nIf you need help with anything else, such as selecting tests, managing bookings, or understanding our payment policies, please let me know!",
+      "retrieved_contexts": [
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "DocNow supports booking tests for multiple family members in a single order. You can add family members (patients) from your profile. Each test in your cart can be assigned to a different patient. During checkout, specify which family member each test is for. The phlebotomist will collect samples from all patients during the same visit.",
+        "DocNow accepts UPI, credit/debit cards, netbanking, and digital wallets via Razorpay. You can also apply DocNow wallet credits or promo codes for discounts. If a promo code or wallet balance fully covers your order amount, no additional payment gateway transaction is needed. All prices shown on the platform include applicable taxes. DocNow may offer discounted prices on selected tests and packages.",
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required"
+      ],
+      "retrieved_sources": [
+        "faq",
+        "catalog",
+        "booking_help",
+        "policy",
+        "catalog"
+      ],
+      "ground_truth": "You can book a slot up to 7 days in advance.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "tools_called": [
+        "get_faq_answer"
+      ],
+      "latency_ms": 3565,
+      "error": null
+    },
+    {
+      "query_id": "faq-09",
+      "category": "policy",
+      "query": "Can I use wallet credits to pay for my test?",
+      "response": "I'm sorry, but I don't have the information regarding whether you can use wallet credits to pay for your test. If you have any other questions about our tests, booking status, or policies, please feel free to ask!",
+      "retrieved_contexts": [
+        "Test Name: Vitamin B12\nType: TEST\nPrice: ₹699 (MRP: ₹1100)\nDescription: Measures vitamin B12 levels to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Post Prandial Blood Sugar (PPBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose 2 hours after a meal. Used with FBS to check for diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: Sample taken 2 hours after a meal",
+        "Test Name: Vitamin D (25-OH)\nType: TEST\nPrice: ₹899 (MRP: ₹1400)\nDescription: Measures 25-hydroxy vitamin D to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "booking_help",
+        "catalog"
+      ],
+      "ground_truth": "Yes, if you have DocNow wallet credits, you can apply them at checkout to pay for your tests.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "booking_help",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 3219,
+      "error": null
+    },
+    {
+      "query_id": "faq-10",
+      "category": "policy",
+      "query": "Can I cancel my test after the phlebotomist arrives at my location?",
+      "response": "I apologize, but I don't have the information regarding whether you can cancel your test after the phlebotomist arrives at your location. If you need assistance with anything else mentioned in our policies, such as booking or home collection, please let me know!",
+      "retrieved_contexts": [
+        "Test Name: Post Prandial Blood Sugar (PPBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose 2 hours after a meal. Used with FBS to check for diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: Sample taken 2 hours after a meal",
+        "Test Name: Vitamin B12\nType: TEST\nPrice: ₹699 (MRP: ₹1100)\nDescription: Measures vitamin B12 levels to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "Test Name: Lipid Profile\nType: TEST\nPrice: ₹499 (MRP: ₹700)\nDescription: Measures total cholesterol, HDL, LDL, VLDL and triglycerides to assess heart risk.\nParameters: 8 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "faq",
+        "booking_help",
+        "catalog"
+      ],
+      "ground_truth": "If you cancel after the phlebotomist arrives, a visiting charge may be deducted from your refund according to our policy.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "policy",
+      "expected_tool": null,
+      "tools_called": [
+        "cancel_booking"
+      ],
+      "latency_ms": 3023,
+      "error": null
+    },
+    {
+      "query_id": "edge-01",
+      "category": "edge",
+      "query": "Can you help me book a flight to Mumbai?",
+      "response": "I'm sorry, but I cannot help you book a flight. I am DocNow's AI customer support assistant, and I only help with healthcare diagnostics, such as finding lab tests, checking booking status, rescheduling appointments, and answering health package questions. Let me know if you need assistance with any of our doorstep lab tests!",
+      "retrieved_contexts": [
+        "Test Name: Urine Routine and Microscopy\nType: TEST\nPrice: ₹149 (MRP: ₹250)\nDescription: Physical, chemical and microscopic examination of urine.\nParameters: 20 parameters\nSample Type: Urine\nReport Time: 12 hours",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 4043,
+      "error": null
+    },
+    {
+      "query_id": "edge-02",
+      "category": "edge",
+      "query": "What is the weather like in Bangalore today?",
+      "response": "I'm sorry, but I don't have the information about the weather in Bangalore. I can help you with finding lab tests, checking booking statuses, and rescheduling appointments.",
+      "retrieved_contexts": [
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "After a phlebotomist is assigned to your booking, you can track their status from the booking details page. You'll see the phlebotomist's name and a masked contact number for privacy. You'll receive a WhatsApp notification when the phlebotomist is assigned and when they're on their way."
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "faq",
+        "faq"
+      ],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": false,
+      "verifier_verdict": "PARTIALLY_GROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 3347,
+      "error": null
+    },
+    {
+      "query_id": "edge-03",
+      "category": "edge",
+      "query": "What is the current stock price of Apple?",
+      "response": "I'm sorry, but I don't have that information. As DocNow's assistant, I can only help you with our healthcare diagnostics services, such as finding tests, checking booking status, understanding reports, and answering policy questions. Let me know if you need help with any of our lab tests!",
+      "retrieved_contexts": [
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "Diagnostic reports are typically delivered within 24-48 hours after sample collection, though the exact time varies by test type. Some specialized tests may take longer. Reports are delivered as downloadable PDF files in the Reports section of your DocNow account. You'll also receive a WhatsApp notification when your report is ready."
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "policy",
+        "faq"
+      ],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 52451,
+      "error": "Error calling Gemini API: ClientError(\"429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\\\nPlease retry in 10.466548299s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '10s'}]}}\"); Intent classification failed: ClientError(\"429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\\\nPlease retry in 10.466548299s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '10s'}]}}\")"
+    },
+    {
+      "query_id": "edge-04",
+      "category": "edge",
+      "query": "Can you write me a prescription for antibiotics?",
+      "response": "I'm sorry, but I cannot write a prescription for antibiotics or provide medical advice. Please consult a qualified physician or doctor for prescriptions and medical treatment. If you need any diagnostic tests, I'd be happy to help you find them!",
+      "retrieved_contexts": [
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Test Name: Vitamin D (25-OH)\nType: TEST\nPrice: ₹899 (MRP: ₹1400)\nDescription: Measures 25-hydroxy vitamin D to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Kidney Function Test (KFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks kidney health: urea, creatinine, uric acid, BUN and electrolytes.\nParameters: 9 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: PSA (Prostate Specific Antigen)\nType: TEST\nPrice: ₹649 (MRP: ₹900)\nDescription: Screens for prostate problems in men.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "DocNow wallet credits can be earned through referrals and promotional campaigns. Credits are applied automatically during checkout to reduce your payable amount. Promo codes can be entered during checkout for additional discounts. Each promo code has usage limits (per-user and global). If your wallet balance and/or promo discount fully cover the order, no payment gateway transaction is needed."
+      ],
+      "retrieved_sources": [
+        "policy",
+        "catalog",
+        "catalog",
+        "catalog",
+        "booking_help"
+      ],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": false,
+      "verifier_verdict": "PARTIALLY_GROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 3250,
+      "error": null
+    },
+    {
+      "query_id": "edge-05",
+      "category": "edge",
+      "query": "Write a poem about blood tests.",
+      "response": "I am sorry, but I don't have the information to write a poem about blood tests. As DocNow's customer support assistant, I can help you with finding tests and packages, checking booking status, rescheduling or cancelling appointments, understanding reports, and answering policy questions. Let me know if you need help with any of those!",
+      "retrieved_contexts": [
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: PSA (Prostate Specific Antigen)\nType: TEST\nPrice: ₹649 (MRP: ₹900)\nDescription: Screens for prostate problems in men.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "DocNow wallet credits can be earned through referrals and promotional campaigns. Credits are applied automatically during checkout to reduce your payable amount. Promo codes can be entered during checkout for additional discounts. Each promo code has usage limits (per-user and global). If your wallet balance and/or promo discount fully cover the order, no payment gateway transaction is needed.",
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "booking_help",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 3357,
+      "error": null
+    },
+    {
+      "query_id": "edge-06",
+      "category": "edge",
+      "query": "What are some good restaurants near me?",
+      "response": "I'm sorry, but I don't have that information. As DocNow's customer support assistant, I can only help you with our healthcare diagnostics platform, including finding tests and packages, checking booking statuses, rescheduling or cancelling appointments, understanding report policies, and answering other platform-related questions. \n\nIf you need help with any of our lab tests or health packages, please let me know!",
+      "retrieved_contexts": [
+        "Test Name: Lipid Profile\nType: TEST\nPrice: ₹499 (MRP: ₹700)\nDescription: Measures total cholesterol, HDL, LDL, VLDL and triglycerides to assess heart risk.\nParameters: 8 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required",
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Diagnostic reports are typically delivered within 24-48 hours after sample collection, though the exact time varies by test type. Some specialized tests may take longer. Reports are delivered as downloadable PDF files in the Reports section of your DocNow account. You'll also receive a WhatsApp notification when your report is ready.",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "faq",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 3502,
+      "error": null
+    },
+    {
+      "query_id": "edge-07",
+      "category": "edge",
+      "query": "Can you help me solve this algebra homework problem?",
+      "response": "I'm sorry, but I can't help with algebra homework. I am DocNow's AI customer support assistant, and I can only help you with healthcare diagnostics, lab tests, bookings, reports, and related policies. \n\nIf you have any questions about our health packages or need help booking a test, please let me know!",
+      "retrieved_contexts": [
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Urine Routine and Microscopy\nType: TEST\nPrice: ₹149 (MRP: ₹250)\nDescription: Physical, chemical and microscopic examination of urine.\nParameters: 20 parameters\nSample Type: Urine\nReport Time: 12 hours",
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet."
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "faq"
+      ],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 3268,
+      "error": null
+    },
+    {
+      "query_id": "edge-08",
+      "category": "edge",
+      "query": "What do you think about the current political situation?",
+      "response": "I'm sorry, but I don't have information on that topic. As DocNow's customer support assistant, I can only help you with finding tests or packages, checking booking status, rescheduling or cancelling appointments, understanding reports, and answering our platform's policies. Let me know if you need assistance with any of those!",
+      "retrieved_contexts": [
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Diagnostic reports are typically delivered within 24-48 hours after sample collection, though the exact time varies by test type. Some specialized tests may take longer. Reports are delivered as downloadable PDF files in the Reports section of your DocNow account. You'll also receive a WhatsApp notification when your report is ready.",
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet."
+      ],
+      "retrieved_sources": [
+        "policy",
+        "catalog",
+        "faq",
+        "catalog",
+        "faq"
+      ],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 11703,
+      "error": null
+    },
+    {
+      "query_id": "edge-09",
+      "category": "edge",
+      "query": "Do you offer plumbing services as well?",
+      "response": "I'm sorry, but I don't have information about plumbing services. DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep. Let me know if you need help with any of our diagnostic tests or packages!",
+      "retrieved_contexts": [
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Antenatal Profile\nType: PACKAGE\nPrice: ₹1799 (MRP: ₹2499)\nDescription: Recommended tests during pregnancy.\nParameters: Includes 35 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nIncluded Tests: Complete Blood Count, Blood Group and Rh, Thyroid Profile, VDRL, HIV, HBsAg, Blood Sugar, Urine Routine",
+        "Test Name: Kidney Function Test (KFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks kidney health: urea, creatinine, uric acid, BUN and electrolytes.\nParameters: 9 parameters\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "booking_help",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 36093,
+      "error": "Error calling Gemini API: ClientError(\"429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\\\nPlease retry in 59.086817903s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '59s'}]}}\"); Intent classification failed: ClientError(\"429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\\\nPlease retry in 59.086817903s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '59s'}]}}\")"
+    },
+    {
+      "query_id": "edge-10",
+      "category": "edge",
+      "query": "I'm feeling very sad today, what should I do?",
+      "response": "I'm really sorry to hear that you're feeling this way today, but I don't have the information or medical expertise to help with how you're feeling emotionally. \n\nSince DocNow is a healthcare diagnostics platform, I can help you find lab tests, check booking statuses, or answer questions about our packages, but for emotional support, I kindly recommend reaching out to a mental health professional, a trusted friend, or a helpline. Take care of yourself!",
+      "retrieved_contexts": [
+        "Test Name: Vitamin D (25-OH)\nType: TEST\nPrice: ₹899 (MRP: ₹1400)\nDescription: Measures 25-hydroxy vitamin D to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Vitamin B12\nType: TEST\nPrice: ₹699 (MRP: ₹1100)\nDescription: Measures vitamin B12 levels to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "DocNow wallet credits can be earned through referrals and promotional campaigns. Credits are applied automatically during checkout to reduce your payable amount. Promo codes can be entered during checkout for additional discounts. Each promo code has usage limits (per-user and global). If your wallet balance and/or promo discount fully cover the order, no payment gateway transaction is needed.",
+        "Test Name: Kidney Function Test (KFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks kidney health: urea, creatinine, uric acid, BUN and electrolytes.\nParameters: 9 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "booking_help",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 3637,
+      "error": null
+    }
+  ]
+}

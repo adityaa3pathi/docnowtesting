@@ -18,7 +18,7 @@ def settings() -> Settings:
         gemini_api_key="test-key",
         embedding_model="gemini-embedding-001",
         embedding_dimensions=768,
-        llm_model="gemini-2.0-flash",
+        llm_model="gemini-3.7-flash",
         relevance_threshold=0.7,
         max_tokens=4000,
         max_conversation_turns=10,
@@ -33,6 +33,7 @@ def mock_db() -> MagicMock:
     db = MagicMock()
     db.pool = MagicMock()
     db.vector_search = AsyncMock(return_value=[])
+    db.keyword_search = AsyncMock(return_value=[])
     db.insert_chunk = AsyncMock()
     db.get_conversation = AsyncMock(return_value={"id": "conv-1", "userId": "user-1"})
     db.create_conversation = AsyncMock(return_value="conv-1")
