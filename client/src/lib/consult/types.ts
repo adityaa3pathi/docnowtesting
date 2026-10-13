@@ -124,6 +124,8 @@ export interface LeaveEntry {
 
 export interface AdminDoctor extends DoctorMe {
     user?: { mobile: string; email?: string | null };
+    /** Doctor no-shows in the last 30 days. Only the list route sends it. */
+    noShows30d?: number;
 }
 
 export interface RefundTier {
@@ -205,6 +207,8 @@ export interface RecommendedTest {
 export interface Prescription {
     id: string;
     consultationId: string;
+    /** Starts at 1; a correction voids the current version and issues the next. */
+    version: number;
     medicines: Medicine[];
     recommendedTests: RecommendedTest[];
     advice: string | null;
@@ -262,8 +266,20 @@ export interface DoctorConsultationRecord {
     startsAt: string;
     slot: { endsAt: string };
     patient: { name: string; age: number; gender: string };
+    patientJoinedAt: string | null;
+    doctorJoinedAt: string | null;
     note: ConsultNote | null;
+    /** The current version only; voided ones are in previousVersions. */
     prescription: Prescription | null;
+    previousVersions: PrescriptionVersion[];
+}
+
+export interface PrescriptionVersion {
+    id: string;
+    version: number;
+    issuedAt: string;
+    voidedAt: string;
+    voidReason: string | null;
 }
 
 // ── Admin appointments ──────────────────────────────────
@@ -285,6 +301,7 @@ export interface AdminAppointment {
     patient: { name: string };
     user: { mobile: string };
     prescriptionIssuedAt: string | null;
+    prescriptionVersion: number | null;
 }
 
 export interface AdminAppointmentDetail extends AdminAppointment {

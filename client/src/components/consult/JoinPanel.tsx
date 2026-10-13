@@ -19,10 +19,12 @@ interface Props {
     join: () => Promise<JoinResponse>;
     /** Called after a successful join and after leaving, so the page can reload the status. */
     onChange?: () => void;
+    /** Tells the page when this person enters or leaves the call. */
+    onCallChange?: (inCall: boolean) => void;
 }
 
 /** Shows when the call opens, the Join button inside the window, then the call itself. */
-export function JoinPanel({ status, type, startsAt, endsAt, userName, otherParty, join, onChange }: Props) {
+export function JoinPanel({ status, type, startsAt, endsAt, userName, otherParty, join, onChange, onCallChange }: Props) {
     const now = useServerNow();
     const [token, setToken] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
@@ -36,6 +38,7 @@ export function JoinPanel({ status, type, startsAt, endsAt, userName, otherParty
                 otherParty={otherParty}
                 onLeave={() => {
                     setToken(null);
+                    onCallChange?.(false);
                     onChange?.();
                 }}
             />
@@ -53,6 +56,7 @@ export function JoinPanel({ status, type, startsAt, endsAt, userName, otherParty
         try {
             const res = await join();
             setToken(res.token);
+            onCallChange?.(true);
             onChange?.();
         } catch (e) {
             setError(errorMessage(e));

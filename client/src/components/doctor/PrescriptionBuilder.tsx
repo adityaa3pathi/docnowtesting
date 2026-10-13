@@ -4,7 +4,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { ConfirmDialog } from '@/components/consult/ConfirmDialog';
 import { doctor as doctorApi } from '@/lib/consult/api';
-import { buildPrescription, emptyMedicine } from '@/lib/consult/room';
+import { REISSUE_REASON_MAX, REISSUE_REASON_MIN, buildPrescription, builderFromPrescription, emptyBuilder, emptyMedicine } from '@/lib/consult/room';
 import type { Medicine, Prescription, PrescriptionInput } from '@/lib/consult/types';
 
 const COLUMNS = [
@@ -17,11 +17,21 @@ const COLUMNS = [
 
 const fieldCls = 'w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring';
 
-/** Writes the prescription once. The server never lets it change, so issuing asks for a confirm first. */
-export function PrescriptionBuilder({ consultationId, onIssued }: { consultationId: string; onIssued: (p: Prescription) => void }) {
-    const [rows, setRows] = useState<Medicine[]>([emptyMedicine()]);
-    const [codes, setCodes] = useState('');
-    const [advice, setAdvice] = useState('');
+interface Props {
+    consultationId: string;
+    /** When set, the form corrects this version: it starts pre-filled and needs a reason. */
+    correcting?: Prescription;
+    onIssued: (p: Prescription) => void;
+    onCancel?: () => void;
+}
+
+/** Issues a prescription, or a corrected next version. Both ask for a confirm because neither can be undone. */
+export function PrescriptionBuilder({ consultationId, correcting, onIssued, onCancel }: Props) {
+    const [initial] = useState(() => (correcting ? builderFromPrescription(correcting) : emptyBuilder()));
+    const [rows, setRows] = useState<Medicine[]>(initial.rows);
+    const [codes, setCodes] = useState(initial.codes);
+    const [advice, setAdvice] = useState(initial.advice);
+    const [reason, setReason] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [pending, setPending] = useState<PrescriptionInput | null>(null);
 
@@ -29,6 +39,10 @@ export function PrescriptionBuilder({ consultationId, onIssued }: { consultation
         setRows((rs) => rs.map((r, j) => (j === i ? { ...r, [key]: value } : r)));
 
     function review() {
+        if (correcting && reason.trim().length < REISSUE_REASON_MIN) {
+            setError('Say briefly why you are correcting the prescription.');
+            return;
+        }
         const built = buildPrescription(rows, codes, advice);
         if (!built.ok) {
             setError(built.error);
@@ -40,7 +54,7 @@ export function PrescriptionBuilder({ consultationId, onIssued }: { consultation
 
     return (
         <section aria-label="Prescription" className="space-y-3 rounded-2xl border border-border bg-white p-4">
-            <h2 className="font-bold text-foreground">Prescription</h2>
+            <h2 className="font-bold text-foreground">{correcting ? `Correct prescription (version ${correcting.version})` : 'Prescription'}</h2>
             <ol className="space-y-3">
                 {rows.map((row, i) => (
                     <li key={i} className="space-y-2 rounded-xl bg-primary/5 p-3">
@@ -74,17 +88,32 @@ export function PrescriptionBuilder({ consultationId, onIssued }: { consultation
                 <label htmlFor="rx-advice" className="mb-1 block text-sm font-semibold text-foreground">Advice</label>
                 <textarea id="rx-advice" value={advice} maxLength={2000} onChange={(e) => setAdvice(e.target.value)} className={`${fieldCls} min-h-20`} />
             </div>
+            {correcting && (
+                <div>
+                    <label htmlFor="rx-reason" className="mb-1 block text-sm font-semibold text-foreground">Reason for the correction</label>
+                    <textarea id="rx-reason" value={reason} maxLength={REISSUE_REASON_MAX} onChange={(e) => setReason(e.target.value)}
+                        className={`${fieldCls} min-h-16`} placeholder="e.g. Wrong dose for paracetamol" />
+                    <p className="mt-1 text-xs text-muted-foreground">Kept with the old version. The patient does not see it.</p>
+                </div>
+            )}
             {error && <p role="alert" className="text-sm font-semibold text-destructive">{error}</p>}
-            <Button className="w-full" onClick={review}>Issue prescription</Button>
+            <div className="flex gap-2">
+                {onCancel && <Button variant="outline" className="flex-1" onClick={onCancel}>Cancel</Button>}
+                <Button className="flex-1" onClick={review}>{correcting ? 'Issue corrected version' : 'Issue prescription'}</Button>
+            </div>
             <ConfirmDialog
                 open={pending !== null}
-                title="Issue this prescription?"
-                description="Once issued, the prescription cannot be changed, and your notes are locked. The patient sees it straight away."
-                confirmLabel="Issue prescription"
+                title={correcting ? 'Issue the corrected prescription?' : 'Issue this prescription?'}
+                description={correcting
+                    ? 'The current version will be marked void and the patient will see the new one.'
+                    : 'The patient sees it straight away and your notes lock. Any later correction is kept as a new version.'}
+                confirmLabel={correcting ? 'Issue corrected version' : 'Issue prescription'}
                 onClose={() => setPending(null)}
                 onConfirm={async () => {
                     if (!pending) return;
-                    onIssued(await doctorApi.issuePrescription(consultationId, pending));
+                    onIssued(correcting
+                        ? await doctorApi.reissuePrescription(consultationId, { reason: reason.trim(), prescription: pending })
+                        : await doctorApi.issuePrescription(consultationId, pending));
                 }}
             />
         </section>

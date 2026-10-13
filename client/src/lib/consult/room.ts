@@ -1,5 +1,5 @@
 /** Pure rules for the video room and prescription screens, kept apart from React so they can be tested. */
-import type { ConsultationStatus, Medicine, PrescriptionInput } from './types';
+import type { ConsultationStatus, Medicine, Prescription, PrescriptionInput } from './types';
 
 /** Must match the server's join window in consultations.room.ts. */
 export const JOIN_EARLY_MS = 10 * 60_000;
@@ -18,6 +18,11 @@ export function joinWindow(c: { status: ConsultationStatus; startsAt: string; en
     if (nowMs < opens) return { kind: 'early', opensAt: new Date(opens).toISOString() };
     if (nowMs > Date.parse(c.endsAt) + JOIN_LATE_MS) return { kind: 'ended' };
     return { kind: 'open' };
+}
+
+/** The doctor's page re-checks only while the patient might still arrive and the doctor is not in the call. */
+export function shouldWatchForPatient(status: ConsultationStatus, inCall: boolean): boolean {
+    return !inCall && (status === 'CONFIRMED' || status === 'WAITING');
 }
 
 export const emptyMedicine = (): Medicine => ({ name: '', dose: '', frequency: '', duration: '', instructions: '' });
@@ -45,3 +50,23 @@ export function buildPrescription(rows: Medicine[], codesText: string, advice: s
     }
     return { ok: true, body: { medicines, testCodes, ...(cleanAdvice ? { advice: cleanAdvice } : {}) } };
 }
+
+export interface BuilderState {
+    rows: Medicine[];
+    codes: string;
+    advice: string;
+}
+
+export const emptyBuilder = (): BuilderState => ({ rows: [emptyMedicine()], codes: '', advice: '' });
+
+/** Pre-fills the builder from the current version, so a correction starts from what was issued. */
+export function builderFromPrescription(p: Prescription): BuilderState {
+    return {
+        rows: p.medicines.length ? p.medicines.map((m) => ({ ...emptyMedicine(), ...m })) : [emptyMedicine()],
+        codes: p.recommendedTests.map((t) => t.code).join(', '),
+        advice: p.advice ?? '',
+    };
+}
+
+export const REISSUE_REASON_MIN = 5;
+export const REISSUE_REASON_MAX = 300;

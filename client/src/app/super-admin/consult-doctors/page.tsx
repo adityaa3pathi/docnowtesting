@@ -9,6 +9,7 @@ import { useApi } from '@/hooks/useApi';
 import { admin } from '@/lib/consult/api';
 import { formatRupees } from '@/lib/consult/format';
 import { doctorStatusInfo } from '@/lib/consult/status';
+import { cn } from '@/lib/utils';
 
 const FILTERS = [
     { value: '', label: 'All' },
@@ -53,7 +54,13 @@ export default function ConsultDoctorsPage() {
                                             <p className="font-semibold text-gray-900">{d.displayName}</p>
                                             <p className="text-sm text-gray-500">{d.specialty.name} · {d.consultationFee > 0 ? formatRupees(d.consultationFee) : 'No fee set'}</p>
                                         </div>
-                                        <Badge tone={info.tone}>{info.label}</Badge>
+                                        <div className="flex items-center gap-4">
+                                            <p className={cn('text-right text-sm', (d.noShows30d ?? 0) > 0 ? 'font-bold text-red-600' : 'text-gray-500')}>
+                                                <span className="block text-xs font-medium text-gray-500">No-shows (30 days)</span>
+                                                {d.noShows30d ?? 0}
+                                            </p>
+                                            <Badge tone={info.tone}>{info.label}</Badge>
+                                        </div>
                                     </Link>
                                 </li>
                             );

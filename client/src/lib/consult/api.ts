@@ -70,6 +70,8 @@ export const doctor = {
     saveNotes: (id: string, body: NoteInput) => api.put<ConsultNote>(`/doctor/me/consultations/${id}/notes`, body).then(data),
     issuePrescription: (id: string, body: PrescriptionInput) =>
         api.post<Prescription>(`/doctor/me/consultations/${id}/prescription`, body).then(data),
+    reissuePrescription: (id: string, body: { reason: string; prescription: PrescriptionInput }) =>
+        api.post<Prescription>(`/doctor/me/consultations/${id}/prescription/reissue`, body).then(data),
     downloadPrescription: (id: string) =>
         downloadAuthenticatedFile(`/doctor/me/consultations/${id}/prescription.pdf`, 'docnow-prescription.pdf'),
 };
