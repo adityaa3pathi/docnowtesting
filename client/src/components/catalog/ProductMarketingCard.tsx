@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ShoppingCart, Clock3, FlaskConical, Loader2, Users, ArrowRight } from 'lucide-react';
+import { getCardSummary } from '@/lib/productText';
 
 export interface ProductDetailsSummary {
     testCount: number | null;
@@ -21,6 +22,8 @@ export interface ProductMarketingCardItem {
     mrp?: number | null;
     reportTime?: string | null;
     parameters?: string | null;
+    purpose?: string | null;
+    description?: string | null;
     detailsSummary?: ProductDetailsSummary | null;
 }
 
@@ -41,30 +44,6 @@ function getDisplayCount(product: ProductMarketingCardItem) {
     return product.detailsSummary?.testCount || getFallbackCount(product.parameters) || (product.type === 'TEST' ? 1 : null);
 }
 
-function getItemLabel(product: ProductMarketingCardItem) {
-    return product.type === 'TEST' || product.type === 'PARAMETER' ? 'Parameters included' : 'Tests included';
-}
-
-/**
- * Formats raw API test names into clean, human-readable display names.
- * e.g. "COW MILK-By Elisa Method" → "Cow Milk"
- *      "CHEESE CHEDDAR TYPE-By Elis..." → "Cheese Cheddar Type"
- *      "Allergen, Individual-Food Casein..." → "Allergen, Individual-Food Casein"
- */
-function formatTestName(raw: string): string {
-    // Strip trailing method suffixes like "-By Elisa Method", "-By HPLC", etc.
-    const cleaned = raw.replace(/-By\s+.*/i, '').replace(/\.\.\.$/, '').trim();
-    // Title-case: capitalize first letter of each word, lowercase the rest
-    return cleaned
-        .split(/\s+/)
-        .map((word) => {
-            // Keep short conjunctions/prepositions lowercase unless they're the first word
-            if (word.length <= 2) return word.toLowerCase();
-            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-        })
-        .join(' ');
-}
-
 function getDiscountPercent(price: number, mrp?: number | null): number | null {
     if (!mrp || mrp <= price) return null;
     return Math.round(((mrp - price) / mrp) * 100);
@@ -79,8 +58,7 @@ export function ProductMarketingCard<T extends ProductMarketingCardItem>({
 }: ProductMarketingCardProps<T>) {
     const summary = product.detailsSummary;
     const count = getDisplayCount(product);
-    const previewItems = summary?.constituentsPreview || [];
-    const showIncludedList = previewItems.length > 0;
+    const cardSummary = getCardSummary(product.purpose, product.description);
     const reportTime = summary?.reportingTime || product.reportTime;
     const fastingLabel = summary?.fastingLabel || 'Not specified';
     const idealFor = summary?.idealFor || 'All';
@@ -117,39 +95,19 @@ export function ProductMarketingCard<T extends ProductMarketingCardItem>({
                 </div>
             </div>
 
-            {/* ── Tests Included: Inline Flow (Packages/Profiles) ── */}
-            {!isTest && !isProfile && (
-                <div className="mx-5 border-t border-gray-100 pt-4">
-                    <div className="mb-1 flex items-center justify-between gap-3">
-                        <p className="text-sm font-semibold text-gray-900">{getItemLabel(product)}:</p>
-                    </div>
-
-                    {showIncludedList ? (
-                        <p className="mt-1 min-h-[40px] text-sm leading-relaxed text-gray-500">
-                            {previewItems.slice(0, 4).map(formatTestName).join(', ')}
-                            {(summary?.remainingConstituents || 0) > 0 && (
-                                <>
-                                    {' '}
-                                    <Link href={detailHref} className="relative z-10 font-semibold text-primary hover:underline">
-                                        ...more
-                                    </Link>
-                                </>
-                            )}
-                        </p>
-                    ) : (
-                        <p className="mt-1 min-h-[40px] text-sm leading-relaxed text-gray-400">
-                            Details available on the product page.
-                        </p>
-                    )}
-
-                    {/* Know More link */}
-                    <div className="mt-4 pb-4">
-                        <Link href={detailHref} className="relative z-10 text-sm font-semibold text-primary hover:underline">
-                            + Know More
-                        </Link>
-                    </div>
-                </div>
-            )}
+            {/* ── Summary + Know More (all types) ── */}
+            <div className="px-5 pb-4">
+                {cardSummary && (
+                    <p className="mb-2 text-sm leading-relaxed text-gray-600 line-clamp-2">{cardSummary}</p>
+                )}
+                <Link
+                    href={detailHref}
+                    className="relative z-10 text-sm font-semibold text-primary hover:underline"
+                    aria-label={`Know more about ${product.name}`}
+                >
+                    <span aria-hidden="true">+</span> Know More
+                </Link>
+            </div>
 
             {/* ── Meta Bar: Fasting / Ideal For / Report Time ── */}
             <div className="mt-auto border-y border-gray-100 px-5 py-3">

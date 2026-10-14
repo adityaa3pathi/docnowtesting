@@ -22,6 +22,7 @@ interface Product {
   name: string;
   type: string;
   description?: string;
+  purpose?: string | null;
   displayPrice: number;
   discountedPrice?: number | null;
   price: number;
