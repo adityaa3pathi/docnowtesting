@@ -546,6 +546,7 @@ model CatalogItem {
   parameters       String?            // e.g. "Includes 60+ parameters"
   sampleType       String?            // e.g. "Blood"
   reportTime       String?            // e.g. "24-48 hours"
+  purpose          String?            // Manager-written "What it's for"; catalog sync never writes it
   partnerData      Json?              // Raw Healthians response for reference
   detailsData      Json?              // Cached normalized Healthians detail metadata for cards/detail pages
   detailsFetchedAt DateTime?
