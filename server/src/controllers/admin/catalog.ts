@@ -193,25 +193,28 @@ export async function updateCatalogItemPurpose(req: AuthRequest, res: Response) 
         const existing = await prisma.catalogItem.findUnique({ where: { id }, select: { purpose: true } });
         if (!existing) return res.status(404).json({ error: 'Catalog item not found' });
 
-        const updated = await prisma.catalogItem.update({
-            where: { id },
-            data: { purpose: result.value },
-            select: { id: true, purpose: true },
-        });
-
-        if (req.userId) {
-            await prisma.adminAuditLog.create({
-                data: {
-                    adminId: req.userId,
-                    adminName: req.adminName || 'Manager',
-                    action: 'CATALOG_PURPOSE_UPDATE',
-                    entity: 'CatalogItem',
-                    targetId: id,
-                    oldValue: { purpose: existing.purpose },
-                    newValue: { purpose: updated.purpose },
-                },
+        // One transaction so a failed audit write never leaves an unrecorded change.
+        const updated = await prisma.$transaction(async (tx) => {
+            const row = await tx.catalogItem.update({
+                where: { id },
+                data: { purpose: result.value },
+                select: { id: true, purpose: true },
             });
-        }
+            if (req.userId) {
+                await tx.adminAuditLog.create({
+                    data: {
+                        adminId: req.userId,
+                        adminName: req.adminName || 'Manager',
+                        action: 'CATALOG_PURPOSE_UPDATE',
+                        entity: 'CatalogItem',
+                        targetId: id,
+                        oldValue: { purpose: existing.purpose },
+                        newValue: { purpose: row.purpose },
+                    },
+                });
+            }
+            return row;
+        });
 
         res.json(updated);
     } catch (error: any) {

@@ -19,6 +19,7 @@ import {
     ArrowLeftRight,
     PhoneCall,
     Building2,
+    FileText,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,6 +37,7 @@ type NavItem = {
 const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/manager/dashboard' },
     { id: 'categories', label: 'Categories', icon: FolderTree, href: '/manager/categories' },
+    { id: 'catalog', label: 'Product Descriptions', icon: FileText, href: '/manager/catalog' },
     { id: 'payment-links', label: 'Payment Links', icon: LinkIcon, href: '/manager/payment-links' },
     { id: 'orders', label: 'Orders', icon: ShoppingCart, href: '/manager/orders' },
     { id: 'abandoned-carts', label: 'Abandoned Carts', icon: ShoppingBag, href: '/manager/abandoned-carts' },

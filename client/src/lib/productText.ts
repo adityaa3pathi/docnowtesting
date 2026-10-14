@@ -8,7 +8,8 @@ const ENTITIES: Record<string, string> = {
     '&nbsp;': ' ',
 };
 
-// Same rules as the product pages: <br> becomes a space, 'na'/'n/a' counts as empty.
+// Plain-text version of the product pages' cleaning: <br> becomes a space,
+// 'na'/'n/a' counts as empty, and {City_Name} is generic since cards have no city.
 function cleanText(raw?: string | null): string | null {
     if (!raw) return null;
     const text = raw

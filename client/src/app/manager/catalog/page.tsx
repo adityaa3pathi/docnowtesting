@@ -96,7 +96,9 @@ export default function CatalogPurposePage() {
                 ...prev,
                 items: prev.items.map(i => (i.id === item.id ? { ...i, purpose: saved } : i)),
             });
+            // Keep any text typed while the save was in flight.
             setDrafts(prev => {
+                if ((prev[item.id] ?? '').trim() !== value) return prev;
                 const next = { ...prev };
                 delete next[item.id];
                 return next;
