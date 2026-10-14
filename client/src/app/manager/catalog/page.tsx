@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { Loader2, Search, ChevronLeft, ChevronRight, Check, Info } from 'lucide-react';
 import api from '@/lib/api';
+import { useDebounce } from '@/hooks/useDebounce';
 
-const MAX_PURPOSE = 300;
+const MAX_PURPOSE = 300; // keep in sync with server PURPOSE_MAX_LENGTH
 const PAGE_SIZE = 50;
 
 type ItemType = 'TEST' | 'PROFILE' | 'PACKAGE';
@@ -41,7 +42,6 @@ export default function CatalogPurposePage() {
     const [page, setPage] = useState(1);
     const [typeFilter, setTypeFilter] = useState<'' | ItemType>('');
     const [searchInput, setSearchInput] = useState('');
-    const [search, setSearch] = useState('');
     const [retryNonce, setRetryNonce] = useState(0);
     const [result, setResult] = useState<ListResult | null>(null);
 
@@ -49,13 +49,7 @@ export default function CatalogPurposePage() {
     const [drafts, setDrafts] = useState<Record<string, string>>({});
     const [statuses, setStatuses] = useState<Record<string, RowStatus>>({});
 
-    useEffect(() => {
-        const t = setTimeout(() => {
-            setSearch(searchInput.trim());
-            setPage(1);
-        }, 350);
-        return () => clearTimeout(t);
-    }, [searchInput]);
+    const search = useDebounce(searchInput.trim(), 350);
 
     // Loading is derived: the shown result belongs to an older query until the new one lands.
     const queryKey = `${page}|${search}|${typeFilter}|${retryNonce}`;
@@ -140,7 +134,7 @@ export default function CatalogPurposePage() {
                         aria-label="Search products by name"
                         placeholder="Search products..."
                         value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
+                        onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
                         className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-colors"
                     />
                 </div>

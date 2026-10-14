@@ -13,12 +13,12 @@ describe('normalizePurpose', () => {
     });
 
     it('accepts exactly the max length and rejects one more', () => {
-        expect(normalizePurpose('a'.repeat(PURPOSE_MAX_LENGTH))).toEqual({ ok: true, value: 'a'.repeat(300) });
+        expect(normalizePurpose('a'.repeat(PURPOSE_MAX_LENGTH))).toEqual({ ok: true, value: 'a'.repeat(PURPOSE_MAX_LENGTH) });
         expect(normalizePurpose('a'.repeat(PURPOSE_MAX_LENGTH + 1)).ok).toBe(false);
     });
 
     it('measures length after trimming', () => {
-        expect(normalizePurpose(` ${'a'.repeat(300)} `).ok).toBe(true);
+        expect(normalizePurpose(` ${'a'.repeat(PURPOSE_MAX_LENGTH)} `).ok).toBe(true);
     });
 
     it('rejects non-string values', () => {

@@ -281,7 +281,6 @@ export default function ProfileDetailsPage(props: { params: Promise<{ slug: stri
       <section className="container mx-auto px-4 max-w-4xl -mt-6 relative z-10">
         <div className="grid gap-6">
           
-          {/* Purpose Card (manager-written, optional) */}
           <ProductPurpose text={localData.purpose} tone="teal" />
 
           {/* Description Card */}

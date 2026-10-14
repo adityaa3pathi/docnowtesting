@@ -190,7 +190,7 @@ export async function updateCatalogItemPurpose(req: AuthRequest, res: Response) 
     if (!result.ok) return res.status(400).json({ error: result.error });
 
     try {
-        const existing = await prisma.catalogItem.findUnique({ where: { id }, select: { id: true, purpose: true } });
+        const existing = await prisma.catalogItem.findUnique({ where: { id }, select: { purpose: true } });
         if (!existing) return res.status(404).json({ error: 'Catalog item not found' });
 
         const updated = await prisma.catalogItem.update({
