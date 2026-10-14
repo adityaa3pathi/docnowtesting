@@ -24,7 +24,25 @@ function cleanText(raw?: string | null): string | null {
     return text;
 }
 
+/** Manager-written purpose, cleaned; null when it is effectively blank. */
+export function getCustomPurpose(purpose?: string | null): string | null {
+    return cleanText(purpose);
+}
+
 /** Card blurb: the manager-written purpose wins; Healthians' description is the fallback. */
-export function getCardSummary(purpose?: string | null, description?: string | null): string | null {
-    return cleanText(purpose) ?? cleanText(description);
+export function getCardSummary(
+    purpose?: string | null,
+    description?: string | null,
+): { text: string; isCustom: boolean } | null {
+    const custom = getCustomPurpose(purpose);
+    if (custom) return { text: custom, isCustom: true };
+    const fallback = cleanText(description);
+    return fallback ? { text: fallback, isCustom: false } : null;
+}
+
+/** Label shown above the manager-written purpose, worded for the product type. */
+export function getPurposeHeading(type?: string | null): string {
+    if (type === 'PACKAGE') return 'What this package is for';
+    if (type === 'PROFILE') return 'What this profile is for';
+    return 'What this test is for';
 }

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ShoppingCart, Clock3, FlaskConical, Loader2, Users, ArrowRight } from 'lucide-react';
-import { getCardSummary } from '@/lib/productText';
+import { getCardSummary, getPurposeHeading } from '@/lib/productText';
 
 export interface ProductDetailsSummary {
     testCount: number | null;
@@ -97,8 +97,13 @@ export function ProductMarketingCard<T extends ProductMarketingCardItem>({
 
             {/* ── Summary + Know More (all types) ── */}
             <div className="px-5 pb-4">
+                {cardSummary?.isCustom && (
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        {getPurposeHeading(product.type)}
+                    </p>
+                )}
                 {cardSummary && (
-                    <p className="mb-2 text-sm leading-relaxed text-gray-600 line-clamp-2">{cardSummary}</p>
+                    <p className="mb-2 text-sm leading-relaxed text-gray-600 line-clamp-2">{cardSummary.text}</p>
                 )}
                 <Link
                     href={detailHref}
