@@ -15,7 +15,7 @@ import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callba
 import { listCorporateInquiries, updateCorporateInquiryStatus } from '../controllers/admin/corporateInquiries';
 import { listAbandonedCarts } from '../controllers/admin/abandonedCarts';
 import { exportAdminData } from '../controllers/admin/export';
-import { listCatalog } from '../controllers/admin/catalog';
+import { listCatalog, updateCatalogItemPurpose } from '../controllers/admin/catalog';
 
 import { OTP_EXPIRY_MINS, isValidMobile, persistAndSendOtp } from '../services/otp';
 import { BookingService } from '../services/booking.service';
@@ -87,10 +87,11 @@ router.get('/export', ...mgr, exportAdminData);
 
 
 // ============================================
-// CATALOG (Read-only for Manager Categories)
+// CATALOG (list, and edit the "What it's for" text)
 // ============================================
 
 router.get('/catalog', ...mgr, listCatalog);
+router.put('/catalog/:id/purpose', ...mgr, updateCatalogItemPurpose);
 
 // Price Range Preview — returns allowed price ranges for given test codes
 router.get('/price-range', ...mgr, async (req: AuthRequest, res: Response) => {
