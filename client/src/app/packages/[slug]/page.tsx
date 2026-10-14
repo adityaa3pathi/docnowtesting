@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { parseSlug, mapHealthiansResponseToViewModel } from '@/lib/mapProductDetails';
 import { ProductDetailsViewModel } from '@/types/productDetails';
+import { ProductPurpose } from '@/components/catalog/ProductPurpose';
 
 export default function PackageDetailsPage(props: { params: Promise<{ slug: string }> }) {
   const params = use(props.params);
@@ -288,6 +289,9 @@ export default function PackageDetailsPage(props: { params: Promise<{ slug: stri
       <section className="container mx-auto px-4 max-w-4xl -mt-6 relative z-10">
         <div className="grid gap-6">
           
+          {/* Purpose Card (manager-written, optional) */}
+          <ProductPurpose text={localData.purpose} tone="purple" />
+
           {/* Description Card */}
           {hasValidDescription && (
             <Card className="p-6 md:p-8 border-gray-100 shadow-xl shadow-purple-900/5">
