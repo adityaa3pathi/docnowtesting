@@ -97,23 +97,94 @@ async def test_kb_turn_still_runs_the_verifier(mock_db, settings, agent_context)
 
 
 @pytest.mark.asyncio
-async def test_parallel_mode_runs_both_without_titles(mock_db, settings, agent_context):
-    order = []
+async def test_intent_and_search_overlap_in_parallel_mode(mock_db, settings, agent_context):
+    import asyncio
 
-    async def slow_retrieve(*_a, **_k):
-        order.append("retrieve-start")
+    search_started = asyncio.Event()
+
+    async def retrieve(*_a, **_k):
+        search_started.set()
         return RetrievalResult(chunks=[CHUNK], max_similarity=0.9)
 
     async def classify(*_a, **_k):
-        order.append("classify-start")
+        # Only finishes if the search is already running alongside it.
+        await asyncio.wait_for(search_started.wait(), timeout=1)
         return Intent(intent="FAQ", confidence=0.9)
 
     with pipeline() as p:
-        p.retrieve.side_effect = slow_retrieve
+        p.retrieve.side_effect = retrieve
         p.classify.side_effect = classify
         await handle_message("what is the fasting rule", agent_context, mock_db, settings)
-    assert set(order) == {"retrieve-start", "classify-start"}
     assert p.classify.await_args.args[1] == ""  # no retrieval titles when parallel
+
+
+@pytest.mark.asyncio
+async def test_sequential_mode_gives_intent_the_titles(mock_db, settings, agent_context):
+    settings.parallel_intent_retrieval = False
+    with pipeline() as p:
+        await handle_message("what is the fasting rule", agent_context, mock_db, settings)
+    assert "Fasting (faq" in p.classify.await_args.args[1]
+
+
+@pytest.mark.asyncio
+async def test_catalog_tool_turn_keeps_chunks_and_runs_the_verifier(mock_db, settings, agent_context):
+    intent = Intent(intent="CATALOG_SEARCH", tool_name="search_catalog", requires_action=True, confidence=0.9)
+    action = ActionResult(tool="search_catalog", success=True, output={"items": [{"name": "CBC", "price": 299}]})
+    with pipeline(intent=intent, action=action) as p:
+        response = await handle_message("price of cbc", agent_context, mock_db, settings)
+    p.verify.assert_awaited_once()
+    assert p.draft.await_args.args[1] == [CHUNK]
+    assert response.verifier_verdict == "GROUNDED"
+
+
+@pytest.mark.asyncio
+async def test_failed_booking_action_gets_a_fixed_reply_not_a_draft(mock_db, settings, agent_context):
+    from app.agents.orchestrator import ACTION_FAILED_RESPONSE
+
+    intent = Intent(intent="BOOKING_STATUS", tool_name="get_booking_status",
+                    parameters={"booking_id": "999"}, requires_action=True, confidence=0.9)
+    failed = ActionResult(tool="get_booking_status", success=False, error="Booking not found")
+    with pipeline(intent=intent, action=failed) as p:
+        response = await handle_message("status of 999", agent_context, mock_db, settings)
+    p.draft.assert_not_called()
+    assert response.content == ACTION_FAILED_RESPONSE
+
+
+@pytest.mark.asyncio
+async def test_done_write_is_confirmed_even_if_the_draft_fails(mock_db, settings, agent_context):
+    agent_context.pending_action = Intent(intent="BOOKING_CANCEL", tool_name="cancel_booking",
+                                          parameters={"booking_id": "12345"}, requires_action=True)
+    done = ActionResult(tool="cancel_booking", success=True, output={"status": "Cancelled"})
+    with pipeline(action=done, draft=ABSTENTION_MESSAGE):
+        response = await handle_message("yes", agent_context, mock_db, settings)
+    assert response.content == "Done. Your booking has been cancelled."
+    assert not response.was_abstained
+
+
+@pytest.mark.asyncio
+async def test_quota_error_during_search_gives_the_busy_reply(mock_db, settings, agent_context):
+    from app.agents.llm import AIBusyError
+    from app.agents.orchestrator import BUSY_RESPONSE
+
+    with pipeline() as p:
+        p.retrieve.side_effect = AIBusyError()
+        response = await handle_message("what is the fasting rule", agent_context, mock_db, settings)
+    assert response.content == BUSY_RESPONSE
+
+
+@pytest.mark.asyncio
+async def test_retrieve_turns_embedding_429_into_busy(mock_db, settings):
+    from google.genai import errors
+
+    from app.agents.llm import AIBusyError
+    from app.agents.retrieval import retrieve
+
+    quota = errors.ClientError(429, {"error": {"message": "quota", "status": "RESOURCE_EXHAUSTED"}})
+    with (
+        patch("app.agents.retrieval.generate_embedding", new_callable=AsyncMock, side_effect=quota),
+        pytest.raises(AIBusyError),
+    ):
+        await retrieve("fasting", mock_db, settings)
 
 
 def test_bookings_are_compacted_to_five_rows():
@@ -193,8 +264,25 @@ async def test_tool_turn_cancels_the_unused_search(mock_db, settings, agent_cont
         return RetrievalResult()
 
     intent = Intent(intent="BOOKING_LIST", tool_name="list_bookings", requires_action=True, confidence=0.9)
+    async def action_after_cancel(*_a, **_k):
+        await asyncio.sleep(0)  # let the cancellation land
+        assert p.retrieve_task_cancelled(), "search should be cancelled before the tool runs"
+        return ActionResult(tool="list_bookings", success=True, output={"bookings": []})
+
     with pipeline(intent=intent) as p:
+        tasks = []
+        real_create_task = asyncio.create_task
+
+        def track(coro):
+            task = real_create_task(coro)
+            tasks.append(task)
+            return task
+
+        p.retrieve_task_cancelled = lambda: bool(tasks) and tasks[0].cancelled()
         p.retrieve.side_effect = slow_retrieve
-        await handle_message("show my bookings", agent_context, mock_db, settings)
+        p.action.side_effect = action_after_cancel
+        with patch("app.agents.orchestrator.asyncio.create_task", side_effect=track):
+            response = await handle_message("show my bookings", agent_context, mock_db, settings)
         await asyncio.sleep(0.6)
     assert finished == []
+    assert response.verifier_verdict == "TOOL_ONLY"  # an assertion inside the tool would turn into an error reply

@@ -44,7 +44,8 @@ class Settings(BaseSettings):
     verifier_thinking_level: str = "minimal"
     intent_max_output_tokens: int = 512
     draft_max_output_tokens: int = 1024
-    verifier_max_output_tokens: int = 1536
+    # The verifier echoes the whole draft back, so it needs the draft cap plus room.
+    verifier_max_output_tokens: int = 2560
 
     # Auth (MUST match Express server's JWT_SECRET)
     jwt_secret: str = ""

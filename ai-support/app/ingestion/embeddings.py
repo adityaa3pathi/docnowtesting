@@ -32,7 +32,7 @@ async def generate_embedding(text: str, settings: Settings, task_type: str) -> l
         values = response.embeddings[0].values
         return list(values)
     except Exception:
-        logger.exception("Failed to generate embedding for text: %s...", text[:80])
+        logger.exception("Failed to generate embedding (%d chars)", len(text))
         raise
 
 

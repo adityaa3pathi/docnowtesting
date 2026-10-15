@@ -70,6 +70,16 @@ ERROR_RESPONSE = (
 TOOL_OUTPUT_CHARS = 800
 MAX_BOOKINGS_IN_PROMPT = 5
 
+ACTION_FAILED_RESPONSE = (
+    "I couldn't complete that just now. Please check the booking details and try again, "
+    "or contact our support team at +91 9649089089."
+)
+
+WRITE_DONE_RESPONSES = {
+    "cancel_booking": "Done. Your booking has been cancelled.",
+    "reschedule_booking": "Done. Your booking has been rescheduled.",
+}
+
 # Plain greetings and thanks get the canned reply with no model or search call.
 _GREETING = re.compile(
     r"^\s*(hi+|hello|hey|hola|namaste|namaskar|good (morning|afternoon|evening)|"
@@ -104,7 +114,7 @@ async def classify_intent(
     """Classify user intent using LLM."""
     prompt = INTENT_CLASSIFICATION_PROMPT.format(
         query=query,
-        context_summary=retrieval_summary or "none",
+        context_summary=retrieval_summary or "not checked",
         is_authenticated=str(ctx.is_authenticated),
         conversation_history=_history_text(ctx) or "(new conversation)",
         tools=render_tool_list(),
@@ -248,7 +258,7 @@ async def _run_pipeline(
         else:
             retrieval = await retrieve(message, db, settings)
             summary = "; ".join(f"{c.title} ({c.source}, sim={c.similarity:.2f})" for c in retrieval.chunks)
-            intent = await classify_intent(message, summary, ctx, settings)
+            intent = await classify_intent(message, summary or "none", ctx, settings)
         logger.info(
             "Intent: %s (tool=%s, action=%s, conf=%.2f)",
             intent.intent, intent.tool_name, intent.requires_action, intent.confidence,
@@ -273,9 +283,15 @@ async def _run_pipeline(
             )
 
         tool_turn = bool((intent.requires_action or confirmed) and intent.tool_name)
+        tool_def = TOOL_REGISTRY.get(intent.tool_name) if tool_turn else None
+        # Booking tools answer from the customer's own records; catalog tools still use and verify KB chunks.
+        booking_turn = bool(tool_def and tool_def.requires_auth)
+        if booking_turn and retrieval_task:
+            retrieval_task.cancel()
+        elif retrieval_task:
+            retrieval = await retrieval_task
+
         if not tool_turn:
-            if retrieval_task:
-                retrieval = await retrieval_task
             if retrieval.failed:
                 return SupportResponse(content=ERROR_RESPONSE, was_abstained=True, latency_ms=_elapsed(start_time))
             # Nothing relevant in the knowledge base: abstain before paying for draft and verifier.
@@ -301,7 +317,6 @@ async def _run_pipeline(
                     latency_ms=_elapsed(start_time),
                 )
 
-            tool_def = TOOL_REGISTRY.get(intent.tool_name)
             if tool_def and tool_def.is_write and not confirmed:
                 return SupportResponse(
                     content=_confirmation_request(intent),
@@ -314,15 +329,28 @@ async def _run_pipeline(
             action_result = await execute_action(intent, ctx, settings)
             actions.append(action_result)
 
-            # Tool-only answer: no KB chunks reach the draft, so there is nothing to verify.
-            draft = await generate_draft(message, [], actions, ctx, settings)
-            return SupportResponse(
-                content=draft,
-                actions_taken=actions,
-                verifier_verdict="TOOL_ONLY",
-                was_abstained=draft == ABSTENTION_MESSAGE,
-                latency_ms=_elapsed(start_time),
-            )
+            # A failed tool gets a fixed reply: an unverified draft could claim it worked.
+            if not action_result.success:
+                return SupportResponse(
+                    content=ACTION_FAILED_RESPONSE,
+                    actions_taken=actions,
+                    was_abstained=True,
+                    latency_ms=_elapsed(start_time),
+                )
+
+            if booking_turn:
+                # No KB chunks reach this draft, so there is nothing for the verifier to check.
+                draft = await generate_draft(message, [], actions, ctx, settings)
+                if draft == ABSTENTION_MESSAGE and intent.tool_name in WRITE_DONE_RESPONSES:
+                    # The change already happened; never tell the customer we could not help.
+                    draft = WRITE_DONE_RESPONSES[intent.tool_name]
+                return SupportResponse(
+                    content=draft,
+                    actions_taken=actions,
+                    verifier_verdict="TOOL_ONLY",
+                    was_abstained=draft == ABSTENTION_MESSAGE,
+                    latency_ms=_elapsed(start_time),
+                )
 
         # 6. Generate draft response
         draft = await generate_draft(
@@ -364,3 +392,5 @@ async def _run_pipeline(
     finally:
         if retrieval_task and not retrieval_task.done():
             retrieval_task.cancel()
+        elif retrieval_task and not retrieval_task.cancelled():
+            retrieval_task.exception()  # mark a finished-but-unused failure as seen

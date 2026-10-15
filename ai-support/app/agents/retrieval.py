@@ -4,9 +4,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from google.genai import errors
 from langfuse import observe
 
 from app.agents.keyword import rrf_fuse
+from app.agents.llm import AIBusyError
 from app.ingestion.embeddings import QUERY, generate_embedding
 from app.models import RetrievalResult, RetrievedChunk
 from app.observability import annotate
@@ -61,6 +63,11 @@ async def retrieve(query: str, db: Any, settings: Any) -> RetrievalResult:
             query_embedding=embedding,
         )
 
+    except errors.ClientError as exc:
+        if exc.code == 429:
+            raise AIBusyError from exc
+        logger.exception("Error in retrieval agent")
+        return RetrievalResult(chunks=[], should_abstain=True, max_similarity=0.0, failed=True)
     except Exception:
         logger.exception("Error in retrieval agent")
         return RetrievalResult(chunks=[], should_abstain=True, max_similarity=0.0, failed=True)
