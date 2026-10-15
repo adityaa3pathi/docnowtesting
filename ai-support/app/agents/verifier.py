@@ -59,6 +59,7 @@ async def verify(
             system_prompt="You are a factual verification agent. Return valid JSON only.",
             temperature=0,
             response_json_schema=VERIFIER_SCHEMA,
+            stage="verifier",
         )
 
         result = json.loads(response_text)

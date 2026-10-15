@@ -19,6 +19,7 @@ from typing import Any
 
 from langfuse import observe
 
+from app.agents import usage
 from app.agents.llm import AIBusyError, call_gemini
 from app.agents.retrieval import retrieve
 from app.agents.verifier import verify
@@ -96,6 +97,7 @@ async def classify_intent(
             system_prompt="You are an intent classifier. Return valid JSON only.",
             temperature=0.1,
             response_json_schema=intent_schema(TOOL_REGISTRY),
+            stage="intent",
         )
         parsed = json.loads(result_text)
         return Intent(
@@ -147,6 +149,7 @@ async def generate_draft(
             system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
             # Answers quote prices and policies; low temperature keeps them literal.
             temperature=0.2,
+            stage="draft",
         )
     except AIBusyError:
         raise
@@ -166,8 +169,15 @@ async def handle_message(
 
     This is the main entry point called by the chat route handler.
     """
-    response = await _run_pipeline(message, ctx, db, settings)
+    with usage.track_turn() as turn:
+        response = await _run_pipeline(message, ctx, db, settings)
+    response.token_count = turn.total_tokens()
+    response.usage = turn.summary()
     response.langfuse_trace_id = current_trace_id()
+    logger.info(
+        "turn tokens total=%d calls=%d cap_hits=%d",
+        response.token_count, response.usage["calls"], response.usage["cap_hits"],
+    )
     return response
 
 

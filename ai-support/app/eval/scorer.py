@@ -28,10 +28,34 @@ class EvalResult:
     tools_called: list[str] = field(default_factory=list)
     latency_ms: int = 0
     error: Optional[str] = None
+    usage: dict[str, Any] = field(default_factory=dict)
 
 
 def _rate(hits: int, total: int) -> Optional[float]:
     return hits / total if total else None
+
+
+def _percentile(values: list[int], pct: float) -> Optional[int]:
+    if not values:
+        return None
+    ordered = sorted(values)
+    return ordered[min(len(ordered) - 1, int(len(ordered) * pct))]
+
+
+def token_metrics(results: list[EvalResult]) -> dict[str, Any]:
+    """Token cost per turn, cap hits, and p99 output+thinking per stage for setting caps."""
+    with_usage = [r.usage for r in results if r.usage]
+    totals = [u["total_tokens"] for u in with_usage]
+    calls = [c for u in with_usage for c in u.get("per_call", [])]
+    metrics: dict[str, Any] = {
+        "tokens_per_turn_mean": round(sum(totals) / len(totals)) if totals else None,
+        "tokens_per_turn_p95": _percentile(totals, 0.95),
+        "cap_hit_rate": _rate(sum(u.get("cap_hits", 0) for u in with_usage), len(calls)),
+    }
+    for stage in ("intent", "draft", "verifier"):
+        spent = [c["output_tokens"] + c["thought_tokens"] for c in calls if c["stage"] == stage]
+        metrics[f"{stage}_output_p99"] = _percentile(spent, 0.99)
+    return metrics
 
 
 def custom_metrics(results: list[EvalResult]) -> dict[str, Any]:
@@ -54,6 +78,7 @@ def custom_metrics(results: list[EvalResult]) -> dict[str, Any]:
         "error_rate": _rate(sum(r.error is not None for r in results), len(results)),
         "p50_latency_ms": latencies[len(latencies) // 2] if latencies else None,
         "p95_latency_ms": latencies[min(len(latencies) - 1, int(len(latencies) * 0.95))] if latencies else None,
+        **token_metrics(results),
     }
 
 

@@ -83,6 +83,7 @@ class SupportResponse(BaseModel):
     was_abstained: bool = False
     latency_ms: int = 0
     token_count: int = 0
+    usage: dict[str, Any] = Field(default_factory=dict)
     langfuse_trace_id: str | None = None
     pending_action: Intent | None = None
 
