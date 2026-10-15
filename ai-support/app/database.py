@@ -1,6 +1,7 @@
 """Async PostgreSQL connection pool with pgvector support."""
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
 
@@ -11,6 +12,19 @@ from app.agents.keyword import BM25Index
 from app.config import Settings
 
 logger = logging.getLogger(__name__)
+
+
+def chunk_row(record: Any) -> dict[str, Any]:
+    """A KnowledgeChunk row as a dict; asyncpg hands jsonb back as text, so metadata is decoded here."""
+    row = dict(record)
+    meta = row.get("metadata")
+    if isinstance(meta, str):
+        try:
+            row["metadata"] = json.loads(meta)
+        except ValueError:
+            logger.warning("Chunk %s has unreadable metadata; ignoring it", row.get("id"))
+            row["metadata"] = None
+    return row
 
 
 class Database:
@@ -69,7 +83,7 @@ class Database:
                 embedding,
                 limit,
             )
-            return [dict(r) for r in rows]
+            return [chunk_row(r) for r in rows]
 
     async def keyword_search(self, query: str, limit: int = 20) -> list[dict[str, Any]]:
         """BM25 over all chunks; the index is rebuilt only when ingestion has changed the table."""
@@ -82,7 +96,7 @@ class Database:
                 rows = await conn.fetch(
                     'SELECT id, source, "sourceId", title, content, metadata FROM "KnowledgeChunk"'
                 )
-                self._bm25 = BM25Index([dict(r) for r in rows])
+                self._bm25 = BM25Index([chunk_row(r) for r in rows])
                 self._bm25_version = version
         return self._bm25.search(query, limit)
 
