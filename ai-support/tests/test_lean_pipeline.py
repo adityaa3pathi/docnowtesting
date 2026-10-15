@@ -308,3 +308,22 @@ def test_default_thinking_levels_are_supported_by_gemini_flash(settings):
     # gemini-3.7-flash rejects "minimal" (checked on the live API 15-10-2026).
     for stage in ("intent", "draft", "verifier"):
         assert getattr(settings, f"{stage}_thinking_level") != "minimal"
+
+
+@pytest.mark.asyncio
+async def test_logged_out_visitor_can_ask_catalog_prices(mock_db, settings, unauthenticated_context):
+    intent = Intent(intent="CATALOG_SEARCH", tool_name="search_catalog", requires_action=True, confidence=0.9)
+    action = ActionResult(tool="search_catalog", success=True, output={"items": [{"name": "Lipid", "price": 499}]})
+    with pipeline(intent=intent, action=action) as p:
+        response = await handle_message("price of lipid profile", unauthenticated_context, mock_db, settings)
+    p.action.assert_awaited_once()
+    assert "log in" not in response.content.lower()
+
+
+@pytest.mark.asyncio
+async def test_logged_out_visitor_is_asked_to_log_in_for_bookings(mock_db, settings, unauthenticated_context):
+    intent = Intent(intent="BOOKING_LIST", tool_name="list_bookings", requires_action=True, confidence=0.9)
+    with pipeline(intent=intent) as p:
+        response = await handle_message("show my bookings", unauthenticated_context, mock_db, settings)
+    p.action.assert_not_called()
+    assert "log in" in response.content.lower()

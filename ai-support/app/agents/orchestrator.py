@@ -306,7 +306,7 @@ async def _run_pipeline(
         # 5. Execute action if needed
         actions: list[ActionResult] = []
         if tool_turn:
-            if not ctx.is_authenticated:
+            if tool_def and tool_def.requires_auth and not ctx.is_authenticated:
                 return SupportResponse(
                     content=(
                         "Please log in to access your bookings. You can log in from "
