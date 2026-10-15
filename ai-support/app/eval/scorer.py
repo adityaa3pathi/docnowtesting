@@ -66,6 +66,7 @@ def custom_metrics(results: list[EvalResult]) -> dict[str, Any]:
     with_source = [r for r in answerable if r.expected_source]
     with_tool = [r for r in results if r.expected_tool]
     latencies = sorted(r.latency_ms for r in results)
+    checked = [r for r in results if r.verifier_verdict != "TOOL_ONLY"]
 
     return {
         "abstention_accuracy": _rate(sum(r.should_abstain == r.was_abstained for r in results), len(results)),
@@ -74,7 +75,8 @@ def custom_metrics(results: list[EvalResult]) -> dict[str, Any]:
             sum(not r.was_abstained for r in results if r.should_abstain),
             sum(r.should_abstain for r in results),
         ),
-        "groundedness_score": _rate(sum(r.verifier_verdict == "GROUNDED" for r in results), len(results)),
+        # Tool-only answers carry no KB claims and skip the verifier, so they are not scored here.
+        "groundedness_score": _rate(sum(r.verifier_verdict == "GROUNDED" for r in checked), len(checked)),
         "source_hit_rate": _rate(sum(r.expected_source in r.retrieved_sources for r in with_source), len(with_source)),
         "tool_choice_accuracy": _rate(sum(r.expected_tool in r.tools_called for r in with_tool), len(with_tool)),
         "error_rate": _rate(sum(r.error is not None for r in results), len(results)),

@@ -63,4 +63,4 @@ async def retrieve(query: str, db: Any, settings: Any) -> RetrievalResult:
 
     except Exception:
         logger.exception("Error in retrieval agent")
-        return RetrievalResult(chunks=[], should_abstain=True, max_similarity=0.0)
+        return RetrievalResult(chunks=[], should_abstain=True, max_similarity=0.0, failed=True)
