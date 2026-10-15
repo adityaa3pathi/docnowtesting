@@ -41,6 +41,7 @@ class RetrievalResult(BaseModel):
     should_abstain: bool = False
     max_similarity: float = 0.0
     query_embedding: list[float] = Field(default_factory=list)
+    failed: bool = False  # search errored; never treat as "nothing relevant"
 
 
 class Intent(BaseModel):

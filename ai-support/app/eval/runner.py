@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
 import contextvars
 import json
 import logging
+import os
 import sys
 import time
 import types
@@ -23,7 +25,8 @@ from unittest.mock import patch
 
 import httpx
 
-from app.agents.orchestrator import handle_message
+from app import genai_client
+from app.agents.orchestrator import BUSY_RESPONSE, handle_message
 from app.config import Settings
 from app.eval.corpus import EmbeddingCache, InMemoryKnowledgeBase
 from app.eval.fake_express import FakeExpress
@@ -103,7 +106,7 @@ async def run_query(q: dict, kb: InMemoryKnowledgeBase, settings: Settings) -> E
 
 async def run(args: argparse.Namespace) -> int:
     settings = Settings()
-    if not settings.gemini_api_key:
+    if not settings.gemini_api_key and not args.groq_model:
         print("SUPPORT_GEMINI_API_KEY is not set. The eval calls the real pipeline and needs it.")
         return 2
 
@@ -111,6 +114,13 @@ async def run(args: argparse.Namespace) -> int:
     if args.category:
         queries = [q for q in queries if q["category"] == args.category]
     queries = queries[: args.limit] if args.limit else queries
+    if args.per_category:
+        picked, seen = [], {}
+        for q in queries:
+            seen[q["category"]] = seen.get(q["category"], 0) + 1
+            if seen[q["category"]] <= args.per_category:
+                picked.append(q)
+        queries = picked
 
     logging.getLogger("app").addHandler(_ErrorCollector())
     init_langfuse(settings)
@@ -118,13 +128,44 @@ async def run(args: argparse.Namespace) -> int:
     kb = await InMemoryKnowledgeBase.load(cache)
     if args.no_keyword:
         kb.keyword_search = partial(_no_hits)
-    print(f"Knowledge base: {len(kb.chunks)} chunks. Running {len(queries)} queries...")
+    # --resume keeps finished answers on disk so a run can stop when keys run out and continue later.
+    resume = Path(args.resume) if args.resume else None
+    done: dict[str, EvalResult] = {}
+    if resume and resume.exists():
+        for line in resume.read_text().splitlines():
+            row = json.loads(line)
+            done[row["query_id"]] = EvalResult(**row)
+    print(f"Knowledge base: {len(kb.chunks)} chunks. {len(done)} done, running {len(queries) - len(done)} queries...")
+    out_of_keys = False
 
-    sem = asyncio.Semaphore(args.concurrency)
+    # Free-tier keys allow a few calls a minute; a query makes at most 3, so pace whole queries.
+    pause = 3 * 60 / args.rpm if args.rpm else 0
+    sem = asyncio.Semaphore(1 if pause else args.concurrency)
 
-    async def bounded(q: dict) -> EvalResult:
+    # Extra free-tier keys (comma list, eval only): on a quota reply, switch key and rerun the query.
+    spare_keys = [k.strip() for k in os.environ.get("SUPPORT_GEMINI_API_KEYS", "").split(",") if k.strip()]
+
+    async def bounded(q: dict) -> EvalResult | None:
+        nonlocal out_of_keys
+        if q["id"] in done:
+            return done[q["id"]]
         async with sem:
-            return await run_query(q, kb, settings)
+            if out_of_keys:
+                return None
+            result = await run_query(q, kb, settings)
+            while result.response == BUSY_RESPONSE and spare_keys:
+                print(f"Quota hit on {q['id']}; switching to the next key ({len(spare_keys) - 1} left after this).")
+                settings.gemini_api_key = spare_keys.pop(0)
+                genai_client._client = None
+                result = await run_query(q, kb, settings)
+            if result.response == BUSY_RESPONSE:
+                out_of_keys = True
+                return None
+            if resume:
+                with resume.open("a") as f:
+                    f.write(json.dumps(asdict(result)) + "\n")
+            await asyncio.sleep(pause)
+            return result
 
     # Swap only the HTTP client the action agent uses; Gemini's own httpx stays real.
     fake_httpx = types.SimpleNamespace(
@@ -132,11 +173,25 @@ async def run(args: argparse.Namespace) -> int:
         HTTPStatusError=httpx.HTTPStatusError,
     )
     # Query embeddings go through the same disk cache, so reruns only pay for LLM calls.
-    with (
+    patches = [
         patch("app.agents.action.httpx", fake_httpx),
         patch("app.agents.retrieval.generate_embedding", lambda text, _s, _task: cache.embed(text)),
-    ):
+    ]
+    if args.groq_model:
+        # Same pipeline, open model on Groq: compares old vs new code without Gemini quota.
+        from app.eval.groq_llm import make_groq_call
+
+        groq_call = make_groq_call(args.groq_model)
+        patches += [patch(f"app.agents.{m}.call_gemini", groq_call) for m in ("orchestrator", "verifier")]
+    with contextlib.ExitStack() as stack:
+        for p in patches:
+            stack.enter_context(p)
         results = await asyncio.gather(*(bounded(q) for q in queries))
+
+    if out_of_keys:
+        finished = sum(r is not None for r in results)
+        print(f"ALL_KEYS_EXHAUSTED: {finished}/{len(queries)} queries done. Add a key and rerun with the same --resume.")
+        return 3
 
     scores: dict = custom_metrics(results)
     judge_model = args.judge_model or settings.llm_model
@@ -204,6 +259,10 @@ def main() -> None:
     parser.add_argument("--category", choices=["catalog", "booking", "policy", "edge"])
     parser.add_argument("--concurrency", type=int, default=4)
     parser.add_argument("--judge-model", default=None)
+    parser.add_argument("--groq-model", default=None, help="run the pipeline on this Groq model instead of Gemini")
+    parser.add_argument("--resume", default=None, help="jsonl file of finished answers to continue from")
+    parser.add_argument("--per-category", type=int, default=0, help="first N questions of each category")
+    parser.add_argument("--rpm", type=int, default=0, help="Gemini calls per minute allowed by the key")
     parser.add_argument("--no-ragas", action="store_true")
     parser.add_argument("--no-keyword", action="store_true", help="dense-only baseline (BM25 off)")
     parser.add_argument("--gate", action="store_true", help="exit 1 if a metric is below threshold")

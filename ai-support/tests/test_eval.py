@@ -93,3 +93,8 @@ def test_token_metrics_are_none_without_usage():
     m = custom_metrics([_result()])
     assert m["tokens_per_turn_mean"] is None
     assert m["cap_hit_rate"] is None
+
+
+def test_groundedness_ignores_tool_only_answers():
+    m = custom_metrics([_result(), _result(verifier_verdict="TOOL_ONLY", expected_source=None)])
+    assert m["groundedness_score"] == 1.0
