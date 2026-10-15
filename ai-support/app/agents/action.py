@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 _SAFE_PATH_VALUE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
 
-@observe(name="action-agent")
+@observe(name="action-agent", capture_input=False, capture_output=False)
 async def execute_action(
     intent: Intent,
     ctx: AgentContext,

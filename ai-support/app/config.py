@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     groq_api_key: str = ""
 
     # Langfuse Observability
+    # Off by default: production traces would send customer chats outside India.
+    langfuse_enabled: bool = False
     langfuse_public_key: str = ""
     langfuse_secret_key: str = ""
     langfuse_base_url: str = "https://cloud.langfuse.com"

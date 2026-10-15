@@ -30,7 +30,7 @@ from app.models import (
     RetrievedChunk,
     SupportResponse,
 )
-from app.observability import current_trace_id
+from app.observability import annotate, current_trace_id
 from app.prompts.intent import INTENT_CLASSIFICATION_PROMPT, intent_schema
 from app.prompts.system import DRAFT_GENERATION_PROMPT, ORCHESTRATOR_SYSTEM_PROMPT
 from app.prompts.verifier import ABSTENTION_MESSAGE
@@ -74,7 +74,7 @@ def _confirmation_request(intent: Intent) -> str:
     return f"Please confirm: do you want me to {action} ({details})? Reply YES to continue, or anything else to stop."
 
 
-@observe(name="intent-classification")
+@observe(name="intent-classification", capture_input=False, capture_output=False)
 async def classify_intent(
     query: str,
     retrieval_summary: str,
@@ -100,13 +100,15 @@ async def classify_intent(
             stage="intent",
         )
         parsed = json.loads(result_text)
-        return Intent(
+        intent = Intent(
             intent=parsed.get("intent", "UNKNOWN"),
             tool_name=parsed.get("tool_name"),
             parameters=parsed.get("parameters", {}),
             requires_action=parsed.get("requires_action", False),
             confidence=parsed.get("confidence", 0.0),
         )
+        annotate(intent=intent.intent, tool=intent.tool_name, confidence=intent.confidence)
+        return intent
     except AIBusyError:
         raise
     except Exception:
@@ -114,7 +116,7 @@ async def classify_intent(
         return Intent(intent="UNKNOWN", requires_action=False, confidence=0.0)
 
 
-@observe(name="draft-generation")
+@observe(name="draft-generation", capture_input=False, capture_output=False)
 async def generate_draft(
     query: str,
     retrieval_chunks: list[RetrievedChunk],
@@ -158,7 +160,7 @@ async def generate_draft(
         return ABSTENTION_MESSAGE
 
 
-@observe(name="support-agent-orchestrator")
+@observe(name="support-agent-orchestrator", capture_input=False, capture_output=False)
 async def handle_message(
     message: str,
     ctx: AgentContext,
@@ -174,6 +176,7 @@ async def handle_message(
     response.token_count = turn.total_tokens()
     response.usage = turn.summary()
     response.langfuse_trace_id = current_trace_id()
+    annotate(calls=response.usage["calls"], total_tokens=response.token_count, cap_hits=response.usage["cap_hits"])
     logger.info(
         "turn tokens total=%d calls=%d cap_hits=%d",
         response.token_count, response.usage["calls"], response.usage["cap_hits"],

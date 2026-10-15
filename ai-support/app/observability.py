@@ -14,8 +14,8 @@ def init_langfuse(settings: Any) -> None:
     """Initialize the Langfuse client if keys are provided."""
     global _langfuse_client
 
-    if not (settings.langfuse_public_key and settings.langfuse_secret_key):
-        logger.info("Langfuse keys not provided. Tracing is off.")
+    if not (settings.langfuse_enabled and settings.langfuse_public_key and settings.langfuse_secret_key):
+        logger.info("Langfuse disabled or keys missing. Tracing is off.")
         # Without a client, every @observe call builds a disabled one and warns about missing keys.
         logging.getLogger("langfuse").setLevel(logging.ERROR)
         return
@@ -37,6 +37,24 @@ def shutdown_langfuse() -> None:
     """Flush pending spans and scores before the process exits."""
     if _langfuse_client:
         _langfuse_client.shutdown()
+
+
+# Only these keys may reach Langfuse; anything else (tokens, bookings, profiles) is dropped.
+SAFE_TRACE_FIELDS = frozenset({
+    "intent", "tool", "confidence", "requires_action", "success", "verdict",
+    "chunk_ids", "top_similarity", "should_abstain", "calls", "total_tokens", "cap_hits",
+})
+
+
+def annotate(**fields: Any) -> None:
+    """Attach allow-listed metadata to the current span; a no-op when tracing is off."""
+    if not _langfuse_client:
+        return
+    safe = {k: v for k, v in fields.items() if k in SAFE_TRACE_FIELDS}
+    try:
+        get_client().update_current_span(metadata=safe)
+    except Exception:
+        logger.warning("Could not annotate Langfuse span", exc_info=True)
 
 
 def current_trace_id() -> Optional[str]:
