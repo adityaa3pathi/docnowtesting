@@ -97,7 +97,7 @@ async def test_kb_turn_still_runs_the_verifier(mock_db, settings, agent_context)
 
 
 @pytest.mark.asyncio
-async def test_intent_and_retrieval_start_together(mock_db, settings, agent_context):
+async def test_parallel_mode_runs_both_without_titles(mock_db, settings, agent_context):
     order = []
 
     async def slow_retrieve(*_a, **_k):
@@ -116,7 +116,7 @@ async def test_intent_and_retrieval_start_together(mock_db, settings, agent_cont
     assert p.classify.await_args.args[1] == ""  # no retrieval titles when parallel
 
 
-def test_bookings_are_compacted_to_five_recent_rows():
+def test_bookings_are_compacted_to_five_rows():
     bookings = [
         {"id": f"b{i}", "status": "Order Booked", "items": ["CBC", "Lipid"], "slotDate": "2026-10-20",
          "slotTime": "09:00", "address": {"line1": "secret street"}, "totalAmount": 999}
@@ -179,3 +179,22 @@ def test_prompts_put_static_text_before_customer_data():
         (VERIFIER_PROMPT, "{sources}"),
     ]:
         assert template.index("Instructions") < template.index(first_var)
+
+
+@pytest.mark.asyncio
+async def test_tool_turn_cancels_the_unused_search(mock_db, settings, agent_context):
+    import asyncio
+
+    finished = []
+
+    async def slow_retrieve(*_a, **_k):
+        await asyncio.sleep(0.5)
+        finished.append(True)
+        return RetrievalResult()
+
+    intent = Intent(intent="BOOKING_LIST", tool_name="list_bookings", requires_action=True, confidence=0.9)
+    with pipeline(intent=intent) as p:
+        p.retrieve.side_effect = slow_retrieve
+        await handle_message("show my bookings", agent_context, mock_db, settings)
+        await asyncio.sleep(0.6)
+    assert finished == []

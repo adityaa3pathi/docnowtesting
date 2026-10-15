@@ -67,6 +67,9 @@ ERROR_RESPONSE = (
     "Please try again or contact our support team at +91 9649089089."
 )
 
+TOOL_OUTPUT_CHARS = 800
+MAX_BOOKINGS_IN_PROMPT = 5
+
 # Plain greetings and thanks get the canned reply with no model or search call.
 _GREETING = re.compile(
     r"^\s*(hi+|hello|hey|hola|namaste|namaskar|good (morning|afternoon|evening)|"
@@ -101,7 +104,7 @@ async def classify_intent(
     """Classify user intent using LLM."""
     prompt = INTENT_CLASSIFICATION_PROMPT.format(
         query=query,
-        context_summary=retrieval_summary,
+        context_summary=retrieval_summary or "none",
         is_authenticated=str(ctx.is_authenticated),
         conversation_history=_history_text(ctx) or "(new conversation)",
         tools=render_tool_list(),
@@ -131,10 +134,6 @@ async def classify_intent(
     except Exception:
         logger.exception("Intent classification failed")
         return Intent(intent="UNKNOWN", requires_action=False, confidence=0.0)
-
-
-TOOL_OUTPUT_CHARS = 800
-MAX_BOOKINGS_IN_PROMPT = 5
 
 
 def _booking_line(b: dict) -> str:
@@ -231,6 +230,7 @@ async def _run_pipeline(
     settings: Any,
 ) -> SupportResponse:
     start_time = time.monotonic()
+    retrieval_task: asyncio.Task | None = None
 
     try:
         if _GREETING.match(message):
@@ -238,12 +238,13 @@ async def _run_pipeline(
 
         # A "yes" to the write action asked about last turn runs it; no search needed.
         confirmed = ctx.pending_action is not None and bool(_CONFIRM.match(message))
+        retrieval = RetrievalResult()
         if confirmed:
-            intent, retrieval = ctx.pending_action, RetrievalResult()
+            intent = ctx.pending_action
         elif settings.parallel_intent_retrieval:
-            retrieval, intent = await asyncio.gather(
-                retrieve(message, db, settings), classify_intent(message, "", ctx, settings)
-            )
+            # Search runs while intent is classified; tool and greeting turns cancel it unused.
+            retrieval_task = asyncio.create_task(retrieve(message, db, settings))
+            intent = await classify_intent(message, "", ctx, settings)
         else:
             retrieval = await retrieve(message, db, settings)
             summary = "; ".join(f"{c.title} ({c.source}, sim={c.similarity:.2f})" for c in retrieval.chunks)
@@ -255,26 +256,26 @@ async def _run_pipeline(
 
         # 3. Greeting — return immediately without verification
         if intent.intent == "GREETING":
-            latency_ms = int((time.monotonic() - start_time) * 1000)
             return SupportResponse(
                 content=GREETING_RESPONSE,
                 was_abstained=False,
-                latency_ms=latency_ms,
+                latency_ms=_elapsed(start_time),
             )
 
         # 4. Off-topic → abstain. Off-topic questions score as close to the catalog
         # as real ones (eval 13-10-2026), so similarity alone cannot gate this.
         if intent.intent == "OFF_TOPIC":
-            latency_ms = int((time.monotonic() - start_time) * 1000)
             return SupportResponse(
                 content=OFF_TOPIC_RESPONSE,
                 was_abstained=True,
                 verifier_verdict="UNGROUNDED",
-                latency_ms=latency_ms,
+                latency_ms=_elapsed(start_time),
             )
 
         tool_turn = bool((intent.requires_action or confirmed) and intent.tool_name)
         if not tool_turn:
+            if retrieval_task:
+                retrieval = await retrieval_task
             if retrieval.failed:
                 return SupportResponse(content=ERROR_RESPONSE, was_abstained=True, latency_ms=_elapsed(start_time))
             # Nothing relevant in the knowledge base: abstain before paying for draft and verifier.
@@ -290,7 +291,6 @@ async def _run_pipeline(
         actions: list[ActionResult] = []
         if tool_turn:
             if not ctx.is_authenticated:
-                latency_ms = int((time.monotonic() - start_time) * 1000)
                 return SupportResponse(
                     content=(
                         "Please log in to access your bookings. You can log in from "
@@ -298,7 +298,7 @@ async def _run_pipeline(
                         "you check booking status, reschedule, or cancel appointments."
                     ),
                     was_abstained=False,
-                    latency_ms=latency_ms,
+                    latency_ms=_elapsed(start_time),
                 )
 
             tool_def = TOOL_REGISTRY.get(intent.tool_name)
@@ -306,7 +306,7 @@ async def _run_pipeline(
                 return SupportResponse(
                     content=_confirmation_request(intent),
                     pending_action=intent,
-                    latency_ms=int((time.monotonic() - start_time) * 1000),
+                    latency_ms=_elapsed(start_time),
                 )
 
             from app.agents.action import execute_action
@@ -332,8 +332,6 @@ async def _run_pipeline(
         # 7. Verify — the critical grounded abstention gate
         verification = await verify(draft, retrieval, actions, settings)
 
-        latency_ms = int((time.monotonic() - start_time) * 1000)
-
         if verification.verdict == "UNGROUNDED":
             return SupportResponse(
                 content=ABSTENTION_MESSAGE,
@@ -341,7 +339,7 @@ async def _run_pipeline(
                 actions_taken=actions,
                 verifier_verdict="UNGROUNDED",
                 was_abstained=True,
-                latency_ms=latency_ms,
+                latency_ms=_elapsed(start_time),
             )
 
         # 8. Return verified response
@@ -351,15 +349,18 @@ async def _run_pipeline(
             actions_taken=actions,
             verifier_verdict=verification.verdict,
             was_abstained=False,
-            latency_ms=latency_ms,
+            latency_ms=_elapsed(start_time),
         )
 
     except AIBusyError:
         return SupportResponse(
             content=BUSY_RESPONSE,
             was_abstained=True,
-            latency_ms=int((time.monotonic() - start_time) * 1000),
+            latency_ms=_elapsed(start_time),
         )
     except Exception:
         logger.exception("Orchestrator error for conversation %s", ctx.conversation_id)
         return SupportResponse(content=ERROR_RESPONSE, was_abstained=True, latency_ms=_elapsed(start_time))
+    finally:
+        if retrieval_task and not retrieval_task.done():
+            retrieval_task.cancel()

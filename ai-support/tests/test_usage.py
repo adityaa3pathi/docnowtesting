@@ -84,6 +84,7 @@ async def test_handle_message_reports_turn_tokens(mock_db, settings, agent_conte
         patch("app.agents.orchestrator.retrieve", new_callable=AsyncMock,
               return_value=RetrievalResult(should_abstain=True)),
     ):
+        # Not a plain "hello": that skips the model entirely.
         response = await handle_message("hello, who are you?", agent_context, mock_db, settings)
 
     assert response.token_count == 156

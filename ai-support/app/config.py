@@ -38,8 +38,7 @@ class Settings(BaseSettings):
     # Run intent and retrieval together; false restores the old sequential path.
     parallel_intent_retrieval: bool = True
 
-    # Per-call thinking and output caps (caps include thinking tokens).
-    # Retune caps from the eval's per-stage p99 once a baseline exists; "" sends no thinking config.
+    # Per-call thinking and output caps (caps include thinking tokens); "" sends no thinking config.
     intent_thinking_level: str = "minimal"
     draft_thinking_level: str = "low"
     verifier_thinking_level: str = "minimal"
