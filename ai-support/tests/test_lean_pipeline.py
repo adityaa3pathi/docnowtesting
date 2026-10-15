@@ -224,7 +224,7 @@ async def test_call_gemini_sends_thinking_level_and_cap(settings):
     with patch("app.agents.llm.get_genai_client", return_value=client):
         await call_gemini("p", settings, stage="intent")
     config = generate.await_args.kwargs["config"]
-    assert config.thinking_config.thinking_level == types.ThinkingLevel.MINIMAL
+    assert config.thinking_config.thinking_level == types.ThinkingLevel.LOW
     assert config.max_output_tokens == settings.intent_max_output_tokens
 
 
@@ -286,3 +286,25 @@ async def test_tool_turn_cancels_the_unused_search(mock_db, settings, agent_cont
         await asyncio.sleep(0.6)
     assert finished == []
     assert response.verifier_verdict == "TOOL_ONLY"  # an assertion inside the tool would turn into an error reply
+
+
+@pytest.mark.asyncio
+async def test_unsupported_thinking_level_retries_without_it(settings):
+    from google.genai import errors
+
+    from app.agents.llm import call_gemini
+
+    rejected = errors.ClientError(400, {"error": {"code": 400, "status": "INVALID_ARGUMENT",
+                                              "message": "Thinking level MINIMAL is not supported for this model."}})
+    ok = SimpleNamespace(text="ok", usage_metadata=None, candidates=[])
+    generate = AsyncMock(side_effect=[rejected, ok])
+    client = SimpleNamespace(aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate)))
+    with patch("app.agents.llm.get_genai_client", return_value=client):
+        assert await call_gemini("p", settings, stage="intent") == "ok"
+    assert generate.await_args_list[1].kwargs["config"].thinking_config is None
+
+
+def test_default_thinking_levels_are_supported_by_gemini_flash(settings):
+    # gemini-3.7-flash rejects "minimal" (checked on the live API 15-10-2026).
+    for stage in ("intent", "draft", "verifier"):
+        assert getattr(settings, f"{stage}_thinking_level") != "minimal"

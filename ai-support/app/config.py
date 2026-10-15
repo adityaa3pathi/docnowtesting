@@ -39,9 +39,10 @@ class Settings(BaseSettings):
     parallel_intent_retrieval: bool = True
 
     # Per-call thinking and output caps (caps include thinking tokens); "" sends no thinking config.
-    intent_thinking_level: str = "minimal"
+    # gemini-3.7-flash rejects "minimal"; a rejected level is retried once without thinking config.
+    intent_thinking_level: str = "low"
     draft_thinking_level: str = "low"
-    verifier_thinking_level: str = "minimal"
+    verifier_thinking_level: str = "low"
     intent_max_output_tokens: int = 512
     draft_max_output_tokens: int = 1024
     # The verifier echoes the whole draft back, so it needs the draft cap plus room.

@@ -20,6 +20,23 @@ class TruncatedResponseError(Exception):
     """The output cap cut the reply short; callers fall back instead of using partial text."""
 
 
+async def _generate(settings: Any, prompt: str, config_kwargs: dict[str, Any], stage: str) -> Any:
+    models = get_genai_client(settings).aio.models
+    try:
+        return await models.generate_content(
+            model=settings.llm_model, contents=prompt, config=types.GenerateContentConfig(**config_kwargs)
+        )
+    except errors.ClientError as exc:
+        # A model that rejects the thinking level must not take the whole chat down.
+        if exc.code != 400 or "thinking" not in str(exc.message).lower() or "thinking_config" not in config_kwargs:
+            raise
+        logger.warning("Model %s rejected %s thinking config; retrying without it", settings.llm_model, stage)
+        config_kwargs = {k: v for k, v in config_kwargs.items() if k != "thinking_config"}
+        return await models.generate_content(
+            model=settings.llm_model, contents=prompt, config=types.GenerateContentConfig(**config_kwargs)
+        )
+
+
 async def call_gemini(
     prompt: str,
     settings: Any,
@@ -48,11 +65,7 @@ async def call_gemini(
 
     try:
         start = time.monotonic()
-        response = await get_genai_client(settings).aio.models.generate_content(
-            model=settings.llm_model,
-            contents=prompt,
-            config=types.GenerateContentConfig(**config_kwargs),
-        )
+        response = await _generate(settings, prompt, config_kwargs, stage)
         call = usage.from_response(response, stage, settings.llm_model, int((time.monotonic() - start) * 1000))
         usage.record(call)
         logger.info(
