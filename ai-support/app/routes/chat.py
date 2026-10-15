@@ -21,6 +21,21 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Matches the window the prompts use; the turn cap is counted separately.
+HISTORY_MESSAGES = 6
+
+
+async def load_turn_state(db, conversation_id: str, settings) -> tuple[list[dict], Intent | None]:
+    """Latest history and any pending confirmation; raises 400 once the turn cap is reached."""
+    if await db.count_user_messages(conversation_id) >= settings.max_conversation_turns:
+        raise HTTPException(
+            status_code=400,
+            detail="Conversation has reached the maximum number of turns. Please start a new conversation.",
+        )
+    messages = await db.get_recent_messages(conversation_id, limit=HISTORY_MESSAGES)
+    history = [{"role": m["role"], "content": m["content"]} for m in messages]
+    return history, _pending_action(messages)
+
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: Request, body: ChatRequest):
@@ -68,17 +83,7 @@ async def chat(request: Request, body: ChatRequest):
     history = []
     pending_action = None
     if conversation_id != "ephemeral":
-        messages = await db.get_conversation_messages(conversation_id, limit=20)
-        history = [{"role": m["role"], "content": m["content"]} for m in messages]
-        pending_action = _pending_action(messages)
-
-        # Check turn limit
-        user_turns = sum(1 for m in history if m["role"] == "user")
-        if user_turns >= settings.max_conversation_turns:
-            raise HTTPException(
-                status_code=400,
-                detail="Conversation has reached the maximum number of turns. Please start a new conversation.",
-            )
+        history, pending_action = await load_turn_state(db, conversation_id, settings)
 
     # 4. Store user message
     user_msg_id = None

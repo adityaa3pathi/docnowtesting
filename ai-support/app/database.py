@@ -226,6 +226,35 @@ class Database:
             )
             return [dict(r) for r in rows]
 
+    async def get_recent_messages(self, conversation_id: str, limit: int = 6) -> list[dict]:
+        """The latest `limit` messages, oldest first, with only what prompts need."""
+        if not self.pool:
+            raise RuntimeError("Database pool not initialized.")
+
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT role, content, "actionsTaken", "createdAt"
+                FROM "SupportMessage"
+                WHERE "conversationId" = $1
+                ORDER BY "createdAt" DESC
+                LIMIT $2
+                """,
+                conversation_id,
+                limit,
+            )
+            return [dict(r) for r in reversed(rows)]
+
+    async def count_user_messages(self, conversation_id: str) -> int:
+        if not self.pool:
+            raise RuntimeError("Database pool not initialized.")
+
+        async with self.pool.acquire() as conn:
+            return await conn.fetchval(
+                """SELECT count(*) FROM "SupportMessage" WHERE "conversationId" = $1 AND role = 'user'""",
+                conversation_id,
+            )
+
     async def update_feedback(self, message_id: str, user_id: str, score: int) -> dict | None:
         """Set feedback score (1=thumbs down, 5=thumbs up) on a message the user owns.
 
