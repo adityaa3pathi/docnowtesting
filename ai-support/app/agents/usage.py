@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import contextlib
+from collections.abc import Iterator
 from contextvars import ContextVar
 from dataclasses import asdict, dataclass, field
-from typing import Any, Iterator, Optional
+from typing import Any
 
 from google.genai import types
 
@@ -45,7 +46,7 @@ class TurnUsage:
         }
 
 
-_current: ContextVar[Optional[TurnUsage]] = ContextVar("support_turn_usage", default=None)
+_current: ContextVar[TurnUsage | None] = ContextVar("support_turn_usage", default=None)
 
 
 @contextlib.contextmanager

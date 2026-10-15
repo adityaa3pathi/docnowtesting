@@ -37,7 +37,7 @@ def _rate(hits: int, total: int) -> Optional[float]:
     return hits / total if total else None
 
 
-def _percentile(values: list[int], pct: float) -> Optional[int]:
+def _percentile(values: list[int], pct: float) -> int | None:
     if not values:
         return None
     ordered = sorted(values)

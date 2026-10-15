@@ -29,10 +29,9 @@ def _client(*responses):
 @pytest.mark.asyncio
 async def test_usage_is_summed_across_calls_in_one_turn(settings):
     client = _client(_response(100, 20, 5), _response(300, 80, 10, cached=50), _response(200, 10, 0))
-    with patch("app.agents.llm.get_genai_client", return_value=client):
-        with usage.track_turn() as turn:
-            for stage in ("intent", "draft", "verifier"):
-                await call_gemini("p", settings, stage=stage)
+    with patch("app.agents.llm.get_genai_client", return_value=client), usage.track_turn() as turn:
+        for stage in ("intent", "draft", "verifier"):
+            await call_gemini("p", settings, stage=stage)
 
     summary = turn.summary()
     assert summary["calls"] == 3
@@ -47,9 +46,8 @@ async def test_usage_is_summed_across_calls_in_one_turn(settings):
 @pytest.mark.asyncio
 async def test_missing_usage_metadata_counts_as_zero(settings):
     resp = SimpleNamespace(text="ok", usage_metadata=None, candidates=[])
-    with patch("app.agents.llm.get_genai_client", return_value=_client(resp)):
-        with usage.track_turn() as turn:
-            assert await call_gemini("p", settings, stage="intent") == "ok"
+    with patch("app.agents.llm.get_genai_client", return_value=_client(resp)), usage.track_turn() as turn:
+        assert await call_gemini("p", settings, stage="intent") == "ok"
     assert turn.total_tokens() == 0
     assert turn.summary()["calls"] == 1
 
@@ -57,9 +55,8 @@ async def test_missing_usage_metadata_counts_as_zero(settings):
 @pytest.mark.asyncio
 async def test_cap_hit_is_recorded(settings):
     resp = _response(finish=types.FinishReason.MAX_TOKENS)
-    with patch("app.agents.llm.get_genai_client", return_value=_client(resp)):
-        with usage.track_turn() as turn:
-            await call_gemini("p", settings, stage="draft")
+    with patch("app.agents.llm.get_genai_client", return_value=_client(resp)), usage.track_turn() as turn:
+        await call_gemini("p", settings, stage="draft")
     assert turn.summary()["cap_hits"] == 1
 
 
