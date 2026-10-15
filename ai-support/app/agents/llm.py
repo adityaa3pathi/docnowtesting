@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any, Optional
 
 from google.genai import errors, types
 
+from app.agents import usage
 from app.genai_client import get_genai_client
 
 logger = logging.getLogger(__name__)
@@ -21,6 +23,7 @@ async def call_gemini(
     temperature: float = 0.7,
     response_mime_type: Optional[str] = None,
     response_json_schema: Optional[dict[str, Any]] = None,
+    stage: str = "llm",
 ) -> str:
     """Calls the Gemini API."""
     config_kwargs: dict[str, Any] = {"temperature": temperature}
@@ -34,10 +37,18 @@ async def call_gemini(
         config_kwargs["response_json_schema"] = response_json_schema
 
     try:
+        start = time.monotonic()
         response = await get_genai_client(settings).aio.models.generate_content(
             model=settings.llm_model,
             contents=prompt,
             config=types.GenerateContentConfig(**config_kwargs),
+        )
+        call = usage.from_response(response, stage, settings.llm_model, int((time.monotonic() - start) * 1000))
+        usage.record(call)
+        logger.info(
+            "gemini stage=%s prompt=%d output=%d thoughts=%d cached=%d latency_ms=%d cap_hit=%s",
+            stage, call.prompt_tokens, call.output_tokens, call.thought_tokens,
+            call.cached_tokens, call.latency_ms, call.cap_hit,
         )
         return response.text
     except errors.ClientError as exc:

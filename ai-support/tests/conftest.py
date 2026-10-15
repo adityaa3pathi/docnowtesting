@@ -39,6 +39,8 @@ def mock_db() -> MagicMock:
     db.create_conversation = AsyncMock(return_value="conv-1")
     db.add_message = AsyncMock(return_value="msg-1")
     db.get_conversation_messages = AsyncMock(return_value=[])
+    db.get_recent_messages = AsyncMock(return_value=[])
+    db.count_user_messages = AsyncMock(return_value=0)
     db.update_feedback = AsyncMock()
     return db
 

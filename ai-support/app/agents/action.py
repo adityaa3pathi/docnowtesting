@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 _SAFE_PATH_VALUE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
 
-@observe(name="action-agent")
+@observe(name="action-agent", capture_input=False, capture_output=False)
 async def execute_action(
     intent: Intent,
     ctx: AgentContext,
@@ -31,7 +31,7 @@ async def execute_action(
     the structured result.
     """
     tool_name = intent.tool_name
-    logger.info("Executing action: %s with params: %s", tool_name, intent.parameters)
+    logger.info("Executing action: %s keys=%s", tool_name, sorted(intent.parameters))
 
     if not tool_name or tool_name not in TOOL_REGISTRY:
         return ActionResult(

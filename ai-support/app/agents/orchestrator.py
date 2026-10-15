@@ -19,6 +19,7 @@ from typing import Any
 
 from langfuse import observe
 
+from app.agents import usage
 from app.agents.llm import AIBusyError, call_gemini
 from app.agents.retrieval import retrieve
 from app.agents.verifier import verify
@@ -29,13 +30,16 @@ from app.models import (
     RetrievedChunk,
     SupportResponse,
 )
-from app.observability import current_trace_id
+from app.observability import annotate, current_trace_id
 from app.prompts.intent import INTENT_CLASSIFICATION_PROMPT, intent_schema
 from app.prompts.system import DRAFT_GENERATION_PROMPT, ORCHESTRATOR_SYSTEM_PROMPT
 from app.prompts.verifier import ABSTENTION_MESSAGE
 from app.tools.registry import TOOL_REGISTRY, render_tool_list
 
 logger = logging.getLogger(__name__)
+
+# Raw messages carried into prompts; the chat route loads exactly this many.
+HISTORY_MESSAGES = 6
 
 GREETING_RESPONSE = (
     "Hello! 👋 I'm DocNow's support assistant. I can help you with:\n"
@@ -64,7 +68,7 @@ _CONFIRM = re.compile(
 
 
 def _history_text(ctx: AgentContext) -> str:
-    return "\n".join(f"{m['role'].upper()}: {m['content']}" for m in ctx.conversation_history[-6:])
+    return "\n".join(f"{m['role'].upper()}: {m['content']}" for m in ctx.conversation_history[-HISTORY_MESSAGES:])
 
 
 def _confirmation_request(intent: Intent) -> str:
@@ -73,7 +77,7 @@ def _confirmation_request(intent: Intent) -> str:
     return f"Please confirm: do you want me to {action} ({details})? Reply YES to continue, or anything else to stop."
 
 
-@observe(name="intent-classification")
+@observe(name="intent-classification", capture_input=False, capture_output=False)
 async def classify_intent(
     query: str,
     retrieval_summary: str,
@@ -96,15 +100,18 @@ async def classify_intent(
             system_prompt="You are an intent classifier. Return valid JSON only.",
             temperature=0.1,
             response_json_schema=intent_schema(TOOL_REGISTRY),
+            stage="intent",
         )
         parsed = json.loads(result_text)
-        return Intent(
+        intent = Intent(
             intent=parsed.get("intent", "UNKNOWN"),
             tool_name=parsed.get("tool_name"),
             parameters=parsed.get("parameters", {}),
             requires_action=parsed.get("requires_action", False),
             confidence=parsed.get("confidence", 0.0),
         )
+        annotate(intent=intent.intent, tool=intent.tool_name, confidence=intent.confidence)
+        return intent
     except AIBusyError:
         raise
     except Exception:
@@ -112,7 +119,7 @@ async def classify_intent(
         return Intent(intent="UNKNOWN", requires_action=False, confidence=0.0)
 
 
-@observe(name="draft-generation")
+@observe(name="draft-generation", capture_input=False, capture_output=False)
 async def generate_draft(
     query: str,
     retrieval_chunks: list[RetrievedChunk],
@@ -147,6 +154,7 @@ async def generate_draft(
             system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
             # Answers quote prices and policies; low temperature keeps them literal.
             temperature=0.2,
+            stage="draft",
         )
     except AIBusyError:
         raise
@@ -155,7 +163,7 @@ async def generate_draft(
         return ABSTENTION_MESSAGE
 
 
-@observe(name="support-agent-orchestrator")
+@observe(name="support-agent-orchestrator", capture_input=False, capture_output=False)
 async def handle_message(
     message: str,
     ctx: AgentContext,
@@ -166,8 +174,16 @@ async def handle_message(
 
     This is the main entry point called by the chat route handler.
     """
-    response = await _run_pipeline(message, ctx, db, settings)
+    with usage.track_turn() as turn:
+        response = await _run_pipeline(message, ctx, db, settings)
+    summary = turn.summary()
+    response.usage = summary
+    response.token_count = summary["total_tokens"]
     response.langfuse_trace_id = current_trace_id()
+    annotate(calls=summary["calls"], total_tokens=summary["total_tokens"], cap_hits=summary["cap_hits"])
+    logger.info(
+        "turn tokens total=%d calls=%d cap_hits=%d", summary["total_tokens"], summary["calls"], summary["cap_hits"]
+    )
     return response
 
 

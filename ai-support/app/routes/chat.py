@@ -1,12 +1,14 @@
 """POST /api/support/chat — Main chat endpoint."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import time
 
 from fastapi import APIRouter, HTTPException, Request
 
+from app.agents.orchestrator import HISTORY_MESSAGES
 from app.auth import get_access_token, get_current_user
 from app.models import (
     ActionSummary,
@@ -20,6 +22,22 @@ from app.models import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+
+async def load_turn_state(db, conversation_id: str, settings) -> tuple[list[dict], Intent | None]:
+    """Latest history and any pending confirmation; raises 400 once the turn cap is reached."""
+    user_turns, messages = await asyncio.gather(
+        db.count_user_messages(conversation_id),
+        db.get_recent_messages(conversation_id, limit=HISTORY_MESSAGES),
+    )
+    if user_turns >= settings.max_conversation_turns:
+        raise HTTPException(
+            status_code=400,
+            detail="Conversation has reached the maximum number of turns. Please start a new conversation.",
+        )
+    history = [{"role": m["role"], "content": m["content"]} for m in messages]
+    return history, _pending_action(messages)
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -68,17 +86,7 @@ async def chat(request: Request, body: ChatRequest):
     history = []
     pending_action = None
     if conversation_id != "ephemeral":
-        messages = await db.get_conversation_messages(conversation_id, limit=20)
-        history = [{"role": m["role"], "content": m["content"]} for m in messages]
-        pending_action = _pending_action(messages)
-
-        # Check turn limit
-        user_turns = sum(1 for m in history if m["role"] == "user")
-        if user_turns >= settings.max_conversation_turns:
-            raise HTTPException(
-                status_code=400,
-                detail="Conversation has reached the maximum number of turns. Please start a new conversation.",
-            )
+        history, pending_action = await load_turn_state(db, conversation_id, settings)
 
     # 4. Store user message
     user_msg_id = None

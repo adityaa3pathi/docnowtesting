@@ -68,3 +68,28 @@ def test_custom_metrics_reports_none_when_nothing_to_measure():
     m = custom_metrics([_result(expected_tool=None)])
     assert m["tool_choice_accuracy"] is None
     assert m["missed_abstention_rate"] is None
+
+
+def _usage(total: int, cap_hits: int = 0, per_call: list | None = None) -> dict:
+    return {"total_tokens": total, "cap_hits": cap_hits, "calls": len(per_call or []), "per_call": per_call or []}
+
+
+def test_custom_metrics_reports_token_use():
+    draft = {"stage": "draft", "output_tokens": 90, "thought_tokens": 10}
+    intent = {"stage": "intent", "output_tokens": 20, "thought_tokens": 0}
+    results = [
+        _result(usage=_usage(1000, per_call=[intent, draft])),
+        _result(usage=_usage(3000, cap_hits=1, per_call=[intent, {**draft, "output_tokens": 190}])),
+    ]
+    m = custom_metrics(results)
+    assert m["tokens_per_turn_mean"] == 2000
+    assert m["tokens_per_turn_p95"] == 3000
+    assert m["cap_hit_rate"] == pytest.approx(1 / 4)
+    assert m["draft_output_p99"] == 200
+    assert m["intent_output_p99"] == 20
+
+
+def test_token_metrics_are_none_without_usage():
+    m = custom_metrics([_result()])
+    assert m["tokens_per_turn_mean"] is None
+    assert m["cap_hit_rate"] is None
