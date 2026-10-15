@@ -31,7 +31,7 @@ async def execute_action(
     the structured result.
     """
     tool_name = intent.tool_name
-    logger.info("Executing action: %s with params: %s", tool_name, intent.parameters)
+    logger.info("Executing action: %s keys=%s", tool_name, sorted(intent.parameters))
 
     if not tool_name or tool_name not in TOOL_REGISTRY:
         return ActionResult(

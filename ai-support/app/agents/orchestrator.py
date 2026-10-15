@@ -38,6 +38,9 @@ from app.tools.registry import TOOL_REGISTRY, render_tool_list
 
 logger = logging.getLogger(__name__)
 
+# Raw messages carried into prompts; the chat route loads exactly this many.
+HISTORY_MESSAGES = 6
+
 GREETING_RESPONSE = (
     "Hello! 👋 I'm DocNow's support assistant. I can help you with:\n"
     "• Finding tests and health packages\n"
@@ -65,7 +68,7 @@ _CONFIRM = re.compile(
 
 
 def _history_text(ctx: AgentContext) -> str:
-    return "\n".join(f"{m['role'].upper()}: {m['content']}" for m in ctx.conversation_history[-6:])
+    return "\n".join(f"{m['role'].upper()}: {m['content']}" for m in ctx.conversation_history[-HISTORY_MESSAGES:])
 
 
 def _confirmation_request(intent: Intent) -> str:

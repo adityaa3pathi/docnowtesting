@@ -8,6 +8,7 @@ import time
 
 from fastapi import APIRouter, HTTPException, Request
 
+from app.agents.orchestrator import HISTORY_MESSAGES
 from app.auth import get_access_token, get_current_user
 from app.models import (
     ActionSummary,
@@ -22,8 +23,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Matches the window the prompts use; the turn cap is counted separately.
-HISTORY_MESSAGES = 6
 
 
 async def load_turn_state(db, conversation_id: str, settings) -> tuple[list[dict], Intent | None]:

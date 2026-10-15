@@ -27,7 +27,7 @@ async def retrieve(query: str, db: Any, settings: Any) -> RetrievalResult:
 
     If NO chunk clears the relevance threshold, should_abstain=True.
     """
-    logger.info("Retrieving chunks for query: %s", query[:80])
+    logger.info("Retrieving chunks (query %d chars)", len(query))
 
     try:
         embedding = await generate_embedding(query, settings, QUERY)

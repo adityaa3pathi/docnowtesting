@@ -41,6 +41,18 @@ async def test_pending_action_is_found_in_a_long_conversation(mock_db, settings)
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("turns,blocked", [(9, False), (10, True)])
+async def test_turn_cap_boundary(mock_db, settings, turns, blocked):
+    mock_db.get_recent_messages = AsyncMock(return_value=[])
+    mock_db.count_user_messages = AsyncMock(return_value=turns)
+    if blocked:
+        with pytest.raises(HTTPException):
+            await load_turn_state(mock_db, "conv-1", settings)
+    else:
+        await load_turn_state(mock_db, "conv-1", settings)
+
+
+@pytest.mark.asyncio
 async def test_turn_cap_counts_all_user_messages_not_just_recent(mock_db, settings):
     mock_db.get_recent_messages = AsyncMock(return_value=[_msg("user", "hi")])
     mock_db.count_user_messages = AsyncMock(return_value=12)
