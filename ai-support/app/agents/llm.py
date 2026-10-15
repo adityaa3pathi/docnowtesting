@@ -16,6 +16,10 @@ class AIBusyError(Exception):
     """Gemini quota is used up; callers must not turn this into a normal answer."""
 
 
+class TruncatedResponseError(Exception):
+    """The output cap cut the reply short; callers fall back instead of using partial text."""
+
+
 async def call_gemini(
     prompt: str,
     settings: Any,
@@ -27,6 +31,12 @@ async def call_gemini(
 ) -> str:
     """Calls the Gemini API."""
     config_kwargs: dict[str, Any] = {"temperature": temperature}
+    thinking_level = getattr(settings, f"{stage}_thinking_level", "")
+    if thinking_level:
+        config_kwargs["thinking_config"] = types.ThinkingConfig(thinking_level=thinking_level.upper())
+    max_output = getattr(settings, f"{stage}_max_output_tokens", None)
+    if max_output:
+        config_kwargs["max_output_tokens"] = max_output
     if system_prompt:
         config_kwargs["system_instruction"] = system_prompt
     if response_mime_type:
@@ -50,12 +60,17 @@ async def call_gemini(
             stage, call.prompt_tokens, call.output_tokens, call.thought_tokens,
             call.cached_tokens, call.latency_ms, call.cap_hit,
         )
+        if call.cap_hit:
+            raise TruncatedResponseError(stage)
         return response.text
     except errors.ClientError as exc:
         if exc.code == 429:
             logger.warning("Gemini quota exhausted: %s", exc.message)
             raise AIBusyError from exc
         logger.exception("Error calling Gemini API")
+        raise
+    except TruncatedResponseError:
+        logger.warning("Gemini %s reply hit its output cap", stage)
         raise
     except Exception:
         logger.exception("Error calling Gemini API")

@@ -53,9 +53,15 @@ async def test_missing_usage_metadata_counts_as_zero(settings):
 
 
 @pytest.mark.asyncio
-async def test_cap_hit_is_recorded(settings):
+async def test_cap_hit_is_recorded_before_raising(settings):
+    from app.agents.llm import TruncatedResponseError
+
     resp = _response(finish=types.FinishReason.MAX_TOKENS)
-    with patch("app.agents.llm.get_genai_client", return_value=_client(resp)), usage.track_turn() as turn:
+    with (
+        patch("app.agents.llm.get_genai_client", return_value=_client(resp)),
+        usage.track_turn() as turn,
+        pytest.raises(TruncatedResponseError),
+    ):
         await call_gemini("p", settings, stage="draft")
     assert turn.summary()["cap_hits"] == 1
 
@@ -78,7 +84,7 @@ async def test_handle_message_reports_turn_tokens(mock_db, settings, agent_conte
         patch("app.agents.orchestrator.retrieve", new_callable=AsyncMock,
               return_value=RetrievalResult(should_abstain=True)),
     ):
-        response = await handle_message("hello", agent_context, mock_db, settings)
+        response = await handle_message("hello, who are you?", agent_context, mock_db, settings)
 
     assert response.token_count == 156
     assert response.usage["calls"] == 1

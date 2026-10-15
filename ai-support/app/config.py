@@ -35,6 +35,17 @@ class Settings(BaseSettings):
     relevance_threshold: float = 0.58
     max_tokens: int = 4000
     max_conversation_turns: int = 10
+    # Run intent and retrieval together; false restores the old sequential path.
+    parallel_intent_retrieval: bool = True
+
+    # Per-call thinking and output caps (caps include thinking tokens).
+    # Retune caps from the eval's per-stage p99 once a baseline exists; "" sends no thinking config.
+    intent_thinking_level: str = "minimal"
+    draft_thinking_level: str = "low"
+    verifier_thinking_level: str = "minimal"
+    intent_max_output_tokens: int = 512
+    draft_max_output_tokens: int = 1024
+    verifier_max_output_tokens: int = 1536
 
     # Auth (MUST match Express server's JWT_SECRET)
     jwt_secret: str = ""
