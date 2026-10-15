@@ -168,7 +168,7 @@ def print_table(scores: dict) -> None:
     print(f"\n{'Metric':<24} | {'Score':>8} | {'Threshold':>9}")
     print("-" * 47)
     for metric, value in scores.items():
-        shown = "n/a" if value is None else (f"{value:.0f}" if isinstance(value, int) or "latency" in metric else f"{value:.3f}")
+        shown = "n/a" if value is None else (f"{value:.0f}" if isinstance(value, int) else f"{value:.3f}")
         threshold = THRESHOLDS.get(metric)
         print(f"{metric:<24} | {shown:>8} | {threshold if threshold is not None else '':>9}")
 

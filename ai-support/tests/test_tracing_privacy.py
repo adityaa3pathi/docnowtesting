@@ -24,7 +24,8 @@ def test_every_observe_turns_off_input_and_output_capture():
     for name, kwargs in calls:
         for flag in ("capture_input", "capture_output"):
             assert flag in kwargs, f"{name}: @observe without {flag}=False"
-            assert getattr(kwargs[flag], "value", None) is False, f"{name}: {flag} must be False"
+            value = kwargs[flag]
+            assert isinstance(value, ast.Constant) and value.value is False, f"{name}: {flag} must be False"
 
 
 def test_langfuse_stays_off_unless_enabled(settings):

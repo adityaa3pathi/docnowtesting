@@ -226,7 +226,7 @@ class Database:
             )
             return [dict(r) for r in rows]
 
-    async def get_recent_messages(self, conversation_id: str, limit: int = 6) -> list[dict]:
+    async def get_recent_messages(self, conversation_id: str, limit: int) -> list[dict]:
         """The latest `limit` messages, oldest first, with only what prompts need."""
         if not self.pool:
             raise RuntimeError("Database pool not initialized.")

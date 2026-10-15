@@ -173,13 +173,13 @@ async def handle_message(
     """
     with usage.track_turn() as turn:
         response = await _run_pipeline(message, ctx, db, settings)
-    response.token_count = turn.total_tokens()
-    response.usage = turn.summary()
+    summary = turn.summary()
+    response.usage = summary
+    response.token_count = summary["total_tokens"]
     response.langfuse_trace_id = current_trace_id()
-    annotate(calls=response.usage["calls"], total_tokens=response.token_count, cap_hits=response.usage["cap_hits"])
+    annotate(calls=summary["calls"], total_tokens=summary["total_tokens"], cap_hits=summary["cap_hits"])
     logger.info(
-        "turn tokens total=%d calls=%d cap_hits=%d",
-        response.token_count, response.usage["calls"], response.usage["cap_hits"],
+        "turn tokens total=%d calls=%d cap_hits=%d", summary["total_tokens"], summary["calls"], summary["cap_hits"]
     )
     return response
 

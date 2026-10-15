@@ -1,6 +1,7 @@
 """POST /api/support/chat — Main chat endpoint."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import time
@@ -27,12 +28,15 @@ HISTORY_MESSAGES = 6
 
 async def load_turn_state(db, conversation_id: str, settings) -> tuple[list[dict], Intent | None]:
     """Latest history and any pending confirmation; raises 400 once the turn cap is reached."""
-    if await db.count_user_messages(conversation_id) >= settings.max_conversation_turns:
+    user_turns, messages = await asyncio.gather(
+        db.count_user_messages(conversation_id),
+        db.get_recent_messages(conversation_id, limit=HISTORY_MESSAGES),
+    )
+    if user_turns >= settings.max_conversation_turns:
         raise HTTPException(
             status_code=400,
             detail="Conversation has reached the maximum number of turns. Please start a new conversation.",
         )
-    messages = await db.get_recent_messages(conversation_id, limit=HISTORY_MESSAGES)
     history = [{"role": m["role"], "content": m["content"]} for m in messages]
     return history, _pending_action(messages)
 

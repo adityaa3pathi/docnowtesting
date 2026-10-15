@@ -5,6 +5,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
+from app.agents.usage import STAGES
+
 logger = logging.getLogger(__name__)
 
 RAGAS_METRICS = ["faithfulness", "answer_relevancy", "context_precision", "context_recall"]
@@ -52,7 +54,7 @@ def token_metrics(results: list[EvalResult]) -> dict[str, Any]:
         "tokens_per_turn_p95": _percentile(totals, 0.95),
         "cap_hit_rate": _rate(sum(u.get("cap_hits", 0) for u in with_usage), len(calls)),
     }
-    for stage in ("intent", "draft", "verifier"):
+    for stage in STAGES:
         spent = [c["output_tokens"] + c["thought_tokens"] for c in calls if c["stage"] == stage]
         metrics[f"{stage}_output_p99"] = _percentile(spent, 0.99)
     return metrics
@@ -77,7 +79,7 @@ def custom_metrics(results: list[EvalResult]) -> dict[str, Any]:
         "tool_choice_accuracy": _rate(sum(r.expected_tool in r.tools_called for r in with_tool), len(with_tool)),
         "error_rate": _rate(sum(r.error is not None for r in results), len(results)),
         "p50_latency_ms": latencies[len(latencies) // 2] if latencies else None,
-        "p95_latency_ms": latencies[min(len(latencies) - 1, int(len(latencies) * 0.95))] if latencies else None,
+        "p95_latency_ms": _percentile(latencies, 0.95),
         **token_metrics(results),
     }
 

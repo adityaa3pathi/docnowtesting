@@ -8,6 +8,9 @@ from typing import Any, Iterator, Optional
 
 from google.genai import types
 
+# Stage names used by call_gemini callers and the eval's per-stage metrics.
+STAGES = ("intent", "draft", "verifier")
+
 
 @dataclass
 class CallUsage:

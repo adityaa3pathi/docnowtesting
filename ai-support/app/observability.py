@@ -41,8 +41,7 @@ def shutdown_langfuse() -> None:
 
 # Only these keys may reach Langfuse; anything else (tokens, bookings, profiles) is dropped.
 SAFE_TRACE_FIELDS = frozenset({
-    "intent", "tool", "confidence", "requires_action", "success", "verdict",
-    "chunk_ids", "top_similarity", "should_abstain", "calls", "total_tokens", "cap_hits",
+    "intent", "tool", "confidence", "verdict", "chunk_ids", "top_similarity", "calls", "total_tokens", "cap_hits",
 })
 
 
