@@ -109,28 +109,28 @@ export function rateLimiter(points: number, durationSec: number, keyPrefix: stri
                 handleRedisError(err);
                 // Fall through to in-memory fallbackStore below
             }
-        } else {
-            // Fallback logic
-            const now = Date.now();
-            const entry = fallbackStore.get(key);
+        }
 
-            if (entry && entry.resetAt > now) {
-                if (entry.count >= points) {
-                    const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-                    res.set('Retry-After', String(retryAfter));
-                    return res.status(429).json({
-                        error: 'Too many requests. Please wait before trying again.',
-                        retryAfter
-                    });
-                }
-                entry.count++;
-            } else {
-                fallbackStore.set(key, {
-                    count: 1,
-                    resetAt: now + durationSec * 1000
+        // Fallback logic (in-memory)
+        const now = Date.now();
+        const entry = fallbackStore.get(key);
+
+        if (entry && entry.resetAt > now) {
+            if (entry.count >= points) {
+                const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
+                res.set('Retry-After', String(retryAfter));
+                return res.status(429).json({
+                    error: 'Too many requests. Please wait before trying again.',
+                    retryAfter
                 });
             }
-            return next();
+            entry.count++;
+        } else {
+            fallbackStore.set(key, {
+                count: 1,
+                resetAt: now + durationSec * 1000
+            });
         }
+        return next();
     };
 }
