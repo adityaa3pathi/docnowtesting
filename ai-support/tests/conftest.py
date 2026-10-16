@@ -18,7 +18,7 @@ def settings() -> Settings:
         gemini_api_key="test-key",
         embedding_model="gemini-embedding-001",
         embedding_dimensions=768,
-        llm_model="gemini-3.7-flash",
+        llm_model="gemini-3.5-flash",
         relevance_threshold=0.7,
         max_tokens=4000,
         max_conversation_turns=10,
