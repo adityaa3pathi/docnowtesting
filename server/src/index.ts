@@ -115,11 +115,25 @@ const AI_SUPPORT_TARGET = rawSupportUrl.endsWith('/api/support')
     ? rawSupportUrl
     : `${rawSupportUrl}/api/support`;
 
+// Keep-alive ping for AI support microservice to prevent Render Free-tier container from spinning down
+if (rawSupportUrl.includes('onrender.com')) {
+    const keepaliveHealthUrl = `${rawSupportUrl.replace(/\/api\/support$/, '')}/health`;
+    setInterval(async () => {
+        try {
+            await fetch(keepaliveHealthUrl, { signal: AbortSignal.timeout(15000) });
+        } catch {
+            // Keepalive ping is best-effort
+        }
+    }, 8 * 60 * 1000); // Ping every 8 minutes (Render free tier spins down after 15m)
+}
+
 // Each chat message costs several Gemini calls, so cap bursts and daily use per caller.
 app.use('/api/support/chat', rateLimiter(10, 60, 'support_chat_min'), rateLimiter(100, 24 * 60 * 60, 'support_chat_day'));
 app.use('/api/support', createProxyMiddleware({
     target: AI_SUPPORT_TARGET,
     changeOrigin: true,
+    timeout: 60000,
+    proxyTimeout: 60000,
     // express.json() already read the body; resend it or the AI gets nothing and the call times out.
     on: { proxyReq: fixRequestBody },
 }));

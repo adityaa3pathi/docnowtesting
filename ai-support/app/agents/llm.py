@@ -76,9 +76,9 @@ async def call_gemini(
         if call.cap_hit:
             raise TruncatedResponseError(stage)
         return response.text
-    except errors.ClientError as exc:
-        if exc.code == 429:
-            logger.warning("Gemini quota exhausted: %s", exc.message)
+    except (errors.ClientError, errors.ServerError) as exc:
+        if getattr(exc, 'code', None) in (429, 503) or '503' in str(exc) or '429' in str(exc):
+            logger.warning("Gemini API unavailable (%s): %s", getattr(exc, 'code', 503), getattr(exc, 'message', str(exc)))
             raise AIBusyError from exc
         logger.exception("Error calling Gemini API")
         raise

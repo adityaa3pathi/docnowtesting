@@ -17,6 +17,29 @@ setInterval(() => {
 
 let ratelimitCache: Record<string, Ratelimit> = {};
 let redisClient: Redis | null = null;
+let redisDisabledUntil = 0;
+let consecutiveRedisErrors = 0;
+
+function isRedisHealthy(): boolean {
+    if (!redisClient) return false;
+    if (Date.now() < redisDisabledUntil) return false;
+    return true;
+}
+
+function handleRedisError(err: any) {
+    consecutiveRedisErrors++;
+    if (consecutiveRedisErrors >= 2) {
+        // Circuit breaker: back off Redis for 5 minutes
+        redisDisabledUntil = Date.now() + 5 * 60 * 1000;
+        console.warn(`⚠️ Redis rate limiter failing (${err?.message || err}). Disabling Redis for 5 minutes; using in-memory fallback.`);
+    } else {
+        console.error("Redis Rate Limiter Error (falling back to in-memory):", err?.message || err);
+    }
+}
+
+function handleRedisSuccess() {
+    consecutiveRedisErrors = 0;
+}
 
 if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
     redisClient = new Redis({
@@ -56,9 +79,19 @@ export function rateLimiter(points: number, durationSec: number, keyPrefix: stri
         const identifier = (req as any).userId || ip || 'anonymous';
         const key = `${keyPrefix}:${identifier}`;
 
-        if (upstashLimiter) {
+        if (upstashLimiter && isRedisHealthy()) {
             try {
-                const { success, limit, remaining, reset } = await upstashLimiter.limit(identifier as string);
+                // Strict 500ms timeout on Redis calls so broken DNS or slow networks never stall user requests
+                const limitPromise = upstashLimiter.limit(identifier as string);
+                let timerId: NodeJS.Timeout;
+                const timeoutPromise = new Promise<never>((_, reject) => {
+                    timerId = setTimeout(() => reject(new Error('Redis rate limit timeout (500ms)')), 500);
+                });
+                const result = await Promise.race([limitPromise, timeoutPromise]);
+                clearTimeout(timerId!);
+
+                handleRedisSuccess();
+                const { success, limit, remaining, reset } = result;
                 res.setHeader('X-RateLimit-Limit', limit);
                 res.setHeader('X-RateLimit-Remaining', remaining);
                 res.setHeader('X-RateLimit-Reset', reset);
@@ -73,8 +106,8 @@ export function rateLimiter(points: number, durationSec: number, keyPrefix: stri
                 }
                 return next();
             } catch (err) {
-                console.error("Redis Rate Limiter Error (falling back to next):", err);
-                return next();
+                handleRedisError(err);
+                // Fall through to in-memory fallbackStore below
             }
         } else {
             // Fallback logic

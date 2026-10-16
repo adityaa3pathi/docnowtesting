@@ -63,8 +63,8 @@ async def retrieve(query: str, db: Any, settings: Any) -> RetrievalResult:
             query_embedding=embedding,
         )
 
-    except errors.ClientError as exc:
-        if exc.code == 429:
+    except (errors.ClientError, errors.ServerError) as exc:
+        if getattr(exc, 'code', None) in (429, 503) or '503' in str(exc) or '429' in str(exc):
             raise AIBusyError from exc
         logger.exception("Error in retrieval agent")
         return RetrievalResult(chunks=[], should_abstain=True, max_similarity=0.0, failed=True)
