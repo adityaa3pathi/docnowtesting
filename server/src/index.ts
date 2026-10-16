@@ -110,11 +110,15 @@ app.use((req: any, res: any, next: any) => {
 app.use(csrfProtection);
 
 // Proxy AI support requests to Python FastAPI service
-const AI_SUPPORT_URL = process.env.AI_SUPPORT_URL || 'http://localhost:8000';
+const rawSupportUrl = (process.env.AI_SUPPORT_URL || 'http://localhost:8000').replace(/\/+$/, '');
+const AI_SUPPORT_TARGET = rawSupportUrl.endsWith('/api/support')
+    ? rawSupportUrl
+    : `${rawSupportUrl}/api/support`;
+
 // Each chat message costs several Gemini calls, so cap bursts and daily use per caller.
 app.use('/api/support/chat', rateLimiter(10, 60, 'support_chat_min'), rateLimiter(100, 24 * 60 * 60, 'support_chat_day'));
 app.use('/api/support', createProxyMiddleware({
-    target: AI_SUPPORT_URL,
+    target: AI_SUPPORT_TARGET,
     changeOrigin: true,
     // express.json() already read the body; resend it or the AI gets nothing and the call times out.
     on: { proxyReq: fixRequestBody },

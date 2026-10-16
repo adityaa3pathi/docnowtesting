@@ -41,7 +41,7 @@ export function useSupportChat() {
     // Load from local storage on mount
     useEffect(() => {
         const storedId = localStorage.getItem('docnow_support_conversation_id');
-        if (storedId) {
+        if (storedId && storedId !== 'ephemeral') {
             setConversationId(storedId);
             loadHistory(storedId);
         } else {
@@ -58,12 +58,28 @@ export function useSupportChat() {
     }, []);
 
     const loadHistory = async (id: string) => {
+        if (!id || id === 'ephemeral') return;
         setIsLoading(true);
         setError(null);
         try {
             const res = await api.get(`/support/history?conversation_id=${id}`);
-            if (res.data && res.data.messages) {
-                setMessages(res.data.messages);
+            if (res.data && Array.isArray(res.data.messages)) {
+                const formatted: ChatMessage[] = res.data.messages.map((m: any) => ({
+                    id: m.id || Date.now().toString(),
+                    role: m.role || 'assistant',
+                    content: m.content || '',
+                    sources: m.sources?.map((s: any) => ({
+                        title: s.title || '',
+                        url: s.url,
+                        type: s.source_type || s.type,
+                    })) || [],
+                    actions: m.actions || [],
+                    verified: m.verified ?? false,
+                    wasAbstained: m.was_abstained ?? m.wasAbstained ?? false,
+                    feedbackScore: m.feedback_score ?? m.feedbackScore,
+                    createdAt: m.created_at ?? m.createdAt ?? new Date().toISOString(),
+                }));
+                setMessages(formatted);
             }
         } catch (err: any) {
             console.error('Failed to load chat history:', err);
@@ -93,14 +109,34 @@ export function useSupportChat() {
                 conversation_id: conversationId,
             });
 
-            const { message, conversation_id } = res.data;
+            const data = res.data;
+            const newConversationId = data.conversation_id;
 
-            if (conversation_id && conversation_id !== conversationId) {
-                setConversationId(conversation_id);
-                localStorage.setItem('docnow_support_conversation_id', conversation_id);
+            if (newConversationId && newConversationId !== conversationId) {
+                setConversationId(newConversationId);
+                if (newConversationId !== 'ephemeral') {
+                    localStorage.setItem('docnow_support_conversation_id', newConversationId);
+                } else {
+                    localStorage.removeItem('docnow_support_conversation_id');
+                }
             }
 
-            setMessages((prev) => [...prev, message]);
+            const assistantMessage: ChatMessage = {
+                id: data.message_id || data.message?.id || Date.now().toString(),
+                role: 'assistant',
+                content: data.content || data.message?.content || '',
+                sources: data.sources?.map((s: any) => ({
+                    title: s.title || '',
+                    url: s.url,
+                    type: s.source_type || s.type,
+                })) || data.message?.sources || [],
+                actions: data.actions_taken?.map((a: any) => a.summary) || data.message?.actions || [],
+                verified: data.verified ?? data.message?.verified ?? false,
+                wasAbstained: data.was_abstained ?? data.message?.wasAbstained ?? false,
+                createdAt: new Date().toISOString(),
+            };
+
+            setMessages((prev) => [...prev, assistantMessage]);
         } catch (err: any) {
             console.error('Failed to send message:', err);
             setError('Failed to send message.');
