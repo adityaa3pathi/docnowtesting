@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface ChatSource {
     title: string;
@@ -19,8 +20,16 @@ export interface ChatMessage {
     createdAt: string;
 }
 
+const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
+    id: 'welcome',
+    role: 'assistant',
+    content: "Hello! I am DocNow's AI support assistant. How can I help you today?",
+    createdAt: new Date().toISOString(),
+};
+
 export function useSupportChat() {
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const { isAuthenticated, isInitialized } = useAuth();
+    const [messages, setMessages] = useState<ChatMessage[]>([DEFAULT_WELCOME_MESSAGE]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [conversationId, setConversationId] = useState<string | null>(null);
@@ -38,23 +47,11 @@ export function useSupportChat() {
         scrollToBottom();
     }, [messages, scrollToBottom]);
 
-    // Load from local storage on mount
-    useEffect(() => {
-        const storedId = localStorage.getItem('docnow_support_conversation_id');
-        if (storedId && storedId !== 'ephemeral') {
-            setConversationId(storedId);
-            loadHistory(storedId);
-        } else {
-            // Give an initial greeting message
-            setMessages([
-                {
-                    id: 'welcome',
-                    role: 'assistant',
-                    content: 'Hello! I am DocNow\'s AI support assistant. How can I help you today?',
-                    createdAt: new Date().toISOString(),
-                }
-            ]);
-        }
+    const resetChat = useCallback(() => {
+        localStorage.removeItem('docnow_support_conversation_id');
+        setConversationId(null);
+        setError(null);
+        setMessages([DEFAULT_WELCOME_MESSAGE]);
     }, []);
 
     const loadHistory = async (id: string) => {
@@ -63,7 +60,7 @@ export function useSupportChat() {
         setError(null);
         try {
             const res = await api.get(`/support/history?conversation_id=${id}`);
-            if (res.data && Array.isArray(res.data.messages)) {
+            if (res.data && Array.isArray(res.data.messages) && res.data.messages.length > 0) {
                 const formatted: ChatMessage[] = res.data.messages.map((m: any) => ({
                     id: m.id || Date.now().toString(),
                     role: m.role || 'assistant',
@@ -80,14 +77,48 @@ export function useSupportChat() {
                     createdAt: m.created_at ?? m.createdAt ?? new Date().toISOString(),
                 }));
                 setMessages(formatted);
+            } else {
+                setMessages([DEFAULT_WELCOME_MESSAGE]);
             }
         } catch (err: any) {
-            console.error('Failed to load chat history:', err);
-            setError('Failed to load chat history.');
+            console.warn('Failed to load chat history:', err);
+            const status = err?.response?.status;
+            // If the conversation is gone (404), unauthenticated (401), or invalid:
+            if (status === 404 || status === 401) {
+                localStorage.removeItem('docnow_support_conversation_id');
+                setConversationId(null);
+                setMessages([DEFAULT_WELCOME_MESSAGE]);
+                setError(null); // Clean fallback to fresh chat session without alarming error
+            } else {
+                // Network glitch or server wake-up: keep welcome message and show notice
+                setMessages((prev) => prev.length > 0 ? prev : [DEFAULT_WELCOME_MESSAGE]);
+                setError('Failed to load chat history.');
+            }
         } finally {
             setIsLoading(false);
         }
     };
+
+    // Load from local storage once auth state is initialized
+    useEffect(() => {
+        if (!isInitialized) return;
+
+        if (!isAuthenticated) {
+            localStorage.removeItem('docnow_support_conversation_id');
+            setConversationId(null);
+            setMessages([DEFAULT_WELCOME_MESSAGE]);
+            setError(null);
+            return;
+        }
+
+        const storedId = localStorage.getItem('docnow_support_conversation_id');
+        if (storedId && storedId !== 'ephemeral') {
+            setConversationId(storedId);
+            loadHistory(storedId);
+        } else {
+            setMessages([DEFAULT_WELCOME_MESSAGE]);
+        }
+    }, [isInitialized, isAuthenticated]);
 
     const sendMessage = async (text: string) => {
         if (!text.trim()) return;
@@ -139,6 +170,11 @@ export function useSupportChat() {
             setMessages((prev) => [...prev, assistantMessage]);
         } catch (err: any) {
             console.error('Failed to send message:', err);
+            if (err?.response?.status === 404) {
+                // If conversation was not found on backend, clear invalid ID so next attempt creates new conversation
+                localStorage.removeItem('docnow_support_conversation_id');
+                setConversationId(null);
+            }
             setError('Failed to send message.');
         } finally {
             setIsLoading(false);
@@ -164,6 +200,7 @@ export function useSupportChat() {
         messages,
         sendMessage,
         loadHistory,
+        resetChat,
         submitFeedback,
         isLoading,
         error,

@@ -74,7 +74,8 @@ async def chat(request: Request, body: ChatRequest):
         # Verify ownership
         conv = await db.get_conversation(conversation_id, user_id)
         if not conv:
-            raise HTTPException(status_code=404, detail="Conversation not found")
+            logger.warning("Conversation %s not found for user %s; creating fresh conversation", conversation_id, user_id)
+            conversation_id = await db.create_conversation(user_id)
     elif user_id:
         # Create new conversation
         conversation_id = await db.create_conversation(user_id)
