@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     embedding_model: str = "gemini-embedding-001"
     embedding_dimensions: int = 768
-    llm_model: str = "gemini-3.5-flash"
+    llm_model: str = "gemini-3.5-flash-lite"
 
     # Groq: eval judge only, so grading does not eat the Gemini free quota
     groq_api_key: str = ""
