@@ -171,4 +171,20 @@ STATIC_DOCUMENTS: list[dict[str, str]] = [
             "gateway transaction is needed."
         ),
     },
+    {
+        "source": "faq",
+        "title": "Cities and Locations Served",
+        "content": (
+            "DocNow provides doorstep diagnostic lab tests and home sample collection across "
+            "100+ cities in India. We operate in major metro areas including Bengaluru, "
+            "Chennai, Delhi NCR (Delhi, Gurgaon, Noida, Faridabad, Greater Noida, and Ghaziabad), "
+            "Hyderabad, Kolkata, Mumbai, and Pune. We also serve over 100 other cities across India, "
+            "such as Agra, Ahmedabad, Amritsar, Bhopal, Bhubaneswar, Chandigarh, Dehradun, Guwahati, "
+            "Gwalior, Indore, Jaipur, Jodhpur, Kanpur, Lucknow, Ludhiana, Meerut, Mysuru, Nagpur, "
+            "Nashik, Patna, Raipur, Ranchi, Surat, Udaipur, Vadodara, Varanasi, Vijayawada, and "
+            "Visakhapatnam. Certified phlebotomists arrive at your home or office to safely collect "
+            "samples. You can verify whether home collection is available at your exact address by "
+            "entering your 6-digit pincode in the location selector at the top of docnow.in or during checkout."
+        ),
+    },
 ]

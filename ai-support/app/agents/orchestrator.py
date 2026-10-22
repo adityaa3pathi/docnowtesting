@@ -75,6 +75,11 @@ ACTION_FAILED_RESPONSE = (
     "or contact our support team at +91 9649089089."
 )
 
+CATALOG_FAILED_RESPONSE = (
+    "I'm having trouble fetching live catalog details right now. "
+    "Please browse tests directly on docnow.in or contact our support team at +91 9649089089."
+)
+
 WRITE_DONE_RESPONSES = {
     "cancel_booking": "Done. Your booking has been cancelled.",
     "reschedule_booking": "Done. Your booking has been rescheduled.",
@@ -329,14 +334,23 @@ async def _run_pipeline(
             action_result = await execute_action(intent, ctx, settings)
             actions.append(action_result)
 
-            # A failed tool gets a fixed reply: an unverified draft could claim it worked.
+            # A failed booking tool gets a fixed reply: an unverified draft could claim it worked.
             if not action_result.success:
-                return SupportResponse(
-                    content=ACTION_FAILED_RESPONSE,
-                    actions_taken=actions,
-                    was_abstained=True,
-                    latency_ms=_elapsed(start_time),
-                )
+                if booking_turn:
+                    return SupportResponse(
+                        content=ACTION_FAILED_RESPONSE,
+                        actions_taken=actions,
+                        was_abstained=True,
+                        latency_ms=_elapsed(start_time),
+                    )
+                # For catalog tools: fall back to KB chunks if available; otherwise give catalog-specific fallback.
+                if retrieval.should_abstain or not retrieval.chunks:
+                    return SupportResponse(
+                        content=CATALOG_FAILED_RESPONSE,
+                        actions_taken=actions,
+                        was_abstained=True,
+                        latency_ms=_elapsed(start_time),
+                    )
 
             if booking_turn:
                 # No KB chunks reach this draft, so there is nothing for the verifier to check.

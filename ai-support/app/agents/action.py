@@ -53,7 +53,10 @@ async def execute_action(
         )
 
     # Build headers — forward access token for auth-required tools
-    headers: dict[str, str] = {"Content-Type": "application/json"}
+    headers: dict[str, str] = {
+        "Content-Type": "application/json",
+        "User-Agent": "DocNow-AISupport/1.0",
+    }
     if tool_def.requires_auth and ctx.access_token:
         headers["Cookie"] = f"accessToken={ctx.access_token}"
 
