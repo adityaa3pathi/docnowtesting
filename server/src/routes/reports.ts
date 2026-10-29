@@ -6,6 +6,7 @@
  *
  * Endpoints:
  *   GET /api/reports/booking/:bookingId    — list reports for a booking (auth required)
+ *   GET /api/reports/:reportId             — one report's details plus a signed view link token (auth required)
  *   GET /api/reports/:reportId/download    — stream the report PDF (auth required)
  */
 import { Router, Response } from 'express';
@@ -15,7 +16,7 @@ import { originalReportStorageKey, reportStorage } from '../services/reportStora
 import { ingestReport } from '../services/reportIngestion';
 import axios from 'axios';
 import { brandReportPdf } from '../services/reportBrandingService';
-import { verifyReportAccessToken } from '../services/reportAccess';
+import { createReportAccessToken, verifyReportAccessToken } from '../services/reportAccess';
 
 const router = Router();
 
@@ -175,6 +176,57 @@ router.get('/booking/:bookingId', async (req: AuthRequest, res: Response) => {
     } catch (error) {
         console.error('[Reports] Error listing reports:', error);
         return res.status(500).json({ error: 'We could not load your reports right now. Please try again shortly.' });
+    }
+});
+
+/**
+ * GET /api/reports/:reportId
+ * One report for the app's viewer. `viewToken` opens /api/reports/public/:token, which an in-app
+ * browser or share sheet can use without the Authorization header. It expires like WhatsApp links.
+ */
+router.get('/:reportId', async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.userId!;
+        const reportId = req.params.reportId as string;
+        const report = await prisma.report.findUnique({
+            where: { id: reportId },
+            select: {
+                id: true,
+                bookingId: true,
+                vendorCustomerId: true,
+                isFullReport: true,
+                fetchStatus: true,
+                verifiedAt: true,
+                generatedAt: true,
+                fileSize: true,
+                booking: {
+                    select: {
+                        userId: true,
+                        slotDate: true,
+                        items: { select: { patientId: true, testName: true, patient: { select: { name: true } } } },
+                    },
+                },
+            },
+        });
+        // Someone else's report reads as missing, so ids cannot be probed.
+        if (!report || report.booking.userId !== userId) {
+            return res.status(404).json({ error: 'This report is not available anymore.' });
+        }
+
+        const items = report.booking.items;
+        const own = items.filter((i) => i.patientId === report.vendorCustomerId);
+        const relevant = own.length ? own : items;
+        const { booking, vendorCustomerId: _vendorCustomerId, ...rest } = report;
+        return res.json({
+            ...rest,
+            collectedOn: booking.slotDate,
+            patientName: own[0]?.patient.name ?? null,
+            tests: [...new Set(relevant.map((i) => i.testName).filter(Boolean))],
+            viewToken: createReportAccessToken(report.id),
+        });
+    } catch (error) {
+        console.error('[Reports] Error loading report:', error);
+        return res.status(500).json({ error: 'We could not load your report right now. Please try again shortly.' });
     }
 });
 

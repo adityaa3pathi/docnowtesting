@@ -8,44 +8,20 @@
  * `data.channelId` / `channelId` pick the Android channel (teleconsult-call rings, others do not).
  * Lock-screen text never names the patient.
  */
-import axios from 'axios';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '../../db';
+import { deliverPush, pushDisabled, sendViaExpo, type ExpoMessage, type ExpoSend, type PushChannelId } from '../../services/expoPush';
 import { logger } from '../../utils/logger';
 import { claim, dueNotices, LOOKBACK_MS, type NoticeKind, type Recipient } from './consultations.notifications';
 
+export type { ExpoMessage, ExpoSend, ExpoTicket } from '../../services/expoPush';
+
 export type PushKind = NoticeKind | 'PRESCRIPTION_ISSUED';
-export type PushChannelId = 'teleconsult-call' | 'prescriptions-reports' | 'reminders';
+type ConsultPushData = { kind: PushKind; consultationId: string };
+export type ConsultPushMessage = Omit<ExpoMessage<ConsultPushData>, 'to'>;
 
-export interface ExpoMessage {
-    to: string;
-    title: string;
-    body: string;
-    data: { url: string; channelId: PushChannelId; kind: PushKind; consultationId: string };
-    channelId: PushChannelId;
-    sound: string;
-    priority: 'high' | 'normal';
-    ttl: number;
-    interruptionLevel?: 'active' | 'time-sensitive';
-}
-
-export type ExpoTicket = { status: 'ok'; id: string } | { status: 'error'; message: string; details?: { error?: string } };
-export type ExpoSend = (messages: ExpoMessage[]) => Promise<ExpoTicket[]>;
-
-const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 /** Must match the file bundled by the app's expo-notifications plugin (used by iOS; Android uses the channel). */
 const CALL_SOUND = 'teleconsult_call.wav';
-
-/** Sends one batch (Expo allows 100 per request); tickets come back in message order. */
-export const sendViaExpo: ExpoSend = async (messages) => {
-    const token = process.env.EXPO_ACCESS_TOKEN;
-    const { data } = await axios.post(EXPO_PUSH_URL, messages, {
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        timeout: 10_000,
-    });
-    if (!Array.isArray(data?.data)) throw new Error(`Expo push rejected the request: ${JSON.stringify(data?.errors ?? data).slice(0, 300)}`);
-    return data.data as ExpoTicket[];
-};
 
 const select = {
     id: true, status: true, startsAt: true, createdAt: true, userId: true,
@@ -68,7 +44,7 @@ const istTime = (d: Date) =>
     new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true }).format(d).toUpperCase();
 const istDay = (d: Date) => new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short' }).format(d);
 
-export function pushMessage(kind: PushKind, to: Recipient, c: PushRow): Omit<ExpoMessage, 'to'> {
+export function pushMessage(kind: PushKind, to: Recipient, c: PushRow): ConsultPushMessage {
     const dr = `Dr. ${c.doctor.displayName}`;
     const at = istTime(c.startsAt);
     const url = to === 'doctor' ? `docnow://doctor/consultations/${c.id}` : `docnow://consult/room/${c.id}`;
@@ -116,7 +92,7 @@ type Deps = { db?: PrismaClient; now?: Date; send?: ExpoSend; consultationId?: s
 
 export async function sendDuePushes(deps: Deps = {}) {
     // Tests and local runs without push set EXPO_PUSH_DISABLED=1; an injected sender still runs.
-    if (process.env.EXPO_PUSH_DISABLED === '1' && !deps.send) return { sent: 0, failed: 0 };
+    if (pushDisabled() && !deps.send) return { sent: 0, failed: 0 };
     const db = deps.db ?? prisma;
     const now = deps.now ?? new Date();
     const send = deps.send ?? sendViaExpo;
@@ -150,24 +126,12 @@ export async function sendDuePushes(deps: Deps = {}) {
             const key = { consultationId_kind_recipient_channel: { consultationId: c.id, kind, recipient: to, channel: 'push' } };
             const message = pushMessage(kind, to, c);
             try {
-                const tickets = await send(tokens.map((token) => ({ to: token, ...message })));
-                // Uninstalled apps: forget the token so later sends skip it.
-                const dead = tokens.filter((_, i) => {
-                    const t = tickets[i];
-                    return t?.status === 'error' && t.details?.error === 'DeviceNotRegistered';
-                });
-                if (dead.length) {
-                    await db.pushToken.deleteMany({ where: { token: { in: dead } } });
-                    tokensByUser.set(userId, tokens.filter((t) => !dead.includes(t)));
-                }
-                const ok = tickets.filter((t): t is { status: 'ok'; id: string } => t.status === 'ok');
-                if (!ok.length) {
-                    const first = tickets.find((t) => t.status === 'error');
-                    throw new Error(first && first.status === 'error' ? first.message : 'No push ticket returned');
-                }
+                const { ticketIds, dead } = await deliverPush(db, tokens, message, send);
+                // Uninstalled apps were forgotten; later sends in this run skip them too.
+                if (dead.length) tokensByUser.set(userId, tokens.filter((t) => !dead.includes(t)));
                 await db.consultationNotification.update({
                     where: key,
-                    data: { status: 'SENT', providerId: ok.map((t) => t.id).join(',').slice(0, 500), lastError: null },
+                    data: { status: 'SENT', providerId: ticketIds.join(',').slice(0, 500), lastError: null },
                 });
                 sent++;
             } catch (e: unknown) {

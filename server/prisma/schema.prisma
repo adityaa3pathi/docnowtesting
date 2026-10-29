@@ -283,8 +283,25 @@ model Report {
   fileSize         Int?                        // PDF file size in bytes
   generatedAt      DateTime  @default(now())
   booking          Booking   @relation(fields: [bookingId], references: [id])
+  notifications    ReportNotification[]
 
   @@unique([bookingId, vendorCustomerId, isFullReport, verifiedAt])
+}
+
+// One row per report per channel, claimed before sending, so "report ready" never goes out twice.
+model ReportNotification {
+  id         String   @id @default(uuid())
+  reportId   String
+  channel    String // push
+  status     String   @default("SENDING") // SENDING | SENT | FAILED
+  attempts   Int      @default(1)
+  lastError  String?
+  providerId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  report     Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, channel])
 }
 
 model CallbackRequest {
