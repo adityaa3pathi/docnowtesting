@@ -3,6 +3,7 @@
  * signed-in user, so another user's ids return 404. Cookie requests need a CSRF token.
  */
 import { Router, Response } from 'express';
+import multer from 'multer';
 import { prisma } from '../../db';
 import { z } from 'zod';
 import { authMiddleware, AuthRequest } from '../../middleware/auth';
@@ -14,6 +15,7 @@ import { verifyAndConfirm } from './consultations.payments';
 import { sendConsultError } from './consultations.http';
 import { guestInfo, guestJoin, patientJoin } from './consultations.room';
 import { acceptFamilyLink, declineFamilyLink } from './consultations.family';
+import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_BOOKING, removeAttachment, uploadAttachment } from './consultations.attachments';
 import { reassignBooking, reassignOption, rescheduleBooking, rescheduleSlots } from './consultations.reschedule';
 import { kickConsultPushes } from './consultations.push';
 import { addRecommendedTestsToCart, getPatientPrescription, prescriptionFromLink, prescriptionLinkToken } from './consultations.prescription';
@@ -25,7 +27,11 @@ const bookingSchema = z.object({
     idempotencyKey: z.string().regex(/^[A-Za-z0-9_-]{8,64}$/, 'Invalid idempotency key'),
     isCaregiverJoined: z.boolean().optional(),
     attachedReportIds: z.array(z.string().uuid('Invalid report')).max(5, 'Attach at most 5 reports').optional(),
+    attachmentIds: z.array(z.string().uuid('Invalid document')).max(MAX_ATTACHMENTS_PER_BOOKING, `Attach at most ${MAX_ATTACHMENTS_PER_BOOKING} documents`).optional(),
 });
+
+// One file per request, held in memory only long enough to check it and send it to private storage.
+const attachmentUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_ATTACHMENT_BYTES, files: 1 } });
 
 export const consultPatientRoutes = Router();
 const patient = [authMiddleware, consultCsrfGuard] as const;
@@ -37,6 +43,30 @@ consultPatientRoutes.post('/bookings', ...patient, rateLimiter(5, 60, 'consult_b
         const parse = bookingSchema.safeParse(req.body);
         if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
         res.status(201).json(await createBooking({ userId: req.userId!, ...parse.data }));
+    } catch (e) { fail(res, e); }
+});
+
+// ── Outside medical records (photos / PDFs) for the doctor ──
+
+consultPatientRoutes.post('/attachments', ...patient, rateLimiter(20, 600, 'consult_attachment'), (req: AuthRequest, res: Response) => {
+    attachmentUpload.single('file')(req, res, async (err: unknown) => {
+        try {
+            if (err instanceof multer.MulterError) {
+                return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'Files can be up to 10 MB' : 'Upload one file at a time' });
+            }
+            if (err) throw err;
+            const file = (req as AuthRequest & { file?: { buffer: Buffer; originalname: string } }).file;
+            if (!file) return res.status(400).json({ error: 'Choose a photo or PDF to upload' });
+            res.status(201).json(await uploadAttachment(req.userId!, file));
+        } catch (e) { fail(res, e); }
+    });
+});
+
+consultPatientRoutes.delete('/attachments/:id', ...patient, async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        res.json(await removeAttachment(req.userId!, id.data));
     } catch (e) { fail(res, e); }
 });
 

@@ -13,6 +13,7 @@ import { expireHold, holdSlot } from './consultations.transitions';
 import { DOCTOR_LATE_AFTER_MS, noShowDeadlines } from './consultations.room';
 import { DoctorError } from './doctors.status';
 import { accessFor, familyWhere, isSelf, userMobile } from './consultations.family';
+import { attachmentsFor, claimAttachments, type AttachmentStorage } from './consultations.attachments';
 
 export const MAX_OPEN_HOLDS_PER_USER = 3;
 export const MAX_OPEN_HOLDS_PER_DOCTOR = 1;
@@ -27,6 +28,8 @@ export type BookingInput = {
     isCaregiverJoined?: boolean;
     /** DocNow lab reports (from the booker's own lab bookings) to share with the doctor. */
     attachedReportIds?: string[];
+    /** Photos / PDFs of outside records the booker uploaded just before (POST /attachments). */
+    attachmentIds?: string[];
 };
 
 export const MAX_ATTACHED_REPORTS = 5;
@@ -128,7 +131,7 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
     try {
         consultation = await db.$transaction(async (tx) => {
             if (!(await holdSlot(tx, slot.id))) throw new DoctorError(409, SLOT_TAKEN);
-            return tx.consultation.create({
+            const created = await tx.consultation.create({
                 data: {
                     userId: input.userId,
                     patientId: patient.id,
@@ -148,6 +151,8 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
                     ...(reportIds.length ? { attachedReports: { create: reportIds.map((reportId) => ({ reportId })) } } : {}),
                 },
             });
+            await claimAttachments(tx, input.userId, created.id, input.attachmentIds ?? [], now);
+            return created;
         });
     } catch (e) {
         if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
@@ -287,14 +292,20 @@ function familyView(c: BookingRow, linked: boolean) {
 // Family members see paid bookings only; holds and expired attempts are the booker's business.
 const FAMILY_VISIBLE: Prisma.ConsultationWhereInput = { status: { notIn: ['PENDING_PAYMENT', 'EXPIRED'] } };
 
-export async function getBooking(userId: string, consultationId: string, db: PrismaClient = prisma) {
+/**
+ * One booking. The detail view (not the list) carries the outside documents with fresh signed
+ * links, for the booker and the accepted family member; never before the family member accepts.
+ */
+export async function getBooking(userId: string, consultationId: string, db: PrismaClient = prisma, storage?: AttachmentStorage) {
     const c = await db.consultation.findFirst({ where: { id: consultationId }, include: viewInclude });
     if (!c) throw new DoctorError(404, 'Not found');
     const access = accessFor(c, userId, c.userId === userId ? null : await userMobile(db, userId));
     if (!access) throw new DoctorError(404, 'Not found');
-    if (access.kind === 'booker') return toView(c);
+    const documents = () => attachmentsFor(c.id, { db, storage });
+    if (access.kind === 'booker') return { ...toView(c), attachments: await documents() };
     if (c.status === 'PENDING_PAYMENT' || c.status === 'EXPIRED') throw new DoctorError(404, 'Not found');
-    return familyView(c, access.kind === 'family');
+    if (access.kind === 'family-pending') return familyView(c, false);
+    return { ...familyView(c, true), attachments: await documents() };
 }
 
 /** The booker's own consultations plus those booked for them by family, newest first. */

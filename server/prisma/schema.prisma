@@ -127,6 +127,7 @@ model User {
   doctorProfile DoctorProfile?
   consultations Consultation[]
   familyLinkedPatients Patient[] @relation("FamilyLinkedPatients")
+  consultationAttachments ConsultationAttachment[]
 
   // Mobile push notifications
   pushTokens    PushToken[]
@@ -994,6 +995,7 @@ model Consultation {
   prescriptions Prescription[]
   notifications ConsultationNotification[]
   attachedReports ConsultationReport[]
+  attachments     ConsultationAttachment[]
 
   @@unique([userId, idempotencyKey])
   @@index([slotId])
@@ -1126,3 +1128,23 @@ model ConsultationReport {
 
   @@id([consultationId, reportId])
 }
+
+// A photo or PDF of an outside record (old prescription, discharge summary, lab report) the booker
+// uploaded for the doctor. Stored privately; read through short-lived signed links only. Uploaded
+// before booking, so consultationId stays empty until the booking claims it.
+model ConsultationAttachment {
+  id             String        @id @default(uuid())
+  userId         String
+  consultationId String?
+  storageKey     String        @unique
+  name           String
+  mimeType       String
+  sizeBytes      Int
+  createdAt      DateTime      @default(now())
+  user           User          @relation(fields: [userId], references: [id])
+  consultation   Consultation? @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  @@index([consultationId])
+  @@index([userId, consultationId])
+}
+

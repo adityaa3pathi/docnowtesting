@@ -137,6 +137,7 @@ const guestSelect = {
     ...select,
     doctor: { select: { displayName: true, photoUrl: true, qualification: true, specialty: { select: { name: true } } } },
     patient: { select: { name: true, preferredLanguage: true } },
+    _count: { select: { attachments: true } },
 } as const;
 
 async function guestConsultation(token: string) {
@@ -165,6 +166,8 @@ export async function guestInfo(token: string, now = new Date()) {
         // A first name is enough for "Namaste Sunita ji"; nothing clinical is ever on this page.
         patientFirstName: c.patient.name.trim().split(/\s+/)[0] ?? '',
         language: c.patient.preferredLanguage === 'en' ? ('en' as const) : ('hi' as const),
+        // Only how many: anyone holding this link could otherwise open the patient's records.
+        documentsShared: c._count.attachments,
         doctor: {
             name: c.doctor.displayName,
             photoUrl: c.doctor.photoUrl,

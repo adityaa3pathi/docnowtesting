@@ -2,7 +2,7 @@
  * Doctor notes and prescriptions. Notes stay editable until the first prescription is issued. A
  * prescription's content never changes; a correction voids it and issues the next version.
  */
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../../db';
 import { addCatalogItemToCart } from '../../services/cartService';
@@ -10,6 +10,7 @@ import { realConsultVideo } from './consultations.video';
 import { DoctorError } from './doctors.status';
 import { canSeeClinical, isSelf, resolveAccess } from './consultations.family';
 import { createReportAccessToken } from '../../services/reportAccess';
+import { attachmentsFor } from './consultations.attachments';
 import { createSignedToken, verifySignedToken } from '../../services/signedToken';
 import { resolveOrCreateSelfPatient } from '../../utils/patientValidation';
 import type { ConsultationStatus } from './consultations.types';
@@ -90,6 +91,7 @@ export async function getDoctorRecord(doctorId: string, consultationId: string) 
     });
     if (!c) throw new DoctorError(404, 'Not found');
     const { prescriptions, user, attachedReports, ...rest } = c;
+    const documents = await attachmentsFor(c.id);
     const voided = prescriptions.filter((p) => p.voidedAt);
     const forFamily = !isSelf(c.patient.relation);
     return {
@@ -104,6 +106,8 @@ export async function getDoctorRecord(doctorId: string, consultationId: string) 
             date: report.verifiedAt ?? report.generatedAt,
             viewToken: createReportAccessToken(report.id),
         })),
+        // Photos / PDFs of outside records the booker uploaded, as signed links valid for an hour.
+        attachments: documents,
         prescription: prescriptions.find((p) => !p.voidedAt) ?? null,
         previousVersions: voided.map((p) => ({ id: p.id, version: p.version, issuedAt: p.issuedAt, voidedAt: p.voidedAt, voidReason: p.voidReason })),
     };
@@ -268,5 +272,27 @@ export async function addRecommendedTestsToCart(userId: string, consultationId: 
         if (r.ok) added.push(t.code);
         else skipped.push({ code: t.code, reason: r.error });
     }
-    return { added, skipped };
+    // Checkout pre-selects this, so the person only picks a collection slot.
+    return { added, skipped, suggestedAddressId: await suggestCollectionAddress(userId, patientId) };
+}
+
+type AddressDb = Pick<PrismaClient, 'booking' | 'address'>;
+
+/**
+ * Where the tests will most likely be collected: the address of the caller's last lab booking for
+ * this patient (Mother's home, not the booker's), else the last one they used at all, else any
+ * saved address. Null when they have none, and checkout asks for one.
+ */
+export async function suggestCollectionAddress(userId: string, patientId: string, db: AddressDb = prisma): Promise<string | null> {
+    const usable = { addressId: { not: null }, address: { is: { isDeleted: false } } };
+    const forPatient = await db.booking.findFirst({
+        where: { userId, ...usable, items: { some: { patientId } } },
+        orderBy: { createdAt: 'desc' },
+        select: { addressId: true },
+    });
+    if (forPatient?.addressId) return forPatient.addressId;
+    const lastUsed = await db.booking.findFirst({ where: { userId, ...usable }, orderBy: { createdAt: 'desc' }, select: { addressId: true } });
+    if (lastUsed?.addressId) return lastUsed.addressId;
+    const saved = await db.address.findFirst({ where: { userId, isDeleted: false }, select: { id: true } });
+    return saved?.id ?? null;
 }
