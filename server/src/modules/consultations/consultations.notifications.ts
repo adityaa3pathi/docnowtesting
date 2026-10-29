@@ -9,7 +9,7 @@ import { logger } from '../../utils/logger';
 import { sendTemplateViaWhatsApp, type WappieTemplateComponent } from '../../services/wappieWhatsApp';
 import { JOIN_EARLY_MS, JOIN_LATE_MS } from './consultations.room';
 
-export type NoticeKind = 'CONFIRMED' | 'REMINDER' | 'JOIN_NOW' | 'DOCTOR_NO_SHOW' | 'PATIENT_NO_SHOW';
+export type NoticeKind = 'CONFIRMED' | 'REMINDER' | 'JOIN_NOW' | 'PARTNER_WAITING' | 'DOCTOR_NO_SHOW' | 'PATIENT_NO_SHOW';
 type Recipient = 'patient' | 'doctor';
 type Send = (mobile: string, template: string, language: string, components: WappieTemplateComponent[]) => Promise<{ id: string }>;
 type Deps = { db?: PrismaClient; send?: Send; now?: Date; templates?: Partial<Record<NoticeKind, string>> };
@@ -24,6 +24,7 @@ function templatesFromEnv(): Partial<Record<NoticeKind, string>> {
         CONFIRMED: process.env.CONSULT_WA_TEMPLATE_CONFIRMED,
         REMINDER: process.env.CONSULT_WA_TEMPLATE_REMINDER,
         JOIN_NOW: process.env.CONSULT_WA_TEMPLATE_JOIN_NOW,
+        PARTNER_WAITING: process.env.CONSULT_WA_TEMPLATE_PARTNER_WAITING,
         DOCTOR_NO_SHOW: process.env.CONSULT_WA_TEMPLATE_DOCTOR_NO_SHOW,
         PATIENT_NO_SHOW: process.env.CONSULT_WA_TEMPLATE_PATIENT_NO_SHOW,
     };
@@ -36,6 +37,7 @@ const istDateTime = (d: Date) =>
 
 const select = {
     id: true, status: true, startsAt: true, createdAt: true, doctorId: true,
+    doctorJoinedAt: true, patientJoinedAt: true,
     slot: { select: { endsAt: true } },
     patient: { select: { name: true } },
     user: { select: { mobile: true } },
@@ -54,6 +56,7 @@ function message(kind: NoticeKind, to: Recipient, c: Row): { body: string[]; pat
         case 'CONFIRMED': return { body: [name, other, when], path };
         case 'REMINDER': return { body: [name, other, when], path };
         case 'JOIN_NOW': return { body: [name, other], path };
+        case 'PARTNER_WAITING': return { body: [name, other], path };
         // The link offers the same doctor again.
         case 'PATIENT_NO_SHOW': return { body: [name, other], path: `consult/doctors/${c.doctorId}` };
         case 'DOCTOR_NO_SHOW': {
@@ -65,7 +68,7 @@ function message(kind: NoticeKind, to: Recipient, c: Row): { body: string[]; pat
 
 /** Which messages are due for this consultation right now. */
 export function dueNotices(
-    c: { status: string; startsAt: Date; createdAt: Date; slot: { endsAt: Date }; refunds: unknown[] },
+    c: { status: string; startsAt: Date; createdAt: Date; doctorJoinedAt: Date | null; patientJoinedAt: Date | null; slot: { endsAt: Date }; refunds: unknown[] },
     now: Date,
 ): [NoticeKind, Recipient][] {
     const t = now.getTime();
@@ -80,6 +83,9 @@ export function dueNotices(
     }
     if (live && t >= start - JOIN_EARLY_MS && t < c.slot.endsAt.getTime() + JOIN_LATE_MS) {
         due.push(['JOIN_NOW', 'patient'], ['JOIN_NOW', 'doctor']);
+        // When one party has joined but the other hasn't, nudge the missing one.
+        if (c.doctorJoinedAt && !c.patientJoinedAt) due.push(['PARTNER_WAITING', 'patient']);
+        if (c.patientJoinedAt && !c.doctorJoinedAt) due.push(['PARTNER_WAITING', 'doctor']);
     }
     // The refund often completes in the same run, moving the booking on to REFUNDED.
     const doctorMissed = c.status === 'NO_SHOW_DOCTOR' || (c.status === 'REFUNDED' && c.refunds.length > 0);

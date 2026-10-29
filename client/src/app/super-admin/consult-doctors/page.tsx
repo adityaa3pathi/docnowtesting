@@ -52,7 +52,7 @@ export default function ConsultDoctorsPage() {
                                     <Link href={`/super-admin/consult-doctors/${d.id}`} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm hover:border-primary/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
                                         <div className="min-w-0">
                                             <p className="font-semibold text-gray-900">{d.displayName}</p>
-                                            <p className="text-sm text-gray-500">{d.specialty.name} · {d.consultationFee > 0 ? formatRupees(d.consultationFee) : 'No fee set'}</p>
+                                            <p className="text-sm text-gray-500">{d.specialty?.name ?? 'General'} · {d.consultationFee > 0 ? formatRupees(d.consultationFee) : 'No fee set'}</p>
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <p className={cn('text-right text-sm', (d.noShows30d ?? 0) > 0 ? 'font-bold text-red-600' : 'text-gray-500')}>

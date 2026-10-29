@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { Loader2, Mic, MicOff, PhoneOff, Video, VideoOff, Volume2 } from 'lucide-react';
+import { Loader2, Maximize, Minimize, Mic, MicOff, PhoneOff, Video, VideoOff, Volume2 } from 'lucide-react';
 import { ConnectionState, DisconnectReason, Room, RoomEvent, Track, type Participant } from 'livekit-client';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
@@ -64,8 +64,10 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave }: 
     const [error, setError] = useState<string | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
     const [leaving, setLeaving] = useState(false);
+    const [fullscreen, setFullscreen] = useState(false);
     const [, redraw] = useReducer((n: number) => n + 1, 0);
     const audioBox = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const leaveRef = useRef(onLeave);
     const videoAllowed = !role.endsWith('-audio');
 
@@ -155,10 +157,26 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave }: 
     const micOn = !!local?.isMicrophoneEnabled;
     const camOn = !!local?.isCameraEnabled;
 
+    function toggleFullscreen() {
+        if (!containerRef.current) return;
+        if (!document.fullscreenElement) {
+            containerRef.current.requestFullscreen().then(() => setFullscreen(true)).catch(() => {});
+        } else {
+            document.exitFullscreen().then(() => setFullscreen(false)).catch(() => {});
+        }
+    }
+
+    // Listen for fullscreen changes (e.g., Escape key).
+    useEffect(() => {
+        const cb = () => setFullscreen(!!document.fullscreenElement);
+        document.addEventListener('fullscreenchange', cb);
+        return () => document.removeEventListener('fullscreenchange', cb);
+    }, []);
+
     return (
-        <div className="space-y-3">
+        <div className="space-y-3" ref={containerRef}>
             <div ref={audioBox} hidden />
-            <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-gray-900">
+            <div className="relative w-full overflow-hidden rounded-2xl bg-gray-900" style={{ minHeight: fullscreen ? '100vh' : '55vh', maxHeight: fullscreen ? '100vh' : '80vh' }}>
                 {!connected ? (
                     <div role="status" className="flex h-full items-center justify-center gap-2 text-sm text-white">
                         <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Connecting...
@@ -200,6 +218,9 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave }: 
                         Switch to audio
                     </Button>
                 )}
+                <Button variant="outline" size="sm" disabled={!connected} onClick={toggleFullscreen}>
+                    {fullscreen ? <><Minimize className="mr-1.5 h-4 w-4" aria-hidden /> Exit fullscreen</> : <><Maximize className="mr-1.5 h-4 w-4" aria-hidden /> Fullscreen</>}
+                </Button>
                 <Button size="sm" disabled={leaving} onClick={() => void leave()} className="bg-destructive hover:bg-destructive/90">
                     <PhoneOff className="mr-1.5 h-4 w-4" aria-hidden /> Leave
                 </Button>

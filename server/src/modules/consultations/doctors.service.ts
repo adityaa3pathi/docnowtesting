@@ -80,6 +80,7 @@ export async function adminCreateDoctor(adminId: string, data: {
             }
             return tx.doctorProfile.create({
                 data: { ...profile, userId: user.id, status: 'APPROVED', createdByAdminId: adminId, reviewedById: adminId, reviewedAt: new Date() },
+                include: { specialty: true, availability: true, user: { select: { mobile: true, email: true } } },
             });
         });
     } catch (e) {
@@ -106,6 +107,7 @@ export async function reviewDoctor(
         const updated = await tx.doctorProfile.update({
             where: { id: doctorId },
             data: { status: to, statusReason: to === 'APPROVED' ? null : reason, reviewedById: adminId, reviewedAt: new Date() },
+            include: { specialty: true, availability: true, user: { select: { mobile: true, email: true } } },
         });
         if (to === 'APPROVED' && doctor.user.role === 'USER') {
             await tx.user.update({ where: { id: doctor.userId }, data: { role: 'DOCTOR' } });

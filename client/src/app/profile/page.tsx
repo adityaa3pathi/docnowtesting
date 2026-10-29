@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut, ChevronRight, IndianRupee, Stethoscope } from 'lucide-react';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -64,6 +64,10 @@ function BentoCard({ title, icon, value, subtitle, children, className, gradient
                 {cardContent}
             </DialogTrigger>
             <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 bg-white sm:bg-gray-50 !rounded-3xl">
+                <DialogHeader className="sr-only">
+                    <DialogTitle>{title}</DialogTitle>
+                    <DialogDescription>{subtitle || title}</DialogDescription>
+                </DialogHeader>
                 <div className="bg-white sm:rounded-2xl sm:shadow-sm sm:p-6">
                     {children}
                 </div>

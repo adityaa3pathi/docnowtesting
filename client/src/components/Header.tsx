@@ -12,6 +12,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { useLocation } from '@/contexts/LocationContext';
@@ -49,6 +50,9 @@ const desktopNavLinks = [
     { label: 'Health Camps', href: '/camps' },
     { label: 'About Us', href: '/about' },
 ];
+
+// Doctor dashboard link — available to all authenticated users (doctor layout handles profile check)
+const doctorNavLink = { label: 'Doctor Dashboard', href: '/doctor', icon: Stethoscope };
 
 export function Header() {
     const pathname = usePathname();
@@ -268,7 +272,10 @@ export function Header() {
                                 </button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-hidden flex flex-col">
-                                <DialogHeader><DialogTitle className="text-2xl font-black">Select your Location</DialogTitle></DialogHeader>
+                                <DialogHeader>
+                                    <DialogTitle className="text-2xl font-black">Select your Location</DialogTitle>
+                                    <DialogDescription className="sr-only">Search and choose your city</DialogDescription>
+                                </DialogHeader>
                                 <div className="space-y-6 mt-4 flex-1 overflow-y-auto pr-2">
                                     <div className="relative">
                                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -325,7 +332,10 @@ export function Header() {
                                 </button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[400px]">
-                                <DialogHeader><DialogTitle className="text-2xl font-black text-center">Enter Pincode</DialogTitle></DialogHeader>
+                                <DialogHeader>
+                                    <DialogTitle className="text-2xl font-black text-center">Enter Pincode</DialogTitle>
+                                    <DialogDescription className="sr-only">Enter your 6-digit pincode</DialogDescription>
+                                </DialogHeader>
                                 <div className="space-y-6 mt-4">
                                     <div className="space-y-4">
                                         <input
@@ -386,6 +396,17 @@ export function Header() {
                             )}
                         </Link>
 
+                        {/* Doctor Dashboard */}
+                        {isAuthenticated && (
+                            <Link
+                                href={doctorNavLink.href}
+                                className="border border-teal-600 text-teal-600 font-semibold text-sm px-4 py-2 rounded-[7px] hover:bg-teal-50 transition-all flex items-center gap-1.5 whitespace-nowrap"
+                            >
+                                <Stethoscope className="h-4 w-4" />
+                                Doctor
+                            </Link>
+                        )}
+
                         {/* Auth */}
                         {isAuthenticated ? (
                             <Link href="/profile" className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-black hover:bg-primary/90 transition-colors">
@@ -439,7 +460,7 @@ export function Header() {
                         <DialogContent className="sm:max-w-[400px] border-none shadow-2xl">
                             <DialogHeader className="space-y-3">
                                 <DialogTitle className="text-xl font-black">Need help with booking a test?</DialogTitle>
-                                <p className="text-sm text-muted-foreground">Please share your details, and our health expert will assist you.</p>
+                                <DialogDescription className="text-sm text-muted-foreground">Please share your details, and our health expert will assist you.</DialogDescription>
                             </DialogHeader>
                             <form onSubmit={handleCallbackSubmit} className="space-y-4 mt-2">
                                 <Input
@@ -589,6 +610,16 @@ export function Header() {
                             <Stethoscope className="w-4 h-4 text-gray-400" />
                             Consult a Doctor
                         </Link>
+                        {isAuthenticated && (
+                            <Link
+                                href="/doctor"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-teal-700 hover:bg-teal-50 transition-all"
+                            >
+                                <Stethoscope className="w-4 h-4 text-teal-600" />
+                                Doctor Dashboard
+                            </Link>
+                        )}
                         <Link
                             href="/camps"
                             onClick={() => setIsMobileMenuOpen(false)}

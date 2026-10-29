@@ -20,7 +20,7 @@ export default function DoctorHomePage() {
                 <Badge tone={info.tone}>{info.label}</Badge>
                 <h1 className="text-xl font-bold text-foreground">{doctor.displayName}</h1>
                 <p className="text-sm text-muted-foreground">
-                    {doctor.specialty.name} · Fee {formatRupees(doctor.consultationFee)} · {doctor.slotMinutes} minute appointments
+                    {doctor.specialty?.name ?? 'General'} · Fee {formatRupees(doctor.consultationFee)} · {doctor.slotMinutes} minute appointments
                 </p>
             </Card>
 

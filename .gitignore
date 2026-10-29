@@ -22,6 +22,8 @@ to_be_implemented.md
 *.key
 *.id_rsa
 *.id_rsa.pub
+__pycache__/
+*.py[cod]
 
 # Environment Files
 .env

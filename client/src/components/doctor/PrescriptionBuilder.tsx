@@ -7,6 +7,28 @@ import { doctor as doctorApi } from '@/lib/consult/api';
 import { REISSUE_REASON_MAX, REISSUE_REASON_MIN, buildPrescription, builderFromPrescription, emptyBuilder, emptyMedicine } from '@/lib/consult/room';
 import type { Medicine, Prescription, PrescriptionInput } from '@/lib/consult/types';
 
+// Common drug name suggestions for autocomplete
+const DRUG_SUGGESTIONS = [
+    'Paracetamol', 'Amoxicillin', 'Azithromycin', 'Cetirizine', 'Diclofenac', 'Domperidone',
+    'Levocetirizine', 'Metformin', 'Omeprazole', 'Pantoprazole', 'Ranitidine', 'Ciprofloxacin',
+    'Doxycycline', 'Ibuprofen', 'Losartan', 'Amlodipine', 'Atorvastatin', 'Metronidazole',
+    'Ondansetron', 'Prednisolone', 'Salbutamol', 'Cough Syrup', 'Multivitamin', 'Calcium + D3',
+    'Iron + Folic Acid', 'B-Complex', 'Vitamin C', 'Zinc', 'Montelukast', 'Ofloxacin',
+    'Cefixime', 'Clarithromycin', 'Fluconazole', 'Ketoconazole', 'Clotrimazole', 'Betamethasone',
+    'Hydrocortisone', 'Dexamethasone', 'Atenolol', 'Enalapril', 'Ramipril', 'Telmisartan',
+    'Hydrochlorothiazide', 'Furosemide', 'Glimepiride', 'Insulin', 'Thyroxine', 'Carbimazole',
+];
+
+// Common lab test code suggestions
+const TEST_SUGGESTIONS = [
+    'CBC', 'Lipid Profile', 'LFT', 'KFT', 'RFT', 'TSH', 'T3', 'T4', 'HbA1c', 'FBS', 'PPBS',
+    'Vitamin D', 'Vitamin B12', 'Serum Iron', 'Ferritin', 'Urine Routine', 'Urine Culture',
+    'Blood Culture', 'CRP', 'ESR', 'RA Factor', 'ANA', 'Dengue NS1', 'Malaria Antigen',
+    'Widal Test', 'HBsAg', 'Anti-HCV', 'HIV', 'VDRL', 'PT/INR', 'APTT', 'D-Dimer',
+    'Serum Calcium', 'Serum Uric Acid', 'Lipase', 'Amylase', 'PSA', 'CEA', 'CA-125',
+    'ECG', 'Chest X-Ray', 'USG Abdomen', '2D Echo', 'PFT', 'TMT', 'Hb Electrophoresis',
+];
+
 const COLUMNS = [
     { key: 'name', label: 'Medicine', placeholder: 'Name' },
     { key: 'dose', label: 'Dose', placeholder: '500 mg' },
@@ -68,9 +90,22 @@ export function PrescriptionBuilder({ consultationId, correcting, onIssued, onCa
                         {COLUMNS.map((c) => (
                             <div key={c.key}>
                                 <label htmlFor={`rx-${i}-${c.key}`} className="sr-only">{c.label} {i + 1}</label>
-                                <input id={`rx-${i}-${c.key}`} value={row[c.key]} placeholder={`${c.label}: ${c.placeholder}`}
-                                    maxLength={c.key === 'name' ? 120 : c.key === 'instructions' ? 200 : 60}
-                                    onChange={(e) => setCell(i, c.key, e.target.value)} className={fieldCls} />
+                                {c.key === 'name' ? (
+                                    <>
+                                        <input id={`rx-${i}-${c.key}`} value={row[c.key]} placeholder={`${c.label}: ${c.placeholder}`}
+                                            maxLength={120} list={`drug-suggestions-${i}`}
+                                            onChange={(e) => setCell(i, c.key, e.target.value)} className={fieldCls} />
+                                        <datalist id={`drug-suggestions-${i}`}>
+                                            {DRUG_SUGGESTIONS.filter((d) => !row[c.key] || d.toLowerCase().includes(row[c.key].toLowerCase())).map((d) => (
+                                                <option key={d} value={d} />
+                                            ))}
+                                        </datalist>
+                                    </>
+                                ) : (
+                                    <input id={`rx-${i}-${c.key}`} value={row[c.key]} placeholder={`${c.label}: ${c.placeholder}`}
+                                        maxLength={c.key === 'instructions' ? 200 : 60}
+                                        onChange={(e) => setCell(i, c.key, e.target.value)} className={fieldCls} />
+                                )}
                             </div>
                         ))}
                     </li>
@@ -81,7 +116,13 @@ export function PrescriptionBuilder({ consultationId, correcting, onIssued, onCa
             </Button>
             <div>
                 <label htmlFor="rx-tests" className="mb-1 block text-sm font-semibold text-foreground">Recommended test codes</label>
-                <input id="rx-tests" value={codes} onChange={(e) => setCodes(e.target.value)} className={fieldCls} placeholder="e.g. CBC, TSH" />
+                <input id="rx-tests" value={codes} onChange={(e) => setCodes(e.target.value)} className={fieldCls}
+                    placeholder="e.g. CBC, TSH" list="test-suggestions" />
+                <datalist id="test-suggestions">
+                    {TEST_SUGGESTIONS.filter((t) => !codes || t.toLowerCase().includes(codes.split(/[\s,]+/).pop()?.toLowerCase() || '')).map((t) => (
+                        <option key={t} value={t} />
+                    ))}
+                </datalist>
                 <p className="mt-1 text-xs text-muted-foreground">Catalog test codes, separated by commas. Names show after you issue.</p>
             </div>
             <div>

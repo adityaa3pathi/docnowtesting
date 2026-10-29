@@ -348,7 +348,11 @@ consultAdminRoutes.patch('/doctors/:id', ...admin, async (req: AuthRequest, res:
         const parse = adminUpdateDoctorSchema.safeParse(req.body);
         if (!parse.success) return bad(res, parse);
         const id = req.params.id as string;
-        const updated = await prisma.doctorProfile.update({ where: { id }, data: parse.data });
+        const updated = await prisma.doctorProfile.update({
+            where: { id },
+            data: parse.data,
+            include: { specialty: true, availability: true, user: { select: { mobile: true, email: true } } },
+        });
         await audit(req, 'DOCTOR_UPDATE', id, parse.data);
         res.json(updated);
     } catch (e) { fail(res, e, 'admin update'); }

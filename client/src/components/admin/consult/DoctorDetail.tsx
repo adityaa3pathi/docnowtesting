@@ -38,7 +38,8 @@ export function DoctorDetail({ id }: { id: string }) {
         setSaving(true);
         setFormError(null);
         try {
-            setData(await admin.updateDoctor(id, { consultationFee: feeNum, slotMinutes: slotValue }));
+            const next = await admin.updateDoctor(id, { consultationFee: feeNum, slotMinutes: slotValue });
+            setData((prev) => (prev ? { ...prev, ...next, specialty: next.specialty ?? prev.specialty } : next));
             setFee(null);
             setSlot(null);
             toast.success('Saved');
@@ -53,7 +54,8 @@ export function DoctorDetail({ id }: { id: string }) {
         setBusy(true);
         setFormError(null);
         try {
-            setData(await admin.approve(id));
+            const next = await admin.approve(id);
+            setData((prev) => (prev ? { ...prev, ...next, specialty: next.specialty ?? prev.specialty } : next));
             toast.success('Doctor approved');
         } catch (e) {
             setFormError(errorMessage(e));
@@ -71,7 +73,7 @@ export function DoctorDetail({ id }: { id: string }) {
                     <h2 className="text-xl font-bold text-gray-900">{doc.displayName}</h2>
                     <Badge tone={info.tone}>{info.label}</Badge>
                 </div>
-                <p className="mt-1 text-sm text-gray-500">{doc.specialty.name} · {doc.qualification} · {doc.experienceYears} years</p>
+                <p className="mt-1 text-sm text-gray-500">{doc.specialty?.name ?? 'General'} · {doc.qualification} · {doc.experienceYears} years</p>
                 <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                     <div><dt className="text-gray-500">Registration</dt><dd className="font-medium">{doc.registrationNumber} ({doc.registrationCouncil})</dd></div>
                     <div><dt className="text-gray-500">Mobile</dt><dd className="font-medium">{doc.user?.mobile ?? 'Not shown'}</dd></div>
@@ -113,11 +115,19 @@ export function DoctorDetail({ id }: { id: string }) {
 
             <ReasonDialog
                 open={dialog === 'reject'} title="Reject this doctor" description="The doctor will see this reason." confirmLabel="Reject" destructive
-                onClose={() => setDialog(null)} onConfirm={async (r) => { setData(await admin.reject(id, r)); toast.success('Doctor rejected'); }}
+                onClose={() => setDialog(null)} onConfirm={async (r) => {
+                    const next = await admin.reject(id, r);
+                    setData((prev) => (prev ? { ...prev, ...next, specialty: next.specialty ?? prev.specialty } : next));
+                    toast.success('Doctor rejected');
+                }}
             />
             <ReasonDialog
                 open={dialog === 'suspend'} title="Suspend this doctor" description="Patients will no longer be able to book them." confirmLabel="Suspend" destructive
-                onClose={() => setDialog(null)} onConfirm={async (r) => { setData(await admin.suspend(id, r)); toast.success('Doctor suspended'); }}
+                onClose={() => setDialog(null)} onConfirm={async (r) => {
+                    const next = await admin.suspend(id, r);
+                    setData((prev) => (prev ? { ...prev, ...next, specialty: next.specialty ?? prev.specialty } : next));
+                    toast.success('Doctor suspended');
+                }}
             />
         </div>
     );

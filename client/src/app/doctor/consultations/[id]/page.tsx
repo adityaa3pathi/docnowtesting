@@ -107,6 +107,7 @@ export default function DoctorConsultationRoomPage({ params }: { params: Promise
         <div className="space-y-4">
             <Link href="/doctor/consultations" className="text-sm font-semibold text-primary">&larr; Consultations</Link>
             <div className="grid gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
+                {/* Main area: call + patient info takes ~70% */}
                 <div className="space-y-4">
                     <Card className="space-y-1 p-5">
                         <div className="flex flex-wrap items-start justify-between gap-2">
