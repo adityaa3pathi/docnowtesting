@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut, ChevronRight, IndianRupee } from 'lucide-react';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -31,7 +31,33 @@ const ReportsTab = dynamic(() => import('@/components/profile/ReportsTab').then(
 
 
 // --- BENTO BOX COMPONENT ---
-function BentoCard({ title, icon, value, subtitle, children, className, gradient, onClick, isLink }: any) {
+interface BentoCardProps {
+    title: string;
+    icon: React.ReactNode;
+    value?: string | number | null;
+    subtitle?: string | null;
+    children?: React.ReactNode;
+    className?: string;
+    gradient?: string;
+    onClick?: () => void;
+    isLink?: boolean;
+    isOpen?: boolean;
+    onOpenChange?: (open: boolean) => void;
+}
+
+function BentoCard({
+    title,
+    icon,
+    value,
+    subtitle,
+    children,
+    className,
+    gradient,
+    onClick,
+    isLink,
+    isOpen,
+    onOpenChange,
+}: BentoCardProps) {
     const cardContent = (
         <div 
             onClick={!children ? onClick : undefined}
@@ -59,11 +85,15 @@ function BentoCard({ title, icon, value, subtitle, children, className, gradient
     if (!children) return cardContent;
 
     return (
-        <Dialog>
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
                 {cardContent}
             </DialogTrigger>
             <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 bg-white sm:bg-gray-50 !rounded-3xl">
+                <DialogHeader className="sr-only">
+                    <DialogTitle>{title}</DialogTitle>
+                    <DialogDescription>{subtitle || title}</DialogDescription>
+                </DialogHeader>
                 <div className="bg-white sm:rounded-2xl sm:shadow-sm sm:p-6">
                     {children}
                 </div>
@@ -72,13 +102,35 @@ function BentoCard({ title, icon, value, subtitle, children, className, gradient
     );
 }
 
-export default function ProfilePage() {
+function ProfilePageContent() {
     const { isAuthenticated, isInitialized, user, logout } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
     
     const [walletBalance, setWalletBalance] = useState<number | null>(null);
     const [familyCount, setFamilyCount] = useState<number | null>(null);
     const [activeBookingsCount, setActiveBookingsCount] = useState<number | null>(null);
+    const [activeTab, setActiveTab] = useState<string | null>(null);
+
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (tab) {
+            const normalized = tab === 'orders' ? 'bookings' : tab === 'patients' ? 'family' : tab;
+            setActiveTab(normalized);
+        } else {
+            setActiveTab(null);
+        }
+    }, [searchParams]);
+
+    const handleTabChange = (tabId: string, open: boolean) => {
+        if (open) {
+            setActiveTab(tabId);
+            router.replace(`/profile?tab=${tabId}`, { scroll: false });
+        } else {
+            setActiveTab(null);
+            router.replace('/profile', { scroll: false });
+        }
+    };
 
     useEffect(() => {
         if (isInitialized && !isAuthenticated) {
@@ -133,6 +185,8 @@ export default function ProfilePage() {
                         icon={<User className="w-4 h-4" />}
                         value={user?.name || 'User'}
                         subtitle={[user?.email, user?.mobile].filter(Boolean).join(' • ') || 'Complete your profile'}
+                        isOpen={activeTab === 'profile'}
+                        onOpenChange={(open) => handleTabChange('profile', open)}
                     >
                         <ProfileTab />
                     </BentoCard>
@@ -145,6 +199,8 @@ export default function ProfilePage() {
                         icon={<Wallet className="w-4 h-4" />}
                         value={walletBalance !== null ? `₹${walletBalance.toLocaleString('en-IN')}` : '...'}
                         subtitle="Available balance"
+                        isOpen={activeTab === 'wallet'}
+                        onOpenChange={(open) => handleTabChange('wallet', open)}
                     >
                         <WalletTab />
                     </BentoCard>
@@ -157,6 +213,8 @@ export default function ProfilePage() {
                         icon={<Calendar className="w-4 h-4" />}
                         value={activeBookingsCount !== null ? activeBookingsCount : '...'}
                         subtitle="Active appointments"
+                        isOpen={activeTab === 'bookings'}
+                        onOpenChange={(open) => handleTabChange('bookings', open)}
                     >
                         <BookingsTab />
                     </BentoCard>
@@ -169,6 +227,8 @@ export default function ProfilePage() {
                         icon={<Users className="w-4 h-4" />}
                         value={familyCount !== null ? `${familyCount} Members` : '...'}
                         subtitle="Manage your family profiles"
+                        isOpen={activeTab === 'family'}
+                        onOpenChange={(open) => handleTabChange('family', open)}
                     >
                         <FamilyTab />
                     </BentoCard>
@@ -180,6 +240,8 @@ export default function ProfilePage() {
                         title="Reports" 
                         icon={<FileText className="w-4 h-4" />}
                         subtitle="View health records"
+                        isOpen={activeTab === 'reports'}
+                        onOpenChange={(open) => handleTabChange('reports', open)}
                     >
                         <ReportsTab />
                     </BentoCard>
@@ -191,6 +253,8 @@ export default function ProfilePage() {
                         title="Referrals" 
                         icon={<Gift className="w-4 h-4" />}
                         subtitle="Invite & earn rewards"
+                        isOpen={activeTab === 'referrals'}
+                        onOpenChange={(open) => handleTabChange('referrals', open)}
                     >
                         <ReferralTab />
                     </BentoCard>
@@ -217,5 +281,13 @@ export default function ProfilePage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function ProfilePage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>}>
+            <ProfilePageContent />
+        </Suspense>
     );
 }
