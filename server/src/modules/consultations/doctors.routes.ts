@@ -25,6 +25,7 @@ import { doctorListQuery, listDoctorConsultations } from './doctors.consultation
 import { policyRoutes } from './consultations.policy.routes';
 import { reviewRoutes } from './consultations.review.routes';
 import { doctorJoin, endConsultation } from './consultations.room';
+import { kickConsultPushes } from './consultations.push';
 import { getDoctorRecord, issuePrescription, noteSchema, prescriptionSchema, reissuePrescription, reissueSchema, saveNotes } from './consultations.prescription';
 import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
 import { appointmentsQuery, getAppointment, listAppointments } from './consultations.appointments';
@@ -240,7 +241,9 @@ doctorRoutes.get('/me/consultations/:id', ...mine, async (req: AuthRequest, res:
 
 doctorRoutes.post('/me/consultations/:id/join', ...mineWrite, rateLimiter(20, 60, 'doctor_join'), async (req: AuthRequest, res: Response) => {
     try {
-        res.json(await doctorJoin(await myDoctorId(req), req.userId!, consultId(req)));
+        const id = consultId(req);
+        res.json(await doctorJoin(await myDoctorId(req), req.userId!, id));
+        kickConsultPushes(id);
     } catch (e) { fail(res, e, 'join'); }
 });
 
@@ -262,7 +265,9 @@ doctorRoutes.post('/me/consultations/:id/prescription', ...mineWrite, rateLimite
     try {
         const parse = prescriptionSchema.safeParse(req.body);
         if (!parse.success) return bad(res, parse);
-        res.status(201).json(await issuePrescription(await myDoctorId(req), consultId(req), parse.data));
+        const id = consultId(req);
+        res.status(201).json(await issuePrescription(await myDoctorId(req), id, parse.data));
+        kickConsultPushes(id);
     } catch (e) { fail(res, e, 'issue prescription'); }
 });
 

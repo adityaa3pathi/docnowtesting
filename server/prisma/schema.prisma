@@ -1035,12 +1035,13 @@ model Prescription {
   @@unique([consultationId, version])
 }
 
-// One row per message per person, claimed before sending, so a message never goes out twice.
+// One row per message per person per channel, claimed before sending, so a message never goes out twice.
 model ConsultationNotification {
   id             String       @id @default(uuid())
   consultationId String
-  kind           String // CONFIRMED | REMINDER | JOIN_NOW | DOCTOR_NO_SHOW
+  kind           String // CONFIRMED | REMINDER | JOIN_NOW | PARTNER_WAITING | DOCTOR_NO_SHOW | PATIENT_NO_SHOW | PRESCRIPTION_ISSUED
   recipient      String // patient | doctor
+  channel        String       @default("whatsapp") // whatsapp | push
   status         String       @default("SENDING") // SENDING | SENT | FAILED
   attempts       Int          @default(1)
   lastError      String?
@@ -1049,7 +1050,7 @@ model ConsultationNotification {
   updatedAt      DateTime     @updatedAt
   consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
 
-  @@unique([consultationId, kind, recipient])
+  @@unique([consultationId, kind, recipient, channel])
   @@index([status, updatedAt])
 }
 

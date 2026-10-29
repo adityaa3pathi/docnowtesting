@@ -10,13 +10,14 @@ import { sendTemplateViaWhatsApp, type WappieTemplateComponent } from '../../ser
 import { JOIN_EARLY_MS, JOIN_LATE_MS } from './consultations.room';
 
 export type NoticeKind = 'CONFIRMED' | 'REMINDER' | 'JOIN_NOW' | 'PARTNER_WAITING' | 'DOCTOR_NO_SHOW' | 'PATIENT_NO_SHOW';
-type Recipient = 'patient' | 'doctor';
+export type Recipient = 'patient' | 'doctor';
+export type NoticeChannel = 'whatsapp' | 'push';
 type Send = (mobile: string, template: string, language: string, components: WappieTemplateComponent[]) => Promise<{ id: string }>;
 type Deps = { db?: PrismaClient; send?: Send; now?: Date; templates?: Partial<Record<NoticeKind, string>> };
 
 const MAX_ATTEMPTS = 3;
 const REMINDER_LEAD_MS = 60 * 60_000;
-const LOOKBACK_MS = 48 * 3_600_000;
+export const LOOKBACK_MS = 48 * 3_600_000;
 const LANGUAGE = process.env.CONSULT_WA_LANGUAGE || 'en';
 
 function templatesFromEnv(): Partial<Record<NoticeKind, string>> {
@@ -94,16 +95,19 @@ export function dueNotices(
     return due;
 }
 
-/** True when this run owns the send: a fresh claim, or a failed one taken back for retry. */
-async function claim(db: PrismaClient, consultationId: string, kind: NoticeKind, recipient: Recipient): Promise<boolean> {
+/**
+ * True when this run owns the send: a fresh claim, or a failed one taken back for retry. Each
+ * channel has its own row, so WhatsApp and push never block each other.
+ */
+export async function claim(db: PrismaClient, consultationId: string, kind: string, recipient: Recipient, channel: NoticeChannel = 'whatsapp'): Promise<boolean> {
     try {
-        await db.consultationNotification.create({ data: { consultationId, kind, recipient } });
+        await db.consultationNotification.create({ data: { consultationId, kind, recipient, channel } });
         return true;
     } catch (e) {
         if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002')) throw e;
     }
     const retry = await db.consultationNotification.updateMany({
-        where: { consultationId, kind, recipient, status: 'FAILED', attempts: { lt: MAX_ATTEMPTS } },
+        where: { consultationId, kind, recipient, channel, status: 'FAILED', attempts: { lt: MAX_ATTEMPTS } },
         data: { status: 'SENDING', attempts: { increment: 1 } },
     });
     return retry.count === 1;
@@ -141,7 +145,7 @@ export async function sendDueNotices(deps: Deps = {}) {
                     { type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: path }] },
                 ]);
                 await db.consultationNotification.update({
-                    where: { consultationId_kind_recipient: { consultationId: c.id, kind, recipient: to } },
+                    where: { consultationId_kind_recipient_channel: { consultationId: c.id, kind, recipient: to, channel: 'whatsapp' } },
                     data: { status: 'SENT', providerId: res.id, lastError: null },
                 });
                 sent++;
@@ -149,7 +153,7 @@ export async function sendDueNotices(deps: Deps = {}) {
                 failed++;
                 logger.warn({ consultationId: c.id, kind, to, error: e?.message }, 'consult_notice_failed');
                 await db.consultationNotification.update({
-                    where: { consultationId_kind_recipient: { consultationId: c.id, kind, recipient: to } },
+                    where: { consultationId_kind_recipient_channel: { consultationId: c.id, kind, recipient: to, channel: 'whatsapp' } },
                     data: { status: 'FAILED', lastError: String(e?.message ?? e).slice(0, 500) },
                 });
             }

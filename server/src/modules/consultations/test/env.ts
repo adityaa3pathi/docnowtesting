@@ -6,5 +6,9 @@ for (const key of ['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_S
     process.env[key] = '';
 }
 
+// No test may send a real push through Expo; suites that test pushes inject their own sender.
+process.env.EXPO_PUSH_DISABLED = '1';
+process.env.EXPO_ACCESS_TOKEN = '';
+
 // App code reads DATABASE_URL; point it at the test database, or at nothing, never at the .env one.
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'postgresql://no-db@127.0.0.1:1/no_test_db';

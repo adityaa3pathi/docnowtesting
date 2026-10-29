@@ -1,18 +1,23 @@
 /**
- * Every-minute consultation timers: settle no-shows first, then send the messages that are due,
- * so a doctor no-show notice can go out in the same run. Both steps are safe to run twice.
+ * Every-minute consultation timers: settle no-shows first, then send the WhatsApp messages and
+ * push notifications that are due, so a doctor no-show notice can go out in the same run. Every
+ * step is safe to run twice.
  */
 import cron from 'node-cron';
 import { Redis } from '@upstash/redis';
 import { settleNoShows } from '../modules/consultations/consultations.noShow';
 import { sendDueNotices } from '../modules/consultations/consultations.notifications';
+import { sendDuePushes } from '../modules/consultations/consultations.push';
 import { logAlert, logger } from '../utils/logger';
 
 export async function runConsultTimers() {
     const noShows = await settleNoShows();
     const notices = await sendDueNotices();
-    if (noShows.doctors || noShows.patients || notices.sent || notices.failed) logger.info({ noShows, notices }, 'consult_timers_run');
-    return { noShows, notices };
+    const pushes = await sendDuePushes();
+    if (noShows.doctors || noShows.patients || notices.sent || notices.failed || pushes.sent || pushes.failed) {
+        logger.info({ noShows, notices, pushes }, 'consult_timers_run');
+    }
+    return { noShows, notices, pushes };
 }
 
 const redis = process.env.UPSTASH_REDIS_REST_URL

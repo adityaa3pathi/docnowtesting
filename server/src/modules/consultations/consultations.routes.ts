@@ -12,6 +12,7 @@ import { cancelConsultation, cancelPreview } from './consultations.cancellation'
 import { verifyAndConfirm } from './consultations.payments';
 import { sendConsultError } from './consultations.http';
 import { patientJoin } from './consultations.room';
+import { kickConsultPushes } from './consultations.push';
 import { addRecommendedTestsToCart, getPatientPrescription } from './consultations.prescription';
 import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
 
@@ -89,6 +90,7 @@ consultPatientRoutes.post('/bookings/:id/join', ...patient, rateLimiter(20, 60, 
         const id = z.string().uuid().safeParse(req.params.id);
         if (!id.success) return res.status(404).json({ error: 'Not found' });
         res.json(await patientJoin(req.userId!, id.data));
+        kickConsultPushes(id.data);
     } catch (e) { fail(res, e); }
 });
 
