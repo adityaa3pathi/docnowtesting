@@ -1,6 +1,8 @@
 import express, { Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { rateLimiter } from '../middleware/rateLimiter';
+import { pushTokenSchema, removePushToken, removePushTokenSchema, savePushToken } from '../services/pushTokens';
 import { generateReferralCode } from '../utils/referralService';
 import { prisma } from '../db';
 
@@ -328,6 +330,38 @@ router.get('/referrals', authMiddleware, async (req: AuthRequest, res: Response)
         });
     } catch (error) {
         console.error('Get Referral Center Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// POST /api/profile/push-token - Register this phone's Expo push token for the signed-in account
+router.post('/push-token', authMiddleware, rateLimiter(10, 60, 'push_token'), async (req: AuthRequest, res: Response) => {
+    const parse = pushTokenSchema.safeParse(req.body);
+    if (!parse.success) {
+        res.status(400).json({ error: parse.error.issues[0]?.message ?? 'Invalid push token' });
+        return;
+    }
+    try {
+        await savePushToken(req.userId!, parse.data);
+        res.status(204).end();
+    } catch (error) {
+        console.error('Save Push Token Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// DELETE /api/profile/push-token - Stop notifications to this phone (called on sign-out)
+router.delete('/push-token', authMiddleware, rateLimiter(10, 60, 'push_token'), async (req: AuthRequest, res: Response) => {
+    const parse = removePushTokenSchema.safeParse(req.body);
+    if (!parse.success) {
+        res.status(400).json({ error: parse.error.issues[0]?.message ?? 'Invalid push token' });
+        return;
+    }
+    try {
+        await removePushToken(req.userId!, parse.data.token);
+        res.status(204).end();
+    } catch (error) {
+        console.error('Remove Push Token Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });

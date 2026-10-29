@@ -126,6 +126,9 @@ model User {
   // Doctor Consultation
   doctorProfile DoctorProfile?
   consultations Consultation[]
+
+  // Mobile push notifications
+  pushTokens    PushToken[]
 }
 
 model Session {
@@ -1048,4 +1051,21 @@ model ConsultationNotification {
 
   @@unique([consultationId, kind, recipient])
   @@index([status, updatedAt])
+}
+
+// ============================================
+// MOBILE PUSH NOTIFICATIONS
+// ============================================
+
+// One row per phone. The token is unique, so a phone that signs in to another account moves to it.
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique // Expo push token, e.g. ExponentPushToken[xxxx]
+  platform  String // ios | android
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt // last time the app confirmed this token
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
 }
