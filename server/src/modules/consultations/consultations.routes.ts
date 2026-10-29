@@ -13,7 +13,7 @@ import { createBooking, getBooking, listBookings } from './consultations.booking
 import { cancelConsultation, cancelPreview } from './consultations.cancellation';
 import { verifyAndConfirm } from './consultations.payments';
 import { sendConsultError } from './consultations.http';
-import { guestInfo, guestJoin, patientJoin } from './consultations.room';
+import { CONSENT_REQUIRED, CONSENT_VERSION, guestInfo, guestJoin, patientJoin } from './consultations.room';
 import { acceptFamilyLink, declineFamilyLink } from './consultations.family';
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_BOOKING, removeAttachment, uploadAttachment } from './consultations.attachments';
 import { reassignBooking, reassignOption, rescheduleBooking, rescheduleSlots } from './consultations.reschedule';
@@ -28,6 +28,18 @@ const bookingSchema = z.object({
     isCaregiverJoined: z.boolean().optional(),
     attachedReportIds: z.array(z.string().uuid('Invalid report')).max(5, 'Attach at most 5 reports').optional(),
     attachmentIds: z.array(z.string().uuid('Invalid document')).max(MAX_ATTACHMENTS_PER_BOOKING, `Attach at most ${MAX_ATTACHMENTS_PER_BOOKING} documents`).optional(),
+});
+
+// NMC telemedicine consent: the join screen's checkbox. Without it nobody on the patient's side gets a room token.
+const consentSchema = z.object({
+    consent: z.literal(true),
+    consentVersion: z.string().trim().min(1).max(40).optional(),
+    channel: z.enum(['app', 'web']).optional(),
+});
+const consentOf = (req: { ip?: string; get(name: string): string | undefined }, body: z.infer<typeof consentSchema>) => ({
+    version: body.consentVersion ?? CONSENT_VERSION,
+    ipAddress: req.ip ?? null,
+    userAgent: req.get('user-agent') ?? null,
 });
 
 // One file per request, held in memory only long enough to check it and send it to private storage.
@@ -185,7 +197,11 @@ consultPatientRoutes.post('/bookings/:id/join', ...patient, rateLimiter(20, 60, 
     try {
         const id = z.string().uuid().safeParse(req.params.id);
         if (!id.success) return res.status(404).json({ error: 'Not found' });
-        res.json(await patientJoin(req.userId!, id.data));
+        const consent = consentSchema.safeParse(req.body ?? {});
+        if (!consent.success) return res.status(400).json({ error: CONSENT_REQUIRED, code: 'CONSENT_REQUIRED' });
+        res.json(await patientJoin(req.userId!, id.data, {
+            consent: { ...consentOf(req, consent.data), channel: consent.data.channel ?? 'app', userId: req.userId! },
+        }));
         kickConsultPushes(id.data);
     } catch (e) { fail(res, e); }
 });
@@ -242,7 +258,9 @@ consultGuestRoutes.get('/guest/:token', rateLimiter(60, 60, 'consult_guest'), as
 
 consultGuestRoutes.post('/guest/:token/join', rateLimiter(20, 60, 'consult_guest_join'), async (req, res: Response) => {
     try {
-        const out = await guestJoin(String(req.params.token));
+        const consent = consentSchema.safeParse(req.body ?? {});
+        if (!consent.success) return res.status(400).json({ error: CONSENT_REQUIRED, code: 'CONSENT_REQUIRED' });
+        const out = await guestJoin(String(req.params.token), { consent: { ...consentOf(req, consent.data), channel: 'guest-link' } });
         res.json(out);
         // The doctor hears "your patient is waiting" straight away.
         void prisma.consultation.findUnique({ where: { guestToken: String(req.params.token) }, select: { id: true } })

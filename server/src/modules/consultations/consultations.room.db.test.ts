@@ -101,15 +101,38 @@ describeDb('video consultations: join, notes, prescription (real Postgres)', () 
             const otherDoctor = await makeDoctor();
             await expect(room.patientJoin(stranger.id, b.c.id, { video })).rejects.toMatchObject({ status: 404 });
             await expect(room.doctorJoin(otherDoctor.profile.id, otherDoctor.user.id, b.c.id, { video })).rejects.toMatchObject({ status: 404 });
-            const res = await post(`${patientApp.url}/consult/bookings/${b.c.id}/join`, tokenFor(stranger as any));
+            const res = await post(`${patientApp.url}/consult/bookings/${b.c.id}/join`, tokenFor(stranger as any), { consent: true });
             expect(res.status).toBe(404);
         });
 
         it('answers 503 through the route while video keys are missing', async () => {
             const b = await confirmed(2);
-            const res = await post(`${patientApp.url}/consult/bookings/${b.c.id}/join`, tokenFor(b.user as any));
+            const res = await post(`${patientApp.url}/consult/bookings/${b.c.id}/join`, tokenFor(b.user as any), { consent: true });
             expect(res.status).toBe(503);
             expect(await status(b.c.id)).toBe('CONFIRMED');
+        });
+
+        it('refuses a join without telemedicine consent and changes nothing', async () => {
+            const b = await confirmed(2);
+            for (const body of [{}, { consent: false }, { consent: 'yes' }]) {
+                const res = await post(`${patientApp.url}/consult/bookings/${b.c.id}/join`, tokenFor(b.user as any), body);
+                expect(res.status).toBe(400);
+                expect(await res.json()).toMatchObject({ code: 'CONSENT_REQUIRED', error: room.CONSENT_REQUIRED });
+            }
+            expect(await status(b.c.id)).toBe('CONFIRMED');
+            expect(await testDb.consultationConsent.count({ where: { consultationId: b.c.id } })).toBe(0);
+        });
+
+        it('records consent once per person, even across rejoins', async () => {
+            const b = await confirmed(2);
+            const consent = { channel: 'app', version: room.CONSENT_VERSION, userId: b.user.id, ipAddress: '203.0.113.7', userAgent: 'DocNow/1.0' } as const;
+            await room.patientJoin(b.user.id, b.c.id, { video, consent });
+            await room.patientJoin(b.user.id, b.c.id, { video, consent });
+            const rows = await testDb.consultationConsent.findMany({ where: { consultationId: b.c.id } });
+            expect(rows).toHaveLength(1);
+            expect(rows[0]).toMatchObject({
+                identity: `patient:${b.patient.id}`, userId: b.user.id, channel: 'app', version: 'nmc-tpg-2020-v1', ipAddress: '203.0.113.7', userAgent: 'DocNow/1.0',
+            });
         });
 
         it('lets only the doctor end a call in progress', async () => {

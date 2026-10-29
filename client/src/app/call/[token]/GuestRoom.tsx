@@ -3,7 +3,9 @@ import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Camera, CheckCircle2, Hand, Mic, PhoneCall, Stethoscope } from 'lucide-react';
 import { ConsultCallRoom } from '@/components/consult/ConsultCallRoom';
+import { TelemedicineConsent } from '@/components/consult/TelemedicineConsent';
 import { errorMessage, errorStatus, guest } from '@/lib/consult/api';
+import { GUEST_CONSENT_REQUIRED_HINT, GUEST_CONSENT_TEXT } from '@/lib/consult/consent';
 import { guestCopy, type GuestInfo, type GuestLanguage } from '@/lib/consult/guest';
 import type { JoinResponse } from '@/lib/consult/types';
 import { formatIstDay, formatIstTime } from '@/lib/consult/time';
@@ -68,6 +70,7 @@ export function GuestRoom({ token }: { token: string }) {
     const [joinError, setJoinError] = useState<string | null>(null);
     const [call, setCall] = useState<JoinResponse | null>(null);
     const [ended, setEnded] = useState(false);
+    const [consented, setConsented] = useState(false);
     const audio = useRef<AudioContext | null>(null);
     const chimed = useRef(false);
 
@@ -103,6 +106,7 @@ export function GuestRoom({ token }: { token: string }) {
     }, [info?.doctorJoined, call, doctorArrived]);
 
     async function start() {
+        if (!consented) return;
         // A tap is what lets the browser play sound later, so the audio is set up here.
         try {
             audio.current ??= new AudioContext();
@@ -113,7 +117,7 @@ export function GuestRoom({ token }: { token: string }) {
         setJoining(true);
         setJoinError(null);
         try {
-            setCall(await guest.join(token));
+            setCall(await guest.join(token, true));
             setEnded(false);
         } catch (e) {
             setJoinError(errorMessage(e, 'We could not start the call. Please check your internet and try again.'));
@@ -218,14 +222,17 @@ export function GuestRoom({ token }: { token: string }) {
                 </p>
             ) : null}
 
+            <TelemedicineConsent checked={consented} onChange={setConsented} label={GUEST_CONSENT_TEXT} senior language={shown.language} />
+
             <button
                 type="button"
                 onClick={() => void start()}
-                disabled={!open || joining}
+                disabled={!open || joining || !consented}
                 className="flex min-h-20 w-full items-center justify-center gap-3 rounded-3xl bg-[#4b2192] px-6 text-2xl font-extrabold text-white shadow-lg transition active:scale-[0.98] disabled:opacity-50">
                 <PhoneCall className="h-8 w-8" aria-hidden />
                 <span>{joining ? 'जोड़ रहे हैं… / Connecting…' : `${copy.primary.start} (${copy.secondary.start})`}</span>
             </button>
+            {open && !consented ? <p className="text-center text-base font-semibold text-gray-700">{GUEST_CONSENT_REQUIRED_HINT}</p> : null}
             {!open ? (
                 <p className="text-center text-base text-gray-700">
                     {copy.primary.early} · {formatIstTime(info.opensAt)}

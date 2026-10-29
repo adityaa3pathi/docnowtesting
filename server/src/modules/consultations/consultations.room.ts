@@ -13,7 +13,20 @@ const JOINABLE: ConsultationStatus[] = ['CONFIRMED', 'WAITING', 'IN_PROGRESS'];
 export const JOIN_EARLY_MS = 10 * 60_000;
 export const JOIN_LATE_MS = 15 * 60_000;
 
-type Deps = { video?: ConsultVideo; now?: Date };
+/** Telemedicine consent the person gave on the join screen (the routes refuse a join without it). */
+export interface JoinConsent {
+    channel: 'app' | 'web' | 'guest-link';
+    /** Which wording was shown, e.g. CONSENT_VERSION. */
+    version: string;
+    userId?: string | null;
+    ipAddress?: string | null;
+    userAgent?: string | null;
+}
+/** The current consent wording: NMC Telemedicine Practice Guidelines (2020), first DocNow text. */
+export const CONSENT_VERSION = 'nmc-tpg-2020-v1';
+export const CONSENT_REQUIRED = 'Please accept the teleconsultation consent to join';
+
+type Deps = { video?: ConsultVideo; now?: Date; consent?: JoinConsent };
 
 const select = {
     id: true, status: true, type: true, roomId: true, startsAt: true, doctorJoinedAt: true, patientJoinedAt: true,
@@ -99,7 +112,18 @@ async function joinPatientSide(c: Joining, party: 'patient' | 'caretaker', who: 
     const now = deps.now ?? new Date();
     checkJoinable(c, now);
     const roomId = await ensureRoom(c, video);
+    const consent = deps.consent;
     await prisma.$transaction([
+        // The first consent per person is the record; rejoining after a dropped call adds nothing.
+        ...(consent
+            ? [prisma.consultationConsent.createMany({
+                data: [{
+                    consultationId: c.id, identity: who.identity, userId: consent.userId ?? null, channel: consent.channel, version: consent.version,
+                    ipAddress: consent.ipAddress ?? null, userAgent: consent.userAgent?.slice(0, 300) ?? null,
+                }],
+                skipDuplicates: true,
+            })]
+            : []),
         prisma.consultation.updateMany({ where: { id: c.id, status: 'CONFIRMED' }, data: { status: 'WAITING' } }),
         prisma.consultation.updateMany({ where: { id: c.id, status: { in: JOINABLE }, patientJoinedAt: null }, data: { patientJoinedAt: now } }),
         ...(party === 'caretaker'

@@ -433,9 +433,9 @@ describeDb('assisted family consultation (real Postgres)', () => {
         expect(early).not.toHaveProperty('chronicConditions');
 
         const now = new Date(startsAt.getTime() - 5 * 60_000);
-        const guest = await room.guestJoin(guestToken!, { video, now });
+        const guest = await room.guestJoin(guestToken!, { video, now, consent: { channel: 'guest-link', version: room.CONSENT_VERSION } });
         expect(guest.identity).toBe(`patient:${b.patient.id}`);
-        const caregiver = await room.patientJoin(b.son.id, b.id, { video, now });
+        const caregiver = await room.patientJoin(b.son.id, b.id, { video, now, consent: { channel: 'app', version: room.CONSENT_VERSION, userId: b.son.id } });
         expect(caregiver.identity).toBe(`caretaker:${b.son.id}`);
         expect(caregiver.role).toBe('caretaker');
 
@@ -443,6 +443,13 @@ describeDb('assisted family consultation (real Postgres)', () => {
         expect(c.familyJoinedAt).not.toBeNull();
         expect(c.caregiverJoinedAt).not.toBeNull();
         expect(c.status).toBe('WAITING');
+
+        // NMC consent: one record for the family member (no account) and one for the caregiver.
+        const consents = await testDb.consultationConsent.findMany({ where: { consultationId: b.id }, orderBy: { identity: 'asc' } });
+        expect(consents.map((r) => [r.identity, r.userId, r.channel])).toEqual([
+            [`caretaker:${b.son.id}`, b.son.id, 'app'],
+            [`patient:${b.patient.id}`, null, 'guest-link'],
+        ]);
     });
 
     it('guest link expires after the call window and stops working once cancelled', async () => {

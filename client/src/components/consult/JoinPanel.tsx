@@ -5,9 +5,11 @@ import { Button } from '@/components/ui';
 import { useServerNow } from '@/hooks/useServerNow';
 import { errorMessage } from '@/lib/consult/api';
 import { joinWindow } from '@/lib/consult/room';
+import { CONSENT_REQUIRED_HINT, consentText } from '@/lib/consult/consent';
 import { formatIstDateTime } from '@/lib/consult/time';
 import type { ConsultationStatus, ConsultationType, JoinResponse } from '@/lib/consult/types';
 import { ConsultCallRoom } from './ConsultCallRoom';
+import { TelemedicineConsent } from './TelemedicineConsent';
 
 interface Props {
     status: ConsultationStatus;
@@ -20,14 +22,18 @@ interface Props {
     onChange?: () => void;
     /** Tells the page when this person enters or leaves the call. */
     onCallChange?: (inCall: boolean) => void;
+    /** Patient side: the NMC teleconsultation consent must be ticked before Join works. */
+    consentDoctorName?: string;
 }
 
 /** Shows when the call opens, the Join button inside the window, then the call itself. */
-export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, onChange, onCallChange }: Props) {
+export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, onChange, onCallChange, consentDoctorName }: Props) {
     const now = useServerNow();
     const [call, setCall] = useState<JoinResponse | null>(null);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [consented, setConsented] = useState(false);
+    const needsConsent = consentDoctorName !== undefined && !consented;
 
     if (call) {
         return (
@@ -71,11 +77,15 @@ export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, on
                 <p className="text-sm text-muted-foreground">Join from {formatIstDateTime(win.opensAt)} (Indian time).</p>
             )}
             {win.kind === 'ended' && <p className="text-sm text-muted-foreground">The time to join this call has passed.</p>}
+            {win.kind !== 'ended' && consentDoctorName !== undefined && (
+                <TelemedicineConsent checked={consented} onChange={setConsented} label={consentText(consentDoctorName)} />
+            )}
             {win.kind === 'open' && (
-                <Button size="lg" className="w-full" disabled={busy} onClick={() => void start()}>
+                <Button size="lg" className="w-full" disabled={busy || needsConsent} onClick={() => void start()}>
                     {busy ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden /> Joining</> : <><Video className="mr-2 h-5 w-5" aria-hidden /> Join call</>}
                 </Button>
             )}
+            {win.kind === 'open' && needsConsent && <p className="text-center text-xs text-muted-foreground">{CONSENT_REQUIRED_HINT}</p>}
             {error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>}
         </div>
     );

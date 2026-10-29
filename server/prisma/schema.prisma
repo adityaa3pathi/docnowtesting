@@ -119,6 +119,9 @@ model User {
   // Session management
   tokenVersion  Int        @default(0)   // Increment to force-logout all sessions
   sessions      Session[]
+  // Set when the person deleted their account in the app: contact details are wiped and the
+  // account is blocked; clinical and financial records the law requires us to keep stay de-identified.
+  deletedAt     DateTime?
 
   // AI Support Agent
   supportConversations SupportConversation[]
@@ -996,6 +999,7 @@ model Consultation {
   notifications ConsultationNotification[]
   attachedReports ConsultationReport[]
   attachments     ConsultationAttachment[]
+  consents        ConsultationConsent[]
 
   @@unique([userId, idempotencyKey])
   @@index([slotId])
@@ -1148,3 +1152,21 @@ model ConsultationAttachment {
   @@index([userId, consultationId])
 }
 
+
+// Telemedicine consent (NMC Telemedicine Practice Guidelines, 2020): recorded once per person on
+// the patient's side, before the server lets them into the call. `userId` is deliberately not a
+// relation, so the record survives an account deletion.
+model ConsultationConsent {
+  id             String       @id @default(uuid())
+  consultationId String
+  identity       String // the call identity that consented: patient:<patientId> or caretaker:<userId>
+  userId         String? // the signed-in account, or empty for the zero-login family link
+  channel        String // app | web | guest-link
+  version        String // which consent wording was shown
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime     @default(now())
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  @@unique([consultationId, identity])
+}

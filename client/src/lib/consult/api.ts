@@ -1,6 +1,7 @@
 /** One typed call per consultation route, so screens never write raw URLs. */
 import type { AxiosResponse } from 'axios';
 import api, { downloadAuthenticatedFile } from '@/lib/api';
+import { CONSENT_VERSION } from './consent';
 import { recordServerDate } from './time';
 import type { GuestInfo } from './guest';
 import type {
@@ -32,7 +33,9 @@ export function errorStatus(e: unknown): number | undefined {
 
 export const guest = {
     info: (token: string) => api.get<GuestInfo>(`/consult/guest/${encodeURIComponent(token)}`).then(data),
-    join: (token: string) => api.post<JoinResponse & { identity: string }>(`/consult/guest/${encodeURIComponent(token)}/join`).then(data),
+    /** `consent` is the NMC teleconsultation checkbox; the server refuses the join without it. */
+    join: (token: string, consent: true) =>
+        api.post<JoinResponse & { identity: string }>(`/consult/guest/${encodeURIComponent(token)}/join`, { consent, consentVersion: CONSENT_VERSION }).then(data),
 };
 
 // ── Patient ─────────────────────────────────────────────
@@ -51,7 +54,8 @@ export const consult = {
         api.post<VerifyResponse>(`/consult/bookings/${id}/verify`, body).then(data),
     cancelPreview: (id: string) => api.get<CancelPreview>(`/consult/bookings/${id}/cancel-preview`).then(data),
     cancel: (id: string, reason?: string) => api.post<CancelResult>(`/consult/bookings/${id}/cancel`, { reason }).then(data),
-    join: (id: string) => api.post<JoinResponse>(`/consult/bookings/${id}/join`).then(data),
+    join: (id: string, consent: true) =>
+        api.post<JoinResponse>(`/consult/bookings/${id}/join`, { consent, consentVersion: CONSENT_VERSION, channel: 'web' }).then(data),
     prescription: (id: string) => api.get<Prescription>(`/consult/bookings/${id}/prescription`).then(data),
     downloadPrescription: (id: string) =>
         downloadAuthenticatedFile(`/consult/bookings/${id}/prescription.pdf`, 'docnow-prescription.pdf'),
