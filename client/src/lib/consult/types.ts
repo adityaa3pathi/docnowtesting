@@ -286,10 +286,21 @@ export interface DoctorConsultationRecord {
     caregiver?: { name: string; relation: string; coJoining: boolean; joinedAt: string | null } | null;
     /** DocNow lab reports shared for this consultation; `viewToken` opens /api/reports/public/:token. */
     attachedReports?: { id: string; label: string; isFullReport: boolean; date: string; viewToken: string }[];
+    /** Photos / PDFs of outside records the booker uploaded; `url` is signed and expires within the hour. */
+    attachments?: ConsultAttachment[];
     note: ConsultNote | null;
     /** The current version only; voided ones are in previousVersions. */
     prescription: Prescription | null;
     previousVersions: PrescriptionVersion[];
+}
+
+export interface ConsultAttachment {
+    id: string;
+    name: string;
+    mimeType: string;
+    sizeBytes: number;
+    uploadedAt: string;
+    url: string;
 }
 
 export interface PrescriptionVersion {
