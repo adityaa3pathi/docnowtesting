@@ -5,7 +5,7 @@
 import { AccessToken, DataPacket_Kind, RoomServiceClient, TrackSource } from 'livekit-server-sdk';
 import { DoctorError } from './doctors.status';
 
-export type VideoRole = 'doctor' | 'patient' | 'doctor-audio' | 'patient-audio';
+export type VideoRole = 'doctor' | 'patient' | 'caretaker' | 'doctor-audio' | 'patient-audio' | 'caretaker-audio';
 
 export type ConsultRoomEvent =
     | { v: 1; type: 'PRESCRIPTION_DRAFTING'; consultationId: string }
@@ -16,7 +16,8 @@ export interface ConsultVideo {
     /** Address the client connects to. */
     url(): string;
     createRoom(name: string): Promise<string>;
-    joinToken(roomId: string, userId: string, displayName: string, role: VideoRole): Promise<string>;
+    /** `identity` is `doctor:<id>`, `patient:<id>` or `caretaker:<id>` (see callIdentity). */
+    joinToken(roomId: string, identity: string, displayName: string, role: VideoRole): Promise<string>;
     /** Removes everyone still in the room, so the other side's screen knows the call is over. */
     endRoom(roomId: string): Promise<void>;
     /** Broadcasts a reliable event to all participants currently in the room. */
@@ -25,8 +26,8 @@ export interface ConsultVideo {
 
 const JOIN_TOKEN_TTL = '2h';
 const EMPTY_ROOM_SECONDS = 10 * 60;
-// Doctor and patient, plus room for one rejoin overlapping a dropped connection on each side.
-const MAX_PARTICIPANTS = 4;
+// Doctor, patient and a caregiver, plus room for one rejoin overlapping a dropped connection each.
+const MAX_PARTICIPANTS = 6;
 
 function liveKitKeys() {
     const url = process.env.LIVEKIT_URL;
@@ -53,16 +54,17 @@ export function realConsultVideo(): ConsultVideo {
             });
             return room.name;
         },
-        async joinToken(roomId, userId, displayName, role) {
+        async joinToken(roomId, identity, displayName, role) {
             const { apiKey, apiSecret } = liveKitKeys();
-            const token = new AccessToken(apiKey, apiSecret, { identity: userId, name: displayName, ttl: JOIN_TOKEN_TTL });
+            const token = new AccessToken(apiKey, apiSecret, { identity, name: displayName, ttl: JOIN_TOKEN_TTL });
             const audioOnly = role.endsWith('-audio');
             token.addGrant({
                 room: roomId,
                 roomJoin: true,
                 canSubscribe: true,
                 canPublish: true,
-                canPublishData: false,
+                // Only the doctor sends room events (prescription drafting / issued); the server does too.
+                canPublishData: role.startsWith('doctor'),
                 canPublishSources: audioOnly ? [TrackSource.MICROPHONE] : [TrackSource.MICROPHONE, TrackSource.CAMERA],
                 canUpdateOwnMetadata: true, // allows client to publish { net: 'audio-only' }
             });

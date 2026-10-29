@@ -126,6 +126,7 @@ model User {
   // Doctor Consultation
   doctorProfile DoctorProfile?
   consultations Consultation[]
+  familyLinkedPatients Patient[] @relation("FamilyLinkedPatients")
 
   // Mobile push notifications
   pushTokens    PushToken[]
@@ -171,10 +172,29 @@ model Patient {
   age          Int
   gender       String
   dob          DateTime?
+
+  // Assisted family consultations. `phone` is the family member's own 10-digit mobile; whoever
+  // signs in with it sees consultations booked for this person, and gets clinical access only
+  // after accepting once ("Aditya booked this for you, is this you?"), so a mistyped number
+  // never exposes health details. Changing the phone clears the link.
+  phone              String?
+  preferredLanguage  String    @default("hi") // hi | en
+  bloodGroup         String?
+  allergies          String[]  @default([])
+  chronicConditions  String[]  @default([])
+  currentMedications String[]  @default([])
+  linkedUserId       String?
+  linkedAt           DateTime?
+  linkDeclinedAt     DateTime?
+
   bookingItems BookingItem[]
   cartItems    CartItem[]
   consultations Consultation[]
   user         User          @relation(fields: [userId], references: [id])
+  linkedUser   User?         @relation("FamilyLinkedPatients", fields: [linkedUserId], references: [id])
+
+  @@index([phone])
+  @@index([linkedUserId])
 }
 
 model Address {
@@ -284,6 +304,7 @@ model Report {
   generatedAt      DateTime  @default(now())
   booking          Booking   @relation(fields: [bookingId], references: [id])
   notifications    ReportNotification[]
+  consultations    ConsultationReport[]
 
   @@unique([bookingId, vendorCustomerId, isFullReport, verifiedAt])
 }
@@ -952,6 +973,12 @@ model Consultation {
   roomId              String?            @unique
   patientJoinedAt     DateTime?
   doctorJoinedAt      DateTime?
+  // Family bookings: the zero-login web link (docnow.in/call/<guestToken>), whether the booker said
+  // they would co-join to assist, when they did, and when the family member themselves joined.
+  guestToken          String?            @unique
+  isCaregiverJoined   Boolean            @default(false)
+  caregiverJoinedAt   DateTime?
+  familyJoinedAt      DateTime?
   startedAt           DateTime?
   endedAt             DateTime?
   createdAt           DateTime           @default(now())
@@ -966,6 +993,7 @@ model Consultation {
   note          ConsultationNote?
   prescriptions Prescription[]
   notifications ConsultationNotification[]
+  attachedReports ConsultationReport[]
 
   @@unique([userId, idempotencyKey])
   @@index([slotId])
@@ -1086,4 +1114,15 @@ model PushToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, updatedAt])
+}
+
+// A DocNow lab report the booker shared with the doctor for this consultation.
+model ConsultationReport {
+  consultationId String
+  reportId       String
+  createdAt      DateTime     @default(now())
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  report         Report       @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@id([consultationId, reportId])
 }

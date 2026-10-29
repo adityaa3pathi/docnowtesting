@@ -3,6 +3,7 @@
  * signed-in user, so another user's ids return 404. Cookie requests need a CSRF token.
  */
 import { Router, Response } from 'express';
+import { prisma } from '../../db';
 import { z } from 'zod';
 import { authMiddleware, AuthRequest } from '../../middleware/auth';
 import { consultCsrfGuard } from '../../middleware/consultCsrf';
@@ -11,16 +12,19 @@ import { createBooking, getBooking, listBookings } from './consultations.booking
 import { cancelConsultation, cancelPreview } from './consultations.cancellation';
 import { verifyAndConfirm } from './consultations.payments';
 import { sendConsultError } from './consultations.http';
-import { patientJoin } from './consultations.room';
+import { guestInfo, guestJoin, patientJoin } from './consultations.room';
+import { acceptFamilyLink, declineFamilyLink } from './consultations.family';
 import { reassignBooking, reassignOption, rescheduleBooking, rescheduleSlots } from './consultations.reschedule';
 import { kickConsultPushes } from './consultations.push';
-import { addRecommendedTestsToCart, getPatientPrescription } from './consultations.prescription';
+import { addRecommendedTestsToCart, getPatientPrescription, prescriptionFromLink, prescriptionLinkToken } from './consultations.prescription';
 import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
 
 const bookingSchema = z.object({
     slotId: z.string().uuid('Invalid slot'),
     patientId: z.string().uuid('Invalid patient'),
     idempotencyKey: z.string().regex(/^[A-Za-z0-9_-]{8,64}$/, 'Invalid idempotency key'),
+    isCaregiverJoined: z.boolean().optional(),
+    attachedReportIds: z.array(z.string().uuid('Invalid report')).max(5, 'Attach at most 5 reports').optional(),
 });
 
 export const consultPatientRoutes = Router();
@@ -33,6 +37,24 @@ consultPatientRoutes.post('/bookings', ...patient, rateLimiter(5, 60, 'consult_b
         const parse = bookingSchema.safeParse(req.body);
         if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
         res.status(201).json(await createBooking({ userId: req.userId!, ...parse.data }));
+    } catch (e) { fail(res, e); }
+});
+
+// ── Family member: "booked for you" accept / not me ─────
+
+consultPatientRoutes.post('/family/:patientId/accept', ...patient, rateLimiter(10, 60, 'consult_family_link'), async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.patientId);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        res.json(await acceptFamilyLink(req.userId!, id.data));
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.post('/family/:patientId/decline', ...patient, rateLimiter(10, 60, 'consult_family_link'), async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.patientId);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        res.json(await declineFamilyLink(req.userId!, id.data));
     } catch (e) { fail(res, e); }
 });
 
@@ -159,10 +181,52 @@ consultPatientRoutes.get('/bookings/:id/prescription.pdf', ...patient, async (re
     } catch (e) { fail(res, e); }
 });
 
+consultPatientRoutes.get('/bookings/:id/prescription/link', ...patient, rateLimiter(20, 60, 'consult_rx_link'), async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        res.json(await prescriptionLinkToken(req.userId!, id.data));
+    } catch (e) { fail(res, e); }
+});
+
 consultPatientRoutes.post('/bookings/:id/recommended-tests/cart', ...patient, rateLimiter(10, 60, 'consult_rx_cart'), async (req: AuthRequest, res: Response) => {
     try {
         const id = z.string().uuid().safeParse(req.params.id);
         if (!id.success) return res.status(404).json({ error: 'Not found' });
         res.json(await addRecommendedTestsToCart(req.userId!, id.data));
+    } catch (e) { fail(res, e); }
+});
+
+// ── Public: zero-login family room and signed prescription links ──
+// No sign-in: the guest token (a random UUID, sent only to the family member's phone) or the
+// signed link is the credential. Rate-limited per IP; nothing clinical is returned before the call.
+
+export const consultGuestRoutes = Router();
+
+consultGuestRoutes.get('/guest/:token', rateLimiter(60, 60, 'consult_guest'), async (req, res: Response) => {
+    try {
+        res.setHeader('Cache-Control', 'no-store');
+        res.json(await guestInfo(String(req.params.token)));
+    } catch (e) { fail(res, e); }
+});
+
+consultGuestRoutes.post('/guest/:token/join', rateLimiter(20, 60, 'consult_guest_join'), async (req, res: Response) => {
+    try {
+        const out = await guestJoin(String(req.params.token));
+        res.json(out);
+        // The doctor hears "your patient is waiting" straight away.
+        void prisma.consultation.findUnique({ where: { guestToken: String(req.params.token) }, select: { id: true } })
+            .then((c) => c && kickConsultPushes(c.id)).catch(() => {});
+    } catch (e) { fail(res, e); }
+});
+
+consultGuestRoutes.get('/prescriptions/public/:token', rateLimiter(30, 60, 'consult_rx_public'), async (req, res: Response) => {
+    try {
+        const p = await prescriptionFromLink(String(req.params.token));
+        const pdf = await renderPrescriptionPdf(p);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="docnow-prescription-${p.consultationId.slice(0, 8)}.pdf"`);
+        res.setHeader('Cache-Control', 'private, no-store');
+        res.send(pdf);
     } catch (e) { fail(res, e); }
 });

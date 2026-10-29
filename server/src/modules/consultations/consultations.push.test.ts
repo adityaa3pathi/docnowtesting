@@ -18,6 +18,10 @@ function row(over: Partial<PushRow> = {}): PushRow {
         doctor: { displayName: 'Mehta', userId: 'doctor-user' },
         refunds: [],
         prescriptions: [],
+        familyJoinedAt: null,
+        // A visit for the booker themselves; family bookings are covered in consultations.familyBooking.test.ts.
+        patient: { name: 'Asha Rao', relation: 'Self', phone: null, linkedUserId: null, linkDeclinedAt: null },
+        user: { name: 'Asha Rao' },
         ...over,
     } as PushRow;
 }
@@ -53,7 +57,7 @@ describe('what is due', () => {
     });
 
     it('adds the prescription push once one is issued', () => {
-        const done = row({ status: 'COMPLETED', prescriptions: [{ id: 'rx-1' }] });
+        const done = row({ status: 'COMPLETED', prescriptions: [{ id: 'rx-1', recommendedTests: [] }] });
         expect(duePushes(done, min(30))).toEqual([['PRESCRIPTION_ISSUED', 'patient']]);
         expect(duePushes(row({ status: 'COMPLETED' }), min(30))).toEqual([]);
     });
@@ -132,7 +136,7 @@ describe('sendDuePushes', () => {
     });
 
     it('forgets uninstalled phones and still counts the send if one phone got it', async () => {
-        const db = fakeDb([row({ status: 'COMPLETED', prescriptions: [{ id: 'rx' }] })], [
+        const db = fakeDb([row({ status: 'COMPLETED', prescriptions: [{ id: 'rx', recommendedTests: [] }] })], [
             { userId: 'patient-user', token: 'ExponentPushToken[gone]' },
             { userId: 'patient-user', token: 'ExponentPushToken[live]' },
         ]);
@@ -146,7 +150,7 @@ describe('sendDuePushes', () => {
     });
 
     it('marks the notice FAILED (to retry) when every phone was refused or Expo is down', async () => {
-        const db = fakeDb([row({ status: 'COMPLETED', prescriptions: [{ id: 'rx' }] })], [{ userId: 'patient-user', token: 'ExponentPushToken[a]' }]);
+        const db = fakeDb([row({ status: 'COMPLETED', prescriptions: [{ id: 'rx', recommendedTests: [] }] })], [{ userId: 'patient-user', token: 'ExponentPushToken[a]' }]);
         const send = vi.fn().mockRejectedValue(new Error('ECONNRESET'));
         const out = await sendDuePushes({ db: db as never, now: min(30), send });
         expect(out).toEqual({ sent: 0, failed: 1 });

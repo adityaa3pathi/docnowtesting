@@ -6,6 +6,7 @@ import { prisma } from '../../db';
 import { DoctorError } from './doctors.status';
 import { ConsultVideo, VideoRole, realConsultVideo } from './consultations.video';
 import type { ConsultationStatus } from './consultations.types';
+import { resolveAccess } from './consultations.family';
 import { DEFAULT_RULES, type Rules } from './consultations.policy';
 
 const JOINABLE: ConsultationStatus[] = ['CONFIRMED', 'WAITING', 'IN_PROGRESS'];
@@ -16,8 +17,8 @@ type Deps = { video?: ConsultVideo; now?: Date };
 
 const select = {
     id: true, status: true, type: true, roomId: true, startsAt: true, doctorJoinedAt: true, patientJoinedAt: true,
-    policySnapshot: true, slot: { select: { endsAt: true } },
-    patient: { select: { name: true } }, doctor: { select: { displayName: true } },
+    policySnapshot: true, slot: { select: { endsAt: true } }, userId: true, patientId: true,
+    patient: { select: { name: true } }, doctor: { select: { displayName: true } }, user: { select: { name: true } },
 } as const;
 type Joinable = {
     id: string; status: ConsultationStatus; type: string; roomId: string | null; startsAt: Date;
@@ -70,24 +71,115 @@ async function assertStillJoinable(id: string) {
     if (!JOINABLE.includes(after.status)) throw new DoctorError(409, 'This consultation cannot be joined');
 }
 
-function role(person: 'doctor' | 'patient', type: string): VideoRole {
+export type CallParty = 'doctor' | 'patient' | 'caretaker';
+
+function role(person: CallParty, type: string): VideoRole {
     return type === 'AUDIO' ? `${person}-audio` : person;
 }
 
-export async function patientJoin(userId: string, consultationId: string, deps: Deps = {}) {
+/**
+ * Room identities say who someone is, so every client can tell the doctor from the patient and
+ * the caregiver in a three-way call. Two sessions of one patient (app and web) share an identity,
+ * so the newer one replaces the older instead of showing twice.
+ */
+export const callIdentity = {
+    doctor: (doctorId: string) => `doctor:${doctorId}`,
+    patient: (patientId: string) => `patient:${patientId}`,
+    caretaker: (userId: string) => `caretaker:${userId}`,
+};
+
+type Joining = Joinable & { userId: string; patientId: string; user: { name: string | null } };
+
+/**
+ * Anyone on the patient's side entering the room. Their arrival counts as the patient being
+ * present (so the doctor can start and no-show rules hold), and records which side came.
+ */
+async function joinPatientSide(c: Joining, party: 'patient' | 'caretaker', who: { identity: string; name: string; family: boolean }, deps: Deps) {
     const video = deps.video ?? realConsultVideo();
     const now = deps.now ?? new Date();
-    const c = await prisma.consultation.findFirst({ where: { id: consultationId, userId }, select });
-    if (!c) throw new DoctorError(404, 'Not found');
     checkJoinable(c, now);
     const roomId = await ensureRoom(c, video);
     await prisma.$transaction([
         prisma.consultation.updateMany({ where: { id: c.id, status: 'CONFIRMED' }, data: { status: 'WAITING' } }),
         prisma.consultation.updateMany({ where: { id: c.id, status: { in: JOINABLE }, patientJoinedAt: null }, data: { patientJoinedAt: now } }),
+        ...(party === 'caretaker'
+            ? [prisma.consultation.updateMany({ where: { id: c.id, caregiverJoinedAt: null }, data: { caregiverJoinedAt: now, isCaregiverJoined: true } })]
+            : []),
+        ...(who.family ? [prisma.consultation.updateMany({ where: { id: c.id, familyJoinedAt: null }, data: { familyJoinedAt: now } })] : []),
     ]);
     await assertStillJoinable(c.id);
-    const r = role('patient', c.type);
-    return { url: video.url(), roomId, role: r, token: await video.joinToken(roomId, userId, c.patient.name, r) };
+    const r = role(party, c.type);
+    return { url: video.url(), roomId, role: r, identity: who.identity, token: await video.joinToken(roomId, who.identity, who.name, r) };
+}
+
+/**
+ * Join from the app. The booker of their own visit is the patient; the booker of a family visit is
+ * the caregiver; the family member who accepted the booking is the patient.
+ */
+export async function patientJoin(userId: string, consultationId: string, deps: Deps = {}) {
+    const found = await resolveAccess(userId, consultationId);
+    if (!found) throw new DoctorError(404, 'Not found');
+    if (found.access.kind === 'family-pending') throw new DoctorError(409, 'Please confirm this consultation is for you first');
+    const c = await prisma.consultation.findUniqueOrThrow({ where: { id: consultationId }, select });
+    const { access } = found;
+    if (access.kind === 'booker' && access.forFamily) {
+        return joinPatientSide(c, 'caretaker', { identity: callIdentity.caretaker(userId), name: `${c.user.name || 'Family'} (family)`, family: false }, deps);
+    }
+    return joinPatientSide(c, 'patient', { identity: callIdentity.patient(c.patientId), name: c.patient.name, family: access.kind === 'family' }, deps);
+}
+
+// ── Zero-login web room (docnow.in/call/<guestToken>) ───
+
+export const GUEST_LINK_ENDED = 'This consultation link has expired';
+export const GUEST_LINK_CANCELLED = 'This consultation was cancelled';
+
+const guestSelect = {
+    ...select,
+    doctor: { select: { displayName: true, photoUrl: true, qualification: true, specialty: { select: { name: true } } } },
+    patient: { select: { name: true, preferredLanguage: true } },
+} as const;
+
+async function guestConsultation(token: string) {
+    // Tokens are UUIDs; anything else cannot match and is not worth a query.
+    if (!/^[0-9a-f-]{36}$/i.test(token)) throw new DoctorError(404, 'Not found');
+    const c = await prisma.consultation.findUnique({ where: { guestToken: token }, select: guestSelect });
+    if (!c) throw new DoctorError(404, 'Not found');
+    if (['CANCELLED', 'REFUNDED', 'NO_SHOW_DOCTOR', 'EXPIRED', 'PENDING_PAYMENT'].includes(c.status)) throw new DoctorError(410, GUEST_LINK_CANCELLED);
+    return c;
+}
+
+/** What the web room shows before joining. Read-only, so link previews and refreshes change nothing. */
+export async function guestInfo(token: string, now = new Date()) {
+    const c = await guestConsultation(token);
+    const opensAt = new Date(c.startsAt.getTime() - JOIN_EARLY_MS);
+    const closesAt = new Date(c.slot.endsAt.getTime() + JOIN_LATE_MS);
+    if (now > closesAt || c.status === 'COMPLETED' || c.status === 'NO_SHOW_PATIENT') throw new DoctorError(410, GUEST_LINK_ENDED);
+    return {
+        status: c.status,
+        type: c.type,
+        startsAt: c.startsAt,
+        endsAt: c.slot.endsAt,
+        opensAt,
+        window: now < opensAt ? ('early' as const) : ('open' as const),
+        doctorJoined: c.doctorJoinedAt !== null,
+        // A first name is enough for "Namaste Sunita ji"; nothing clinical is ever on this page.
+        patientFirstName: c.patient.name.trim().split(/\s+/)[0] ?? '',
+        language: c.patient.preferredLanguage === 'en' ? ('en' as const) : ('hi' as const),
+        doctor: {
+            name: c.doctor.displayName,
+            photoUrl: c.doctor.photoUrl,
+            qualification: c.doctor.qualification,
+            specialty: c.doctor.specialty.name,
+        },
+    };
+}
+
+/** Joins the family member from the web link, as the patient. */
+export async function guestJoin(token: string, deps: Deps = {}) {
+    const c = await guestConsultation(token);
+    const now = deps.now ?? new Date();
+    if (now.getTime() > c.slot.endsAt.getTime() + JOIN_LATE_MS || c.status === 'COMPLETED') throw new DoctorError(410, GUEST_LINK_ENDED);
+    return joinPatientSide(c, 'patient', { identity: callIdentity.patient(c.patientId), name: c.patient.name, family: true }, deps);
 }
 
 export async function doctorJoin(doctorId: string, doctorUserId: string, consultationId: string, deps: Deps = {}) {
@@ -107,7 +199,8 @@ export async function doctorJoin(doctorId: string, doctorUserId: string, consult
     ]);
     await assertStillJoinable(c.id);
     const r = role('doctor', c.type);
-    return { url: video.url(), roomId, role: r, token: await video.joinToken(roomId, doctorUserId, `Dr. ${c.doctor.displayName}`, r) };
+    const identity = callIdentity.doctor(doctorId);
+    return { url: video.url(), roomId, role: r, identity, token: await video.joinToken(roomId, identity, `Dr. ${c.doctor.displayName}`, r) };
 }
 
 export async function endConsultation(doctorId: string, consultationId: string, deps: Deps = {}) {

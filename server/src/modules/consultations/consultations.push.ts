@@ -6,13 +6,19 @@
  *
  * Payload contract with the mobile app: `data.url` is a docnow:// link the app opens on tap, and
  * `data.channelId` / `channelId` pick the Android channel (teleconsult-call rings, others do not).
- * Lock-screen text never names the patient.
+ * Lock-screen text never names the patient to the doctor.
+ *
+ * Family bookings reach two phones: the booker's (caregiver copy, e.g. "Prescription ready for
+ * Sunita Verma") and the family member's own. The family member's account is the one that accepted
+ * the booking; before that, whoever signs in with the patient's phone gets generic text only, and
+ * never the prescription, so a mistyped number learns nothing clinical.
  */
 import { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '../../db';
 import { deliverPush, pushDisabled, sendViaExpo, type ExpoMessage, type ExpoSend, type PushChannelId } from '../../services/expoPush';
 import { logger } from '../../utils/logger';
-import { claim, dueNotices, LOOKBACK_MS, type NoticeKind, type Recipient } from './consultations.notifications';
+import { claim, dueNotices, LOOKBACK_MS, type AnyRecipient, type NoticeKind } from './consultations.notifications';
+import { isSelf } from './consultations.family';
 
 export type { ExpoMessage, ExpoSend, ExpoTicket } from '../../services/expoPush';
 
@@ -25,18 +31,39 @@ const CALL_SOUND = 'teleconsult_call.wav';
 
 const select = {
     id: true, status: true, startsAt: true, createdAt: true, userId: true,
-    doctorJoinedAt: true, patientJoinedAt: true,
+    doctorJoinedAt: true, patientJoinedAt: true, familyJoinedAt: true,
     slot: { select: { endsAt: true } },
     doctor: { select: { displayName: true, userId: true } },
     refunds: { where: { reason: 'DOCTOR_NO_SHOW' }, select: { amountPaise: true } },
-    prescriptions: { where: { voidedAt: null }, select: { id: true }, take: 1 },
+    prescriptions: { where: { voidedAt: null }, select: { id: true, recommendedTests: true }, take: 1 },
+    patient: { select: { name: true, relation: true, phone: true, linkedUserId: true, linkDeclinedAt: true } },
+    user: { select: { name: true } },
 } satisfies Prisma.ConsultationSelect;
 export type PushRow = Prisma.ConsultationGetPayload<{ select: typeof select }>;
 
-/** The WhatsApp rules, plus a push once the patient's prescription is ready. */
-export function duePushes(c: PushRow, now: Date): [PushKind, Recipient][] {
-    const due: [PushKind, Recipient][] = dueNotices(c, now);
-    if (c.prescriptions.length && (c.status === 'IN_PROGRESS' || c.status === 'COMPLETED')) due.push(['PRESCRIPTION_ISSUED', 'patient']);
+const JOIN_EARLY_MS = 10 * 60_000;
+const JOIN_LATE_MS = 15 * 60_000;
+
+/** A family booking whose family member can be reached on their own phone. */
+const reachesFamily = (c: PushRow) => !isSelf(c.patient.relation) && !!c.patient.phone && !c.patient.linkDeclinedAt;
+
+/** The WhatsApp rules, plus a push once the prescription is ready, plus the family member's own pushes. */
+export function duePushes(c: PushRow, now: Date): [PushKind, AnyRecipient][] {
+    const due: [PushKind, AnyRecipient][] = dueNotices(c, now);
+    const issued = c.prescriptions.length > 0 && (c.status === 'IN_PROGRESS' || c.status === 'COMPLETED');
+    if (issued) due.push(['PRESCRIPTION_ISSUED', 'patient']);
+    if (!reachesFamily(c)) return due;
+
+    const t = now.getTime();
+    const live = ['CONFIRMED', 'WAITING', 'IN_PROGRESS'].includes(c.status);
+    const inWindow = t >= c.startsAt.getTime() - JOIN_EARLY_MS && t < c.slot.endsAt.getTime() + JOIN_LATE_MS;
+    if (live && inWindow) {
+        due.push(['JOIN_NOW', 'family']);
+        // The caregiver joining does not count: the doctor is waiting for the family member.
+        if (c.doctorJoinedAt && !c.familyJoinedAt) due.push(['PARTNER_WAITING', 'family']);
+    }
+    // Clinical news only to an account that accepted the booking.
+    if (issued && c.patient.linkedUserId) due.push(['PRESCRIPTION_ISSUED', 'family']);
     return due;
 }
 
@@ -44,11 +71,64 @@ const istTime = (d: Date) =>
     new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true }).format(d).toUpperCase();
 const istDay = (d: Date) => new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short' }).format(d);
 
-export function pushMessage(kind: PushKind, to: Recipient, c: PushRow): ConsultPushMessage {
+type Text = { title: string; body: string; channelId: PushChannelId; url?: string };
+
+const firstName = (name: string) => name.trim().split(/\s+/)[0] || name;
+const hasTests = (c: PushRow) => Array.isArray(c.prescriptions[0]?.recommendedTests) && (c.prescriptions[0]!.recommendedTests as unknown[]).length > 0;
+
+/** The family member's own phone. `linked` = they accepted the booking; otherwise keep it generic. */
+function familyText(kind: PushKind, c: PushRow, dr: string): Text | null {
+    const linked = !!c.patient.linkedUserId;
+    const booker = c.user.name ? firstName(c.user.name) : 'your family member';
+    switch (kind) {
+        case 'JOIN_NOW':
+            return linked
+                ? { title: `${dr} will call you in 10 minutes`, body: `Booked by ${booker}. Tap to join from your phone.`, channelId: 'reminders' }
+                : { title: 'Your consultation starts in 10 minutes', body: `Booked for you by ${booker} on DocNow. Tap to confirm and join.`, channelId: 'reminders' };
+        case 'PARTNER_WAITING':
+            return linked
+                ? { title: `${dr} is waiting for you`, body: 'Tap to join the video call now.', channelId: 'teleconsult-call' }
+                : { title: 'Your doctor is waiting', body: `Booked for you by ${booker}. Tap to confirm and join.`, channelId: 'teleconsult-call' };
+        case 'PRESCRIPTION_ISSUED':
+            return linked
+                ? {
+                    title: 'Your prescription is ready',
+                    body: `Your prescription from ${dr} is ready${hasTests(c) ? ' with recommended tests' : ''}.`,
+                    channelId: 'prescriptions-reports',
+                    url: `docnow://records/prescription/${c.id}`,
+                }
+                : null;
+        default:
+            return null;
+    }
+}
+
+/** The booker of a family visit: they are the caregiver, so the text is about their family member. */
+function caregiverText(kind: PushKind, c: PushRow, dr: string): Text | null {
+    const who = firstName(c.patient.name);
+    switch (kind) {
+        case 'JOIN_NOW':
+            return { title: `${who}'s consultation starts in 10 minutes`, body: `Join to assist ${who} with ${dr}.`, channelId: 'reminders' };
+        case 'PARTNER_WAITING':
+            return { title: `${dr} is waiting`, body: `${who} has not joined yet. Tap to join and help.`, channelId: 'teleconsult-call' };
+        case 'PRESCRIPTION_ISSUED':
+            return {
+                title: `Prescription ready for ${c.patient.name}`,
+                body: `${dr} has issued it.${hasTests(c) ? ' Book the recommended tests in one tap.' : ''}`,
+                channelId: 'prescriptions-reports',
+                url: `docnow://records/prescription/${c.id}`,
+            };
+        default:
+            return null;
+    }
+}
+
+export function pushMessage(kind: PushKind, to: AnyRecipient, c: PushRow): ConsultPushMessage {
     const dr = `Dr. ${c.doctor.displayName}`;
     const at = istTime(c.startsAt);
     const url = to === 'doctor' ? `docnow://doctor/consultations/${c.id}` : `docnow://consult/room/${c.id}`;
-    const text = ((): { title: string; body: string; channelId: PushChannelId; url?: string } => {
+    const special = to === 'family' ? familyText(kind, c, dr) : to === 'patient' && !isSelf(c.patient.relation) ? caregiverText(kind, c, dr) : null;
+    const text = special ?? ((): Text => {
         switch (kind) {
             case 'CONFIRMED':
                 return { title: 'Consultation confirmed', body: `Your consultation with ${dr} is booked for ${istDay(c.startsAt)}, ${at} IST.`, channelId: 'reminders' };
@@ -109,7 +189,14 @@ export async function sendDuePushes(deps: Deps = {}) {
     });
     if (!rows.length) return { sent: 0, failed: 0 };
 
-    const userIds = [...new Set(rows.flatMap((r) => [r.userId, r.doctor.userId]))];
+    // The family member's account: the one that accepted, else whoever signs in with that phone.
+    const unlinkedPhones = [...new Set(rows.filter((r) => reachesFamily(r) && !r.patient.linkedUserId).map((r) => r.patient.phone!))];
+    const phoneOwners = unlinkedPhones.length
+        ? await db.user.findMany({ where: { mobile: { in: unlinkedPhones } }, select: { id: true, mobile: true } })
+        : [];
+    const familyUser = (r: PushRow) => r.patient.linkedUserId ?? phoneOwners.find((u) => u.mobile === r.patient.phone)?.id ?? null;
+
+    const userIds = [...new Set(rows.flatMap((r) => [r.userId, r.doctor.userId, ...(reachesFamily(r) ? [familyUser(r)] : [])]).filter((id): id is string => !!id))];
     const tokenRows = await db.pushToken.findMany({ where: { userId: { in: userIds } }, select: { userId: true, token: true } });
     const tokensByUser = new Map<string, string[]>();
     for (const t of tokenRows) tokensByUser.set(t.userId, [...(tokensByUser.get(t.userId) ?? []), t.token]);
@@ -118,7 +205,9 @@ export async function sendDuePushes(deps: Deps = {}) {
     let failed = 0;
     for (const c of rows) {
         for (const [kind, to] of duePushes(c, now)) {
-            const userId = to === 'doctor' ? c.doctor.userId : c.userId;
+            const userId = to === 'doctor' ? c.doctor.userId : to === 'family' ? familyUser(c) : c.userId;
+            // The booker signed in with the patient's own phone: one person, so one push is enough.
+            if (!userId || (to === 'family' && userId === c.userId)) continue;
             const tokens = tokensByUser.get(userId);
             // No phone registered: nothing is claimed, so it still goes out if one registers while it is due.
             if (!tokens?.length) continue;

@@ -7,4 +7,4 @@
 export { ConsultationStatus, ConsultationType } from './consultations.types';
 export { assertTransition, canTransition } from './consultations.stateMachine';
 export { consultPublicRoutes, doctorRoutes, consultAdminRoutes } from './doctors.routes';
-export { consultPatientRoutes } from './consultations.routes';
+export { consultGuestRoutes, consultPatientRoutes } from './consultations.routes';

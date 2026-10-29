@@ -8,20 +8,32 @@ import { prisma } from '../../db';
 import { logger } from '../../utils/logger';
 import { sendTemplateViaWhatsApp, type WappieTemplateComponent } from '../../services/wappieWhatsApp';
 import { JOIN_EARLY_MS, JOIN_LATE_MS } from './consultations.room';
+import { dosageSummary, type FamilyLanguage } from './consultations.familyMessages';
+import { createSignedToken } from '../../services/signedToken';
 
 export type NoticeKind = 'CONFIRMED' | 'REMINDER' | 'JOIN_NOW' | 'PARTNER_WAITING' | 'DOCTOR_NO_SHOW' | 'PATIENT_NO_SHOW';
 export type Recipient = 'patient' | 'doctor';
+/** Family bookings add the family member (the patient's own phone) as a third recipient. */
+export type AnyRecipient = Recipient | 'family';
 export type NoticeChannel = 'whatsapp' | 'push';
 type Send = (mobile: string, template: string, language: string, components: WappieTemplateComponent[]) => Promise<{ id: string }>;
-type Deps = { db?: PrismaClient; send?: Send; now?: Date; templates?: Partial<Record<NoticeKind, string>> };
+/** Messages to a family member's own phone (Patient.phone), in their preferred language. */
+export type FamilyNoticeKind = 'FAMILY_BOOKED' | 'FAMILY_JOIN_NOW' | 'FAMILY_PRESCRIPTION';
+type Templates = Partial<Record<NoticeKind | FamilyNoticeKind, string>>;
+type Deps = { db?: PrismaClient; send?: Send; now?: Date; templates?: Templates };
 
 const MAX_ATTEMPTS = 3;
 const REMINDER_LEAD_MS = 60 * 60_000;
 export const LOOKBACK_MS = 48 * 3_600_000;
 const LANGUAGE = process.env.CONSULT_WA_LANGUAGE || 'en';
 
-function templatesFromEnv(): Partial<Record<NoticeKind, string>> {
+function templatesFromEnv(): Templates {
     return {
+        // Body {{1}} first name, {{2}} doctor, {{3}} time (BOOKED) or booker; link button {{1}} = path.
+        FAMILY_BOOKED: process.env.CONSULT_WA_TEMPLATE_FAMILY_BOOKED,
+        FAMILY_JOIN_NOW: process.env.CONSULT_WA_TEMPLATE_FAMILY_JOIN_NOW,
+        // Body {{1}} first name, {{2}} doctor, {{3}} dosage summary; link button = signed prescription PDF.
+        FAMILY_PRESCRIPTION: process.env.CONSULT_WA_TEMPLATE_FAMILY_PRESCRIPTION,
         CONFIRMED: process.env.CONSULT_WA_TEMPLATE_CONFIRMED,
         REMINDER: process.env.CONSULT_WA_TEMPLATE_REMINDER,
         JOIN_NOW: process.env.CONSULT_WA_TEMPLATE_JOIN_NOW,
@@ -40,9 +52,11 @@ const select = {
     id: true, status: true, startsAt: true, createdAt: true, doctorId: true,
     doctorJoinedAt: true, patientJoinedAt: true,
     slot: { select: { endsAt: true } },
-    patient: { select: { name: true } },
-    user: { select: { mobile: true } },
+    user: { select: { mobile: true, name: true } },
     doctor: { select: { displayName: true, user: { select: { mobile: true } } } },
+    guestToken: true, familyJoinedAt: true,
+    patient: { select: { name: true, relation: true, phone: true, preferredLanguage: true, linkedUserId: true, linkDeclinedAt: true } },
+    prescriptions: { where: { voidedAt: null }, select: { medicines: true }, take: 1 },
     refunds: { where: { reason: 'DOCTOR_NO_SHOW' }, select: { amountPaise: true } },
 } satisfies Prisma.ConsultationSelect;
 type Row = Prisma.ConsultationGetPayload<{ select: typeof select }>;
@@ -99,7 +113,7 @@ export function dueNotices(
  * True when this run owns the send: a fresh claim, or a failed one taken back for retry. Each
  * channel has its own row, so WhatsApp and push never block each other.
  */
-export async function claim(db: PrismaClient, consultationId: string, kind: string, recipient: Recipient, channel: NoticeChannel = 'whatsapp'): Promise<boolean> {
+export async function claim(db: PrismaClient, consultationId: string, kind: string, recipient: AnyRecipient, channel: NoticeChannel = 'whatsapp'): Promise<boolean> {
     try {
         await db.consultationNotification.create({ data: { consultationId, kind, recipient, channel } });
         return true;
@@ -113,6 +127,55 @@ export async function claim(db: PrismaClient, consultationId: string, kind: stri
     return retry.count === 1;
 }
 
+/**
+ * Family member's WhatsApp: the booking with its zero-login call link, the link again when the
+ * room opens (until they join), and the prescription. The prescription goes only once the number
+ * is proven theirs (they accepted in the app, or attended the call from the link sent to it).
+ */
+export function dueFamilyNotices(
+    c: { status: string; startsAt: Date; slot: { endsAt: Date }; guestToken: string | null; familyJoinedAt: Date | null;
+        patient: { relation: string; phone: string | null; linkedUserId: string | null; linkDeclinedAt: Date | null };
+        prescriptions: unknown[] },
+    now: Date,
+): FamilyNoticeKind[] {
+    const p = c.patient;
+    if (p.relation.trim().toLowerCase() === 'self' || !p.phone || p.linkDeclinedAt) return [];
+    const t = now.getTime();
+    const start = c.startsAt.getTime();
+    const live = ['CONFIRMED', 'WAITING', 'IN_PROGRESS'].includes(c.status);
+    const due: FamilyNoticeKind[] = [];
+    if (c.guestToken && c.status === 'CONFIRMED' && t < start - JOIN_EARLY_MS) due.push('FAMILY_BOOKED');
+    if (c.guestToken && live && !c.familyJoinedAt && t >= start - JOIN_EARLY_MS && t < c.slot.endsAt.getTime() + JOIN_LATE_MS) due.push('FAMILY_JOIN_NOW');
+    const verified = !!p.linkedUserId || !!c.familyJoinedAt;
+    if (verified && c.prescriptions.length && (c.status === 'IN_PROGRESS' || c.status === 'COMPLETED')) due.push('FAMILY_PRESCRIPTION');
+    return due;
+}
+
+const familyLanguage = (lang: string): FamilyLanguage => (lang === 'en' ? 'en' : 'hi');
+const WA_LANGUAGE: Record<FamilyLanguage, string> = {
+    hi: process.env.CONSULT_WA_FAMILY_LANGUAGE_HI || 'hi',
+    en: process.env.CONSULT_WA_FAMILY_LANGUAGE_EN || 'en',
+};
+
+function familyMessage(kind: FamilyNoticeKind, c: Row): { body: string[]; path: string; language: string } {
+    const lang = familyLanguage(c.patient.preferredLanguage);
+    const first = c.patient.name.trim().split(/\s+/)[0] || c.patient.name;
+    const doctor = `Dr. ${c.doctor.displayName}`;
+    const booker = (c.user.name ?? '').trim().split(/\s+/)[0] || (lang === 'hi' ? 'आपके परिवार' : 'your family');
+    const callPath = `call/${c.guestToken}`;
+    switch (kind) {
+        case 'FAMILY_BOOKED':
+            return { body: [first, doctor, istDateTime(c.startsAt), booker], path: callPath, language: WA_LANGUAGE[lang] };
+        case 'FAMILY_JOIN_NOW':
+            return { body: [first, doctor, booker], path: callPath, language: WA_LANGUAGE[lang] };
+        case 'FAMILY_PRESCRIPTION': {
+            const medicines = (c.prescriptions[0]?.medicines ?? []) as { name: string }[];
+            const token = createSignedToken('consult-prescription', c.id, Number(process.env.PRESCRIPTION_LINK_EXPIRY_HOURS || '72'));
+            return { body: [first, doctor, dosageSummary(medicines, lang)], path: `api/consult/prescriptions/public/${token}`, language: WA_LANGUAGE[lang] };
+        }
+    }
+}
+
 export async function sendDueNotices(deps: Deps = {}) {
     const db = deps.db ?? prisma;
     const now = deps.now ?? new Date();
@@ -122,7 +185,7 @@ export async function sendDueNotices(deps: Deps = {}) {
 
     const rows = await db.consultation.findMany({
         where: {
-            status: { in: ['CONFIRMED', 'WAITING', 'IN_PROGRESS', 'NO_SHOW_DOCTOR', 'NO_SHOW_PATIENT', 'REFUNDED'] },
+            status: { in: ['CONFIRMED', 'WAITING', 'IN_PROGRESS', 'COMPLETED', 'NO_SHOW_DOCTOR', 'NO_SHOW_PATIENT', 'REFUNDED'] },
             startsAt: { gte: new Date(now.getTime() - LOOKBACK_MS) },
         },
         select,
@@ -133,14 +196,21 @@ export async function sendDueNotices(deps: Deps = {}) {
     let sent = 0;
     let failed = 0;
     for (const c of rows) {
-        for (const [kind, to] of dueNotices(c, now)) {
-            const template = templates[kind];
+        const deliveries: { kind: string; to: AnyRecipient; mobile: string; language: string; body: string[]; path: string }[] = [
+            ...dueNotices(c, now).map(([kind, to]) => ({
+                kind, to, mobile: to === 'doctor' ? c.doctor.user.mobile : c.user.mobile, language: LANGUAGE, ...message(kind, to, c),
+            })),
+            ...dueFamilyNotices(c, now)
+                // The booker signed up with the patient's own number: they already get the booker messages.
+                .filter(() => c.patient.phone !== c.user.mobile)
+                .map((kind) => ({ kind, to: 'family' as const, mobile: c.patient.phone!, ...familyMessage(kind, c) })),
+        ];
+        for (const { kind, to, mobile, language, body, path } of deliveries) {
+            const template = templates[kind as NoticeKind | FamilyNoticeKind];
             if (!template) continue;
             if (!(await claim(db, c.id, kind, to))) continue;
-            const mobile = to === 'doctor' ? c.doctor.user.mobile : c.user.mobile;
-            const { body, path } = message(kind, to, c);
             try {
-                const res = await send(mobile, template, LANGUAGE, [
+                const res = await send(mobile, template, language, [
                     { type: 'body', parameters: body.map((text) => ({ type: 'text', text })) },
                     { type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: path }] },
                 ]);

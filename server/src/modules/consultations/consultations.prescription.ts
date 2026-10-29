@@ -8,6 +8,10 @@ import { prisma } from '../../db';
 import { addCatalogItemToCart } from '../../services/cartService';
 import { realConsultVideo } from './consultations.video';
 import { DoctorError } from './doctors.status';
+import { canSeeClinical, isSelf, resolveAccess } from './consultations.family';
+import { createReportAccessToken } from '../../services/reportAccess';
+import { createSignedToken, verifySignedToken } from '../../services/signedToken';
+import { resolveOrCreateSelfPatient } from '../../utils/patientValidation';
 import type { ConsultationStatus } from './consultations.types';
 
 const WRITABLE: ConsultationStatus[] = ['IN_PROGRESS', 'COMPLETED'];
@@ -63,15 +67,43 @@ export async function getDoctorRecord(doctorId: string, consultationId: string) 
         where: { id: consultationId, doctorId },
         select: {
             id: true, status: true, type: true, startsAt: true, patientJoinedAt: true, doctorJoinedAt: true, slot: { select: { endsAt: true } },
-            patient: { select: { name: true, age: true, gender: true } },
+            patient: {
+                select: {
+                    name: true, age: true, gender: true, relation: true, preferredLanguage: true,
+                    bloodGroup: true, allergies: true, chronicConditions: true, currentMedications: true,
+                },
+            },
+            user: { select: { name: true } },
+            isCaregiverJoined: true, caregiverJoinedAt: true, familyJoinedAt: true,
+            attachedReports: {
+                select: {
+                    report: {
+                        select: {
+                            id: true, isFullReport: true, verifiedAt: true, generatedAt: true,
+                            booking: { select: { items: { select: { testName: true } } } },
+                        },
+                    },
+                },
+            },
             note: true, prescriptions: { orderBy: { version: 'desc' } },
         },
     });
     if (!c) throw new DoctorError(404, 'Not found');
-    const { prescriptions, ...rest } = c;
+    const { prescriptions, user, attachedReports, ...rest } = c;
     const voided = prescriptions.filter((p) => p.voidedAt);
+    const forFamily = !isSelf(c.patient.relation);
     return {
         ...rest,
+        // Family bookings: who booked and whether they are joining to assist (never their contact details).
+        caregiver: forFamily ? { name: user.name || 'Family member', relation: c.patient.relation, coJoining: c.isCaregiverJoined, joinedAt: c.caregiverJoinedAt } : null,
+        // Reports the booker shared; each opens through a signed link that expires like WhatsApp ones.
+        attachedReports: attachedReports.map(({ report }) => ({
+            id: report.id,
+            label: [...new Set(report.booking.items.map((i) => i.testName))].join(', ') || 'Lab report',
+            isFullReport: report.isFullReport,
+            date: report.verifiedAt ?? report.generatedAt,
+            viewToken: createReportAccessToken(report.id),
+        })),
         prescription: prescriptions.find((p) => !p.voidedAt) ?? null,
         previousVersions: voided.map((p) => ({ id: p.id, version: p.version, issuedAt: p.issuedAt, voidedAt: p.voidedAt, voidReason: p.voidReason })),
     };
@@ -170,20 +202,56 @@ export async function reissuePrescription(doctorId: string, consultationId: stri
     }
 }
 
-/** The patient's view: the prescription for their own consultation, or 404. */
-export async function getPatientPrescription(userId: string, consultationId: string) {
+/** Prescription links in WhatsApp and the in-app browser: valid this long, like report links. */
+export const PRESCRIPTION_LINK_PURPOSE = 'consult-prescription';
+export const PRESCRIPTION_LINK_HOURS = Number(process.env.PRESCRIPTION_LINK_EXPIRY_HOURS || '72');
+
+/** The current prescription for a consultation, for anyone allowed to see it (no access check). */
+export async function currentPrescription(consultationId: string) {
     const p = await prisma.prescription.findFirst({
-        where: { consultationId, voidedAt: null, consultation: { userId } },
+        where: { consultationId, voidedAt: null },
         include: { consultation: { select: { startsAt: true, patientId: true } } },
     });
     if (!p) throw new DoctorError(404, 'No prescription yet');
     return p;
 }
 
-/** Adds each recommended test for the consultation's patient, skipping ones already in the cart. */
+/**
+ * The patient side's view: the booker, or the family member once they accepted the booking.
+ * Someone without access gets the same 404 as a missing prescription.
+ */
+export async function getPatientPrescription(userId: string, consultationId: string) {
+    const found = await resolveAccess(userId, consultationId);
+    if (!found || !canSeeClinical(found.access)) throw new DoctorError(404, 'No prescription yet');
+    return currentPrescription(consultationId);
+}
+
+/** A signed link token that opens the PDF without signing in (in-app browser, WhatsApp). */
+export async function prescriptionLinkToken(userId: string, consultationId: string) {
+    await getPatientPrescription(userId, consultationId);
+    return { token: createSignedToken(PRESCRIPTION_LINK_PURPOSE, consultationId, PRESCRIPTION_LINK_HOURS), expiresInHours: PRESCRIPTION_LINK_HOURS };
+}
+
+export async function prescriptionFromLink(token: string) {
+    let consultationId: string;
+    try {
+        consultationId = verifySignedToken(PRESCRIPTION_LINK_PURPOSE, token);
+    } catch (e) {
+        throw new DoctorError(400, e instanceof Error ? e.message : 'Invalid link');
+    }
+    return currentPrescription(consultationId);
+}
+
+/**
+ * Adds each recommended test to the caller's own cart, skipping ones already there. The booker
+ * books for the consultation's patient; a family member books for themselves (their own Self
+ * profile in their own account).
+ */
 export async function addRecommendedTestsToCart(userId: string, consultationId: string) {
-    const p = await getPatientPrescription(userId, consultationId);
-    const patientId = p.consultation.patientId;
+    const found = await resolveAccess(userId, consultationId);
+    if (!found || !canSeeClinical(found.access)) throw new DoctorError(404, 'No prescription yet');
+    const p = await currentPrescription(consultationId);
+    const patientId = found.access.kind === 'booker' ? p.consultation.patientId : (await resolveOrCreateSelfPatient(userId, prisma)).id;
     const tests = p.recommendedTests as RecommendedTest[];
     const inCart = await prisma.cartItem.findMany({
         where: { cart: { userId }, patientId, testCode: { in: tests.map((t) => t.code) } },

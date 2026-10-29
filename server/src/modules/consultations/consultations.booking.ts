@@ -12,12 +12,26 @@ import { ConsultRazorpay, normalizeRazorpayError, realConsultRazorpay } from './
 import { expireHold, holdSlot } from './consultations.transitions';
 import { DOCTOR_LATE_AFTER_MS, noShowDeadlines } from './consultations.room';
 import { DoctorError } from './doctors.status';
+import { accessFor, familyWhere, isSelf, userMobile } from './consultations.family';
 
 export const MAX_OPEN_HOLDS_PER_USER = 3;
 export const MAX_OPEN_HOLDS_PER_DOCTOR = 1;
 
 export type BookingDeps = { db?: PrismaClient; razorpay?: ConsultRazorpay; now?: () => Date };
-export type BookingInput = { userId: string; patientId: string; slotId: string; idempotencyKey: string };
+export type BookingInput = {
+    userId: string;
+    patientId: string;
+    slotId: string;
+    idempotencyKey: string;
+    /** Family bookings: the booker will co-join the call to assist. */
+    isCaregiverJoined?: boolean;
+    /** DocNow lab reports (from the booker's own lab bookings) to share with the doctor. */
+    attachedReportIds?: string[];
+};
+
+export const MAX_ATTACHED_REPORTS = 5;
+/** Base of the zero-login web room link sent to family members. */
+export const guestJoinUrl = (token: string) => `${(process.env.GUEST_CALL_BASE_URL || 'https://docnow.in/call').replace(/\/+$/, '')}/${token}`;
 
 const SLOT_TAKEN = 'Slot is no longer available';
 
@@ -75,8 +89,17 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
     const repeated = await existingBooking(db, input, requestHash);
     if (repeated) return repeated;
 
-    const patient = await db.patient.findFirst({ where: { id: input.patientId, userId: input.userId }, select: { id: true } });
+    const patient = await db.patient.findFirst({ where: { id: input.patientId, userId: input.userId }, select: { id: true, relation: true } });
     if (!patient) throw new DoctorError(404, 'Not found');
+    const forFamily = !isSelf(patient.relation);
+
+    // Only reports from the booker's own lab bookings can be shared, and each at most once.
+    const reportIds = [...new Set(input.attachedReportIds ?? [])];
+    if (reportIds.length > MAX_ATTACHED_REPORTS) throw new DoctorError(400, `Attach at most ${MAX_ATTACHED_REPORTS} reports`);
+    if (reportIds.length) {
+        const owned = await db.report.count({ where: { id: { in: reportIds }, booking: { userId: input.userId } } });
+        if (owned !== reportIds.length) throw new DoctorError(404, 'Report not found');
+    }
 
     const slot = await db.slot.findUnique({ where: { id: input.slotId }, include: { doctor: true } });
     if (!slot || slot.doctor.status !== 'APPROVED') throw new DoctorError(404, 'Slot not available');
@@ -120,6 +143,9 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
                     idempotencyKey: input.idempotencyKey,
                     requestHash,
                     orderReceipt: `c_${randomUUID().replace(/-/g, '')}`,
+                    guestToken: randomUUID(),
+                    isCaregiverJoined: forFamily && (input.isCaregiverJoined ?? true),
+                    ...(reportIds.length ? { attachedReports: { create: reportIds.map((reportId) => ({ reportId })) } } : {}),
                 },
             });
         });
@@ -152,7 +178,8 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
 
 const viewInclude = {
     doctor: { select: { displayName: true, photoUrl: true, qualification: true, specialty: { select: { name: true } } } },
-    patient: { select: { name: true } },
+    patient: { select: { name: true, relation: true, phone: true, linkedUserId: true, linkDeclinedAt: true } },
+    user: { select: { name: true } },
     slot: { select: { endsAt: true } },
     payments: { orderBy: { createdAt: 'desc' as const } },
     refunds: { orderBy: { createdAt: 'desc' as const } },
@@ -196,16 +223,94 @@ function toView(c: BookingRow) {
         doctorLateAt: new Date(c.startsAt.getTime() + DOCTOR_LATE_AFTER_MS),
         doctorNoShowAt: noShowDeadlines(c).doctorBy,
         cancelReason: c.cancelReason,
+        isCaregiverJoined: c.isCaregiverJoined,
+        isBookedForYou: false,
+        // Family bookings: the link the booker can forward, and whether the family member has
+        // accepted the booking on their own phone (false + declined means the number may be wrong).
+        ...(isSelf(c.patient.relation) ? {} : {
+            guestToken: c.guestToken,
+            guestJoinUrl: c.guestToken ? guestJoinUrl(c.guestToken) : null,
+            familyPhone: c.patient.phone,
+            familyLinked: c.patient.linkedUserId !== null,
+            familyDeclined: c.patient.linkDeclinedAt !== null,
+        }),
     };
 }
 
-export async function getBooking(userId: string, consultationId: string, db: PrismaClient = prisma) {
-    const c = await db.consultation.findFirst({ where: { id: consultationId, userId }, include: viewInclude });
-    if (!c) throw new DoctorError(404, 'Not found');
-    return toView(c);
+/**
+ * The family member's view: the visit, never the payment. Before they accept, it is cut down to
+ * doctor and time (plus who booked), so a wrong number reveals nothing clinical.
+ */
+function familyView(c: BookingRow, linked: boolean) {
+    const base = toView(c);
+    const shared = {
+        consultationId: base.consultationId,
+        status: base.status,
+        startsAt: base.startsAt,
+        endsAt: base.endsAt,
+        type: base.type,
+        doctorId: base.doctorId,
+        doctorName: base.doctorName,
+        doctorPhotoUrl: base.doctorPhotoUrl,
+        doctorQualification: base.doctorQualification,
+        specialty: base.specialty,
+        patientId: base.patientId,
+        patientName: base.patientName,
+        isBookedForYou: true,
+        bookedBy: { name: c.user.name || 'Your family member', relation: c.patient.relation },
+        familyAccess: linked ? ('linked' as const) : ('pending' as const),
+        // Payment belongs to the booker; the family member never pays, cancels or sees a refund.
+        razorpayOrderId: null,
+        amountPaise: 0,
+        currency: base.currency,
+        keyId: null,
+        holdExpiresAt: base.holdExpiresAt,
+        paymentCaptured: base.paymentCaptured,
+        underStaffCheck: false,
+        refundPaise: 0,
+        refundStatus: null,
+    };
+    if (!linked) return shared;
+    return {
+        ...shared,
+        hasPrescription: base.hasPrescription,
+        prescriptionId: base.prescriptionId,
+        rxStatus: base.rxStatus,
+        doctorJoined: base.doctorJoined,
+        doctorLateAt: base.doctorLateAt,
+        doctorNoShowAt: base.doctorNoShowAt,
+        cancelReason: base.cancelReason,
+        isCaregiverJoined: base.isCaregiverJoined,
+    };
 }
 
+// Family members see paid bookings only; holds and expired attempts are the booker's business.
+const FAMILY_VISIBLE: Prisma.ConsultationWhereInput = { status: { notIn: ['PENDING_PAYMENT', 'EXPIRED'] } };
+
+export async function getBooking(userId: string, consultationId: string, db: PrismaClient = prisma) {
+    const c = await db.consultation.findFirst({ where: { id: consultationId }, include: viewInclude });
+    if (!c) throw new DoctorError(404, 'Not found');
+    const access = accessFor(c, userId, c.userId === userId ? null : await userMobile(db, userId));
+    if (!access) throw new DoctorError(404, 'Not found');
+    if (access.kind === 'booker') return toView(c);
+    if (c.status === 'PENDING_PAYMENT' || c.status === 'EXPIRED') throw new DoctorError(404, 'Not found');
+    return familyView(c, access.kind === 'family');
+}
+
+/** The booker's own consultations plus those booked for them by family, newest first. */
 export async function listBookings(userId: string, db: PrismaClient = prisma, limit = 50) {
-    const rows = await db.consultation.findMany({ where: { userId }, include: viewInclude, orderBy: { createdAt: 'desc' }, take: limit });
-    return rows.map(toView);
+    const mobile = await userMobile(db, userId);
+    const [own, family] = await Promise.all([
+        db.consultation.findMany({ where: { userId }, include: viewInclude, orderBy: { createdAt: 'desc' }, take: limit }),
+        mobile
+            ? db.consultation.findMany({ where: { AND: [familyWhere(userId, mobile), FAMILY_VISIBLE] }, include: viewInclude, orderBy: { createdAt: 'desc' }, take: limit })
+            : Promise.resolve([] as BookingRow[]),
+    ]);
+    return [
+        ...own.map((c) => ({ at: c.createdAt.getTime(), view: toView(c) as ReturnType<typeof toView> | ReturnType<typeof familyView> })),
+        ...family.map((c) => ({ at: c.createdAt.getTime(), view: familyView(c, c.patient.linkedUserId === userId) })),
+    ]
+        .sort((a, b) => b.at - a.at)
+        .slice(0, limit)
+        .map((r) => r.view);
 }
