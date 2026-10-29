@@ -156,6 +156,7 @@ const viewInclude = {
     payments: { orderBy: { createdAt: 'desc' as const } },
     refunds: { orderBy: { createdAt: 'desc' as const } },
     prescriptions: { where: { voidedAt: null }, select: { id: true } },
+    note: { select: { id: true, advice: true } },
 } satisfies Prisma.ConsultationInclude;
 
 type BookingRow = Prisma.ConsultationGetPayload<{ include: typeof viewInclude }>;
@@ -163,6 +164,12 @@ type BookingRow = Prisma.ConsultationGetPayload<{ include: typeof viewInclude }>
 /** What the patient screens need: the booking, who and when, and where payment and refund stand. */
 function toView(c: BookingRow) {
     const live = c.refunds.filter((r) => !(r.status === 'FAILED' && r.failureConfirmed));
+    const rxStatus = c.prescriptions.length > 0
+        ? 'ISSUED'
+        : c.note !== null
+        ? 'DRAFTING'
+        : (c.status === 'COMPLETED' ? 'NOT_REQUIRED' : 'PENDING');
+
     return {
         ...response(c, c.payments[0]?.razorpayOrderId),
         startsAt: c.startsAt,
@@ -177,6 +184,8 @@ function toView(c: BookingRow) {
         refundPaise: live.reduce((sum, r) => sum + r.amountPaise, 0),
         refundStatus: c.refunds[0]?.status ?? null,
         hasPrescription: c.prescriptions.length > 0,
+        prescriptionId: c.prescriptions[0]?.id ?? null,
+        rxStatus,
         type: c.type,
     };
 }

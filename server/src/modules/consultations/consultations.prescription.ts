@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../../db';
 import { addCatalogItemToCart } from '../../services/cartService';
+import { realConsultVideo } from './consultations.video';
 import { DoctorError } from './doctors.status';
 import type { ConsultationStatus } from './consultations.types';
 
@@ -79,11 +80,20 @@ export async function getDoctorRecord(doctorId: string, consultationId: string) 
 export async function saveNotes(doctorId: string, consultationId: string, data: z.infer<typeof noteSchema>) {
     const c = await doctorConsultation(doctorId, consultationId);
     if (c.current) throw new DoctorError(409, 'Notes are locked once the prescription is issued');
-    return prisma.consultationNote.upsert({
+    const note = await prisma.consultationNote.upsert({
         where: { consultationId },
         update: data,
         create: { consultationId, ...data },
     });
+    // Notify room if active
+    prisma.consultation.findUnique({ where: { id: consultationId }, select: { roomId: true } })
+        .then((full) => {
+            if (full?.roomId) {
+                realConsultVideo().notifyRoom?.(full.roomId, { v: 1, type: 'PRESCRIPTION_DRAFTING', consultationId }).catch(() => {});
+            }
+        })
+        .catch(() => {});
+    return note;
 }
 
 /** Checks the tests against the catalog and freezes doctor and patient details as they are now. */
@@ -121,7 +131,16 @@ export async function issuePrescription(doctorId: string, consultationId: string
     if (c.current) throw new DoctorError(409, 'A prescription has already been issued');
     const data = await buildContent(consultationId, input);
     try {
-        return await prisma.prescription.create({ data });
+        const created = await prisma.prescription.create({ data });
+        // Notify room if active
+        prisma.consultation.findUnique({ where: { id: consultationId }, select: { roomId: true } })
+            .then((full) => {
+                if (full?.roomId) {
+                    realConsultVideo().notifyRoom?.(full.roomId, { v: 1, type: 'PRESCRIPTION_ISSUED', consultationId, prescriptionId: created.id }).catch(() => {});
+                }
+            })
+            .catch(() => {});
+        return created;
     } catch (e) {
         if (alreadyIssued(e)) throw new DoctorError(409, 'A prescription has already been issued');
         throw e;

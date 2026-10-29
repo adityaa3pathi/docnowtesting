@@ -21,4 +21,9 @@ export class FakeVideo implements ConsultVideo {
     async joinToken(roomId: string, userId: string, displayName: string, role: VideoRole) {
         return `token:${roomId}:${userId}:${displayName}:${role}`;
     }
+
+    eventsSent: { roomName: string; event: any }[] = [];
+    async notifyRoom(roomName: string, event: any) {
+        this.eventsSent.push({ roomName, event });
+    }
 }
