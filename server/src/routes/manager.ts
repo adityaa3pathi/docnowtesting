@@ -1153,9 +1153,11 @@ router.post('/orders/:id/confirm-payment', ...mgr, async (req: AuthRequest, res:
                 where: { id },
                 data: { status: 'BOOKING_FAILED' }
             });
-            res.status(200).json({ 
-                status: 'payment_received_booking_pending', 
-                message: 'Payment registered, but partner booking failed. Will enqueue retry.' 
+            const failureError = (result as any).error || 'Payment registered, but partner booking failed.';
+            res.status(400).json({ 
+                error: failureError,
+                details: failureError,
+                bookingId: order.bookingId
             });
         }
     } catch (error: any) {
@@ -1407,6 +1409,7 @@ router.get('/bookings', ...mgr, async (req: AuthRequest, res: Response) => {
                     reportSentAt,
                     rescheduledToId: order.rescheduledToId,
                     rescheduleInfo,
+                    partnerError: order.partnerError,
                 };
             }),
             pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }

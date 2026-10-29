@@ -73,6 +73,7 @@ interface Order {
         rescheduledBy: string;
         rescheduledAt: string | null;
     } | null;
+    partnerError?: string | null;
 }
 
 interface Pagination {
@@ -418,6 +419,11 @@ export default function OrdersPage() {
                                                 <p className="mt-1 text-xs text-gray-500">{order.paymentStatus}</p>
                                                 {order.managerOrder && (
                                                     <p className="mt-1 text-xs text-purple-700">Manager order: {order.managerOrder.status}</p>
+                                                )}
+                                                {order.partnerError && (
+                                                    <p className="mt-1 text-xs text-red-600 font-medium bg-red-50 p-1.5 rounded border border-red-200">
+                                                        {order.partnerError}
+                                                    </p>
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 align-top">

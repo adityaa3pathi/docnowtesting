@@ -57,3 +57,14 @@ export function maskPhoneNumber(phone: string): string {
     if (!phone || phone.length < 4) return '****';
     return '******' + phone.slice(-4);
 }
+
+/**
+ * Returns date in Indian Standard Time (Asia/Kolkata) as YYYY-MM-DD
+ */
+export function getIndianDateString(date: Date = new Date(), offsetDays: number = 0): string {
+    const d = new Date(date);
+    if (offsetDays) {
+        d.setDate(d.getDate() + offsetDays);
+    }
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(d);
+}

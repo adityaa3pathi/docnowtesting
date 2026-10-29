@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { HealthiansAdapter } from '../adapters/healthians';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { prisma } from '../db';
+import { getIndianDateString } from '../utils/helpers';
 
 const router = Router();
 const healthians = HealthiansAdapter.getInstance();
@@ -71,34 +72,22 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
             deal_id: dealIds
         }));
 
-        // Step 3: Get slots for date (default to today)
-        const today = new Date();
-        const maxDate = new Date();
-        maxDate.setDate(today.getDate() + 6); // Today + 6 days constraint
+        // Step 3: Get slots for date (default to today in IST)
+        const todayStr = getIndianDateString(new Date(), 0);
+        const maxDateStr = getIndianDateString(new Date(), 6);
 
-        let slotDate = today.toISOString().split('T')[0]; // Default to today
+        let slotDate = todayStr;
 
         // If 'date' query param is provided, use it
         if (req.query.date) {
-            const requestedDate = new Date(req.query.date as string);
-
-            // Validate date is valid and within range
-            if (isNaN(requestedDate.getTime())) {
-                return res.status(400).json({ error: 'Invalid date format' });
-            }
-
-            // Reset times for accurate comparison
-            const todayReset = new Date(today.setHours(0, 0, 0, 0));
-            const requestedReset = new Date(requestedDate.setHours(0, 0, 0, 0));
-            const maxReset = new Date(maxDate.setHours(0, 0, 0, 0));
-
-            if (requestedReset < todayReset || requestedReset > maxReset) {
+            const requestedDateStr = String(req.query.date).trim();
+            if (requestedDateStr < todayStr || requestedDateStr > maxDateStr) {
                 return res.status(400).json({
                     error: 'Date must be between today and today + 6 days'
                 });
             }
 
-            slotDate = req.query.date as string;
+            slotDate = requestedDateStr;
         }
 
         console.log('Slot Request Params:', {

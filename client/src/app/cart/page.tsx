@@ -6,6 +6,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { getCollectionFee } from '@/lib/collectionFee';
+import { getIndianDateString } from '@/lib/utils';
 
 // Extracted Components
 import { SlotSelector } from '@/components/cart/SlotSelector';
@@ -38,7 +39,7 @@ export default function CartPage() {
     const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
     const [addMemberForItemId, setAddMemberForItemId] = useState<string | null>(null);
     const [billingPatientId, setBillingPatientId] = useState<string>('self');
-    const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState<string>(getIndianDateString(new Date()));
 
     const total = cart?.items.reduce((sum, item) => sum + item.price, 0) || 0;
 

@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button, Input } from '@/components/ui';
 import toast from 'react-hot-toast';
 import { BookingHeader } from './types';
+import { getIndianDateString } from '@/lib/utils';
 
 interface RescheduleDialogProps {
     booking: BookingHeader | null;
@@ -22,7 +23,7 @@ export function RescheduleDialog({
     onSuccess,
     apiPrefix = '/bookings',
 }: RescheduleDialogProps) {
-    const [rescheduleDate, setRescheduleDate] = useState(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
+    const [rescheduleDate, setRescheduleDate] = useState(getIndianDateString(new Date(), 1));
     const [availableSlots, setAvailableSlots] = useState<any[]>([]);
     const [slotsLoading, setSlotsLoading] = useState(false);
     const [selectedNewSlot, setSelectedNewSlot] = useState<any | null>(null);
@@ -37,7 +38,8 @@ export function RescheduleDialog({
     useEffect(() => {
         if (open && booking) {
             // Reset state on open
-            setRescheduleDate(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
+            const tomorrowStr = getIndianDateString(new Date(), 1);
+            setRescheduleDate(tomorrowStr);
             setRescheduleReason('');
             setSelectedNewSlot(null);
             setNeedsAddressSelection(false);
@@ -45,7 +47,7 @@ export function RescheduleDialog({
             setSelectedAddressId(null);
 
             // Initial fetch
-            fetchRescheduleSlots(booking.id, new Date(Date.now() + 86400000).toISOString().split('T')[0], null);
+            fetchRescheduleSlots(booking.id, tomorrowStr, null);
         }
     }, [open, booking]);
 
@@ -91,6 +93,7 @@ export function RescheduleDialog({
 
         // Healthians uses stm_id as the slot identifier
         const slotId = selectedNewSlot.stm_id || selectedNewSlot.slot_id || selectedNewSlot.id;
+        const slotDate = selectedNewSlot.slot_date || rescheduleDate;
         const startTime = selectedNewSlot.slot_time || selectedNewSlot.start_time || '';
         const endTime = selectedNewSlot.end_time || '';
 
@@ -103,7 +106,7 @@ export function RescheduleDialog({
         try {
             const res = await api.post(`${apiPrefix}/${booking.id}/reschedule`, {
                 slot_id: slotId,
-                slotDate: rescheduleDate,
+                slotDate: slotDate,
                 slotTime: `${startTime} - ${endTime}`,
                 reschedule_reason: rescheduleReason,
                 addressId: selectedAddressId,
@@ -146,7 +149,7 @@ export function RescheduleDialog({
                         <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Select New Date</label>
                         <Input
                             type="date"
-                            min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                            min={getIndianDateString(new Date(), 1)}
                             value={rescheduleDate}
                             onChange={(e) => setRescheduleDate(e.target.value)}
                             className="h-12 rounded-xl border-slate-200 focus:border-primary focus:ring-primary/20 transition-all font-bold"
