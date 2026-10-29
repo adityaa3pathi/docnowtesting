@@ -2,6 +2,7 @@
 import type { AxiosResponse } from 'axios';
 import api, { downloadAuthenticatedFile } from '@/lib/api';
 import { recordServerDate } from './time';
+import type { GuestInfo } from './guest';
 import type {
     AdminAppointment, AdminAppointmentDetail, AdminDoctor, AvailabilityWindow, BookingView, CancelPreview, CancelResult,
     CartAddResult, ConsultNote, ConsultRules, ConsultationStatus, CreateBookingResponse, DoctorConsultationPage,
@@ -26,6 +27,13 @@ export function errorMessage(e: unknown, fallback = 'Something went wrong. Pleas
 export function errorStatus(e: unknown): number | undefined {
     return (e as { response?: { status?: number } })?.response?.status;
 }
+
+// ── Family member on the zero-login web room (no sign-in) ──
+
+export const guest = {
+    info: (token: string) => api.get<GuestInfo>(`/consult/guest/${encodeURIComponent(token)}`).then(data),
+    join: (token: string) => api.post<JoinResponse & { identity: string }>(`/consult/guest/${encodeURIComponent(token)}/join`).then(data),
+};
 
 // ── Patient ─────────────────────────────────────────────
 

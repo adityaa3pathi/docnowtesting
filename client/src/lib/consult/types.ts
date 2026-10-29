@@ -268,9 +268,24 @@ export interface DoctorConsultationRecord {
     type: ConsultationType;
     startsAt: string;
     slot: { endsAt: string };
-    patient: { name: string; age: number; gender: string };
+    patient: {
+        name: string;
+        age: number;
+        gender: string;
+        // Clinical snapshot from the family intake (older servers leave these out).
+        relation?: string;
+        preferredLanguage?: string;
+        bloodGroup?: string | null;
+        allergies?: string[];
+        chronicConditions?: string[];
+        currentMedications?: string[];
+    };
     patientJoinedAt: string | null;
     doctorJoinedAt: string | null;
+    /** Family bookings: who booked and whether they co-join to assist. */
+    caregiver?: { name: string; relation: string; coJoining: boolean; joinedAt: string | null } | null;
+    /** DocNow lab reports shared for this consultation; `viewToken` opens /api/reports/public/:token. */
+    attachedReports?: { id: string; label: string; isFullReport: boolean; date: string; viewToken: string }[];
     note: ConsultNote | null;
     /** The current version only; voided ones are in previousVersions. */
     prescription: Prescription | null;

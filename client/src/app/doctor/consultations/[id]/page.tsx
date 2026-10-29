@@ -9,6 +9,7 @@ import { JoinPanel } from '@/components/consult/JoinPanel';
 import { PrescriptionView } from '@/components/consult/PrescriptionView';
 import { ErrorState, LoadingBlock } from '@/components/consult/States';
 import { NotesForm } from '@/components/doctor/NotesForm';
+import { PatientDossier } from '@/components/doctor/PatientDossier';
 import { PrescriptionBuilder } from '@/components/doctor/PrescriptionBuilder';
 import { useApi } from '@/hooks/useApi';
 import { doctor as doctorApi, errorMessage } from '@/lib/consult/api';
@@ -124,6 +125,7 @@ export default function DoctorConsultationRoomPage({ params }: { params: Promise
                             {formatIstDateTime(record.startsAt)} to {formatIstTime(record.slot.endsAt)} (Indian time)
                         </p>
                     </Card>
+                    <PatientDossier record={record} />
                     <JoinPanel
                         key={callKey}
                         status={record.status}

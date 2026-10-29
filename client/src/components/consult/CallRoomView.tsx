@@ -3,6 +3,7 @@ import { useEffect, useReducer, useRef, useState } from 'react';
 import { Loader2, Maximize, Minimize, Mic, MicOff, PhoneOff, Video, VideoOff, Volume2 } from 'lucide-react';
 import { ConnectionState, DisconnectReason, Room, RoomEvent, Track, type Participant } from 'livekit-client';
 import { Button } from '@/components/ui';
+import { arrangeTiles, partyOf, partyOfRole } from '@/lib/consult/guest';
 import { cn } from '@/lib/utils';
 
 export interface ConsultCallRoomProps {
@@ -14,7 +15,13 @@ export interface ConsultCallRoomProps {
     /** Who the other side is, for the waiting message. */
     otherParty: 'doctor' | 'patient';
     onLeave: () => void;
+    /** Called when the doctor enters the room (the family web room plays a chime). */
+    onDoctorJoined?: () => void;
+    /** Large buttons and text for the family web room. */
+    senior?: boolean;
 }
+
+const PARTY_LABEL = { doctor: 'Doctor', patient: 'Patient', caretaker: 'Family' } as const;
 
 const JOIN_FAILED = 'We could not connect the call. Check your internet and allow camera and microphone, then try again.';
 const DROPPED = 'The call was disconnected. Go back and join again.';
@@ -59,7 +66,7 @@ function VideoTile({ participant, label, local, className }: { participant: Part
 }
 
 /** Our own call screen on LiveKit's plain JS client. Always leaves the room on unmount or page close. */
-export default function CallRoomView({ url, token, role, otherParty, onLeave }: ConsultCallRoomProps) {
+export default function CallRoomView({ url, token, role, otherParty, onLeave, onDoctorJoined, senior = false }: ConsultCallRoomProps) {
     const [room, setRoom] = useState<Room | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
@@ -69,11 +76,14 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave }: 
     const audioBox = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const leaveRef = useRef(onLeave);
+    const doctorJoinedRef = useRef(onDoctorJoined);
     const videoAllowed = !role.endsWith('-audio');
+    const viewer = partyOfRole(role);
 
     useEffect(() => {
         leaveRef.current = onLeave;
-    }, [onLeave]);
+        doctorJoinedRef.current = onDoctorJoined;
+    }, [onLeave, onDoctorJoined]);
 
     useEffect(() => {
         const r = new Room({ adaptiveStream: true, dynacast: true });
@@ -87,6 +97,9 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave }: 
         });
         r.on(RoomEvent.TrackUnsubscribed, (track) => {
             if (track.kind === Track.Kind.Audio) track.detach().forEach((el) => el.remove());
+        });
+        r.on(RoomEvent.ParticipantConnected, (p) => {
+            if (partyOf(p.identity) === 'doctor') doctorJoinedRef.current?.();
         });
         r.on(RoomEvent.Disconnected, (reason) => {
             if (closed) return;
@@ -103,6 +116,8 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave }: 
                 if (!closed) setError(JOIN_FAILED);
                 return;
             }
+            // The doctor may already be inside when we arrive.
+            if ([...r.remoteParticipants.values()].some((p) => partyOf(p.identity) === 'doctor')) doctorJoinedRef.current?.();
             try {
                 await r.localParticipant.setMicrophoneEnabled(true);
                 if (videoAllowed) await r.localParticipant.setCameraEnabled(true);
@@ -118,6 +133,13 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave }: 
             leave();
         };
     }, [url, token, videoAllowed]);
+
+    // Listen for fullscreen changes (e.g., Escape key). Above the early return: hooks run in the same order every render.
+    useEffect(() => {
+        const cb = () => setFullscreen(!!document.fullscreenElement);
+        document.addEventListener('fullscreenchange', cb);
+        return () => document.removeEventListener('fullscreenchange', cb);
+    }, []);
 
     async function leave() {
         setLeaving(true);
@@ -153,7 +175,8 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave }: 
     const reconnecting = state === ConnectionState.Reconnecting || state === ConnectionState.SignalReconnecting;
     const connected = state === ConnectionState.Connected || reconnecting;
     const local = room?.localParticipant;
-    const remote = room ? [...room.remoteParticipants.values()][0] : undefined;
+    const { primary: remote, others } = arrangeTiles(room ? [...room.remoteParticipants.values()] : [], viewer);
+    const labelOf = (p: Participant) => p.name || PARTY_LABEL[partyOf(p.identity) ?? otherParty];
     const micOn = !!local?.isMicrophoneEnabled;
     const camOn = !!local?.isCameraEnabled;
 
@@ -166,12 +189,6 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave }: 
         }
     }
 
-    // Listen for fullscreen changes (e.g., Escape key).
-    useEffect(() => {
-        const cb = () => setFullscreen(!!document.fullscreenElement);
-        document.addEventListener('fullscreenchange', cb);
-        return () => document.removeEventListener('fullscreenchange', cb);
-    }, []);
 
     return (
         <div className="space-y-3" ref={containerRef}>
@@ -182,7 +199,7 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave }: 
                         <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Connecting...
                     </div>
                 ) : remote ? (
-                    <VideoTile participant={remote} label={remote.name || `The ${otherParty}`} className="h-full w-full" />
+                    <VideoTile participant={remote} label={labelOf(remote)} className="h-full w-full" />
                 ) : (
                     <p role="status" className="flex h-full items-center justify-center px-6 text-center text-sm text-white">
                         Waiting for the {otherParty} to join...
@@ -191,6 +208,14 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave }: 
                 {connected && local && videoAllowed && (
                     <VideoTile participant={local} label="You" local
                         className="absolute bottom-3 right-3 aspect-video w-1/4 min-w-28 border-2 border-white/70" />
+                )}
+                {/* Three-way calls: the caregiver (or patient, for the doctor) as small tiles. */}
+                {connected && others.length > 0 && (
+                    <div className="absolute left-3 top-3 flex flex-col gap-2">
+                        {others.map((p) => (
+                            <VideoTile key={p.identity} participant={p} label={labelOf(p)} className="aspect-video w-28 border-2 border-white/70 sm:w-36" />
+                        ))}
+                    </div>
                 )}
                 {reconnecting && (
                     <p role="status" className="absolute inset-x-0 top-3 mx-auto w-fit rounded-lg bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
@@ -204,7 +229,7 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave }: 
                 </Button>
             )}
             {notice && <p role="alert" className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">{notice}</p>}
-            <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className={cn('flex flex-wrap items-center justify-center gap-2', senior && '[&_button]:h-14 [&_button]:px-6 [&_button]:text-lg')}>
                 <Button variant="outline" size="sm" disabled={!connected} aria-pressed={!micOn} onClick={() => void toggle('mic', !micOn)}>
                     {micOn ? <><MicOff className="mr-1.5 h-4 w-4" aria-hidden /> Mute</> : <><Mic className="mr-1.5 h-4 w-4" aria-hidden /> Unmute</>}
                 </Button>
