@@ -11,7 +11,8 @@ const VALID_TRANSITIONS: Record<S, S[]> = {
     EXPIRED: [S.CONFIRMED], // late payment re-claims a still-free slot
     CONFIRMED: [S.WAITING, S.RESCHEDULED, S.CANCELLED, S.NO_SHOW_PATIENT, S.NO_SHOW_DOCTOR],
     RESCHEDULED: [S.CONFIRMED, S.CANCELLED],
-    WAITING: [S.IN_PROGRESS, S.CANCELLED, S.NO_SHOW_PATIENT, S.NO_SHOW_DOCTOR],
+    // CONFIRMED again: the doctor was late and the patient moved to a new time or doctor.
+    WAITING: [S.IN_PROGRESS, S.CONFIRMED, S.CANCELLED, S.NO_SHOW_PATIENT, S.NO_SHOW_DOCTOR],
     IN_PROGRESS: [S.COMPLETED, S.NO_SHOW_PATIENT], // doctor joined, patient never did
     CANCELLED: [S.REFUNDED],
     NO_SHOW_PATIENT: [S.REFUNDED],

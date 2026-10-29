@@ -12,6 +12,7 @@ import { cancelConsultation, cancelPreview } from './consultations.cancellation'
 import { verifyAndConfirm } from './consultations.payments';
 import { sendConsultError } from './consultations.http';
 import { patientJoin } from './consultations.room';
+import { reassignBooking, reassignOption, rescheduleBooking, rescheduleSlots } from './consultations.reschedule';
 import { kickConsultPushes } from './consultations.push';
 import { addRecommendedTestsToCart, getPatientPrescription } from './consultations.prescription';
 import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
@@ -82,6 +83,49 @@ consultPatientRoutes.post('/bookings/:id/cancel', ...patient, rateLimiter(5, 60,
         const parse = cancelSchema.safeParse(req.body ?? {});
         if (!parse.success) return res.status(400).json({ error: 'Invalid reason' });
         res.json(await cancelConsultation(id.data, { kind: 'booker', userId: req.userId! }, parse.data.reason));
+    } catch (e) { fail(res, e); }
+});
+
+// ── Doctor running late: free reschedule or the next free doctor (the refund is a cancel reason) ──
+
+const rescheduleSchema = z.object({ newSlotId: z.string().uuid({ message: 'Pick a time' }) });
+const reassignSchema = z.object({ slotId: z.string().uuid({ message: 'Pick a doctor' }) });
+
+consultPatientRoutes.get('/bookings/:id/reschedule-slots', ...patient, async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        res.json(await rescheduleSlots(req.userId!, id.data));
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.post('/bookings/:id/reschedule', ...patient, rateLimiter(5, 60, 'consult_reschedule'), async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        const parse = rescheduleSchema.safeParse(req.body ?? {});
+        if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
+        res.json(await rescheduleBooking(req.userId!, id.data, parse.data.newSlotId));
+        kickConsultPushes(id.data);
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.get('/bookings/:id/reassign-option', ...patient, async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        res.json({ option: await reassignOption(req.userId!, id.data) });
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.post('/bookings/:id/reassign', ...patient, rateLimiter(5, 60, 'consult_reassign'), async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        const parse = reassignSchema.safeParse(req.body ?? {});
+        if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
+        res.json(await reassignBooking(req.userId!, id.data, parse.data.slotId));
+        kickConsultPushes(id.data);
     } catch (e) { fail(res, e); }
 });
 

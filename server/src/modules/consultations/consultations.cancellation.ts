@@ -8,7 +8,8 @@ import { logAlert } from '../../utils/logger';
 import { refundForPercent } from './consultations.money';
 import { pickRefundPercent, Rules } from './consultations.policy';
 import { ConsultRazorpay } from './consultations.razorpay';
-import { createRefundRecord, runRefund } from './consultations.refunds';
+import { createRefundRecord, runRefund, type RefundReason } from './consultations.refunds';
+import { isDoctorLate } from './consultations.room';
 import { releaseSlot } from './consultations.transitions';
 import { DoctorError } from './doctors.status';
 
@@ -17,6 +18,14 @@ export type CancelDeps = { db?: PrismaClient; razorpay?: ConsultRazorpay; now?: 
 
 const CANCELLABLE = ['CONFIRMED', 'RESCHEDULED', 'WAITING'] as const;
 const MAX_REASON = 200;
+
+/**
+ * Reasons that blame the doctor. They refund in full, bypassing the tiers, but only when the server
+ * itself sees the doctor late (isDoctorLate); otherwise the cancel is refused, never silently tiered.
+ */
+export const DOCTOR_FAULT_REASONS = ['DOCTOR_LATE', 'DOCTOR_NO_SHOW'] as const;
+export const DOCTOR_NOT_LATE = 'Your doctor is not late, so this is not a doctor-delay cancellation. Cancel normally to see your refund.';
+const isDoctorFault = (reason: string | null) => (DOCTOR_FAULT_REASONS as readonly string[]).includes(reason ?? '');
 
 export function cleanReason(reason: string | undefined): string | null {
     if (reason === undefined || reason === '') return null;
@@ -28,7 +37,7 @@ export function cleanReason(reason: string | undefined): string | null {
 
 async function view(db: PrismaClient, id: string) {
     const c = await db.consultation.findUniqueOrThrow({ where: { id }, include: { refunds: true } });
-    const refund = c.refunds.find((r) => r.reason === 'PATIENT_CANCEL' || r.reason === 'ADMIN') ?? null;
+    const refund = c.refunds.find((r) => r.reason === 'PATIENT_CANCEL' || r.reason === 'ADMIN' || r.reason === 'DOCTOR_NO_SHOW') ?? null;
     return { status: c.status, refundPaise: refund?.amountPaise ?? 0, refundStatus: refund?.status ?? null };
 }
 
@@ -81,14 +90,20 @@ export async function cancelConsultation(consultationId: string, actor: CancelAc
         throw new DoctorError(409, 'This consultation can no longer be cancelled');
     }
 
+    const doctorFault = isDoctorFault(reason);
+    if (doctorFault && !isDoctorLate(c, now)) throw new DoctorError(409, DOCTOR_NOT_LATE);
+
     const payment = c.payments.find((p) => p.razorpayPaymentId && p.razorpayPaymentId === c.confirmingPaymentId);
     if (!payment) throw new DoctorError(409, 'No confirmed payment found for this consultation');
 
-    const { refundPaise } = estimateRefund(c, payment.amountPaise, now);
+    // The doctor's delay is not the patient's fault: everything paid comes back, whatever the tiers say.
+    const refundPaise = doctorFault ? payment.amountPaise : estimateRefund(c, payment.amountPaise, now).refundPaise;
+    const refundReason: RefundReason = doctorFault ? 'DOCTOR_NO_SHOW' : actor.kind === 'admin' ? 'ADMIN' : 'PATIENT_CANCEL';
 
     const record = await db.$transaction(async (tx) => {
         const res = await tx.consultation.updateMany({
-            where: { id: c.id, status: { in: [...CANCELLABLE] } },
+            // A doctor who joins in the same instant is no longer late; the full refund is then not owed.
+            where: { id: c.id, status: { in: [...CANCELLABLE] }, ...(doctorFault ? { doctorJoinedAt: null } : {}) },
             data: { status: 'CANCELLED', cancelledBy, cancelReason: reason, cancelledAt: now },
         });
         if (res.count !== 1) return null;
@@ -97,11 +112,18 @@ export async function cancelConsultation(consultationId: string, actor: CancelAc
         return createRefundRecord(tx, {
             consultationId: c.id,
             paymentId: payment.id,
-            reason: actor.kind === 'admin' ? 'ADMIN' : 'PATIENT_CANCEL',
+            reason: refundReason,
             requestedPaise: refundPaise,
         });
     });
 
+    if (doctorFault && !record) {
+        const after = await db.consultation.findUniqueOrThrow({ where: { id: c.id }, select: { status: true } });
+        if (after.status !== 'CANCELLED' && after.status !== 'REFUNDED') {
+            throw new DoctorError(409, 'Your doctor has just joined. Please refresh to join the call.');
+        }
+    }
+    if (doctorFault && record) logAlert('consult_doctor_late', { consultationId: c.id, doctorId: c.doctorId, outcome: 'refunded' });
     if (record && record.status === 'PENDING') {
         try {
             await runRefund(record.id, { db, razorpay: deps.razorpay });

@@ -10,6 +10,7 @@ import { feeFromBps, toPaise } from './consultations.money';
 import { getActivePolicy } from './consultations.policy.service';
 import { ConsultRazorpay, normalizeRazorpayError, realConsultRazorpay } from './consultations.razorpay';
 import { expireHold, holdSlot } from './consultations.transitions';
+import { DOCTOR_LATE_AFTER_MS, noShowDeadlines } from './consultations.room';
 import { DoctorError } from './doctors.status';
 
 export const MAX_OPEN_HOLDS_PER_USER = 3;
@@ -150,7 +151,7 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
 }
 
 const viewInclude = {
-    doctor: { select: { displayName: true, specialty: { select: { name: true } } } },
+    doctor: { select: { displayName: true, photoUrl: true, qualification: true, specialty: { select: { name: true } } } },
     patient: { select: { name: true } },
     slot: { select: { endsAt: true } },
     payments: { orderBy: { createdAt: 'desc' as const } },
@@ -187,6 +188,14 @@ function toView(c: BookingRow) {
         prescriptionId: c.prescriptions[0]?.id ?? null,
         rxStatus,
         type: c.type,
+        // Waiting room: who the doctor is, whether they are in, and when the delay options and the
+        // automatic doctor no-show refund begin (both from the rules saved with the booking).
+        doctorPhotoUrl: c.doctor.photoUrl,
+        doctorQualification: c.doctor.qualification,
+        doctorJoined: c.doctorJoinedAt !== null,
+        doctorLateAt: new Date(c.startsAt.getTime() + DOCTOR_LATE_AFTER_MS),
+        doctorNoShowAt: noShowDeadlines(c).doctorBy,
+        cancelReason: c.cancelReason,
     };
 }
 

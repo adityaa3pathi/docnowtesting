@@ -34,6 +34,18 @@ export function noShowDeadlines(c: { startsAt: Date; policySnapshot: unknown }) 
     };
 }
 
+/** From this long after the start, a doctor who has not joined counts as late and the patient gets options. */
+export const DOCTOR_LATE_AFTER_MS = 5 * 60_000;
+const LATE_STATUSES: ConsultationStatus[] = ['CONFIRMED', 'WAITING'];
+
+/**
+ * The server's own check behind every "doctor is late" option (free reschedule, another doctor,
+ * full refund), so a patient cannot claim lateness to skip the cancellation tiers.
+ */
+export function isDoctorLate(c: { status: ConsultationStatus; startsAt: Date; doctorJoinedAt: Date | null }, now: Date): boolean {
+    return LATE_STATUSES.includes(c.status) && !c.doctorJoinedAt && now.getTime() >= c.startsAt.getTime() + DOCTOR_LATE_AFTER_MS;
+}
+
 function checkJoinable(c: Joinable, now: Date) {
     if (c.type === 'CHAT') throw new DoctorError(400, 'Chat consultations are not available yet');
     if (!JOINABLE.includes(c.status)) throw new DoctorError(409, 'This consultation cannot be joined');
