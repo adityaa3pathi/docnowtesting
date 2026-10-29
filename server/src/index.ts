@@ -203,6 +203,7 @@ import { startReconciler } from './workers/reconciler';
 import { startSlotGenerator } from './workers/slotGenerator';
 import { startConsultReconciler } from './workers/consultReconciler';
 import { startConsultTimers } from './workers/consultTimers';
+import { startReportPushRetry } from './workers/reportPushRetry';
 
 app.listen(PORT, () => {
     logger.info({ port: PORT, nodeEnv: process.env.NODE_ENV }, 'server_started');
@@ -210,4 +211,5 @@ app.listen(PORT, () => {
     startSlotGenerator();
     startConsultReconciler();
     startConsultTimers();
+    startReportPushRetry();
 });
