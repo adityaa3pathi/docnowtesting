@@ -24,9 +24,11 @@ export function HeroCarousel() {
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const [imgError, setImgError] = useState(false);
+  // Which slide's image has loaded / failed, so moving to another slide starts it fresh.
+  const [loadedIndex, setLoadedIndex] = useState<number | null>(null);
+  const [errorIndex, setErrorIndex] = useState<number | null>(null);
+  const imgLoaded = loadedIndex === currentIndex;
+  const imgError = errorIndex === currentIndex;
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -41,17 +43,11 @@ export function HeroCarousel() {
         }
       } catch {
         // Fallback: hero section displays default pure gradient background
-      } finally {
-        setIsLoading(false);
       }
     }
     fetchSlides();
   }, []);
 
-  useEffect(() => {
-    setImgLoaded(false);
-    setImgError(false);
-  }, [currentIndex]);
 
   const handleNext = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % slides.length);
@@ -86,12 +82,14 @@ export function HeroCarousel() {
     >
       {/* Slide image */}
       {!imgError && (
+        // CMS slides can live on any host the admin used, which next/image would need listed.
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           key={current.id}
           src={current.desktopImageUrl || current.mobileImageUrl || ''}
           alt={current.imageAlt || 'Doctor and healthcare professional'}
-          onLoad={() => setImgLoaded(true)}
-          onError={() => setImgError(true)}
+          onLoad={() => setLoadedIndex(currentIndex)}
+          onError={() => setErrorIndex(currentIndex)}
           className={`w-full h-full object-cover object-center transition-opacity duration-500 ease-in-out ${
             imgLoaded ? 'opacity-100' : 'opacity-0'
           }`}
