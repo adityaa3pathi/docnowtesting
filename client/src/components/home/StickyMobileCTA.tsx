@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { Phone, MessageCircle, ShoppingCart } from 'lucide-react';
+import { Phone, MessageCircle, ShoppingCart, Stethoscope } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { usePathname } from 'next/navigation';
 import { SUPPORT_PHONE_LINK } from '@/lib/supportConfig';
 
 const WHATSAPP_NUMBER = '919649089089';
-const WHATSAPP_MESSAGE = encodeURIComponent('Hi DocNow, I want to book a lab test.');
+const WHATSAPP_MESSAGE = encodeURIComponent('Hi DocNow, I need help with a doctor consultation or a lab test.');
 
 export function StickyMobileCTA() {
     const { cartCount } = useCart();
@@ -49,6 +49,18 @@ export function StickyMobileCTA() {
                     </div>
                     <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">WhatsApp</span>
                 </a>
+
+                {/* Doctor: the telehealth pillar, one tap from anywhere */}
+                <Link
+                    href="/consult"
+                    className="flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-gray-700 active:bg-gray-100 transition-colors"
+                    aria-label="Consult a doctor"
+                >
+                    <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary">
+                        <Stethoscope className="w-4.5 h-4.5 text-white" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-primary">Doctor</span>
+                </Link>
 
                 {/* Cart */}
                 <Link

@@ -1,234 +1,216 @@
 /**
  * Homepage — Server Component
- * 
- * Static sections (hero, how-it-works, why-us, stats, footer) are rendered as
- * instant HTML on the server. Only the dynamic product grids, callback form,
- * and CTA buttons are hydrated as small client islands.
+ *
+ * DocNow's two co-equal pillars, video doctor consultations and lab tests at home, as instant
+ * server HTML. Only data-driven parts ship JS: the hero search, live doctor fee and count, featured
+ * doctors, product grids, camps, the callback form and the CMS hero carousel.
  */
-import Link from 'next/link';
 import {
-  Search,
   Award,
-  Clock,
-  Shield,
-  Users,
-  Phone,
+  BadgeCheck,
   Beaker,
-  Truck,
   Building2,
-  FileCheck,
+  Clock,
   FlaskConical,
-  Star,
+  HeartPulse,
   Lock,
+  Phone,
+  Stethoscope,
+  Workflow,
 } from 'lucide-react';
 
 import { Footer } from '@/components/Footer';
 import { Card } from '@/components/ui';
+import { CareLoop } from '@/components/home/CareLoop';
+import { FamilyCareSpotlight } from '@/components/home/FamilyCareSpotlight';
+import { FeaturedSpecialties } from '@/components/home/FeaturedSpecialties';
+import { HeroDualPillars, HeroStatsCard } from '@/components/home/HeroDualPillars';
 
 // Client Islands — only these ship JS to the browser
-import { FeaturedPackages, FeaturedTests } from '@/components/home/FeaturedProducts';
-import { FeaturedCamps } from '@/components/home/FeaturedCamps';
 import { CallbackForm } from '@/components/home/CallbackForm';
-import { HeroCTAButtons } from '@/components/home/HeroCTAButtons';
+import { FeaturedCamps } from '@/components/home/FeaturedCamps';
+import { FeaturedDoctors } from '@/components/home/FeaturedDoctors';
+import { FeaturedPackages, FeaturedTests } from '@/components/home/FeaturedProducts';
 import { HeroCarousel } from '@/components/home/HeroCarousel';
 import { RevealSection } from '@/components/home/RevealSection';
 import { StickyMobileCTA } from '@/components/home/StickyMobileCTA';
 
 // ────────────────────── Static Data (zero JS cost)
-const heroStats = [
-  { icon: Users, iconBg: 'bg-purple-50', iconColor: 'text-purple-500', value: '50K+', label: 'HAPPY PATIENTS' },
-  { icon: FlaskConical, iconBg: 'bg-blue-50', iconColor: 'text-blue-500', value: '200+', label: 'LAB TESTS' },
-  { icon: Clock, iconBg: 'bg-orange-50', iconColor: 'text-orange-400', value: '24h', label: 'REPORT DELIVERY' },
-  { icon: Truck, iconBg: 'bg-green-50', iconColor: 'text-green-500', value: '100+', label: 'CITIES COVERED' },
-];
-
-const howItWorks = [
-  { step: '01', title: 'Choose Your Test', description: 'Browse our catalog and select the tests or health packages you need.', icon: Search, color: 'from-purple-500 to-indigo-600' },
-  { step: '02', title: 'Schedule Collection', description: 'Pick a convenient date, time, and address for home sample collection.', icon: Clock, color: 'from-fuchsia-500 to-purple-600' },
-  { step: '03', title: 'Get Digital Reports', description: 'Receive accurate, lab-certified digital reports within 24-48 hours.', icon: FileCheck, color: 'from-pink-500 to-fuchsia-600' },
-];
-
 const whyChooseUs = [
+  { icon: BadgeCheck, title: 'Verified Doctors', desc: 'Every doctor’s medical registration is checked before they can consult on DocNow.', color: 'bg-purple-50 text-purple-700', border: 'hover:border-purple-200' },
   { icon: Award, title: 'Certified Labs', desc: 'NABL & CAP accredited laboratories ensuring highest accuracy standards.', color: 'bg-amber-50 text-amber-600', border: 'hover:border-amber-200' },
   { icon: Clock, title: 'Fast Reports', desc: 'Get lab-certified digital reports within 24-48 hours of sample collection.', color: 'bg-blue-50 text-blue-600', border: 'hover:border-blue-200' },
   { icon: Lock, title: 'Data Privacy', desc: '100% encrypted and confidential. Your health data stays yours.', color: 'bg-green-50 text-green-600', border: 'hover:border-green-200' },
-  { icon: Star, title: 'Expert Team', desc: 'Experienced phlebotomists and healthcare professionals at your doorstep.', color: 'bg-purple-50 text-purple-600', border: 'hover:border-purple-200' },
 ];
+
+function SectionHeading({ badge, badgeIcon: BadgeIcon, badgeTone, title, subtitle }: {
+  badge: string;
+  badgeIcon: typeof Stethoscope;
+  badgeTone: string;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="mb-10 text-center md:mb-14">
+      <div className={`mb-4 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 ${badgeTone}`}>
+        <BadgeIcon className="h-4 w-4" aria-hidden />
+        <span className="text-sm font-bold">{badge}</span>
+      </div>
+      <h2 className="mb-4 text-3xl font-black text-gray-900 md:text-5xl">{title}</h2>
+      <p className="mx-auto max-w-2xl text-lg font-medium text-gray-500">{subtitle}</p>
+    </div>
+  );
+}
 
 // ────────────────────── Page (Server Component — NO "use client")
 export default function Home() {
   return (
-    <main className="flex flex-col min-h-screen bg-white pb-20 md:pb-0">
+    <main className="flex min-h-screen flex-col bg-white pb-20 md:pb-0">
 
-      {/* ═══════════ HERO — purple gradient fallback + full-bleed image carousel ═══════════ */}
+      {/* ═══════════ 1. DUAL-SERVICE HERO ═══════════ */}
       <section
         className="relative pb-16 md:pb-24 lg:pb-32"
         style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}
       >
-        {/* Full-bleed carousel background — md: and up only, z-0 behind content */}
+        {/* CMS slides on the right half of desktop; renders nothing when none are uploaded. */}
         <HeroCarousel />
+        <HeroDualPillars />
 
-        <div className="max-w-[1380px] mx-auto px-6 lg:px-16 pt-4 pb-8 lg:pb-16 relative z-10">
-          <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-0">
-            <div className="flex-1 flex flex-col items-start pt-8 lg:pt-16 max-w-xl lg:max-w-none lg:pr-10 lg:w-[55%]">
-              <h1 className="text-white font-black font-inter text-4xl md:text-5xl lg:text-[56px] leading-[1.1] mb-5">
-                Precision Diagnostics,{' '}
-                <br className="hidden sm:block" />
-                Delivered to Your Door.
-              </h1>
-              <p className="text-white/80 font-inter text-base md:text-lg mb-10 leading-relaxed max-w-lg">
-                Get NABL &amp; CAP certified lab tests and health checkups at home.
-                Fast, accurate results you can trust.
-              </p>
-
-              {/* Client Island: CTA Buttons (needs useRouter) */}
-              <HeroCTAButtons />
-
-              {/* Trust Badges — pure HTML */}
-              <div className="flex flex-wrap items-center gap-5 text-white/80 text-sm font-inter font-semibold">
-                <span className="flex items-center gap-1.5">
-                  <Shield size={15} className="text-white/70" />
-                  100% SECURE
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Clock size={15} className="text-white/70" />
-                  REPORTS IN 24H
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Truck size={15} className="text-white/70" />
-                  FREE COLLECTION
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Card — pure server HTML */}
-        <div className="hidden lg:block absolute -bottom-14 left-1/2 -translate-x-1/2 w-[calc(100%-5rem)] max-w-4xl z-20">
+        <div className="absolute -bottom-14 left-1/2 z-20 hidden w-[calc(100%-5rem)] max-w-4xl -translate-x-1/2 lg:block">
           <HeroStatsCard />
         </div>
-        <div className="lg:hidden mx-4 relative z-20 -mb-4">
+        <div className="relative z-20 mx-4 -mb-4 lg:hidden">
           <HeroStatsCard />
         </div>
       </section>
 
-      {/* ═══════════ HEALTH PACKAGES — Client Island ═══════════ */}
-      <section className="py-16 md:py-24 bg-gradient-to-b from-white to-gray-50/50">
-        <RevealSection className="container mx-auto px-4 max-w-7xl">
-          <div className="text-center mb-14">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-50 border border-purple-100 mb-4">
-              <FlaskConical className="w-4 h-4 text-purple-600" />
-              <span className="text-sm font-bold text-purple-700">Curated by Experts</span>
-            </div>
-            <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-4">
-              Popular Health Packages
-            </h2>
-            <p className="text-lg text-gray-500 font-medium max-w-2xl mx-auto">
-              Comprehensive checkup packages designed by medical experts for complete health screening
-            </p>
-          </div>
+      {/* ═══════════ 2. TOP SPECIALTIES ═══════════ */}
+      <section className="bg-white pb-16 pt-24 md:pb-24 lg:pt-32">
+        <RevealSection className="container mx-auto max-w-7xl px-4">
+          <SectionHeading
+            badge="Consult by Specialty"
+            badgeIcon={Stethoscope}
+            badgeTone="border-purple-100 bg-purple-50 text-purple-700"
+            title="Top Medical Specialties"
+            subtitle="Not sure who to see? Start with your symptoms and pick the right specialist."
+          />
+          <FeaturedSpecialties />
+        </RevealSection>
+      </section>
+
+      {/* ═══════════ 3. FEATURED DOCTORS — Client Island ═══════════ */}
+      <section className="bg-gradient-to-b from-gray-50/70 to-white py-16 md:py-24">
+        <RevealSection className="container mx-auto max-w-7xl px-4">
+          <SectionHeading
+            badge="Verified Doctors"
+            badgeIcon={BadgeCheck}
+            badgeTone="border-emerald-100 bg-emerald-50 text-emerald-700"
+            title="Consult Our Doctors"
+            subtitle="Qualified doctors with checked medical registrations. See fees upfront and book a video slot."
+          />
+          <FeaturedDoctors />
+        </RevealSection>
+      </section>
+
+      {/* ═══════════ 4. THE DOCNOW CARE LOOP ═══════════ */}
+      <section className="bg-white py-16 md:py-24">
+        <RevealSection className="container mx-auto max-w-7xl px-4">
+          <SectionHeading
+            badge="How DocNow Works"
+            badgeIcon={Workflow}
+            badgeTone="border-teal-100 bg-teal-50 text-teal-700"
+            title="One Loop of Care, From Consult to Report"
+            subtitle="See a doctor, get your prescription, give samples at home and get your reports, all in one place."
+          />
+          <CareLoop />
+        </RevealSection>
+      </section>
+
+      {/* ═══════════ 5. ASSISTED FAMILY CARE ═══════════ */}
+      <section className="bg-gradient-to-br from-[#F4F0FA] via-white to-[#F4F0FA] py-16 md:py-24">
+        <RevealSection className="container mx-auto max-w-7xl px-4">
+          <FamilyCareSpotlight />
+        </RevealSection>
+      </section>
+
+      {/* ═══════════ 6. HEALTH PACKAGES & LAB TESTS — Client Islands ═══════════ */}
+      <section className="bg-gradient-to-b from-white to-gray-50/50 py-16 md:py-24">
+        <RevealSection className="container mx-auto max-w-7xl px-4">
+          <SectionHeading
+            badge="Curated by Experts"
+            badgeIcon={FlaskConical}
+            badgeTone="border-purple-100 bg-purple-50 text-purple-700"
+            title="Popular Health Packages"
+            subtitle="Comprehensive checkup packages designed by medical experts for complete health screening"
+          />
           <FeaturedPackages />
         </RevealSection>
       </section>
 
-      {/* ═══════════ HOW IT WORKS — pure server HTML ═══════════ */}
-      <section className="py-16 md:py-24 bg-white">
-        <RevealSection className="container mx-auto px-4 max-w-6xl">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-4">
-              How It Works
-            </h2>
-            <p className="text-lg text-gray-500 font-medium">
-              Book a test in 3 easy steps
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-4 relative">
-            <div className="hidden md:block absolute top-16 left-[20%] right-[20%] h-0.5 bg-gradient-to-r from-purple-200 via-purple-400 to-purple-200" />
-            {howItWorks.map((item) => (
-              <div key={item.step} className="text-center relative z-10 group">
-                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${item.color} shadow-lg mb-6 group-hover:scale-110 transition-transform`}>
-                  <item.icon className="w-7 h-7 text-white" />
-                </div>
-                <div className="text-xs font-black text-purple-400 uppercase tracking-[0.2em] mb-2">Step {item.step}</div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h3>
-                <p className="text-gray-500 font-medium max-w-xs mx-auto leading-relaxed">{item.description}</p>
-              </div>
-            ))}
-          </div>
-        </RevealSection>
-      </section>
-
-      {/* ═══════════ LAB TESTS — Client Island ═══════════ */}
-      <section className="py-16 md:py-24 bg-gray-50/70">
-        <RevealSection className="container mx-auto px-4 max-w-7xl">
-          <div className="text-center mb-14">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 mb-4">
-              <Beaker className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-bold text-blue-700">Comprehensive Testing</span>
-            </div>
-            <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-4">
-              Lab Tests & Profiles
-            </h2>
-            <p className="text-lg text-gray-500 font-medium max-w-2xl mx-auto">
-              Precisely targeted diagnostics for specific health concerns
-            </p>
-          </div>
+      <section className="bg-gray-50/70 py-16 md:py-24">
+        <RevealSection className="container mx-auto max-w-7xl px-4">
+          <SectionHeading
+            badge="Comprehensive Testing"
+            badgeIcon={Beaker}
+            badgeTone="border-blue-100 bg-blue-50 text-blue-700"
+            title="Lab Tests & Profiles"
+            subtitle="Precisely targeted diagnostics for specific health concerns"
+          />
           <FeaturedTests />
         </RevealSection>
       </section>
 
       {/* ═══════════ HEALTH CAMPS — Client Island ═══════════ */}
-      <section className="py-16 md:py-24 bg-white">
-        <RevealSection className="container mx-auto px-4 max-w-7xl">
+      <section className="bg-white py-16 md:py-24">
+        <RevealSection className="container mx-auto max-w-7xl px-4">
           <FeaturedCamps />
         </RevealSection>
       </section>
 
-      {/* ═══════════ WHY CHOOSE US — pure server HTML ═══════════ */}
-      <section className="py-16 md:py-24 bg-white">
-        <RevealSection className="container mx-auto px-4 max-w-6xl">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-4">Why Choose DOCNOW?</h2>
-            <p className="text-lg text-gray-500 font-medium">
-              Trusted by thousands for reliable, convenient diagnostics
-            </p>
-          </div>
+      {/* ═══════════ 7. TRUST & ACCREDITATION ═══════════ */}
+      <section className="bg-white py-16 md:py-24">
+        <RevealSection className="container mx-auto max-w-6xl px-4">
+          <SectionHeading
+            badge="Why DocNow"
+            badgeIcon={HeartPulse}
+            badgeTone="border-rose-100 bg-rose-50 text-rose-700"
+            title="Why Choose DOCNOW?"
+            subtitle="Trusted doctors and certified labs, with your privacy protected at every step"
+          />
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {whyChooseUs.map((feature) => (
               <Card
                 key={feature.title}
-                className={`p-6 sm:p-8 text-center border-gray-100 hover:shadow-lg transition-all duration-300 group ${feature.border}`}
+                className={`group border-gray-100 p-6 text-center transition-all duration-300 hover:shadow-lg sm:p-8 ${feature.border}`}
               >
-                <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl ${feature.color} mb-5 group-hover:scale-110 transition-transform`}>
-                  <feature.icon className="w-7 h-7" />
+                <div className={`mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl ${feature.color} transition-transform group-hover:scale-110`}>
+                  <feature.icon className="h-7 w-7" aria-hidden />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed font-medium">{feature.desc}</p>
+                <h3 className="mb-2 text-lg font-bold text-gray-900">{feature.title}</h3>
+                <p className="text-sm font-medium leading-relaxed text-gray-500">{feature.desc}</p>
               </Card>
             ))}
           </div>
         </RevealSection>
       </section>
 
-      {/* ═══════════ CALLBACK CTA — Client Island for form ═══════════ */}
-      <section className="py-16 md:py-24 bg-gradient-to-b from-gray-50/50 to-white">
-        <RevealSection className="container mx-auto px-4 max-w-3xl">
+      {/* ═══════════ 8. MEDICAL EXPERTS CALLBACK — Client Island for form ═══════════ */}
+      <section className="bg-gradient-to-b from-gray-50/50 to-white py-16 md:py-24">
+        <RevealSection className="container mx-auto max-w-3xl px-4">
           <Card className="overflow-hidden border-0 shadow-2xl shadow-purple-500/10">
-            {/* Header — pure server HTML */}
-            <div className="bg-gradient-to-r from-[#2d1670] to-[#4b2192] p-8 sm:p-10 text-center text-white">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm mb-6">
-                <Phone className="w-8 h-8" />
+            <div className="bg-gradient-to-r from-[#2d1670] to-[#4b2192] p-8 text-center text-white sm:p-10">
+              <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
+                <Phone className="h-8 w-8" aria-hidden />
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black mb-3">Need Help Choosing?</h2>
-              <p className="text-white/70 font-medium max-w-md mx-auto">
-                Our medical experts will call you back within 15 minutes to help you select the right tests.
+              <h2 className="mb-3 text-2xl font-black sm:text-3xl">Need Help Choosing a Doctor or Test?</h2>
+              <p className="mx-auto max-w-md font-medium text-white/70">
+                Our medical experts will call you back within 15 minutes to help you pick the right specialist or tests.
               </p>
               <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-white/80">
-                <Building2 className="h-4 w-4" />
+                <Building2 className="h-4 w-4" aria-hidden />
                 Managing employee testing at scale?
               </div>
             </div>
-            {/* Form — client island */}
             <div className="p-6 sm:p-10">
               <CallbackForm />
             </div>
@@ -241,28 +223,5 @@ export default function Home() {
       {/* ═══════════ STICKY MOBILE CTA — Client Island ═══════════ */}
       <StickyMobileCTA />
     </main>
-  );
-}
-
-// ────────────────────── HeroStatsCard (Server Component — pure HTML)
-function HeroStatsCard() {
-  return (
-    <div className="bg-white rounded-2xl shadow-[0_9px_30px_rgba(0,0,0,0.18)] px-6 py-6 md:px-10">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4">
-        {heroStats.map((stat) => (
-          <div key={stat.label} className="flex flex-col items-center gap-2 text-center">
-            <div className={`w-11 h-11 rounded-full ${stat.iconBg} flex items-center justify-center`}>
-              <stat.icon size={24} className={stat.iconColor} />
-            </div>
-            <span className="font-inter font-black text-2xl md:text-3xl text-gray-900">
-              {stat.value}
-            </span>
-            <span className="font-inter font-semibold text-xs text-gray-400 tracking-wide uppercase">
-              {stat.label}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import api from '@/lib/api';
 import { CampCard, type ActiveCamp } from '@/components/camps/CampCard';
 

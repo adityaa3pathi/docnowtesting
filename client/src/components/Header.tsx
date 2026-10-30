@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
     ShoppingCart, User, Users, Menu, X, MapPin, Search,
-    Navigation, Loader2, Shield, Phone, LogOut, Delete, Building2, Tent, Stethoscope } from 'lucide-react';
+    Loader2, Shield, Phone, LogOut, Delete, Tent, Stethoscope, FlaskConical, ChevronDown } from 'lucide-react';
 import { Button, Input } from './ui';
 import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
@@ -15,6 +15,7 @@ import {
     DialogDescription,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useLocation } from '@/contexts/LocationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
@@ -44,11 +45,12 @@ const callbackCities = Array.from(new Set([...metroCities.map((city) => city.nam
     a.localeCompare(b)
 );
 
-// Desktop nav links (3 only — "Get a Callback" is rendered as a button separately)
-const desktopNavLinks = [
-    { label: 'Consult a Doctor', href: '/consult' },
-    { label: 'Health Camps', href: '/camps' },
-    { label: 'About Us', href: '/about' },
+// Desktop nav (1280px+; smaller screens use the menu, which lists every link). The two pillars
+// lead; the bar is capped at 1380px, so Health Camps and About Us sit under "More" and
+// "Get a Callback" is a compact phone button.
+const moreNavLinks = [
+    { label: 'Health Camps', href: '/camps', icon: Tent },
+    { label: 'About Us', href: '/about', icon: Users },
 ];
 
 // Doctor dashboard link — available to all authenticated users (doctor layout handles profile check)
@@ -58,8 +60,9 @@ export function Header() {
     const pathname = usePathname();
 
     // Pages where the header search bar is redundant or distracting
-    const hideSearch = ['/search', '/profile', '/cart', '/thank-you'].some(p => pathname.startsWith(p));
-    const { selectedCity, selectedPincode, updateCity, updatePincode, checkAndSetPincode, serviceabilityStatus } = useLocation();
+    // The homepage has its own doctors + tests search in the hero.
+    const hideSearch = pathname === '/' || ['/search', '/profile', '/cart', '/thank-you'].some(p => pathname.startsWith(p));
+    const { selectedCity, selectedPincode, updateCity, checkAndSetPincode, serviceabilityStatus } = useLocation();
     const { user, isAuthenticated, logout } = useAuth();
     const { cartCount } = useCart();
     const { openAuthDialog } = useAuthGate();
@@ -152,6 +155,8 @@ export function Header() {
                 window.history.replaceState({}, '', window.location.pathname);
             }
         }
+        // Once on mount: the ?login=true flag is consumed and removed from the URL.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Close mobile menu on resize
@@ -230,38 +235,62 @@ export function Header() {
                 <div className="mx-auto flex h-14 md:h-16 max-w-[1380px] items-center justify-between gap-3 lg:gap-6 px-4 lg:px-10">
 
                     {/* Logo — 15% smaller on mobile */}
-                    <DocnowLogo href="/" priority width={120} height={47} imageClassName="max-h-8 md:max-h-[47px] w-auto" />
+                    <div className="shrink-0">
+                        <DocnowLogo href="/" priority width={120} height={47} imageClassName="max-h-8 md:max-h-[47px] w-auto" />
+                    </div>
 
                     {/* Desktop Global Search — hidden on pages with their own search */}
                     {!hideSearch && (
-                        <div className="hidden md:flex flex-1 max-w-xl mx-8 relative">
+                        <div className="hidden xl:flex flex-1 min-w-[140px] max-w-xl ml-6 mr-1 relative">
                             <GlobalSearch />
                         </div>
                     )}
 
                     {/* Desktop Nav Links */}
-                    <div className="hidden md:flex items-center gap-6 lg:gap-8">
-                        {desktopNavLinks.map((link) => (
-                            <Link
-                                key={link.href}
-                                href={link.href}
-                                className={`text-gray-700 font-semibold text-base leading-none transition-colors hover:text-primary ${pathname === link.href ? 'text-primary underline underline-offset-4' : ''
-                                    }`}
-                            >
-                                {link.label}
-                            </Link>
-                        ))}
-                        {/* Get a Callback — styled as outlined pill */}
+                    <div className="hidden xl:flex items-center gap-4 2xl:gap-5">
+                        {/* Consult a Doctor: the telehealth pillar, as a purple pill */}
+                        <Link
+                            href="/consult"
+                            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-base font-bold leading-none transition-colors ${pathname.startsWith('/consult') ? 'bg-primary text-white' : 'bg-primary/10 text-primary hover:bg-primary/15'}`}
+                        >
+                            <Stethoscope className="h-4 w-4" aria-hidden />
+                            Consult a Doctor
+                        </Link>
+                        <Link
+                            href="/search"
+                            className={`whitespace-nowrap text-gray-700 font-semibold text-base leading-none transition-colors hover:text-primary ${pathname.startsWith('/search') || pathname.startsWith('/tests') || pathname.startsWith('/packages') ? 'text-primary underline underline-offset-4' : ''}`}
+                        >
+                            <span className="2xl:hidden">Lab Tests</span>
+                            <span className="hidden 2xl:inline">Lab Tests &amp; Packages</span>
+                        </Link>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger className={`inline-flex items-center gap-1 whitespace-nowrap font-semibold text-base leading-none transition-colors hover:text-primary focus-visible:outline-none ${moreNavLinks.some((l) => pathname.startsWith(l.href)) ? 'text-primary' : 'text-gray-700'}`}>
+                                More <ChevronDown className="h-4 w-4" aria-hidden />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="min-w-44">
+                                {moreNavLinks.map((link) => (
+                                    <DropdownMenuItem key={link.href} asChild>
+                                        <Link href={link.href} className="flex cursor-pointer items-center gap-2 font-semibold">
+                                            <link.icon className="h-4 w-4 text-gray-400" aria-hidden />
+                                            {link.label}
+                                        </Link>
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        {/* Get a Callback — compact phone button */}
                         <button
                             onClick={() => setIsCallbackOpen(true)}
-                            className="border border-primary text-primary font-semibold text-base px-5 py-2 rounded-[7px] hover:bg-primary/5 transition-all whitespace-nowrap"
+                            title="Get a Callback"
+                            aria-label="Get a callback"
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-primary text-primary hover:bg-primary/5 transition-all"
                         >
-                            Get a Callback
+                            <Phone className="h-4 w-4" aria-hidden />
                         </button>
                     </div>
 
                     {/* Desktop Right Controls */}
-                    <div className="hidden md:flex items-center gap-3">
+                    <div className="hidden xl:flex items-center gap-2 2xl:gap-3">
 
                         {/* Select City */}
                         <Dialog open={isLocationDialogOpen} onOpenChange={setIsLocationDialogOpen}>
@@ -415,7 +444,7 @@ export function Header() {
                         ) : (
                             <button
                                 onClick={() => openAuthDialog()}
-                                className="border border-primary text-primary font-semibold text-sm px-5 py-2 rounded-[7px] hover:bg-primary/5 transition-all flex items-center gap-2"
+                                className="border border-primary text-primary font-semibold text-sm px-4 py-2 rounded-[7px] hover:bg-primary/5 transition-all flex items-center gap-2 whitespace-nowrap"
                             >
                                 <User className="h-4 w-4" />
                                 Sign In
@@ -424,7 +453,7 @@ export function Header() {
                     </div>
 
                     {/* ─── Mobile: Hamburger Only ─── */}
-                    <div className="flex md:hidden items-center">
+                    <div className="flex xl:hidden items-center">
                         <button
                             className="p-2 text-gray-700 hover:text-primary transition-colors"
                             onClick={() => setIsMobileMenuOpen(true)}
@@ -438,7 +467,7 @@ export function Header() {
                 {/* Mobile Global Search — hidden on search/profile/cart pages */}
                 {!hideSearch && (
                     <div
-                        className="md:hidden grid transition-[grid-template-rows,opacity] duration-300 ease-in-out"
+                        className="xl:hidden grid transition-[grid-template-rows,opacity] duration-300 ease-in-out"
                         style={{
                             gridTemplateRows: isSearchHidden ? '0fr' : '1fr',
                             opacity: isSearchHidden ? 0 : 1,
@@ -500,13 +529,13 @@ export function Header() {
             {/* ─── Mobile Navigation Drawer ─── */}
             {/* Backdrop */}
             <div
-                className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 md:hidden ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 xl:hidden ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={() => setIsMobileMenuOpen(false)}
             />
 
             {/* Drawer Panel — white bg so icons stay readable */}
             <div
-                className={`fixed top-0 left-0 h-full w-[280px] bg-white z-[70] shadow-2xl transform transition-transform duration-300 ease-out md:hidden flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+                className={`fixed top-0 left-0 h-full w-[280px] bg-white z-[70] shadow-2xl transform transition-transform duration-300 ease-out xl:hidden flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
                 {/* Drawer Header */}
                 <div className="flex items-center justify-end px-5 h-16 border-b border-gray-100 flex-shrink-0 overflow-hidden bg-white">
@@ -587,28 +616,28 @@ export function Header() {
                             Home
                         </Link>
                         <Link
+                            href="/consult"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold transition-all ${pathname.startsWith('/consult') ? 'bg-primary text-white' : 'bg-primary/5 text-primary hover:bg-primary/10'}`}
+                        >
+                            <Stethoscope className={`w-4 h-4 ${pathname.startsWith('/consult') ? 'text-white' : 'text-primary'}`} />
+                            Consult a Doctor
+                        </Link>
+                        <Link
                             href="/search?type=TEST"
                             onClick={() => setIsMobileMenuOpen(false)}
                             className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname === '/search' && typeof window !== 'undefined' && window.location.search.includes('TEST') ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
                         >
-                            <Search className="w-4 h-4 text-gray-400" />
-                            Tests
+                            <FlaskConical className="w-4 h-4 text-gray-400" />
+                            Lab Tests
                         </Link>
                         <Link
                             href="/search?type=PACKAGE"
                             onClick={() => setIsMobileMenuOpen(false)}
                             className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname === '/search' && typeof window !== 'undefined' && window.location.search.includes('PACKAGE') ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
                         >
-                            <Search className="w-4 h-4 text-gray-400" />
-                            Packages
-                        </Link>
-                        <Link
-                            href="/consult"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname.startsWith('/consult') ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
-                        >
-                            <Stethoscope className="w-4 h-4 text-gray-400" />
-                            Consult a Doctor
+                            <FlaskConical className="w-4 h-4 text-gray-400" />
+                            Health Packages
                         </Link>
                         {isAuthenticated && (
                             <Link
@@ -627,6 +656,14 @@ export function Header() {
                         >
                             <Tent className="w-4 h-4 text-gray-400" />
                             Health Camps
+                        </Link>
+                        <Link
+                            href="/about"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:bg-gray-50 hover:text-primary transition-all ${pathname === '/about' ? 'text-primary bg-primary/5' : 'text-gray-700'}`}
+                        >
+                            <Users className="w-4 h-4 text-gray-400" />
+                            About Us
                         </Link>
                         {isAuthenticated && (
                             <Link

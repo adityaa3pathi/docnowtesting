@@ -1,15 +1,33 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 import { useApi } from '@/hooks/useApi';
 import { consult } from '@/lib/consult/api';
 import { DoctorCard } from '@/components/consult/DoctorCard';
 import { SpecialtyChips } from '@/components/consult/SpecialtyChips';
 import { EmptyState, ErrorState, Skeleton } from '@/components/consult/States';
+import { resolveSpecialty, specialtyLabel } from '@/lib/home/specialties';
 
+// useSearchParams needs a Suspense boundary so the page can still be prerendered.
 export default function ConsultHomePage() {
-    const [specialtyId, setSpecialtyId] = useState<string | null>(null);
+    return (
+        <Suspense fallback={<main className="mx-auto w-full max-w-3xl px-4 py-6"><Skeleton className="h-28" /></main>}>
+            <ConsultHome />
+        </Suspense>
+    );
+}
+
+function ConsultHome() {
+    // ?specialty=<slug or homepage key> (from the homepage specialty grid and search) preselects a filter.
+    const wanted = useSearchParams().get('specialty');
+    const [picked, setPicked] = useState<string | null | undefined>(undefined);
     const specialties = useApi(() => consult.specialties(), []);
+    const fromUrl = specialties.data ? resolveSpecialty(wanted, specialties.data) : null;
+    const specialtyId = picked !== undefined ? picked : (fromUrl?.id ?? null);
+    const setSpecialtyId = (id: string | null) => setPicked(id);
+    // Asked for a specialty this deployment does not offer yet: say so, and show everyone instead.
+    const unmatched = !!wanted && picked === undefined && !!specialties.data && !fromUrl;
     const doctors = useApi(() => consult.doctors(specialtyId ?? undefined), [specialtyId]);
 
     return (
@@ -23,6 +41,12 @@ export default function ConsultHomePage() {
                     My consultations
                 </Link>
             </div>
+
+            {unmatched && (
+                <p role="status" className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+                    We don&apos;t have {specialtyLabel(wanted)} doctors on DocNow yet. Here are all our doctors; a General Physician can advise you and refer you if needed.
+                </p>
+            )}
 
             {specialties.data && specialties.data.length > 0 && (
                 <div className="mt-5">
