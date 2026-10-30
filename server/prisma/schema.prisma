@@ -17,6 +17,7 @@ enum Role {
   USER
   MANAGER
   SUPER_ADMIN
+  DOCTOR
 }
 
 enum UserStatus {
@@ -118,9 +119,21 @@ model User {
   // Session management
   tokenVersion  Int        @default(0)   // Increment to force-logout all sessions
   sessions      Session[]
+  // Set when the person deleted their account in the app: contact details are wiped and the
+  // account is blocked; clinical and financial records the law requires us to keep stay de-identified.
+  deletedAt     DateTime?
 
   // AI Support Agent
   supportConversations SupportConversation[]
+
+  // Doctor Consultation
+  doctorProfile DoctorProfile?
+  consultations Consultation[]
+  familyLinkedPatients Patient[] @relation("FamilyLinkedPatients")
+  consultationAttachments ConsultationAttachment[]
+
+  // Mobile push notifications
+  pushTokens    PushToken[]
 }
 
 model Session {
@@ -163,9 +176,29 @@ model Patient {
   age          Int
   gender       String
   dob          DateTime?
+
+  // Assisted family consultations. `phone` is the family member's own 10-digit mobile; whoever
+  // signs in with it sees consultations booked for this person, and gets clinical access only
+  // after accepting once ("Aditya booked this for you, is this you?"), so a mistyped number
+  // never exposes health details. Changing the phone clears the link.
+  phone              String?
+  preferredLanguage  String    @default("hi") // hi | en
+  bloodGroup         String?
+  allergies          String[]  @default([])
+  chronicConditions  String[]  @default([])
+  currentMedications String[]  @default([])
+  linkedUserId       String?
+  linkedAt           DateTime?
+  linkDeclinedAt     DateTime?
+
   bookingItems BookingItem[]
   cartItems    CartItem[]
+  consultations Consultation[]
   user         User          @relation(fields: [userId], references: [id])
+  linkedUser   User?         @relation("FamilyLinkedPatients", fields: [linkedUserId], references: [id])
+
+  @@index([phone])
+  @@index([linkedUserId])
 }
 
 model Address {
@@ -274,8 +307,26 @@ model Report {
   fileSize         Int?                        // PDF file size in bytes
   generatedAt      DateTime  @default(now())
   booking          Booking   @relation(fields: [bookingId], references: [id])
+  notifications    ReportNotification[]
+  consultations    ConsultationReport[]
 
   @@unique([bookingId, vendorCustomerId, isFullReport, verifiedAt])
+}
+
+// One row per report per channel, claimed before sending, so "report ready" never goes out twice.
+model ReportNotification {
+  id         String   @id @default(uuid())
+  reportId   String
+  channel    String // push
+  status     String   @default("SENDING") // SENDING | SENT | FAILED
+  attempts   Int      @default(1)
+  lastError  String?
+  providerId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  report     Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, channel])
 }
 
 model CallbackRequest {
@@ -742,4 +793,381 @@ model SupportMessage {
   conversation    SupportConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
+}
+
+
+// ============================================
+// DOCTOR CONSULTATION
+// ============================================
+
+enum DoctorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum SlotStatus {
+  AVAILABLE
+  BOOKED
+  BLOCKED
+}
+
+model Specialty {
+  id          String          @id @default(uuid())
+  name        String          @unique
+  slug        String          @unique
+  description String?
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  doctors     DoctorProfile[]
+}
+
+model DoctorProfile {
+  id                  String       @id @default(uuid())
+  userId              String       @unique
+  specialtyId         String
+  displayName         String
+  photoUrl            String?
+  qualification       String
+  registrationNumber  String
+  registrationCouncil String
+  experienceYears     Int          @default(0)
+  languages           String[]
+  bio                 String?
+  consultationFee     Float
+  slotMinutes         Int          @default(15)
+  status              DoctorStatus @default(PENDING)
+  statusReason        String?
+  createdByAdminId    String?
+  reviewedById        String?
+  reviewedAt          DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  user         User                 @relation(fields: [userId], references: [id])
+  specialty    Specialty            @relation(fields: [specialtyId], references: [id])
+  availability DoctorAvailability[]
+  leaves       DoctorLeave[]
+  slots        Slot[]
+  consultations Consultation[]
+
+  @@unique([registrationNumber, registrationCouncil])
+  @@index([status, specialtyId])
+}
+
+model DoctorAvailability {
+  id          String        @id @default(uuid())
+  doctorId    String
+  dayOfWeek   Int // 0 = Sunday ... 6 = Saturday, in IST
+  startMinute Int // minutes after midnight IST
+  endMinute   Int
+  doctor      DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, dayOfWeek])
+}
+
+model DoctorLeave {
+  id        String        @id @default(uuid())
+  doctorId  String
+  startsAt  DateTime
+  endsAt    DateTime
+  reason    String?
+  createdAt DateTime      @default(now())
+  doctor    DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, startsAt])
+}
+
+model Slot {
+  id       String        @id @default(uuid())
+  doctorId String
+  startsAt DateTime
+  endsAt   DateTime
+  status   SlotStatus    @default(AVAILABLE)
+  doctor   DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  consultations Consultation[]
+
+  @@unique([doctorId, startsAt])
+  @@index([doctorId, status, startsAt])
+}
+
+
+// ============================================
+// DOCTOR CONSULTATION: PAYMENTS
+// ============================================
+// Two indexes below are raw SQL in the migration because Prisma cannot express partial unique
+// indexes: Consultation(slotId) for active statuses, and ConsultPolicy(isActive) where active.
+// A refund amount check (amountPaise > 0) lives there too. Do not drop them in a generated migration.
+
+enum ConsultationStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  RESCHEDULED
+  WAITING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW_PATIENT
+  NO_SHOW_DOCTOR
+  EXPIRED
+  REFUNDED
+}
+
+enum ConsultationType {
+  VIDEO
+  AUDIO
+  CHAT
+}
+
+enum ConsultPaymentStatus {
+  CREATED
+  CAPTURED
+  FAILED
+}
+
+enum ConsultRefundStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+enum ConsultRefundReason {
+  PATIENT_CANCEL
+  DOCTOR_NO_SHOW
+  LATE_PAYMENT_SLOT_LOST
+  PAID_AFTER_CANCEL
+  DUPLICATE_PAYMENT
+  ADMIN
+  EXTERNAL
+}
+
+model ConsultPolicy {
+  id          String   @id @default(uuid())
+  version     Int      @unique
+  isActive    Boolean  @default(false)
+  rules       Json
+  reason      String?
+  createdById String?
+  createdAt   DateTime @default(now())
+}
+
+model Consultation {
+  id                  String             @id @default(uuid())
+  userId              String
+  patientId           String
+  doctorId            String
+  slotId              String
+  type                ConsultationType   @default(VIDEO)
+  status              ConsultationStatus @default(PENDING_PAYMENT)
+  feePaise            Int
+  platformFeePaise    Int
+  policyId            String
+  policySnapshot      Json
+  holdExpiresAt       DateTime
+  startsAt            DateTime
+  idempotencyKey      String
+  requestHash         String
+  orderReceipt        String             @unique
+  confirmingPaymentId String?
+  reviewReason        String?
+  cancelledBy         String?
+  cancelReason        String?
+  cancelledAt         DateTime?
+  // Video call: 100ms room made on first join; times record who joined and when.
+  roomId              String?            @unique
+  patientJoinedAt     DateTime?
+  doctorJoinedAt      DateTime?
+  // Family bookings: the zero-login web link (docnow.in/call/<guestToken>), whether the booker said
+  // they would co-join to assist, when they did, and when the family member themselves joined.
+  guestToken          String?            @unique
+  isCaregiverJoined   Boolean            @default(false)
+  caregiverJoinedAt   DateTime?
+  familyJoinedAt      DateTime?
+  startedAt           DateTime?
+  endedAt             DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  user         User                  @relation(fields: [userId], references: [id])
+  patient      Patient               @relation(fields: [patientId], references: [id])
+  doctor       DoctorProfile         @relation(fields: [doctorId], references: [id])
+  slot         Slot                  @relation(fields: [slotId], references: [id])
+  payments     ConsultationPayment[]
+  refunds      ConsultationRefund[]
+  note          ConsultationNote?
+  prescriptions Prescription[]
+  notifications ConsultationNotification[]
+  attachedReports ConsultationReport[]
+  attachments     ConsultationAttachment[]
+  consents        ConsultationConsent[]
+
+  @@unique([userId, idempotencyKey])
+  @@index([slotId])
+  @@index([status, holdExpiresAt])
+  @@index([userId, createdAt])
+  @@index([doctorId, startsAt])
+}
+
+model ConsultationPayment {
+  id                String               @id @default(uuid())
+  consultationId    String
+  razorpayOrderId   String
+  razorpayPaymentId String?              @unique
+  amountPaise       Int
+  status            ConsultPaymentStatus @default(CREATED)
+  capturedAt        DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  consultation Consultation         @relation(fields: [consultationId], references: [id])
+  refunds      ConsultationRefund[]
+
+  @@index([razorpayOrderId])
+  @@index([consultationId])
+}
+
+model ConsultationRefund {
+  id               String              @id @default(uuid())
+  consultationId   String
+  paymentId        String
+  reason           ConsultRefundReason
+  amountPaise      Int
+  status           ConsultRefundStatus @default(PENDING)
+  razorpayRefundId String?             @unique
+  receipt          String              @unique
+  attempts         Int                 @default(0)
+  lastError        String?
+  failureConfirmed Boolean             @default(false)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  consultation Consultation        @relation(fields: [consultationId], references: [id])
+  payment      ConsultationPayment @relation(fields: [paymentId], references: [id])
+
+  @@unique([paymentId, reason])
+  @@index([status, updatedAt])
+}
+
+
+// ============================================
+// DOCTOR CONSULTATION: NOTES AND PRESCRIPTIONS
+// ============================================
+
+// The doctor's working notes; editable until the prescription is issued.
+model ConsultationNote {
+  id             String       @id @default(uuid())
+  consultationId String       @unique
+  complaints     String?
+  findings       String?
+  diagnosis      String?
+  advice         String?
+  followUpDays   Int?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+}
+
+// A legal record: content is written once. A correction voids it and adds the next version;
+// raw SQL in the migration allows only one unvoided version per consultation.
+model Prescription {
+  id               String       @id @default(uuid())
+  consultationId   String
+  version          Int          @default(1)
+  voidedAt         DateTime?
+  voidReason       String?
+  medicines        Json // [{ name, dose, frequency, duration, instructions }]
+  recommendedTests Json // [{ code, name }] from the catalog at issue time
+  advice           String?
+  doctorSnapshot   Json // name, qualification, registration number and council at issue time
+  patientSnapshot  Json // name, age, gender at issue time
+  issuedAt         DateTime     @default(now())
+  consultation     Consultation @relation(fields: [consultationId], references: [id], onDelete: Restrict)
+
+  @@unique([consultationId, version])
+}
+
+// One row per message per person per channel, claimed before sending, so a message never goes out twice.
+model ConsultationNotification {
+  id             String       @id @default(uuid())
+  consultationId String
+  kind           String // CONFIRMED | REMINDER | JOIN_NOW | PARTNER_WAITING | DOCTOR_NO_SHOW | PATIENT_NO_SHOW | PRESCRIPTION_ISSUED
+  recipient      String // patient | doctor
+  channel        String       @default("whatsapp") // whatsapp | push
+  status         String       @default("SENDING") // SENDING | SENT | FAILED
+  attempts       Int          @default(1)
+  lastError      String?
+  providerId     String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  @@unique([consultationId, kind, recipient, channel])
+  @@index([status, updatedAt])
+}
+
+// ============================================
+// MOBILE PUSH NOTIFICATIONS
+// ============================================
+
+// One row per phone. The token is unique, so a phone that signs in to another account moves to it.
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique // Expo push token, e.g. ExponentPushToken[xxxx]
+  platform  String // ios | android
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt // last time the app confirmed this token
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+}
+
+// A DocNow lab report the booker shared with the doctor for this consultation.
+model ConsultationReport {
+  consultationId String
+  reportId       String
+  createdAt      DateTime     @default(now())
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  report         Report       @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@id([consultationId, reportId])
+}
+
+// A photo or PDF of an outside record (old prescription, discharge summary, lab report) the booker
+// uploaded for the doctor. Stored privately; read through short-lived signed links only. Uploaded
+// before booking, so consultationId stays empty until the booking claims it.
+model ConsultationAttachment {
+  id             String        @id @default(uuid())
+  userId         String
+  consultationId String?
+  storageKey     String        @unique
+  name           String
+  mimeType       String
+  sizeBytes      Int
+  createdAt      DateTime      @default(now())
+  user           User          @relation(fields: [userId], references: [id])
+  consultation   Consultation? @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  @@index([consultationId])
+  @@index([userId, consultationId])
+}
+
+
+// Telemedicine consent (NMC Telemedicine Practice Guidelines, 2020): recorded once per person on
+// the patient's side, before the server lets them into the call. `userId` is deliberately not a
+// relation, so the record survives an account deletion.
+model ConsultationConsent {
+  id             String       @id @default(uuid())
+  consultationId String
+  identity       String // the call identity that consented: patient:<patientId> or caretaker:<userId>
+  userId         String? // the signed-in account, or empty for the zero-login family link
+  channel        String // app | web | guest-link
+  version        String // which consent wording was shown
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime     @default(now())
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  @@unique([consultationId, identity])
 }

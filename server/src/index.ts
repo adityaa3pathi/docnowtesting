@@ -34,6 +34,8 @@ import invoiceRoutes from './routes/invoices';
 import healthRoutes from './routes/health';
 import heroSlidesRoutes from './routes/heroSlides';
 import { campAdminRoutes, campPublicRoutes } from './modules/camps';
+import { buildCorsOptions } from './utils/corsOptions';
+import { consultGuestRoutes, consultPublicRoutes, consultPatientRoutes, doctorRoutes, consultAdminRoutes } from './modules/consultations';
 
 import { registerBookingStrategy } from './services/bookingStrategyRegistry';
 import { HomeCollectionStrategy } from './services/homeCollectionStrategy';
@@ -69,16 +71,7 @@ function parseAllowedOrigins() {
 }
 
 const allowedOrigins = parseAllowedOrigins();
-app.use(cors({
-    origin(origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-
-        return callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-}));
+app.use(cors(buildCorsOptions(allowedOrigins)));
 
 app.use(requestContextMiddleware);
 app.use(cookieParser());
@@ -162,6 +155,11 @@ app.use('/api/promos', promoRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/camps', campPublicRoutes);
+app.use('/api/consult', consultPublicRoutes);
+app.use('/api/consult', consultPatientRoutes);
+app.use('/api/consult', consultGuestRoutes);
+app.use('/api/doctor', doctorRoutes);
+app.use('/api/admin/consult', consultAdminRoutes);
 app.use('/api/hero-slides', heroSlidesRoutes);
 
 
@@ -226,8 +224,16 @@ app.use((err: any, req: RequestWithContext, res: Response, next: NextFunction) =
 });
 
 import { startReconciler } from './workers/reconciler';
+import { startSlotGenerator } from './workers/slotGenerator';
+import { startConsultReconciler } from './workers/consultReconciler';
+import { startConsultTimers } from './workers/consultTimers';
+import { startReportPushRetry } from './workers/reportPushRetry';
 
 app.listen(PORT, () => {
     logger.info({ port: PORT, nodeEnv: process.env.NODE_ENV }, 'server_started');
     startReconciler();
+    startSlotGenerator();
+    startConsultReconciler();
+    startConsultTimers();
+    startReportPushRetry();
 });

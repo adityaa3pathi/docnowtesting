@@ -5,7 +5,8 @@ import {
     Dialog,
     DialogContent,
     DialogHeader,
-    DialogTitle
+    DialogTitle,
+    DialogDescription
 } from '@/components/ui/dialog';
 import { Button, Input } from '@/components/ui'; // Imports from components/ui.tsx
 import { Loader2, ArrowLeft, ShieldCheck, Mail, Smartphone, Lock, User as UserIcon, Calendar, Gift, KeyRound, RefreshCw, CheckCircle2, Eye, EyeOff } from 'lucide-react';
@@ -877,6 +878,11 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
                             {view === 'SIGNUP' && 'Create Account'}
                             {view === 'FORGOT_PASSWORD' && 'Reset Password'}
                         </DialogTitle>
+                        <DialogDescription className="sr-only">
+                            {view === 'LOGIN' && 'Log in to your DocNow account'}
+                            {view === 'SIGNUP' && 'Create a new DocNow account'}
+                            {view === 'FORGOT_PASSWORD' && 'Reset your DocNow account password'}
+                        </DialogDescription>
                     </DialogHeader>
                 </div>
 

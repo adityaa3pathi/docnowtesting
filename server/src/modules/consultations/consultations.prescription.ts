@@ -1,0 +1,298 @@
+/**
+ * Doctor notes and prescriptions. Notes stay editable until the first prescription is issued. A
+ * prescription's content never changes; a correction voids it and issues the next version.
+ */
+import { Prisma, PrismaClient } from '@prisma/client';
+import { z } from 'zod';
+import { prisma } from '../../db';
+import { addCatalogItemToCart } from '../../services/cartService';
+import { realConsultVideo } from './consultations.video';
+import { DoctorError } from './doctors.status';
+import { canSeeClinical, isSelf, resolveAccess } from './consultations.family';
+import { createReportAccessToken } from '../../services/reportAccess';
+import { attachmentsFor } from './consultations.attachments';
+import { createSignedToken, verifySignedToken } from '../../services/signedToken';
+import { resolveOrCreateSelfPatient } from '../../utils/patientValidation';
+import type { ConsultationStatus } from './consultations.types';
+
+const WRITABLE: ConsultationStatus[] = ['IN_PROGRESS', 'COMPLETED'];
+
+const text = (max: number) => z.string().trim().max(max).optional();
+
+export const noteSchema = z.object({
+    complaints: text(2000),
+    findings: text(2000),
+    diagnosis: text(1000),
+    advice: text(2000),
+    followUpDays: z.number().int().min(1).max(365).nullable().optional(),
+});
+
+const medicineSchema = z.object({
+    name: z.string().trim().min(1, 'Medicine name is required').max(120),
+    dose: z.string().trim().max(60).default(''),
+    frequency: z.string().trim().max(60).default(''),
+    duration: z.string().trim().max(60).default(''),
+    instructions: z.string().trim().max(200).default(''),
+});
+
+export const prescriptionSchema = z.object({
+    medicines: z.array(medicineSchema).max(20).default([]),
+    testCodes: z.array(z.string().trim().min(1).max(40)).max(10).default([]),
+    advice: text(2000),
+}).refine((p) => p.medicines.length > 0 || p.testCodes.length > 0 || !!p.advice, {
+    message: 'Add at least one medicine, test or advice',
+});
+
+export type RecommendedTest = { code: string; name: string };
+
+export const reissueSchema = z.object({
+    reason: z.string().trim().min(5, 'Say briefly why the prescription is being corrected').max(300),
+    prescription: prescriptionSchema,
+});
+
+const REISSUE_WINDOW_MS = 7 * 24 * 3_600_000;
+const current = { where: { voidedAt: null } } as const;
+
+async function doctorConsultation(doctorId: string, consultationId: string) {
+    const c = await prisma.consultation.findFirst({
+        where: { id: consultationId, doctorId },
+        select: { id: true, status: true, startsAt: true, prescriptions: { ...current, select: { id: true, version: true } } },
+    });
+    if (!c) throw new DoctorError(404, 'Not found');
+    if (!WRITABLE.includes(c.status)) throw new DoctorError(409, 'Notes open once the consultation has started');
+    return { ...c, current: c.prescriptions[0] ?? null };
+}
+
+export async function getDoctorRecord(doctorId: string, consultationId: string) {
+    const c = await prisma.consultation.findFirst({
+        where: { id: consultationId, doctorId },
+        select: {
+            id: true, status: true, type: true, startsAt: true, patientJoinedAt: true, doctorJoinedAt: true, slot: { select: { endsAt: true } },
+            patient: {
+                select: {
+                    name: true, age: true, gender: true, relation: true, preferredLanguage: true,
+                    bloodGroup: true, allergies: true, chronicConditions: true, currentMedications: true,
+                },
+            },
+            user: { select: { name: true } },
+            isCaregiverJoined: true, caregiverJoinedAt: true, familyJoinedAt: true,
+            attachedReports: {
+                select: {
+                    report: {
+                        select: {
+                            id: true, isFullReport: true, verifiedAt: true, generatedAt: true,
+                            booking: { select: { items: { select: { testName: true } } } },
+                        },
+                    },
+                },
+            },
+            note: true, prescriptions: { orderBy: { version: 'desc' } },
+        },
+    });
+    if (!c) throw new DoctorError(404, 'Not found');
+    const { prescriptions, user, attachedReports, ...rest } = c;
+    const documents = await attachmentsFor(c.id);
+    const voided = prescriptions.filter((p) => p.voidedAt);
+    const forFamily = !isSelf(c.patient.relation);
+    return {
+        ...rest,
+        // Family bookings: who booked and whether they are joining to assist (never their contact details).
+        caregiver: forFamily ? { name: user.name || 'Family member', relation: c.patient.relation, coJoining: c.isCaregiverJoined, joinedAt: c.caregiverJoinedAt } : null,
+        // Reports the booker shared; each opens through a signed link that expires like WhatsApp ones.
+        attachedReports: attachedReports.map(({ report }) => ({
+            id: report.id,
+            label: [...new Set(report.booking.items.map((i) => i.testName))].join(', ') || 'Lab report',
+            isFullReport: report.isFullReport,
+            date: report.verifiedAt ?? report.generatedAt,
+            viewToken: createReportAccessToken(report.id),
+        })),
+        // Photos / PDFs of outside records the booker uploaded, as signed links valid for an hour.
+        attachments: documents,
+        prescription: prescriptions.find((p) => !p.voidedAt) ?? null,
+        previousVersions: voided.map((p) => ({ id: p.id, version: p.version, issuedAt: p.issuedAt, voidedAt: p.voidedAt, voidReason: p.voidReason })),
+    };
+}
+
+export async function saveNotes(doctorId: string, consultationId: string, data: z.infer<typeof noteSchema>) {
+    const c = await doctorConsultation(doctorId, consultationId);
+    if (c.current) throw new DoctorError(409, 'Notes are locked once the prescription is issued');
+    const note = await prisma.consultationNote.upsert({
+        where: { consultationId },
+        update: data,
+        create: { consultationId, ...data },
+    });
+    // Notify room if active
+    prisma.consultation.findUnique({ where: { id: consultationId }, select: { roomId: true } })
+        .then((full) => {
+            if (full?.roomId) {
+                realConsultVideo().notifyRoom?.(full.roomId, { v: 1, type: 'PRESCRIPTION_DRAFTING', consultationId }).catch(() => {});
+            }
+        })
+        .catch(() => {});
+    return note;
+}
+
+/** Checks the tests against the catalog and freezes doctor and patient details as they are now. */
+async function buildContent(consultationId: string, input: z.infer<typeof prescriptionSchema>) {
+    const codes = [...new Set(input.testCodes)];
+    const items = await prisma.catalogItem.findMany({
+        where: { partnerCode: { in: codes }, isEnabled: true },
+        select: { partnerCode: true, name: true },
+    });
+    const missing = codes.find((code) => !items.some((i) => i.partnerCode === code));
+    if (missing) throw new DoctorError(400, `Unknown or unavailable test: ${missing}`);
+    const tests: RecommendedTest[] = codes.map((code) => ({ code, name: items.find((i) => i.partnerCode === code)!.name }));
+
+    const c = await prisma.consultation.findUniqueOrThrow({
+        where: { id: consultationId },
+        select: {
+            doctor: { select: { displayName: true, qualification: true, registrationNumber: true, registrationCouncil: true, specialty: { select: { name: true } } } },
+            patient: { select: { name: true, age: true, gender: true } },
+        },
+    });
+    return {
+        consultationId,
+        medicines: input.medicines,
+        recommendedTests: tests,
+        advice: input.advice,
+        doctorSnapshot: { ...c.doctor, specialty: c.doctor.specialty.name },
+        patientSnapshot: c.patient,
+    };
+}
+
+const alreadyIssued = (e: unknown) => e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002';
+
+export async function issuePrescription(doctorId: string, consultationId: string, input: z.infer<typeof prescriptionSchema>) {
+    const c = await doctorConsultation(doctorId, consultationId);
+    if (c.current) throw new DoctorError(409, 'A prescription has already been issued');
+    const data = await buildContent(consultationId, input);
+    try {
+        const created = await prisma.prescription.create({ data });
+        // Notify room if active
+        prisma.consultation.findUnique({ where: { id: consultationId }, select: { roomId: true } })
+            .then((full) => {
+                if (full?.roomId) {
+                    realConsultVideo().notifyRoom?.(full.roomId, { v: 1, type: 'PRESCRIPTION_ISSUED', consultationId, prescriptionId: created.id }).catch(() => {});
+                }
+            })
+            .catch(() => {});
+        return created;
+    } catch (e) {
+        if (alreadyIssued(e)) throw new DoctorError(409, 'A prescription has already been issued');
+        throw e;
+    }
+}
+
+/** Voids the current version and issues the next one, in one transaction, within 7 days of the visit. */
+export async function reissuePrescription(doctorId: string, consultationId: string, input: z.infer<typeof reissueSchema>, now = new Date()) {
+    const c = await doctorConsultation(doctorId, consultationId);
+    if (!c.current) throw new DoctorError(409, 'There is no prescription to correct');
+    if (now.getTime() - c.startsAt.getTime() > REISSUE_WINDOW_MS) {
+        throw new DoctorError(409, 'Prescriptions can be corrected only within 7 days of the consultation');
+    }
+    const data = await buildContent(consultationId, input.prescription);
+    try {
+        return await prisma.$transaction(async (tx) => {
+            const voided = await tx.prescription.updateMany({
+                where: { id: c.current!.id, voidedAt: null },
+                data: { voidedAt: now, voidReason: input.reason },
+            });
+            if (voided.count !== 1) throw new DoctorError(409, 'The prescription changed meanwhile; reload and try again');
+            return tx.prescription.create({ data: { ...data, version: c.current!.version + 1 } });
+        });
+    } catch (e) {
+        if (alreadyIssued(e)) throw new DoctorError(409, 'The prescription changed meanwhile; reload and try again');
+        throw e;
+    }
+}
+
+/** Prescription links in WhatsApp and the in-app browser: valid this long, like report links. */
+export const PRESCRIPTION_LINK_PURPOSE = 'consult-prescription';
+export const PRESCRIPTION_LINK_HOURS = Number(process.env.PRESCRIPTION_LINK_EXPIRY_HOURS || '72');
+
+/** The current prescription for a consultation, for anyone allowed to see it (no access check). */
+export async function currentPrescription(consultationId: string) {
+    const p = await prisma.prescription.findFirst({
+        where: { consultationId, voidedAt: null },
+        include: { consultation: { select: { startsAt: true, patientId: true } } },
+    });
+    if (!p) throw new DoctorError(404, 'No prescription yet');
+    return p;
+}
+
+/**
+ * The patient side's view: the booker, or the family member once they accepted the booking.
+ * Someone without access gets the same 404 as a missing prescription.
+ */
+export async function getPatientPrescription(userId: string, consultationId: string) {
+    const found = await resolveAccess(userId, consultationId);
+    if (!found || !canSeeClinical(found.access)) throw new DoctorError(404, 'No prescription yet');
+    return currentPrescription(consultationId);
+}
+
+/** A signed link token that opens the PDF without signing in (in-app browser, WhatsApp). */
+export async function prescriptionLinkToken(userId: string, consultationId: string) {
+    await getPatientPrescription(userId, consultationId);
+    return { token: createSignedToken(PRESCRIPTION_LINK_PURPOSE, consultationId, PRESCRIPTION_LINK_HOURS), expiresInHours: PRESCRIPTION_LINK_HOURS };
+}
+
+export async function prescriptionFromLink(token: string) {
+    let consultationId: string;
+    try {
+        consultationId = verifySignedToken(PRESCRIPTION_LINK_PURPOSE, token);
+    } catch (e) {
+        throw new DoctorError(400, e instanceof Error ? e.message : 'Invalid link');
+    }
+    return currentPrescription(consultationId);
+}
+
+/**
+ * Adds each recommended test to the caller's own cart, skipping ones already there. The booker
+ * books for the consultation's patient; a family member books for themselves (their own Self
+ * profile in their own account).
+ */
+export async function addRecommendedTestsToCart(userId: string, consultationId: string) {
+    const found = await resolveAccess(userId, consultationId);
+    if (!found || !canSeeClinical(found.access)) throw new DoctorError(404, 'No prescription yet');
+    const p = await currentPrescription(consultationId);
+    const patientId = found.access.kind === 'booker' ? p.consultation.patientId : (await resolveOrCreateSelfPatient(userId, prisma)).id;
+    const tests = p.recommendedTests as RecommendedTest[];
+    const inCart = await prisma.cartItem.findMany({
+        where: { cart: { userId }, patientId, testCode: { in: tests.map((t) => t.code) } },
+        select: { testCode: true },
+    });
+    const added: string[] = [];
+    const skipped: { code: string; reason: string }[] = [];
+    for (const t of tests) {
+        if (inCart.some((i) => i.testCode === t.code)) {
+            skipped.push({ code: t.code, reason: 'Already in cart' });
+            continue;
+        }
+        const r = await addCatalogItemToCart(userId, t.code, patientId);
+        if (r.ok) added.push(t.code);
+        else skipped.push({ code: t.code, reason: r.error });
+    }
+    // Checkout pre-selects this, so the person only picks a collection slot.
+    return { added, skipped, suggestedAddressId: await suggestCollectionAddress(userId, patientId) };
+}
+
+type AddressDb = Pick<PrismaClient, 'booking' | 'address'>;
+
+/**
+ * Where the tests will most likely be collected: the address of the caller's last lab booking for
+ * this patient (Mother's home, not the booker's), else the last one they used at all, else any
+ * saved address. Null when they have none, and checkout asks for one.
+ */
+export async function suggestCollectionAddress(userId: string, patientId: string, db: AddressDb = prisma): Promise<string | null> {
+    const usable = { addressId: { not: null }, address: { is: { isDeleted: false } } };
+    const forPatient = await db.booking.findFirst({
+        where: { userId, ...usable, items: { some: { patientId } } },
+        orderBy: { createdAt: 'desc' },
+        select: { addressId: true },
+    });
+    if (forPatient?.addressId) return forPatient.addressId;
+    const lastUsed = await db.booking.findFirst({ where: { userId, ...usable }, orderBy: { createdAt: 'desc' }, select: { addressId: true } });
+    if (lastUsed?.addressId) return lastUsed.addressId;
+    const saved = await db.address.findFirst({ where: { userId, isDeleted: false }, select: { id: true } });
+    return saved?.id ?? null;
+}

@@ -8,7 +8,6 @@ import {
     BarChart3,
     Users,
     ShoppingCart,
-    ShoppingBag,
     Wallet,
     Gift,
     Settings,
@@ -31,11 +30,16 @@ import {
     Package,
     Tent,
     Sliders,
+    Stethoscope,
+    Tags,
+    Scale,
+    ClipboardCheck,
+    CalendarClock,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { DocnowLogo } from '@/components/DocnowLogo';
-import api, { getAccessToken } from '@/lib/api';
+import api from '@/lib/api';
 
 // Navigation items matching the design
 const navItems = [
@@ -56,6 +60,11 @@ const navItems = [
     { id: 'settings', label: 'System Settings', icon: Settings, href: '/super-admin/settings' },
     { id: 'camps', label: 'Health Camps', icon: Tent, href: '/super-admin/camps' },
     { id: 'failed-orders', label: 'Failed Orders', icon: AlertTriangle, href: '/super-admin/failed-orders' },
+    { id: 'consult-doctors', label: 'Consult Doctors', icon: Stethoscope, href: '/super-admin/consult-doctors' },
+    { id: 'consult-specialties', label: 'Specialties', icon: Tags, href: '/super-admin/consult-specialties' },
+    { id: 'consult-rules', label: 'Consult Rules', icon: Scale, href: '/super-admin/consult-rules' },
+    { id: 'consult-review', label: 'Consult Review', icon: ClipboardCheck, href: '/super-admin/consult-review' },
+    { id: 'consult-appointments', label: 'Consult Appointments', icon: CalendarClock, href: '/super-admin/consult-appointments' },
     { id: 'audit', label: 'Audit Logs', icon: FileText, href: '/super-admin/audit-logs' },
 ];
 
@@ -86,10 +95,11 @@ export default function SuperAdminLayout({
                 const data = res.data;
                 setAdminName(data.admin || 'Admin');
                 setIsLoading(false);
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error('Admin auth error:', error);
-                if (error.response && error.response.status !== 401) {
-                    toast.error(`Admin access denied: ${error.response.data?.error || 'Not authorized'}. Please login as SUPER_ADMIN.`);
+                const response = (error as { response?: { status?: number; data?: { error?: string } } }).response;
+                if (response && response.status !== 401) {
+                    toast.error(`Admin access denied: ${response.data?.error || 'Not authorized'}. Please login as SUPER_ADMIN.`);
                 }
                 router.push('/');
             }
