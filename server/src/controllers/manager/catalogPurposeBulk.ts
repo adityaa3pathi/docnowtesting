@@ -3,6 +3,7 @@ import { AuthRequest } from '../../middleware/auth';
 import { prisma } from '../../db';
 import { getClientIP } from '../../utils/adminHelpers';
 import { PURPOSE_MAX_LENGTH } from '../../utils/catalogPurpose';
+import { normalizePurposeForSearch } from '../../utils/searchUtils';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -236,6 +237,7 @@ export async function executePurposeImport(req: AuthRequest, res: Response) {
                         where: { id: u.id },
                         data: {
                             purpose: u.purpose,
+                            searchPurpose: normalizePurposeForSearch(u.purpose),
                         },
                     })
                 )

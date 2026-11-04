@@ -157,11 +157,11 @@ describe('catalogPurposeBulk', () => {
             expect(db.prisma.catalogItem.update).toHaveBeenCalledTimes(2);
             expect(db.prisma.catalogItem.update).toHaveBeenCalledWith({
                 where: { id: 'item-1' },
-                data: { purpose: 'New Purpose 1' },
+                data: { purpose: 'New Purpose 1', searchPurpose: 'newpurpose1' },
             });
             expect(db.prisma.catalogItem.update).toHaveBeenCalledWith({
                 where: { id: 'item-2' },
-                data: { purpose: null },
+                data: { purpose: null, searchPurpose: '' },
             });
 
             expect(db.prisma.adminAuditLog.create).toHaveBeenCalledWith({
