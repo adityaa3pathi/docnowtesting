@@ -48,7 +48,10 @@ describe('updateCatalogItemPurpose', () => {
         const res = await call({ purpose: '  Yearly check ' });
 
         expect(db.tx.catalogItem.update).toHaveBeenCalledWith(
-            expect.objectContaining({ where: { id: 'item-1' }, data: { purpose: 'Yearly check' } }),
+            expect.objectContaining({
+                where: { id: 'item-1' },
+                data: { purpose: 'Yearly check', searchPurpose: 'yearlycheck' },
+            }),
         );
         expect(db.tx.adminAuditLog.create).toHaveBeenCalledWith({
             data: expect.objectContaining({
@@ -66,7 +69,9 @@ describe('updateCatalogItemPurpose', () => {
         db.prisma.catalogItem.findUnique.mockResolvedValue({ purpose: 'Old' });
         db.tx.catalogItem.update.mockResolvedValue({ id: 'item-1', purpose: null });
         await call({ purpose: '   ' });
-        expect(db.tx.catalogItem.update).toHaveBeenCalledWith(expect.objectContaining({ data: { purpose: null } }));
+        expect(db.tx.catalogItem.update).toHaveBeenCalledWith(
+            expect.objectContaining({ data: { purpose: null, searchPurpose: '' } })
+        );
     });
 
     it('returns 500 when the audit write fails inside the transaction', async () => {

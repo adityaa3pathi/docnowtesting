@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../../middleware/auth';
 import { prisma } from '../../db';
 import { HealthiansAdapter } from '../../adapters/healthians';
-import { buildCatalogSearchWhere, normalizeSearchTerm } from '../../utils/searchUtils';
+import { buildCatalogSearchWhere, normalizeSearchTerm, normalizePurposeForSearch } from '../../utils/searchUtils';
 import { normalizePurpose } from '../../utils/catalogPurpose';
 
 const healthians = HealthiansAdapter.getInstance();
@@ -197,7 +197,10 @@ export async function updateCatalogItemPurpose(req: AuthRequest, res: Response) 
         const updated = await prisma.$transaction(async (tx) => {
             const row = await tx.catalogItem.update({
                 where: { id },
-                data: { purpose: result.value },
+                data: {
+                    purpose: result.value,
+                    searchPurpose: normalizePurposeForSearch(result.value),
+                },
                 select: { id: true, purpose: true },
             });
             if (req.userId) {
