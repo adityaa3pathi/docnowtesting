@@ -163,6 +163,9 @@ export async function updateCatalogItem(req: AuthRequest, res: Response) {
             data.searchName = normalizeSearchTerm(name);
         }
         if (description !== undefined) data.description = description;
+        // ⚠️  If `purpose` is ever added here, you MUST also set:
+        //     data.searchPurpose = normalizePurposeForSearch(purpose);
+        //     See updateCatalogItemPurpose() and catalogPurposeBulk.ts for reference.
         if (parameters !== undefined) data.parameters = parameters;
         if (sampleType !== undefined) data.sampleType = sampleType;
         if (reportTime !== undefined) data.reportTime = reportTime;
