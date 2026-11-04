@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Search, ChevronLeft, ChevronRight, Check, Info } from 'lucide-react';
+import { Loader2, Search, ChevronLeft, ChevronRight, Check, Info, Upload } from 'lucide-react';
 import api from '@/lib/api';
 import { useDebounce } from '@/hooks/useDebounce';
+import { CatalogPurposeImportDialog } from '@/components/manager/CatalogPurposeImportDialog';
 
 const MAX_PURPOSE = 300; // keep in sync with server PURPOSE_MAX_LENGTH
 const PAGE_SIZE = 50;
@@ -44,6 +45,7 @@ export default function CatalogPurposePage() {
     const [searchInput, setSearchInput] = useState('');
     const [retryNonce, setRetryNonce] = useState(0);
     const [result, setResult] = useState<ListResult | null>(null);
+    const [importOpen, setImportOpen] = useState(false);
 
     // Drafts and statuses are keyed by item id so edits survive paging.
     const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -115,11 +117,21 @@ export default function CatalogPurposePage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-semibold text-gray-900">Product descriptions</h1>
-                <p className="text-gray-600 mt-1">
-                    Write what each product is for. This text replaces the test list on product cards.
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-semibold text-gray-900">Product descriptions</h1>
+                    <p className="text-gray-600 mt-1">
+                        Write what each product is for. This text replaces the test list on product cards.
+                    </p>
+                </div>
+                <button
+                    onClick={() => setImportOpen(true)}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-medium w-full sm:w-auto hover:opacity-90 transition-opacity"
+                    style={{ backgroundColor: '#4b2192' }}
+                >
+                    <Upload className="h-4 w-4" />
+                    Import CSV
+                </button>
             </div>
 
             <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
@@ -266,6 +278,12 @@ export default function CatalogPurposePage() {
                     </div>
                 </div>
             )}
+
+            <CatalogPurposeImportDialog
+                open={importOpen}
+                onOpenChange={setImportOpen}
+                onSuccess={() => setRetryNonce(n => n + 1)}
+            />
         </div>
     );
 }

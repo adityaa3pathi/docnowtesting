@@ -16,6 +16,7 @@ import { listCorporateInquiries, updateCorporateInquiryStatus } from '../control
 import { listAbandonedCarts } from '../controllers/admin/abandonedCarts';
 import { exportAdminData } from '../controllers/admin/export';
 import { listCatalog, updateCatalogItemPurpose } from '../controllers/admin/catalog';
+import { validatePurposeImport, executePurposeImport } from '../controllers/manager/catalogPurposeBulk';
 
 import { OTP_EXPIRY_MINS, isValidMobile, persistAndSendOtp } from '../services/otp';
 import { BookingService } from '../services/booking.service';
@@ -92,6 +93,8 @@ router.get('/export', ...mgr, exportAdminData);
 
 router.get('/catalog', ...mgr, listCatalog);
 router.put('/catalog/:id/purpose', ...mgr, updateCatalogItemPurpose);
+router.post('/catalog/import-purpose/validate', ...mgr, validatePurposeImport);
+router.post('/catalog/import-purpose/execute', ...mgr, executePurposeImport);
 
 // Price Range Preview — returns allowed price ranges for given test codes
 router.get('/price-range', ...mgr, async (req: AuthRequest, res: Response) => {
