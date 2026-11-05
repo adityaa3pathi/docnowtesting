@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { Stethoscope } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthGate } from '@/contexts/AuthGateContext';
 import { useApi } from '@/hooks/useApi';
@@ -9,13 +10,19 @@ import { serverNow } from '@/lib/consult/time';
 import { BookingCard } from '@/components/consult/BookingCard';
 import { EmptyState, ErrorState, LoadingBlock } from '@/components/consult/States';
 import { Button } from '@/components/ui';
+import { Footer } from '@/components/Footer';
 import type { BookingView } from '@/lib/consult/types';
 
 function Group({ title, items, holdLive }: { title: string; items: BookingView[]; holdLive?: boolean }) {
     if (items.length === 0) return null;
     return (
-        <section aria-label={title} className="mt-6">
-            <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">{title}</h2>
+        <section aria-label={title} className="mt-8">
+            <div className="mb-4 flex items-center gap-3">
+                <h2 className="text-lg font-black text-foreground md:text-xl">{title}</h2>
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                    {items.length}
+                </span>
+            </div>
             <div className="space-y-3">
                 {items.map((b) => <BookingCard key={b.consultationId} booking={b} holdLive={holdLive} />)}
             </div>
@@ -29,11 +36,19 @@ function MyList() {
     if (error) return <ErrorState message={error} onRetry={refetch} />;
     if (!data || data.length === 0) {
         return (
-            <EmptyState
-                title="No consultations yet"
-                body="When you book a doctor, it will show up here."
-                action={<Link href="/consult" className="text-sm font-bold text-primary">Find a doctor</Link>}
-            />
+            <div className="mt-12 text-center">
+                <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-purple-100">
+                    <Stethoscope className="h-10 w-10 text-primary" aria-hidden />
+                </div>
+                <h2 className="mb-3 text-2xl font-black text-foreground">No consultations yet</h2>
+                <p className="mb-6 text-muted-foreground">When you book a doctor, it will show up here.</p>
+                <Link
+                    href="/consult"
+                    className="inline-flex rounded-2xl bg-primary px-8 py-3 font-extrabold text-white shadow-lg hover:bg-primary/90"
+                >
+                    Find a Doctor
+                </Link>
+            </div>
         );
     }
     const groups = groupBookings(data, serverNow());
@@ -51,16 +66,49 @@ export default function MyConsultationsPage() {
     const { openAuthDialog } = useAuthGate();
 
     return (
-        <main className="mx-auto w-full max-w-3xl px-4 py-6">
-            <h1 className="text-2xl font-bold text-foreground">My consultations</h1>
-            {!isInitialized && <LoadingBlock />}
-            {isInitialized && !isAuthenticated && (
-                <div className="mt-6 text-center">
-                    <p className="text-sm text-muted-foreground">Please log in to see your consultations.</p>
-                    <Button className="mt-3" onClick={openAuthDialog}>Log in</Button>
+        <>
+            <main className="w-full bg-white pb-16 md:pb-24">
+                {/* Mini Hero */}
+                <section
+                    className="pb-12 pt-12 md:pb-16 md:pt-16"
+                    style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}
+                >
+                    <div className="container mx-auto max-w-6xl px-4">
+                        <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+                            <div className="text-center md:text-left">
+                                <h1 className="text-3xl font-black text-white md:text-4xl">My Consultations</h1>
+                                <p className="mt-2 text-base font-medium text-white/80 md:text-lg">
+                                    Track your appointments and access prescriptions
+                                </p>
+                            </div>
+                            <Link
+                                href="/consult"
+                                className="shrink-0 rounded-2xl bg-white px-6 py-3 font-extrabold text-primary shadow-lg hover:bg-white/90"
+                            >
+                                Book New Consultation
+                            </Link>
+                        </div>
+                    </div>
+                </section>
+
+                <div className="container mx-auto max-w-6xl px-4 py-8">
+                    {!isInitialized && <LoadingBlock />}
+                    {isInitialized && !isAuthenticated && (
+                        <div className="mt-12 text-center">
+                            <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-purple-100">
+                                <Stethoscope className="h-10 w-10 text-primary" aria-hidden />
+                            </div>
+                            <h2 className="mb-3 text-2xl font-black text-foreground">Log in to continue</h2>
+                            <p className="mb-6 text-muted-foreground">Please log in to see your consultations.</p>
+                            <Button className="bg-primary px-8 py-3 font-extrabold" onClick={openAuthDialog}>
+                                Log in
+                            </Button>
+                        </div>
+                    )}
+                    {isInitialized && isAuthenticated && <MyList />}
                 </div>
-            )}
-            {isInitialized && isAuthenticated && <MyList />}
-        </main>
+            </main>
+            <Footer />
+        </>
     );
 }

@@ -33,21 +33,21 @@ const ReportsTab = dynamic(() => import('@/components/profile/ReportsTab').then(
 // --- BENTO BOX COMPONENT ---
 function BentoCard({ title, icon, value, subtitle, children, className, gradient, onClick, isLink }: any) {
     const cardContent = (
-        <div 
+        <div
             onClick={!children ? onClick : undefined}
-            className={`relative overflow-hidden rounded-3xl p-4 sm:p-5 shadow-sm border border-gray-100 flex flex-col transition-all active:scale-[0.98] cursor-pointer hover:shadow-md h-full bg-white group ${className}`}
+            className={`group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white p-4 shadow-sm transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] sm:p-6 ${className}`}
         >
-            {gradient && <div className={`absolute inset-0 opacity-[0.07] bg-gradient-to-br ${gradient}`} />}
-            <div className="relative z-10 flex items-center justify-between mb-1.5 sm:mb-3 text-gray-500 group-hover:text-gray-700 transition-colors">
-                <div className="flex items-center gap-1.5 sm:gap-2">
+            {gradient && <div className={`absolute inset-0 bg-gradient-to-br opacity-[0.08] transition-opacity group-hover:opacity-[0.12] ${gradient}`} />}
+            <div className="relative z-10 mb-3 flex items-center justify-between text-gray-500 transition-colors group-hover:text-gray-700 sm:mb-4">
+                <div className="flex items-center gap-2">
                     {icon}
-                    <span className="font-semibold text-xs sm:text-sm">{title}</span>
+                    <span className="text-xs font-bold sm:text-sm">{title}</span>
                 </div>
-                <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0" />
+                <ChevronRight className="h-4 w-4 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" aria-hidden />
             </div>
-            <div className="relative z-10 flex-1 flex flex-col justify-end min-h-0">
-                {value && <div className="text-xl sm:text-3xl font-bold text-gray-900 truncate">{value}</div>}
-                {subtitle && <div className="text-[11px] sm:text-xs text-gray-600 font-medium mt-0.5 sm:mt-1 truncate">{subtitle}</div>}
+            <div className="relative z-10 flex flex-1 flex-col justify-end">
+                {value && <div className="truncate text-2xl font-black text-gray-900 sm:text-3xl">{value}</div>}
+                {subtitle && <div className="mt-1 truncate text-xs font-medium text-gray-600 sm:text-sm">{subtitle}</div>}
             </div>
         </div>
     );
@@ -111,124 +111,136 @@ export default function ProfilePage() {
     const isManager = user?.role === 'MANAGER';
 
     return (
-        <div className="bg-gray-100 flex flex-col" style={{ height: 'calc(100dvh - 73px)', overflow: 'hidden' }}>
-            <div className="flex-1 w-full max-w-5xl mx-auto px-4 py-4 sm:py-6 flex flex-col gap-4 overflow-hidden">
-                
-                {/* Header Section */}
-                <div className="flex justify-between items-center px-1 flex-shrink-0">
-                    <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-                    <button 
+        <div className="min-h-screen w-full bg-gray-100 pb-8">
+            {/* Purple Header Bar */}
+            <div
+                className="w-full px-4 py-6 sm:px-6 sm:py-8"
+                style={{ background: 'linear-gradient(135deg, #4b2192 0%, #6d3fcf 100%)' }}
+            >
+                <div className="mx-auto flex max-w-6xl items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-black text-white sm:text-3xl">
+                            Welcome back, {user?.name?.split(' ')[0] || 'User'}!
+                        </h1>
+                        <p className="mt-1 text-sm font-medium text-white/80 sm:text-base">
+                            Manage your health and appointments
+                        </p>
+                    </div>
+                    <button
                         onClick={logout}
-                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-red-100 text-red-600 hover:bg-red-50 text-sm font-medium transition-colors shadow-sm"
+                        className="flex items-center gap-2 rounded-full border-2 border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95"
                     >
-                        <LogOut className="w-4 h-4" />
+                        <LogOut className="h-4 w-4" aria-hidden />
                         <span className="hidden sm:inline">Log Out</span>
                     </button>
                 </div>
+            </div>
 
-                {/* Grid Layout strictly fills remaining height */}
-                <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 grid-rows-3 sm:grid-rows-3 gap-3 sm:gap-4 h-full min-h-0">
+            {/* Bento Grid */}
+            <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
                     
-                    {/* User Identity - Large Top Left */}
-                    <BentoCard 
-                        className="col-span-2 row-span-1 sm:row-span-1 border-none shadow-md"
+                    {/* User Identity */}
+                    <BentoCard
+                        className="col-span-2 min-h-[120px] border-none shadow-lg sm:min-h-[140px]"
                         gradient="from-blue-600 to-indigo-600"
-                        title="Profile" 
-                        icon={<User className="w-4 h-4" />}
+                        title="Profile"
+                        icon={<User className="h-4 w-4" />}
                         value={user?.name || 'User'}
                         subtitle={[user?.email, user?.mobile].filter(Boolean).join(' • ') || 'Complete your profile'}
                     >
                         <ProfileTab />
                     </BentoCard>
 
-                    {/* Wallet - Square */}
-                    <BentoCard 
-                        className="col-span-1 row-span-1 sm:col-span-1 sm:row-span-1 border-none shadow-md"
+                    {/* Wallet */}
+                    <BentoCard
+                        className="col-span-1 min-h-[120px] border-none shadow-lg sm:min-h-[140px]"
                         gradient="from-[#4b2192] to-[#6d3fcf]"
-                        title="Wallet" 
-                        icon={<Wallet className="w-4 h-4" />}
+                        title="Wallet"
+                        icon={<Wallet className="h-4 w-4" />}
                         value={walletBalance !== null ? `₹${walletBalance.toLocaleString('en-IN')}` : '...'}
                         subtitle="Available balance"
                     >
                         <WalletTab />
                     </BentoCard>
 
-                    {/* Bookings - Square */}
-                    <BentoCard 
-                        className="col-span-1 row-span-1 sm:col-span-1 sm:row-span-1 border-none shadow-md"
+                    {/* Bookings */}
+                    <BentoCard
+                        className="col-span-1 min-h-[120px] border-none shadow-lg sm:min-h-[140px]"
                         gradient="from-emerald-600 to-teal-600"
-                        title="Bookings" 
-                        icon={<Calendar className="w-4 h-4" />}
+                        title="Bookings"
+                        icon={<Calendar className="h-4 w-4" />}
                         value={activeBookingsCount !== null ? activeBookingsCount : '...'}
                         subtitle="Active appointments"
                     >
                         <BookingsTab />
                     </BentoCard>
 
-                    {/* Family - Wide bottom left */}
-                    <BentoCard 
-                        className="col-span-2 row-span-1 sm:col-span-2 sm:row-span-1 border-none shadow-md"
+                    {/* Doctor Consultations - PROMINENT */}
+                    <Link href="/consult/my" className="col-span-2 sm:col-span-2">
+                        <BentoCard
+                            className="min-h-[120px] border-none shadow-2xl sm:min-h-[140px]"
+                            gradient="from-[#4b2192] via-purple-600 to-indigo-600"
+                            title="My Consultations"
+                            icon={<Stethoscope className="h-5 w-5" />}
+                            value="View All"
+                            subtitle="Doctor visits and prescriptions"
+                            isLink
+                        />
+                    </Link>
+
+                    {/* Family */}
+                    <BentoCard
+                        className="col-span-2 min-h-[120px] border-none shadow-lg sm:min-h-[140px]"
                         gradient="from-orange-500 to-amber-500"
-                        title="Family Members" 
-                        icon={<Users className="w-4 h-4" />}
+                        title="Family Members"
+                        icon={<Users className="h-4 w-4" />}
                         value={familyCount !== null ? `${familyCount} Members` : '...'}
                         subtitle="Manage your family profiles"
                     >
                         <FamilyTab />
                     </BentoCard>
 
-                    {/* Reports - Small */}
-                    <BentoCard 
-                        className="col-span-1 row-span-1 sm:col-span-1 sm:row-span-1 border-none shadow-md"
+                    {/* Reports */}
+                    <BentoCard
+                        className="col-span-1 min-h-[120px] border-none shadow-lg sm:min-h-[140px]"
                         gradient="from-rose-500 to-pink-500"
-                        title="Reports" 
-                        icon={<FileText className="w-4 h-4" />}
+                        title="Reports"
+                        icon={<FileText className="h-4 w-4" />}
                         subtitle="View health records"
                     >
                         <ReportsTab />
                     </BentoCard>
 
-                    {/* Referrals - Small */}
-                    <BentoCard 
-                        className="col-span-1 row-span-1 sm:col-span-1 sm:row-span-1 border-none shadow-md"
+                    {/* Referrals */}
+                    <BentoCard
+                        className="col-span-1 min-h-[120px] border-none shadow-lg sm:min-h-[140px]"
                         gradient="from-violet-500 to-fuchsia-500"
-                        title="Referrals" 
-                        icon={<Gift className="w-4 h-4" />}
+                        title="Referrals"
+                        icon={<Gift className="h-4 w-4" />}
                         subtitle="Invite & earn rewards"
                     >
                         <ReferralTab />
                     </BentoCard>
 
-                    {/* Doctor consultations */}
-                    <Link href="/consult/my" className="col-span-2 row-span-1 sm:col-span-4 min-h-0">
-                        <BentoCard
-                            className="border-none shadow-md"
-                            gradient="from-[#4b2192] to-indigo-500"
-                            title="My consultations"
-                            icon={<Stethoscope className="w-4 h-4" />}
-                            subtitle="Doctor visits and refunds"
-                            isLink
-                        />
-                    </Link>
-
-                    {/* Manager/Admin Area - Desktop only */}
+                    {/* Manager/Admin Area */}
                     {(isManager || isSuperAdmin) && (
-                        <div className="hidden sm:flex col-span-4 row-span-1 gap-3 min-h-0">
-                            <Link href="/manager" className="flex-1 group">
-                                <div className="h-full relative overflow-hidden rounded-3xl p-5 shadow-sm border-none bg-gradient-to-r from-teal-600 to-emerald-600 text-white flex flex-col justify-center items-center transition-transform active:scale-[0.98] hover:shadow-lg">
-                                    <Shield className="w-6 h-6 mb-2 opacity-80 group-hover:scale-110 transition-transform" />
-                                    <span className="font-bold text-sm">Manager Portal</span>
+                        <>
+                            <Link href="/manager" className="group col-span-2 sm:col-span-2">
+                                <div className="flex min-h-[100px] flex-col items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-r from-teal-600 to-emerald-600 p-6 text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-2xl active:scale-[0.98]">
+                                    <Shield className="mb-2 h-6 w-6 opacity-90 transition-transform group-hover:scale-110" aria-hidden />
+                                    <span className="text-sm font-bold">Manager Portal</span>
                                 </div>
                             </Link>
                             {isSuperAdmin && (
-                                <Link href="/super-admin" className="flex-1 group">
-                                    <div className="h-full relative overflow-hidden rounded-3xl p-5 shadow-sm border-none bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex flex-col justify-center items-center transition-transform active:scale-[0.98] hover:shadow-lg">
-                                        <Shield className="w-6 h-6 mb-2 opacity-80 group-hover:scale-110 transition-transform" />
-                                        <span className="font-bold text-sm">Admin Portal</span>
+                                <Link href="/super-admin" className="group col-span-2 sm:col-span-2">
+                                    <div className="flex min-h-[100px] flex-col items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-2xl active:scale-[0.98]">
+                                        <Shield className="mb-2 h-6 w-6 opacity-90 transition-transform group-hover:scale-110" aria-hidden />
+                                        <span className="text-sm font-bold">Admin Portal</span>
                                     </div>
                                 </Link>
                             )}
-                        </div>
+                        </>
                     )}
                 </div>
             </div>

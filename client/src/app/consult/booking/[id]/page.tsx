@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronLeft, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthGate } from '@/contexts/AuthGateContext';
 import { useBookingFlow } from '@/hooks/useBookingFlow';
@@ -17,7 +17,8 @@ import { JoinPanel } from '@/components/consult/JoinPanel';
 import { PatientPrescription } from '@/components/consult/PatientPrescription';
 import { ConfirmingNotice, PaymentStatus } from '@/components/consult/PaymentStatus';
 import { ErrorState, LoadingBlock } from '@/components/consult/States';
-import { Button } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
+import { Footer } from '@/components/Footer';
 import type { BookingView } from '@/lib/consult/types';
 
 const REFUND_TEXT = {
@@ -90,77 +91,120 @@ function BookingDetail() {
     const canCancel = info.canCancel && decision.kind !== 'poll' && !booking.underStaffCheck && !paidButUnsettled;
 
     return (
-        <main className="mx-auto w-full max-w-lg px-4 py-6">
-            <Link href="/consult/my" className="text-sm font-semibold text-primary">&larr; My consultations</Link>
-            <div className="mt-4 space-y-4">
-                {decision.kind === 'pay' && (
-                    <>
-                        <h1 className="text-2xl font-bold">Complete your payment</h1>
-                        <div className="rounded-2xl bg-primary/5 p-4 text-center">
-                            <p className="text-xs text-muted-foreground">Your time is held for</p>
-                            <p aria-hidden className="text-3xl font-black tabular-nums text-primary">{formatCountdown(flow.secondsLeft)}</p>
-                            <p className="sr-only" role="status" aria-live="polite">{flow.announcement}</p>
-                        </div>
-                        {summary}
-                        {flow.payNote && <p role="alert" className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">{flow.payNote}</p>}
-                        <Button size="lg" className="w-full" disabled={flow.opening} onClick={() => void pay()}>
-                            {flow.opening ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden /> Opening payment</> : `Pay ${formatPaise(booking.amountPaise)}`}
+        <>
+            <main className="mx-auto w-full max-w-2xl px-4 py-6 pb-16">
+                <Link href="/consult/my" className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-primary/80">
+                    <ChevronLeft className="h-4 w-4" aria-hidden />
+                    My consultations
+                </Link>
+                <div className="mt-6 space-y-6">
+                    {decision.kind === 'pay' && (
+                        <>
+                            <div className="text-center">
+                                <h1 className="text-3xl font-black text-foreground md:text-4xl">Complete Your Payment</h1>
+                            </div>
+
+                            {/* Countdown Timer Card */}
+                            <Card
+                                className="overflow-hidden border-0 p-8 text-center shadow-2xl"
+                                style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}
+                            >
+                                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 backdrop-blur-sm">
+                                    <Clock className="h-4 w-4 text-white" aria-hidden />
+                                    <span className="text-xs font-bold uppercase tracking-wider text-white">Time Remaining</span>
+                                </div>
+                                <p aria-hidden className="text-6xl font-black tabular-nums text-white md:text-7xl">
+                                    {formatCountdown(flow.secondsLeft)}
+                                </p>
+                                <p className="sr-only" role="status" aria-live="polite">{flow.announcement}</p>
+                                <p className="mt-3 text-sm font-medium text-white/80">Your slot is held while you complete payment</p>
+                            </Card>
+
+                            <Card className="shadow-md">{summary}</Card>
+
+                            {flow.payNote && (
+                                <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 shadow-sm">
+                                    <p className="text-sm font-semibold text-amber-800">{flow.payNote}</p>
+                                </div>
+                            )}
+
+                            <Button
+                                size="lg"
+                                className="w-full bg-primary py-6 text-lg font-extrabold shadow-lg"
+                                disabled={flow.opening}
+                                onClick={() => void pay()}
+                            >
+                                {flow.opening ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden />
+                                        Opening payment
+                                    </>
+                                ) : (
+                                    `Pay ${formatPaise(booking.amountPaise)}`
+                                )}
+                            </Button>
+                        </>
+                    )}
+
+                    {decision.kind === 'poll' && (
+                        <>
+                            {paidButUnsettled || booking.paymentCaptured || flow.paidHere ? (
+                                <ConfirmingNotice />
+                            ) : (
+                                <Card className="border-blue-200 bg-blue-50 p-6 shadow-sm">
+                                    <p className="font-bold text-blue-900">Checking your booking</p>
+                                    <p className="mt-2 text-sm text-blue-800">
+                                        The payment window has ended. We are making sure no payment is on the way.
+                                    </p>
+                                </Card>
+                            )}
+                            <Card className="shadow-md">{summary}</Card>
+                            <Button size="lg" className="w-full" disabled>Pay</Button>
+                        </>
+                    )}
+
+                    {decision.kind === 'result' && (
+                        <>
+                            <PaymentStatus result={decision.result} fresh={fresh} statusLabel={info.label} doctorId={booking.doctorId} />
+                            <Card className="shadow-md">{summary}</Card>
+                            <RefundLine booking={booking} />
+                            <JoinPanel
+                                status={booking.status}
+                                type={booking.type}
+                                startsAt={booking.startsAt}
+                                endsAt={booking.endsAt}
+                                otherParty="doctor"
+                                join={() => consult.join(booking.consultationId, true)}
+                                consentDoctorName={booking.doctorName}
+                                onChange={() => void flow.refetch()}
+                            />
+                            {booking.hasPrescription ? (
+                                <PatientPrescription bookingId={booking.consultationId} />
+                            ) : (booking.status === 'IN_PROGRESS' || booking.status === 'COMPLETED') && (
+                                <Card className="flex items-center justify-between gap-3 bg-gray-50 p-4">
+                                    <p className="text-sm text-gray-700">Your prescription will show here once the doctor issues it.</p>
+                                    <Button variant="outline" size="sm" onClick={() => void flow.refetch()}>Check again</Button>
+                                </Card>
+                            )}
+                        </>
+                    )}
+
+                    {canCancel && (
+                        <Button variant="outline" className="w-full" onClick={() => setCancelOpen(true)}>
+                            {booking.status === 'PENDING_PAYMENT' ? 'Cancel this booking' : 'Cancel consultation'}
                         </Button>
-                    </>
-                )}
-                {decision.kind === 'poll' && (
-                    <>
-                        {paidButUnsettled || booking.paymentCaptured || flow.paidHere ? (
-                            <ConfirmingNotice />
-                        ) : (
-                            <div role="status" className="rounded-2xl bg-gray-100 p-4 text-gray-800">
-                                <p className="font-bold">Checking your booking</p>
-                                <p className="mt-1 text-sm">The payment window has ended. We are making sure no payment is on the way.</p>
-                            </div>
-                        )}
-                        {summary}
-                        <Button size="lg" className="w-full" disabled>Pay</Button>
-                    </>
-                )}
-                {decision.kind === 'result' && (
-                    <>
-                        <PaymentStatus result={decision.result} fresh={fresh} statusLabel={info.label} doctorId={booking.doctorId} />
-                        {summary}
-                        <RefundLine booking={booking} />
-                        <JoinPanel
-                            status={booking.status}
-                            type={booking.type}
-                            startsAt={booking.startsAt}
-                            endsAt={booking.endsAt}
-                            otherParty="doctor"
-                            join={() => consult.join(booking.consultationId, true)}
-                            consentDoctorName={booking.doctorName}
-                            onChange={() => void flow.refetch()}
-                        />
-                        {booking.hasPrescription ? (
-                            <PatientPrescription bookingId={booking.consultationId} />
-                        ) : (booking.status === 'IN_PROGRESS' || booking.status === 'COMPLETED') && (
-                            <div className="flex items-center justify-between gap-3 rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700">
-                                <p>Your prescription will show here once the doctor issues it.</p>
-                                <Button variant="outline" size="sm" onClick={() => void flow.refetch()}>Check again</Button>
-                            </div>
-                        )}
-                    </>
-                )}
-                {canCancel && (
-                    <Button variant="outline" className="w-full" onClick={() => setCancelOpen(true)}>
-                        {booking.status === 'PENDING_PAYMENT' ? 'Cancel this booking' : 'Cancel consultation'}
-                    </Button>
-                )}
-            </div>
-            <CancelDialog
-                open={cancelOpen}
-                bookingId={booking.consultationId}
-                unpaid={booking.status === 'PENDING_PAYMENT'}
-                onClose={() => setCancelOpen(false)}
-                onCancelled={() => void flow.refetch()}
-            />
-        </main>
+                    )}
+                </div>
+                <CancelDialog
+                    open={cancelOpen}
+                    bookingId={booking.consultationId}
+                    unpaid={booking.status === 'PENDING_PAYMENT'}
+                    onClose={() => setCancelOpen(false)}
+                    onCancelled={() => void flow.refetch()}
+                />
+            </main>
+            <Footer />
+        </>
     );
 }
 
