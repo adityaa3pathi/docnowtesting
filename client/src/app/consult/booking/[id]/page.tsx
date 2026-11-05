@@ -64,7 +64,48 @@ function BookingDetail() {
             </main>
         );
     }
-    if (flow.loading && !booking) return <LoadingBlock />;
+    if (flow.loading && !booking) {
+        return (
+            <>
+                <main className="mx-auto w-full max-w-2xl px-4 py-6 pb-16 animate-pulse">
+                    <div className="mb-6 flex items-center gap-2">
+                        <div className="h-4 w-4 bg-gray-200 rounded" />
+                        <div className="h-4 w-32 bg-gray-200 rounded" />
+                    </div>
+                    <div className="space-y-6">
+                        {/* Status Card Skeleton */}
+                        <div className="text-center">
+                            <div className="mx-auto h-10 w-64 bg-gray-200 rounded" />
+                        </div>
+
+                        {/* Main Card Skeleton */}
+                        <Card className="p-8 shadow-2xl">
+                            <div className="mb-6 mx-auto h-8 w-48 bg-gray-200 rounded-full" />
+                            <div className="mx-auto h-20 w-48 bg-gray-200 rounded" />
+                            <div className="mt-4 mx-auto h-4 w-56 bg-gray-200 rounded" />
+                        </Card>
+
+                        {/* Booking Summary Skeleton */}
+                        <Card className="p-6 shadow-md">
+                            <div className="space-y-4">
+                                <div className="h-6 w-3/4 bg-gray-200 rounded" />
+                                <div className="h-4 w-1/2 bg-gray-200 rounded" />
+                                <div className="h-4 w-2/3 bg-gray-200 rounded" />
+                                <div className="flex justify-between border-t pt-4">
+                                    <div className="h-5 w-20 bg-gray-200 rounded" />
+                                    <div className="h-5 w-24 bg-gray-200 rounded" />
+                                </div>
+                            </div>
+                        </Card>
+
+                        {/* Action Button Skeleton */}
+                        <div className="h-14 w-full bg-gray-200 rounded-2xl" />
+                    </div>
+                </main>
+                <Footer />
+            </>
+        );
+    }
     if (!booking || !decision) {
         return (
             <main className="mx-auto max-w-md px-4 py-10">

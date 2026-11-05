@@ -32,7 +32,55 @@ function Group({ title, items, holdLive }: { title: string; items: BookingView[]
 
 function MyList() {
     const { data, error, loading, refetch } = useApi(() => consult.bookings(), []);
-    if (loading) return <LoadingBlock />;
+    if (loading) {
+        return (
+            <div className="mt-8 space-y-8 animate-pulse">
+                {/* Upcoming Section Skeleton */}
+                <section>
+                    <div className="mb-4 flex items-center gap-3">
+                        <div className="h-6 w-24 bg-gray-200 rounded" />
+                        <div className="h-6 w-6 bg-gray-200 rounded-full" />
+                    </div>
+                    <div className="space-y-3">
+                        {[1, 2].map((i) => (
+                            <div key={i} className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+                                <div className="mb-3 flex items-center justify-between">
+                                    <div className="h-5 w-40 bg-gray-200 rounded" />
+                                    <div className="h-6 w-24 bg-gray-200 rounded-full" />
+                                </div>
+                                <div className="mb-2 h-4 w-32 bg-gray-200 rounded" />
+                                <div className="mb-2 h-4 w-48 bg-gray-200 rounded" />
+                                <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+                                    <div className="h-6 w-20 bg-gray-200 rounded" />
+                                    <div className="h-9 w-28 bg-gray-200 rounded-xl" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                {/* Past Section Skeleton */}
+                <section>
+                    <div className="mb-4 flex items-center gap-3">
+                        <div className="h-6 w-16 bg-gray-200 rounded" />
+                        <div className="h-6 w-6 bg-gray-200 rounded-full" />
+                    </div>
+                    <div className="space-y-3">
+                        {[1].map((i) => (
+                            <div key={i} className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+                                <div className="mb-3 flex items-center justify-between">
+                                    <div className="h-5 w-40 bg-gray-200 rounded" />
+                                    <div className="h-6 w-24 bg-gray-200 rounded-full" />
+                                </div>
+                                <div className="mb-2 h-4 w-32 bg-gray-200 rounded" />
+                                <div className="mb-2 h-4 w-48 bg-gray-200 rounded" />
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            </div>
+        );
+    }
     if (error) return <ErrorState message={error} onRetry={refetch} />;
     if (!data || data.length === 0) {
         return (
