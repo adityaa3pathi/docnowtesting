@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle2, Lock, ChevronLeft, Users } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthGate } from '@/contexts/AuthGateContext';
@@ -15,7 +15,8 @@ import { AddFamilyMemberDialog } from '@/components/profile/AddFamilyMemberDialo
 import { BookingSummary } from '@/components/consult/BookingSummary';
 import { PersonPicker, type Person } from '@/components/consult/PersonPicker';
 import { ErrorState, LoadingBlock } from '@/components/consult/States';
-import { Button } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
+import { Footer } from '@/components/Footer';
 import type { DoctorPublicProfile, Slot } from '@/lib/consult/types';
 
 function sortPeople(list: Person[]): Person[] {
@@ -121,45 +122,99 @@ function BookPage() {
     if (!doctor || !slot || !people) return <LoadingBlock label="Getting your booking ready" />;
 
     return (
-        <main className="mx-auto w-full max-w-lg px-4 py-6">
-            <Link href={`/consult/doctors/${doctor.id}`} className="text-sm font-semibold text-primary">&larr; Change time</Link>
-            <h1 className="mt-3 text-2xl font-bold text-foreground">Review and pay</h1>
+        <>
+            <main className="mx-auto w-full max-w-2xl px-4 py-6 pb-16">
+                <Link href={`/consult/doctors/${doctor.id}`} className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-primary/80">
+                    <ChevronLeft className="h-4 w-4" aria-hidden />
+                    Change time
+                </Link>
 
-            <div className="mt-4">
-                <BookingSummary
-                    doctorName={doctor.displayName}
-                    specialty={doctor.specialty.name}
-                    startsAt={slot.startsAt}
-                    endsAt={slot.endsAt}
-                    amount={formatRupees(doctor.consultationFee)}
-                />
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-border bg-white p-4 shadow-sm">
-                <PersonPicker people={people} value={personId} onChange={setPersonId} onAdd={() => setAddOpen(true)} />
-            </div>
-
-            {problem && (
-                <div role="alert" className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-destructive">
-                    {problem.message}
-                    {problem.myLink && <> <Link href="/consult/my" className="underline">Go to My consultations</Link></>}
+                {/* Progress Stepper */}
+                <div className="mt-6 flex items-center justify-center gap-2 text-xs font-bold md:gap-3 md:text-sm">
+                    <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-emerald-600" aria-hidden />
+                        <span className="text-muted-foreground">Pick a Doctor</span>
+                    </div>
+                    <div className="h-px w-8 bg-border md:w-12" aria-hidden />
+                    <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-emerald-600" aria-hidden />
+                        <span className="text-muted-foreground">Choose Time</span>
+                    </div>
+                    <div className="h-px w-8 bg-border md:w-12" aria-hidden />
+                    <div className="flex items-center gap-2">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white">3</div>
+                        <span className="text-foreground">Review & Pay</span>
+                    </div>
                 </div>
-            )}
 
-            <Button size="lg" className="mt-5 w-full" disabled={!personId || busy} onClick={pay}>
-                {busy ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden /> Getting your payment ready</> : `Pay ${formatRupees(doctor.consultationFee)}`}
-            </Button>
-            <p className="mt-2 text-center text-xs text-muted-foreground">Your time is held for a few minutes while you pay.</p>
+                <h1 className="mt-8 text-center text-3xl font-black text-foreground md:text-4xl">Review and Pay</h1>
 
-            <AddFamilyMemberDialog
-                open={addOpen}
-                onOpenChange={setAddOpen}
-                onMemberAdded={(p) => {
-                    setPeople((cur) => sortPeople([...(cur ?? []), p]));
-                    setPersonId(p.id);
-                }}
-            />
-        </main>
+                {/* Booking Summary Card */}
+                <Card className="mt-8 shadow-xl">
+                    <BookingSummary
+                        doctorName={doctor.displayName}
+                        specialty={doctor.specialty.name}
+                        startsAt={slot.startsAt}
+                        endsAt={slot.endsAt}
+                        amount={formatRupees(doctor.consultationFee)}
+                    />
+                </Card>
+
+                {/* Patient Picker Card */}
+                <Card className="mt-6 p-6 shadow-md">
+                    <div className="mb-4 flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100">
+                            <Users className="h-5 w-5 text-primary" aria-hidden />
+                        </div>
+                        <h2 className="text-lg font-black text-foreground">Who is this consultation for?</h2>
+                    </div>
+                    <PersonPicker people={people} value={personId} onChange={setPersonId} onAdd={() => setAddOpen(true)} />
+                </Card>
+
+                {/* Error Message */}
+                {problem && (
+                    <div role="alert" className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-6 py-4 shadow-sm">
+                        <p className="text-sm font-semibold text-destructive">
+                            {problem.message}
+                            {problem.myLink && <> <Link href="/consult/my" className="underline">Go to My consultations</Link></>}
+                        </p>
+                    </div>
+                )}
+
+                {/* Pay Button */}
+                <Button
+                    size="lg"
+                    className="mt-8 w-full bg-primary py-6 text-lg font-extrabold shadow-lg hover:shadow-xl"
+                    disabled={!personId || busy}
+                    onClick={pay}
+                >
+                    {busy ? (
+                        <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden />
+                            Getting your payment ready
+                        </>
+                    ) : (
+                        `Pay ${formatRupees(doctor.consultationFee)}`
+                    )}
+                </Button>
+
+                {/* Trust Line */}
+                <div className="mt-4 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground">
+                    <Lock className="h-4 w-4 text-emerald-600" aria-hidden />
+                    <span>Secured by Razorpay · Your time is held while you pay</span>
+                </div>
+
+                <AddFamilyMemberDialog
+                    open={addOpen}
+                    onOpenChange={setAddOpen}
+                    onMemberAdded={(p) => {
+                        setPeople((cur) => sortPeople([...(cur ?? []), p]));
+                        setPersonId(p.id);
+                    }}
+                />
+            </main>
+            <Footer />
+        </>
     );
 }
 
