@@ -4,64 +4,58 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from app.genai_client import get_genai_client
+
 if TYPE_CHECKING:
     from app.config import Settings
 
 logger = logging.getLogger(__name__)
 
-# Module-level client cache
-_client = None
+# Gemini embeds questions and stored passages differently; mixing them up hurts search.
+QUERY = "RETRIEVAL_QUERY"
+DOCUMENT = "RETRIEVAL_DOCUMENT"
 
 
-def _get_client(settings: Settings):
-    """Get or create a google-genai client."""
-    global _client
-    if _client is None:
-        from google import genai
-
-        _client = genai.Client(api_key=settings.gemini_api_key)
-    return _client
-
-
-async def generate_embedding(text: str, settings: Settings) -> list[float]:
+async def generate_embedding(text: str, settings: Settings, task_type: str) -> list[float]:
     """Generate a single embedding vector using Gemini.
 
     Uses gemini-embedding-001 model with configurable dimensions (default 768).
     """
-    client = _get_client(settings)
+    client = get_genai_client(settings)
 
     try:
-        response = client.models.embed_content(
+        response = await client.aio.models.embed_content(
             model=settings.embedding_model,
             contents=text,
-            config={"output_dimensionality": settings.embedding_dimensions},
+            config={"output_dimensionality": settings.embedding_dimensions, "task_type": task_type},
         )
         values = response.embeddings[0].values
         return list(values)
     except Exception:
-        logger.exception("Failed to generate embedding for text: %s...", text[:80])
+        logger.exception("Failed to generate embedding (%d chars)", len(text))
         raise
 
 
 async def generate_embeddings_batch(
     texts: list[str],
     settings: Settings,
+    task_type: str,
     batch_size: int = 20,
 ) -> list[list[float]]:
     """Generate embeddings for multiple texts in batches.
 
     The Gemini API supports batched embedding requests.
     """
-    client = _get_client(settings)
+    client = get_genai_client(settings)
     all_embeddings: list[list[float]] = []
 
     for i in range(0, len(texts), batch_size):
         batch = texts[i : i + batch_size]
         try:
-            response = client.models.embed_content(
+            response = await client.aio.models.embed_content(
                 model=settings.embedding_model,
                 contents=batch,
-                config={"output_dimensionality": settings.embedding_dimensions},
+                config={"output_dimensionality": settings.embedding_dimensions, "task_type": task_type},
             )
             for emb in response.embeddings:
                 all_embeddings.append(list(emb.values))

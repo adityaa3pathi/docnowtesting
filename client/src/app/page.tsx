@@ -67,12 +67,12 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col bg-white pb-20 md:pb-0">
 
-      {/* ═══════════ 1. DUAL-SERVICE HERO ═══════════ */}
+      {/* ═══════════ HERO — purple gradient fallback + full-bleed image carousel ═══════════ */}
       <section
         className="relative pb-16 md:pb-24 lg:pb-32"
         style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}
       >
-        {/* CMS slides on the right half of desktop; renders nothing when none are uploaded. */}
+        {/* Full-bleed carousel background — md: and up only, z-0 behind content */}
         <HeroCarousel />
         <HeroDualPillars />
 

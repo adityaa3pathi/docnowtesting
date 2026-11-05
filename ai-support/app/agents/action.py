@@ -2,18 +2,23 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
+from urllib.parse import quote
 
 import httpx
-from langfuse.decorators import observe
+from langfuse import observe
 
 from app.models import ActionResult, AgentContext, Intent
 from app.tools.registry import TOOL_REGISTRY
 
 logger = logging.getLogger(__name__)
 
+# Path values come from the model, so they must look like an ID, never like a path.
+_SAFE_PATH_VALUE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
-@observe(name="action-agent")
+
+@observe(name="action-agent", capture_input=False, capture_output=False)
 async def execute_action(
     intent: Intent,
     ctx: AgentContext,
@@ -26,7 +31,7 @@ async def execute_action(
     the structured result.
     """
     tool_name = intent.tool_name
-    logger.info("Executing action: %s with params: %s", tool_name, intent.parameters)
+    logger.info("Executing action: %s keys=%s", tool_name, sorted(intent.parameters))
 
     if not tool_name or tool_name not in TOOL_REGISTRY:
         return ActionResult(
@@ -48,19 +53,31 @@ async def execute_action(
         )
 
     # Build headers — forward access token for auth-required tools
-    headers: dict[str, str] = {"Content-Type": "application/json"}
+    headers: dict[str, str] = {
+        "Content-Type": "application/json",
+        "User-Agent": "DocNow-AISupport/1.0",
+    }
     if tool_def.requires_auth and ctx.access_token:
         headers["Cookie"] = f"accessToken={ctx.access_token}"
 
-    # Build URL with path parameters
+    # Build URL with path parameters; drop anything the tool does not declare
     url = f"{settings.express_api_url}{tool_def.endpoint_template}"
-    params = dict(intent.parameters)
+    params = {k: v for k, v in intent.parameters.items() if k in tool_def.parameters}
 
     for key, value in list(params.items()):
         placeholder = f"{{{key}}}"
         if placeholder in url:
-            url = url.replace(placeholder, str(value))
+            if not _SAFE_PATH_VALUE.match(str(value)):
+                return ActionResult(
+                    tool=tool_name, input=intent.parameters, success=False, error=f"Invalid {key}"
+                )
+            url = url.replace(placeholder, quote(str(value), safe=""))
             del params[key]  # Remove path params from query/body
+
+    if "{" in url:
+        return ActionResult(
+            tool=tool_name, input=intent.parameters, success=False, error="Missing required booking details"
+        )
 
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:

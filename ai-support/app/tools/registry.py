@@ -11,6 +11,8 @@ class ToolDefinition:
     method: str
     endpoint_template: str
     parameters: Dict[str, Any] = field(default_factory=dict)
+    # Changes a booking; runs only after the user confirms in the next message.
+    is_write: bool = False
 
 TOOL_REGISTRY: Dict[str, ToolDefinition] = {
     "search_catalog": ToolDefinition(
@@ -67,6 +69,7 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         requires_auth=True,
         method="POST",
         endpoint_template="/bookings/{booking_id}/cancel",
+        is_write=True,
         parameters={
             "booking_id": {"type": "string"},
             "remarks": {"type": "string"}
@@ -78,6 +81,7 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         requires_auth=True,
         method="POST",
         endpoint_template="/bookings/{booking_id}/reschedule",
+        is_write=True,
         parameters={
             "booking_id": {"type": "string"},
             "slot_id": {"type": "string"},
@@ -87,3 +91,12 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         }
     )
 }
+
+
+def render_tool_list() -> str:
+    """One line per tool for the intent prompt, so the model picks real names and parameters."""
+    lines = []
+    for tool in TOOL_REGISTRY.values():
+        params = ", ".join(tool.parameters) or "none"
+        lines.append(f"- {tool.name}: {tool.description} (parameters: {params})")
+    return "\n".join(lines)

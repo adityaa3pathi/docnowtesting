@@ -84,6 +84,21 @@ class TestVerifierAgent:
         assert result.claims_grounded == 0
 
     @pytest.mark.asyncio
+    async def test_null_cleaned_response_still_blocks(self, settings):
+        """The prompt allows a null cleaned_response; it must not crash the verifier."""
+        retrieval = RetrievalResult(chunks=[], should_abstain=False, max_similarity=0.0)
+
+        with patch("app.agents.verifier.call_gemini", new_callable=AsyncMock) as mock_llm:
+            mock_llm.return_value = '{"verdict": "UNGROUNDED", "reasoning": "no source", "cleaned_response": null}'
+
+            from app.agents.verifier import verify
+
+            result = await verify("Your collector arrives at 9 AM.", retrieval, [], settings)
+
+        assert result.verdict == "UNGROUNDED"
+        assert result.reasoning == "no source"
+
+    @pytest.mark.asyncio
     async def test_partially_grounded_strips_claims(self, settings):
         """A partially grounded response should have ungrounded claims stripped."""
         retrieval = RetrievalResult(

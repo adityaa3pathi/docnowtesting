@@ -112,7 +112,7 @@ export function useCheckout({
             const initRes = await api.post('/payments/initiate', {
                 slot_id: slotId,
                 slotLabel: selectedTime,
-                slotDate: selectedDate,
+                slotDate: slot.slot_date || selectedDate,
                 addressId: selectedAddressId,
                 promoCode: appliedPromo?.code,
                 useWallet,

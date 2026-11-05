@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, X, Minus } from 'lucide-react';
+import { MessageCircle, X, Minus, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSupportChat } from '@/hooks/useSupportChat';
@@ -16,6 +16,7 @@ export function SupportChat() {
     const {
         messages,
         sendMessage,
+        resetChat,
         submitFeedback,
         isLoading,
         error,
@@ -67,6 +68,13 @@ export function SupportChat() {
                             </div>
                             <div className="flex items-center gap-1">
                                 <button 
+                                    onClick={resetChat}
+                                    title="Start new conversation"
+                                    className="p-1.5 hover:bg-white/20 rounded-md transition-colors"
+                                >
+                                    <RotateCcw className="w-4 h-4" />
+                                </button>
+                                <button 
                                     onClick={() => setIsOpen(false)}
                                     className="p-1.5 hover:bg-white/20 rounded-md transition-colors"
                                 >
@@ -96,8 +104,14 @@ export function SupportChat() {
                                 </div>
                             )}
                             {error && (
-                                <div className="text-xs text-center text-red-500 my-2 bg-red-50 py-2 rounded-lg border border-red-100">
-                                    {error}
+                                <div className="text-xs text-red-600 my-2 bg-red-50 px-3 py-2 rounded-lg border border-red-100 flex items-center justify-between gap-2">
+                                    <span>{error}</span>
+                                    <button
+                                        onClick={resetChat}
+                                        className="text-[11px] underline text-indigo-600 hover:text-indigo-800 font-medium shrink-0"
+                                    >
+                                        Start new chat
+                                    </button>
                                 </div>
                             )}
                             <div ref={messagesEndRef} />

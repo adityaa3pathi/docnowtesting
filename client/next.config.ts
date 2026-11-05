@@ -6,6 +6,20 @@ const backendApiUrl =
   'http://localhost:5000/api';
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: '/orders',
+        destination: '/profile?tab=bookings',
+        permanent: true,
+      },
+      {
+        source: '/my-orders',
+        destination: '/profile?tab=bookings',
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

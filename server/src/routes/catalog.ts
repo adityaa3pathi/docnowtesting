@@ -17,7 +17,7 @@ router.get('/products', async (req: Request, res: Response) => {
     const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
     const limitNum = Math.min(50, Math.max(1, parseInt(limit as string, 10) || 12));
     const skip = (pageNum - 1) * limitNum;
-    const cacheKey = `catalog:products:v1:${hashCacheValue({
+    const cacheKey = `catalog:products:v2:${hashCacheValue({
         type,
         search,
         category,
@@ -78,6 +78,7 @@ router.get('/products', async (req: Request, res: Response) => {
                 displayPrice: item.displayPrice,
                 discountedPrice: item.discountedPrice,
                 description: item.description,
+                purpose: item.purpose,
                 parameters: item.parameters,
                 sampleType: item.sampleType,
                 reportTime: item.reportTime,
@@ -111,7 +112,7 @@ router.get('/products', async (req: Request, res: Response) => {
 router.get('/featured', async (req: Request, res: Response) => {
     const { type, limit = '6' } = req.query;
     const limitNum = Math.min(20, parseInt(limit as string, 10) || 6);
-    const cacheKey = `catalog:featured:v1:${hashCacheValue({ type, limit: limitNum })}`;
+    const cacheKey = `catalog:featured:v2:${hashCacheValue({ type, limit: limitNum })}`;
 
     const where: any = { isEnabled: true, isFeatured: true };
     if (type) {
@@ -147,6 +148,7 @@ router.get('/featured', async (req: Request, res: Response) => {
                 displayPrice: item.displayPrice,
                 discountedPrice: item.discountedPrice,
                 description: item.description,
+                purpose: item.purpose,
                 parameters: item.parameters,
                 sampleType: item.sampleType,
                 reportTime: item.reportTime,
@@ -174,7 +176,7 @@ router.get('/featured', async (req: Request, res: Response) => {
 router.get('/products/:code', async (req: Request, res: Response) => {
     try {
         const code = req.params.code as string;
-        const cacheKey = `catalog:product:v1:${hashCacheValue(code)}`;
+        const cacheKey = `catalog:product:v2:${hashCacheValue(code)}`;
 
         const payload = await getOrSetJsonCache(cacheKey, 300, async () => {
             const item = await prisma.catalogItem.findUnique({

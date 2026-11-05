@@ -1,15 +1,30 @@
 """Async PostgreSQL connection pool with pgvector support."""
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
 
 import asyncpg
 from pgvector.asyncpg import register_vector
 
+from app.agents.keyword import BM25Index
 from app.config import Settings
 
 logger = logging.getLogger(__name__)
+
+
+def chunk_row(record: Any) -> dict[str, Any]:
+    """A KnowledgeChunk row as a dict; asyncpg hands jsonb back as text, so metadata is decoded here."""
+    row = dict(record)
+    meta = row.get("metadata")
+    if isinstance(meta, str):
+        try:
+            row["metadata"] = json.loads(meta)
+        except ValueError:
+            logger.warning("Chunk %s has unreadable metadata; ignoring it", row.get("id"))
+            row["metadata"] = None
+    return row
 
 
 class Database:
@@ -18,6 +33,8 @@ class Database:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.pool: asyncpg.Pool | None = None
+        self._bm25: BM25Index | None = None
+        self._bm25_version: tuple | None = None
 
     async def connect(self) -> None:
         """Create the connection pool and register pgvector types."""
@@ -66,7 +83,22 @@ class Database:
                 embedding,
                 limit,
             )
-            return [dict(r) for r in rows]
+            return [chunk_row(r) for r in rows]
+
+    async def keyword_search(self, query: str, limit: int = 20) -> list[dict[str, Any]]:
+        """BM25 over all chunks; the index is rebuilt only when ingestion has changed the table."""
+        if not self.pool:
+            raise RuntimeError("Database pool not initialized. Call connect() first.")
+
+        async with self.pool.acquire() as conn:
+            version = tuple(await conn.fetchrow('SELECT count(*), max("updatedAt") FROM "KnowledgeChunk"'))
+            if self._bm25 is None or version != self._bm25_version:
+                rows = await conn.fetch(
+                    'SELECT id, source, "sourceId", title, content, metadata FROM "KnowledgeChunk"'
+                )
+                self._bm25 = BM25Index([chunk_row(r) for r in rows])
+                self._bm25_version = version
+        return self._bm25.search(query, limit)
 
     async def insert_chunk(
         self,
@@ -208,17 +240,54 @@ class Database:
             )
             return [dict(r) for r in rows]
 
-    async def update_feedback(self, message_id: str, score: int) -> None:
-        """Set feedback score on a message (1=thumbs down, 5=thumbs up)."""
+    async def get_recent_messages(self, conversation_id: str, limit: int) -> list[dict]:
+        """The latest `limit` messages, oldest first, with only what prompts need."""
         if not self.pool:
             raise RuntimeError("Database pool not initialized.")
 
         async with self.pool.acquire() as conn:
-            await conn.execute(
+            rows = await conn.fetch(
                 """
-                UPDATE "SupportMessage" SET "feedbackScore" = $1
-                WHERE id = $2
+                SELECT role, content, "actionsTaken", "createdAt"
+                FROM "SupportMessage"
+                WHERE "conversationId" = $1
+                ORDER BY "createdAt" DESC
+                LIMIT $2
+                """,
+                conversation_id,
+                limit,
+            )
+            return [dict(r) for r in reversed(rows)]
+
+    async def count_user_messages(self, conversation_id: str) -> int:
+        if not self.pool:
+            raise RuntimeError("Database pool not initialized.")
+
+        async with self.pool.acquire() as conn:
+            return await conn.fetchval(
+                """SELECT count(*) FROM "SupportMessage" WHERE "conversationId" = $1 AND role = 'user'""",
+                conversation_id,
+            )
+
+    async def update_feedback(self, message_id: str, user_id: str, score: int) -> dict | None:
+        """Set feedback score (1=thumbs down, 5=thumbs up) on a message the user owns.
+
+        Returns {"langfuseTraceId": ...} when updated, None when the message is not theirs.
+        """
+        if not self.pool:
+            raise RuntimeError("Database pool not initialized.")
+
+        async with self.pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                UPDATE "SupportMessage" m SET "feedbackScore" = $1
+                FROM "SupportConversation" c
+                WHERE m.id = $2 AND m.role = 'assistant'
+                  AND c.id = m."conversationId" AND c."userId" = $3
+                RETURNING m."langfuseTraceId"
                 """,
                 score,
                 message_id,
+                user_id,
             )
+            return dict(row) if row else None

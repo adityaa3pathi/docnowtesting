@@ -9,16 +9,17 @@ import json
 import logging
 from typing import Any
 
-from langfuse.decorators import observe
+from langfuse import observe
 
-from app.agents.llm import call_gemini
+from app.agents.llm import AIBusyError, call_gemini
 from app.models import ActionResult, RetrievalResult, VerificationResult
-from app.prompts.verifier import VERIFIER_PROMPT
+from app.observability import annotate
+from app.prompts.verifier import VERIFIER_PROMPT, VERIFIER_SCHEMA
 
 logger = logging.getLogger(__name__)
 
 
-@observe(name="verifier-agent")
+@observe(name="verifier-agent", capture_input=False, capture_output=False)
 async def verify(
     draft: str,
     retrieval: RetrievalResult,
@@ -58,18 +59,27 @@ async def verify(
             settings=settings,
             system_prompt="You are a factual verification agent. Return valid JSON only.",
             temperature=0,
-            response_mime_type="application/json",
+            response_json_schema=VERIFIER_SCHEMA,
+            stage="verifier",
         )
 
         result = json.loads(response_text)
+        verdict = result.get("verdict") or "UNGROUNDED"
+        cleaned = result.get("cleaned_response")
+        # The prompt returns null when nothing is grounded; never let an unchecked draft through.
+        if not cleaned and verdict != "GROUNDED":
+            verdict = "UNGROUNDED"
+        annotate(verdict=verdict)
         return VerificationResult(
-            verdict=result.get("verdict", "UNGROUNDED"),
-            cleaned_response=result.get("cleaned_response", draft),
+            verdict=verdict,
+            cleaned_response=cleaned or draft,
             reasoning=result.get("reasoning", ""),
             claims_checked=result.get("claims_checked", 0),
             claims_grounded=result.get("claims_grounded", 0),
         )
 
+    except AIBusyError:
+        raise
     except Exception:
         logger.exception("Verification failed — defaulting to UNGROUNDED for safety")
         return VerificationResult(

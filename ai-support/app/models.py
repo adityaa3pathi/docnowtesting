@@ -19,6 +19,8 @@ class AgentContext(BaseModel):
     access_token: str | None = None
     conversation_id: str
     conversation_history: list[dict[str, str]] = Field(default_factory=list)
+    # A write action the assistant asked about in its last message, awaiting a "yes".
+    pending_action: Intent | None = None
 
 
 class RetrievedChunk(BaseModel):
@@ -39,6 +41,7 @@ class RetrievalResult(BaseModel):
     should_abstain: bool = False
     max_similarity: float = 0.0
     query_embedding: list[float] = Field(default_factory=list)
+    failed: bool = False  # search errored; never treat as "nothing relevant"
 
 
 class Intent(BaseModel):
@@ -81,7 +84,9 @@ class SupportResponse(BaseModel):
     was_abstained: bool = False
     latency_ms: int = 0
     token_count: int = 0
+    usage: dict[str, Any] = Field(default_factory=dict)
     langfuse_trace_id: str | None = None
+    pending_action: Intent | None = None
 
 
 # ──────────────────────────────────────────────

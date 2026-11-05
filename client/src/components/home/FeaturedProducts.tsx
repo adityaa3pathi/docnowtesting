@@ -27,6 +27,7 @@ interface CatalogProduct {
   displayPrice: number;
   discountedPrice: number | null;
   description: string | null;
+  purpose?: string | null;
   parameters: string | null;
   sampleType: string | null;
   reportTime: string | null;

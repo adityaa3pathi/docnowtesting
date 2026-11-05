@@ -1,23 +1,43 @@
 """POST /api/support/chat — Main chat endpoint."""
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 import time
 
 from fastapi import APIRouter, HTTPException, Request
 
+from app.agents.orchestrator import HISTORY_MESSAGES
 from app.auth import get_access_token, get_current_user
 from app.models import (
     ActionSummary,
     AgentContext,
     ChatRequest,
     ChatResponse,
+    Intent,
     SourceRef,
 )
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+
+async def load_turn_state(db, conversation_id: str, settings) -> tuple[list[dict], Intent | None]:
+    """Latest history and any pending confirmation; raises 400 once the turn cap is reached."""
+    user_turns, messages = await asyncio.gather(
+        db.count_user_messages(conversation_id),
+        db.get_recent_messages(conversation_id, limit=HISTORY_MESSAGES),
+    )
+    if user_turns >= settings.max_conversation_turns:
+        raise HTTPException(
+            status_code=400,
+            detail="Conversation has reached the maximum number of turns. Please start a new conversation.",
+        )
+    history = [{"role": m["role"], "content": m["content"]} for m in messages]
+    return history, _pending_action(messages)
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -54,7 +74,8 @@ async def chat(request: Request, body: ChatRequest):
         # Verify ownership
         conv = await db.get_conversation(conversation_id, user_id)
         if not conv:
-            raise HTTPException(status_code=404, detail="Conversation not found")
+            logger.warning("Conversation %s not found for user %s; creating fresh conversation", conversation_id, user_id)
+            conversation_id = await db.create_conversation(user_id)
     elif user_id:
         # Create new conversation
         conversation_id = await db.create_conversation(user_id)
@@ -64,17 +85,9 @@ async def chat(request: Request, body: ChatRequest):
 
     # 3. Load conversation history
     history = []
+    pending_action = None
     if conversation_id != "ephemeral":
-        messages = await db.get_conversation_messages(conversation_id, limit=20)
-        history = [{"role": m["role"], "content": m["content"]} for m in messages]
-
-        # Check turn limit
-        user_turns = sum(1 for m in history if m["role"] == "user")
-        if user_turns >= settings.max_conversation_turns:
-            raise HTTPException(
-                status_code=400,
-                detail="Conversation has reached the maximum number of turns. Please start a new conversation.",
-            )
+        history, pending_action = await load_turn_state(db, conversation_id, settings)
 
     # 4. Store user message
     user_msg_id = None
@@ -94,6 +107,7 @@ async def chat(request: Request, body: ChatRequest):
         access_token=access_token,
         conversation_id=conversation_id,
         conversation_history=history,
+        pending_action=pending_action,
     )
 
     try:
@@ -115,6 +129,8 @@ async def chat(request: Request, body: ChatRequest):
             {"tool": a.tool, "success": a.success, "output_preview": str(a.output)[:200]}
             for a in response.actions_taken
         ]
+        if response.pending_action:
+            action_refs.append({"pending": response.pending_action.model_dump()})
         assistant_msg_id = await db.add_message(
             conversation_id=conversation_id,
             role="assistant",
@@ -174,3 +190,14 @@ def _summarize_action(action) -> str:
         "reschedule_booking": "Processed rescheduling",
     }
     return summaries.get(action.tool, f"Executed {action.tool}")
+
+
+def _pending_action(messages: list[dict]) -> Intent | None:
+    """The write action the last assistant message asked to confirm; stored server-side, never sent by the client."""
+    last = next((m for m in reversed(messages) if m["role"] == "assistant"), None)
+    if not last or not last.get("actionsTaken"):
+        return None
+    refs = last["actionsTaken"]
+    refs = json.loads(refs) if isinstance(refs, str) else refs
+    pending = next((r["pending"] for r in refs if isinstance(r, dict) and r.get("pending")), None)
+    return Intent.model_validate(pending) if pending else None

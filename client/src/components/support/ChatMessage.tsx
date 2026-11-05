@@ -14,27 +14,171 @@ export function ChatMessage({ message, onFeedback }: ChatMessageProps) {
     const isUser = message.role === 'user';
     const hasFeedback = message.feedbackScore !== undefined;
 
-    // Very basic markdown rendering for **bold** and \n to <br>
-    const renderContent = (text: string) => {
-        // Split by newlines first
-        const paragraphs = text.split('\\n');
-        
-        return paragraphs.map((p, i) => {
-            // Split by **
-            const parts = p.split(/\\*\\*(.*?)\\*\\*/g);
-            return (
-                <span key={i}>
-                    {parts.map((part, j) => {
-                        // Even indices are normal text, odd indices are bolded because of the split regex with capturing group
-                        if (j % 2 === 1) {
-                            return <strong key={j} className="font-semibold">{part}</strong>;
-                        }
-                        return <span key={j}>{part}</span>;
-                    })}
-                    {i < paragraphs.length - 1 && <br />}
-                </span>
+    // Inline tokenizer for bold (**text**), italic (*text*), code (`code`), links ([text](url)), and emails
+    const renderInline = (text: string): React.ReactNode[] => {
+        const tokens: React.ReactNode[] = [];
+        let remaining = text;
+        const pattern = /(\*\*(.+?)\*\*)|(\*([^\*]+)\*)|(`([^`]+)`)|(\[([^\]]+)\]\((https?:\/\/[^\s)]+)\))|(https?:\/\/[^\s<]+)|([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/;
+
+        let key = 0;
+        while (remaining.length > 0) {
+            const match = remaining.match(pattern);
+            if (!match) {
+                tokens.push(remaining);
+                break;
+            }
+
+            const matchIndex = match.index ?? 0;
+            if (matchIndex > 0) {
+                tokens.push(remaining.slice(0, matchIndex));
+            }
+
+            if (match[1]) {
+                // **bold**
+                tokens.push(
+                    <strong key={`b-${key++}`} className={clsx('font-semibold', isUser ? 'text-white' : 'text-gray-900')}>
+                        {match[2]}
+                    </strong>
+                );
+            } else if (match[3]) {
+                // *italic*
+                tokens.push(
+                    <em key={`i-${key++}`} className="italic">
+                        {match[4]}
+                    </em>
+                );
+            } else if (match[5]) {
+                // `code`
+                tokens.push(
+                    <code key={`c-${key++}`} className="px-1 py-0.5 rounded text-xs bg-gray-100 font-mono text-indigo-700">
+                        {match[6]}
+                    </code>
+                );
+            } else if (match[7]) {
+                // [text](url)
+                tokens.push(
+                    <a
+                        key={`l-${key++}`}
+                        href={match[9]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={clsx('underline', isUser ? 'text-white' : 'text-indigo-600 hover:text-indigo-800')}
+                    >
+                        {match[8]}
+                    </a>
+                );
+            } else if (match[10]) {
+                // raw URL
+                tokens.push(
+                    <a
+                        key={`u-${key++}`}
+                        href={match[10]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={clsx('underline break-all', isUser ? 'text-white' : 'text-indigo-600 hover:text-indigo-800')}
+                    >
+                        {match[10]}
+                    </a>
+                );
+            } else if (match[11]) {
+                // email
+                tokens.push(
+                    <a
+                        key={`e-${key++}`}
+                        href={`mailto:${match[11]}`}
+                        className={clsx('underline', isUser ? 'text-white' : 'text-indigo-600 hover:text-indigo-800')}
+                    >
+                        {match[11]}
+                    </a>
+                );
+            }
+
+            remaining = remaining.slice(matchIndex + match[0].length);
+        }
+        return tokens;
+    };
+
+    // Block parser for paragraphs, bullet lists (*, -, •), and numbered lists (1., 2.)
+    const renderMarkdownContent = (text: string) => {
+        if (!text) return null;
+
+        const lines = text.split(/\r?\n/);
+        const elements: React.ReactNode[] = [];
+        let currentList: { type: 'ul' | 'ol'; items: { text: string; num?: string }[] } | null = null;
+        let blockKey = 0;
+
+        const flushList = () => {
+            if (!currentList) return;
+            if (currentList.type === 'ul') {
+                elements.push(
+                    <ul key={`ul-${blockKey++}`} className="my-1.5 space-y-1 pl-1">
+                        {currentList.items.map((item, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm leading-relaxed">
+                                <span className={clsx('mt-1.5 text-xs select-none', isUser ? 'text-indigo-200' : 'text-indigo-500')}>•</span>
+                                <span className="flex-1">{renderInline(item.text)}</span>
+                            </li>
+                        ))}
+                    </ul>
+                );
+            } else {
+                elements.push(
+                    <ol key={`ol-${blockKey++}`} className="my-1.5 space-y-1 pl-1">
+                        {currentList.items.map((item, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm leading-relaxed">
+                                <span className={clsx('font-semibold select-none text-xs min-w-[14px]', isUser ? 'text-indigo-200' : 'text-indigo-600')}>
+                                    {item.num}.
+                                </span>
+                                <span className="flex-1">{renderInline(item.text)}</span>
+                            </li>
+                        ))}
+                    </ol>
+                );
+            }
+            currentList = null;
+        };
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmed = line.trim();
+
+            if (!trimmed) {
+                flushList();
+                continue;
+            }
+
+            // Bullet list item: "* ", "- ", "• "
+            const bulletMatch = trimmed.match(/^[\*\-•]\s+(.*)$/);
+            if (bulletMatch) {
+                if (!currentList || currentList.type !== 'ul') {
+                    flushList();
+                    currentList = { type: 'ul', items: [] };
+                }
+                currentList.items.push({ text: bulletMatch[1] });
+                continue;
+            }
+
+            // Numbered list item: "1. ", "2. "
+            const numMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
+            if (numMatch) {
+                if (!currentList || currentList.type !== 'ol') {
+                    flushList();
+                    currentList = { type: 'ol', items: [] };
+                }
+                currentList.items.push({ num: numMatch[1], text: numMatch[2] });
+                continue;
+            }
+
+            // Regular paragraph line
+            flushList();
+            elements.push(
+                <p key={`p-${blockKey++}`} className="my-1 first:mt-0 last:mb-0 leading-relaxed">
+                    {renderInline(line)}
+                </p>
             );
-        });
+        }
+
+        flushList();
+        return elements;
     };
 
     return (
@@ -65,8 +209,8 @@ export function ChatMessage({ message, onFeedback }: ChatMessageProps) {
                 )}
 
                 {/* Content */}
-                <div className="text-sm leading-relaxed whitespace-pre-wrap word-break">
-                    {renderContent(message.content)}
+                <div className="text-sm leading-relaxed break-words">
+                    {renderMarkdownContent(message.content)}
                 </div>
 
                 {/* Abstention specific contact info */}

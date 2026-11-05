@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
+import { getIndianDateString } from '@/lib/utils';
 import LocationPicker, { LocationResult } from '@/components/LocationPicker';
 import { useForm, useFormContext, useFieldArray, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -61,6 +62,7 @@ interface Slot {
     stm_id: string;
     slot_time: string;
     end_time: string;
+    slot_date?: string;
 }
 
 interface CartItem {
@@ -1171,7 +1173,7 @@ function StepSlot({
 
     useEffect(() => { if (slotDate) fetchSlots(); }, [slotDate, fetchSlots]);
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getIndianDateString(new Date());
 
     const timerLevel = isSlotLocked && secondsRemaining > 0
         ? secondsRemaining <= SLOT_URGENT_SECONDS ? 'urgent'
@@ -1201,7 +1203,12 @@ function StepSlot({
                                     const selected = slotTime === s.stm_id;
                                     return (
                                         <button key={s.stm_id}
-                                            onClick={() => { setValue('slotTime', s.stm_id); setValue('slotLabel', `${s.slot_time} – ${s.end_time}`); resetFreeze(); }}
+                                            onClick={() => {
+                                                setValue('slotTime', s.stm_id);
+                                                setValue('slotLabel', `${s.slot_time} – ${s.end_time}`);
+                                                if (s.slot_date) setValue('slotDate', s.slot_date);
+                                                resetFreeze();
+                                            }}
                                             disabled={isSlotLocked && !selected}
                                             className={`text-sm py-2.5 px-3 rounded-lg border font-medium transition-colors
                                                 ${selected ? 'bg-[#4b2192] text-white border-purple-700' :

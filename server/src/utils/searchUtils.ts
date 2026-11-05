@@ -27,14 +27,25 @@ export function normalizeSearchTerm(input: string): string {
     return input.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+/**
+ * Normalize purpose / description text for database indexing and fast search.
+ * Strips special characters, lowercases, and strips spaces (consistent with normalizeSearchTerm).
+ */
+export function normalizePurposeForSearch(input?: string | null): string {
+    if (!input) return '';
+    return normalizeSearchTerm(input);
+}
+
 // ─── Prisma Where Clause Builder ────────────────────────────────────────────
 
 /**
  * Build a Prisma-compatible `where` fragment for catalog search.
  *
- * Uses an OR condition:
- *  - searchName contains normalizedQuery (catches formatting variations)
- *  - name contains originalQuery (catches exact substring for natural language)
+ * Uses an OR condition across:
+ *  - searchName contains normalizedQuery (fast indexed name match)
+ *  - searchPurpose contains normalizedQuery (fast indexed purpose match)
+ *  - name contains originalQuery (case-insensitive substring fallback)
+ *  - purpose contains originalQuery (case-insensitive substring fallback)
  *
  * Returns the OR clause to be spread into an existing `where` object.
  */
@@ -52,19 +63,23 @@ export function buildCatalogSearchWhere(search: string): { OR: any[] } {
         .filter(t => t.length > 0);
 
     if (tokens.length > 1) {
-        // Multi-token: require ALL tokens present in searchName (AND logic)
-        // "culture swab" → searchName contains "culture" AND searchName contains "swab"
+        // Multi-token: require ALL tokens present in searchName OR ALL tokens in searchPurpose
         conditions.push({
             AND: tokens.map(token => ({ searchName: { contains: token } })),
         });
+        conditions.push({
+            AND: tokens.map(token => ({ searchPurpose: { contains: token } })),
+        });
     } else if (normalized.length > 0) {
-        // Single token: original fast path
+        // Single token: match in searchName or searchPurpose
         conditions.push({ searchName: { contains: normalized } });
+        conditions.push({ searchPurpose: { contains: normalized } });
     }
 
-    // Fallback: original substring match (case-insensitive) for natural language queries
+    // Fallback: natural-language case-insensitive substring match on name and purpose
     if (trimmed.length > 0) {
         conditions.push({ name: { contains: trimmed, mode: 'insensitive' } });
+        conditions.push({ purpose: { contains: trimmed, mode: 'insensitive' } });
     }
 
     // If somehow both are empty (shouldn't happen), return a no-op
@@ -78,12 +93,13 @@ export function buildCatalogSearchWhere(search: string): { OR: any[] } {
 // ─── Fuzzy Scoring ──────────────────────────────────────────────────────────
 
 /**
- * Compute a relevance score (0–100) for a search query against a candidate name.
+ * Compute a relevance score (0–100) for a search query against a candidate text.
  *
  * Scoring tiers:
  *  100 — Exact normalized match
  *   80 — searchName starts with the normalized query
- *   60 — All tokens from the query found in the name
+ *   70 — Query is contained within candidate
+ *   60 — All tokens from the query found in the candidate
  *   40–59 — Partial token overlap (proportional)
  *   20 — Levenshtein boost for short queries within edit distance 2
  *    0 — No meaningful match
@@ -138,19 +154,60 @@ export function fuzzyScore(query: string, candidateName: string): number {
     return 0;
 }
 
+export interface SearchCandidate {
+    name: string;
+    purpose?: string | null;
+    description?: string | null;
+}
+
+/**
+ * Field weights adhering to e-commerce and healthcare industry ranking standards:
+ * - Direct Name Match (Weight: 1.0): Highest user intent (e.g. searching "Thyroid" -> Thyroid Profile)
+ * - Description/Purpose Match (Weight: 0.6): Intent-to-concept discovery (e.g. searching "diabetes" -> HbA1c)
+ * - Multi-Field Bonus (Up to +15 pts): Rewards products matching in both name and description
+ */
+export function multiFieldFuzzyScore(
+    query: string,
+    candidate: SearchCandidate
+): number {
+    if (!query || !candidate?.name) return 0;
+
+    const nameScore = fuzzyScore(query, candidate.name);
+
+    // Primary descriptive text is curated `purpose`, fallback to `description`
+    const descText = candidate.purpose || candidate.description || null;
+    const descScore = descText ? fuzzyScore(query, descText) : 0;
+
+    if (nameScore === 0 && descScore === 0) return 0;
+
+    // Both match: apply multi-field relevance boost
+    if (nameScore > 0 && descScore > 0) {
+        const bonus = Math.min(15, Math.round(descScore * 0.15));
+        return nameScore + bonus;
+    }
+
+    if (nameScore > 0) {
+        return nameScore;
+    }
+
+    // Description-only match: scaled by 0.6 so direct title matches maintain priority
+    return Math.round(descScore * 0.6);
+}
+
 /**
  * Sort results by fuzzy relevance score (descending).
+ * Uses multi-field weighted scoring across product title and description/purpose.
  * Items with score 0 are kept at the end in their original order.
  */
-export function rankSearchResults<T extends { name: string }>(
+export function rankSearchResults<T extends { name: string; purpose?: string | null; description?: string | null }>(
     results: T[],
     query: string
 ): T[] {
     if (!query || !query.trim() || results.length === 0) return results;
 
     return [...results].sort((a, b) => {
-        const scoreA = fuzzyScore(query, a.name);
-        const scoreB = fuzzyScore(query, b.name);
+        const scoreA = multiFieldFuzzyScore(query, a);
+        const scoreB = multiFieldFuzzyScore(query, b);
         // Higher score first; if tied, preserve original order
         return scoreB - scoreA;
     });

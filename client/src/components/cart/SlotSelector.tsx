@@ -1,7 +1,7 @@
 
 import { useMemo } from "react";
 import { Clock, Loader2, Calendar, Lock, CheckCircle2, AlertTriangle, Timer } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, getIndianDateString } from '@/lib/utils';
 
 interface SlotSelectorProps {
     slots: any[];
@@ -48,12 +48,10 @@ export function SlotSelector({
         return 'normal';
     }, [isSlotLocked, secondsRemaining, warningAtSeconds, urgentAtSeconds]);
 
-    // Generate next 7 days
+    // Generate next 7 days in Indian Standard Time (Asia/Kolkata)
     const next7Days = useMemo(() => {
         return Array.from({ length: 7 }, (_, i) => {
-            const d = new Date();
-            d.setDate(d.getDate() + i);
-            return d.toISOString().split('T')[0];
+            return getIndianDateString(new Date(), i);
         });
     }, []);
 

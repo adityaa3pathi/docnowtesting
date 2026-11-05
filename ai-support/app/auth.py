@@ -12,19 +12,19 @@ logger = logging.getLogger(__name__)
 
 
 async def get_current_user(request: Request, settings: Settings) -> str | None:
-    """Extract and validate JWT from cookies.
+    """Extract and validate JWT from cookies or Authorization header.
 
     Uses the same JWT_SECRET as the Express server so tokens are interoperable.
     Returns the userId or None for unauthenticated requests.
     """
-    token = request.cookies.get("accessToken")
+    token = request.cookies.get("docnow_access") or request.cookies.get("accessToken")
     if not token:
         # Also check Authorization header as fallback
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
-            token = auth_header[7:]
+            token = auth_header[7:].strip()
 
-    if not token:
+    if not token or token in ("null", "undefined"):
         return None
 
     try:
@@ -48,9 +48,11 @@ async def get_current_user(request: Request, settings: Settings) -> str | None:
 
 def get_access_token(request: Request) -> str | None:
     """Extract the raw access token string for forwarding to Express API."""
-    token = request.cookies.get("accessToken")
+    token = request.cookies.get("docnow_access") or request.cookies.get("accessToken")
     if not token:
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
-            token = auth_header[7:]
+            token = auth_header[7:].strip()
+    if not token or token in ("null", "undefined"):
+        return None
     return token

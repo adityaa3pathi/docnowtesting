@@ -16,7 +16,7 @@ import uuid
 from app.config import Settings
 from app.database import Database
 from app.ingestion.catalog_sync import sync_catalog
-from app.ingestion.embeddings import generate_embedding
+from app.ingestion.embeddings import DOCUMENT, generate_embedding
 from app.ingestion.static_docs import STATIC_DOCUMENTS
 
 logging.basicConfig(
@@ -53,7 +53,7 @@ async def ingest_static_docs(db: Database, settings: Settings) -> dict[str, int]
                     continue
 
             # Generate embedding
-            embedding = await generate_embedding(doc["content"], settings)
+            embedding = await generate_embedding(doc["content"], settings, DOCUMENT)
 
             await db.insert_chunk(
                 chunk_id=chunk_id,

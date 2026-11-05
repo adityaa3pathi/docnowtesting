@@ -160,12 +160,16 @@ api.interceptors.response.use(
                 return Promise.reject(error);
             }
 
-            if (data.accessToken) {
+            if (data?.accessToken) {
                 accessToken = data.accessToken;
             }
 
             // Retry original request
-            error.config.headers.Authorization = `Bearer ${accessToken}`;
+            if (accessToken) {
+                error.config.headers.Authorization = `Bearer ${accessToken}`;
+            } else if (error.config.headers.Authorization) {
+                delete error.config.headers.Authorization;
+            }
             return api(error.config);
         }
 
