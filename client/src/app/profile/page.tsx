@@ -9,24 +9,68 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import api from '@/lib/api';
 
+// Tab loading skeletons
+function ProfileSkeleton() {
+    return (
+        <div className="space-y-6 animate-pulse">
+            {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center gap-4">
+                    <div className="h-5 w-32 bg-gray-200 rounded" />
+                    <div className="h-10 flex-1 bg-gray-200 rounded-xl" />
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function BookingsSkeleton() {
+    return (
+        <div className="space-y-3 animate-pulse">
+            {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-2xl border border-gray-100 bg-white p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                        <div className="h-5 w-40 bg-gray-200 rounded" />
+                        <div className="h-6 w-20 bg-gray-200 rounded-full" />
+                    </div>
+                    <div className="mb-2 h-4 w-32 bg-gray-200 rounded" />
+                    <div className="h-6 w-24 bg-gray-200 rounded" />
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function ListSkeleton() {
+    return (
+        <div className="space-y-2 animate-pulse">
+            {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4">
+                    <div className="h-4 w-48 bg-gray-200 rounded" />
+                    <div className="h-4 w-20 bg-gray-200 rounded" />
+                </div>
+            ))}
+        </div>
+    );
+}
+
 // Lazy-load tab components — only downloaded when user opens a dialog
 const ProfileTab = dynamic(() => import('@/components/profile/ProfileTab').then(m => ({ default: m.ProfileTab })), {
-    loading: () => <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>,
+    loading: () => <ProfileSkeleton />,
 });
 const FamilyTab = dynamic(() => import('@/components/profile/FamilyTab').then(m => ({ default: m.FamilyTab })), {
-    loading: () => <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>,
+    loading: () => <ListSkeleton />,
 });
 const BookingsTab = dynamic(() => import('@/components/profile/BookingsTab').then(m => ({ default: m.BookingsTab })), {
-    loading: () => <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>,
+    loading: () => <BookingsSkeleton />,
 });
 const WalletTab = dynamic(() => import('@/components/profile/WalletTab').then(m => ({ default: m.WalletTab })), {
-    loading: () => <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>,
+    loading: () => <ListSkeleton />,
 });
 const ReferralTab = dynamic(() => import('@/components/profile/ReferralTab').then(m => ({ default: m.ReferralTab })), {
-    loading: () => <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>,
+    loading: () => <ProfileSkeleton />,
 });
 const ReportsTab = dynamic(() => import('@/components/profile/ReportsTab').then(m => ({ default: m.ReportsTab })), {
-    loading: () => <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>,
+    loading: () => <ListSkeleton />,
 });
 
 
@@ -152,7 +196,69 @@ function ProfilePageContent() {
     }, [isAuthenticated]);
 
     if (!isInitialized || !isAuthenticated) {
-        return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+        return (
+            <div className="min-h-screen w-full bg-gray-100 pb-8">
+                {/* Purple Header Skeleton */}
+                <div
+                    className="w-full px-4 py-6 sm:px-6 sm:py-8 animate-pulse"
+                    style={{ background: 'linear-gradient(135deg, #4b2192 0%, #6d3fcf 100%)' }}
+                >
+                    <div className="mx-auto flex max-w-6xl items-center justify-between">
+                        <div className="flex-1">
+                            <div className="h-8 w-48 bg-white/20 rounded mb-2" />
+                            <div className="h-4 w-64 bg-white/15 rounded" />
+                        </div>
+                        <div className="h-10 w-24 bg-white/20 rounded-full" />
+                    </div>
+                </div>
+
+                {/* Bento Grid Skeleton */}
+                <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 animate-pulse">
+                        {/* Profile Card */}
+                        <div className="col-span-2 min-h-[120px] rounded-3xl bg-white p-4 shadow-lg sm:min-h-[140px] sm:p-6">
+                            <div className="h-4 w-20 bg-gray-200 rounded mb-3" />
+                            <div className="h-8 w-3/4 bg-gray-200 rounded mb-2" />
+                            <div className="h-4 w-1/2 bg-gray-200 rounded" />
+                        </div>
+                        {/* Wallet Card */}
+                        <div className="col-span-1 min-h-[120px] rounded-3xl bg-white p-4 shadow-lg sm:min-h-[140px] sm:p-6">
+                            <div className="h-4 w-16 bg-gray-200 rounded mb-3" />
+                            <div className="h-8 w-20 bg-gray-200 rounded mb-2" />
+                            <div className="h-4 w-24 bg-gray-200 rounded" />
+                        </div>
+                        {/* Bookings Card */}
+                        <div className="col-span-1 min-h-[120px] rounded-3xl bg-white p-4 shadow-lg sm:min-h-[140px] sm:p-6">
+                            <div className="h-4 w-20 bg-gray-200 rounded mb-3" />
+                            <div className="h-8 w-12 bg-gray-200 rounded mb-2" />
+                            <div className="h-4 w-28 bg-gray-200 rounded" />
+                        </div>
+                        {/* Consultations Card */}
+                        <div className="col-span-2 sm:col-span-2 min-h-[120px] rounded-3xl bg-white p-4 shadow-2xl sm:min-h-[140px] sm:p-6">
+                            <div className="h-4 w-32 bg-gray-200 rounded mb-3" />
+                            <div className="h-8 w-24 bg-gray-200 rounded mb-2" />
+                            <div className="h-4 w-40 bg-gray-200 rounded" />
+                        </div>
+                        {/* Family Card */}
+                        <div className="col-span-2 min-h-[120px] rounded-3xl bg-white p-4 shadow-lg sm:min-h-[140px] sm:p-6">
+                            <div className="h-4 w-28 bg-gray-200 rounded mb-3" />
+                            <div className="h-8 w-32 bg-gray-200 rounded mb-2" />
+                            <div className="h-4 w-40 bg-gray-200 rounded" />
+                        </div>
+                        {/* Reports Card */}
+                        <div className="col-span-1 min-h-[120px] rounded-3xl bg-white p-4 shadow-lg sm:min-h-[140px] sm:p-6">
+                            <div className="h-4 w-16 bg-gray-200 rounded mb-3" />
+                            <div className="h-4 w-full bg-gray-200 rounded" />
+                        </div>
+                        {/* Referrals Card */}
+                        <div className="col-span-1 min-h-[120px] rounded-3xl bg-white p-4 shadow-lg sm:min-h-[140px] sm:p-6">
+                            <div className="h-4 w-20 bg-gray-200 rounded mb-3" />
+                            <div className="h-4 w-full bg-gray-200 rounded" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     const isSuperAdmin = user?.role === 'SUPER_ADMIN';

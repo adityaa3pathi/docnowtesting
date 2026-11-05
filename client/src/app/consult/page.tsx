@@ -148,10 +148,24 @@ function ConsultHome() {
                         >
                             {doctors.loading && (
                                 <>
-                                    <Skeleton className="h-44" />
-                                    <Skeleton className="h-44" />
-                                    <Skeleton className="h-44" />
-                                    <Skeleton className="h-44" />
+                                    {[1, 2, 3, 4].map((i) => (
+                                        <div key={i} className="flex gap-5 rounded-2xl border border-border bg-white p-5 shadow-sm animate-pulse md:p-6">
+                                            <div className="h-20 w-20 shrink-0 rounded-2xl bg-gray-200" />
+                                            <div className="min-w-0 flex-1">
+                                                <div className="mb-1 flex items-start justify-between gap-2">
+                                                    <div className="h-5 w-3/4 bg-gray-200 rounded" />
+                                                    <div className="h-5 w-5 shrink-0 bg-gray-200 rounded-full" />
+                                                </div>
+                                                <div className="mb-2 h-5 w-32 bg-gray-200 rounded-full" />
+                                                <div className="mb-1 h-4 w-full bg-gray-200 rounded" />
+                                                <div className="mb-3 h-4 w-2/3 bg-gray-200 rounded" />
+                                                <div className="flex items-center justify-between">
+                                                    <div className="h-6 w-20 bg-gray-200 rounded" />
+                                                    <div className="h-5 w-24 bg-gray-200 rounded" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </>
                             )}
                             {!doctors.loading && doctors.error && (
