@@ -20,6 +20,8 @@ export async function persistAndSendOtp(mobile: string, flow: OtpFlow) {
         create: { identifier: mobile, code, expiresAt, attempts: 0 }
     });
 
+    console.log(`[AUTH-${flow.toUpperCase()}] DEV OTP CODE for ${mobile}: ${code}`);
+
     try {
         const result = await sendOtpViaWhatsApp(mobile, code);
         console.log(`[AUTH-${flow.toUpperCase()}] OTP accepted by Wappie for ${mobile.slice(-4)} | messageId=${result.id} | status=${result.status}`);

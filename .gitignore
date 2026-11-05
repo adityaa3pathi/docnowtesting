@@ -22,6 +22,8 @@ to_be_implemented.md
 *.key
 *.id_rsa
 *.id_rsa.pub
+__pycache__/
+*.py[cod]
 
 # Environment Files
 .env
@@ -64,3 +66,8 @@ db_backups/
 server/scripts/
 docnow-prod-key-new.pem.pub
 docs/DEPLOYMENT.md
+
+# plans and working docs stay local until the owner says to push them
+docs/plans/
+docs/ideation/
+docs/client/

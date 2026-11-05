@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import Razorpay from 'razorpay';
 import { prisma } from '../../db';
+import { tryHandleConsultEvent } from '../../modules/consultations/consultations.webhook';
+import { verifyWebhookSignature } from '../../utils/razorpaySignature';
 import { finalizeBooking } from '../../services/bookingFinalization';
 import { rollbackInitiatedBooking } from '../../services/rollback';
 import { assertTransition } from '../../utils/paymentStateMachine';
@@ -21,12 +22,8 @@ export const webhookHandler = async (req: Request, res: Response) => {
         return res.status(401).json({ error: 'Missing signature' });
     }
 
-    // 1. Verify webhook signature (using raw body)
-    const isValid = Razorpay.validateWebhookSignature(
-        req.body.toString(),
-        signature,
-        process.env.RAZORPAY_WEBHOOK_SECRET!
-    );
+    // 1. Verify webhook signature (using raw body). Fails closed on a missing secret.
+    const isValid = verifyWebhookSignature(req.body, signature, process.env.RAZORPAY_WEBHOOK_SECRET);
 
     if (!isValid) {
         addObservabilityBreadcrumb('razorpay_webhook_invalid_signature');
@@ -35,6 +32,10 @@ export const webhookHandler = async (req: Request, res: Response) => {
     }
 
     const payload = JSON.parse(req.body.toString());
+
+    // Consultation events are handled on their own path, before any lab dedupe write.
+    const consult = await tryHandleConsultEvent(payload, req.headers['x-razorpay-event-id'] as string | undefined);
+    if (consult.handled) return res.status(consult.status).json(consult.body);
 
     // Prioritize header for event ID, fall back to payload
     const eventId = (req.headers['x-razorpay-event-id'] as string) || payload.event_id || payload.id;

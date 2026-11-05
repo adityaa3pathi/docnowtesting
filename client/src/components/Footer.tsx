@@ -64,7 +64,7 @@ export function Footer() {
                             <DocnowLogo href="/" width={196} height={48} imageClassName="max-h-10 md:max-h-12 w-auto" />
                         </div>
                         <p className="text-sm text-muted-foreground font-medium">
-                            Your trusted partner for diagnostic and healthcare services. Fast reports, home visits, and certified labs.
+                            Your trusted partner for video doctor consultations and at-home lab tests. Verified doctors, certified labs, fast reports.
                         </p>
                     </div>
 
@@ -74,6 +74,11 @@ export function Footer() {
                             <li>
                                 <Link href="/about" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                                     About Us
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/consult" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                                    Consult a Doctor
                                 </Link>
                             </li>
                             <li>
