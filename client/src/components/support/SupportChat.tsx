@@ -3,13 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { MessageCircle, X, Minus, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSupportChat } from '@/hooks/useSupportChat';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 
 export function SupportChat() {
-    const { isAuthenticated, isInitialized } = useAuth();
+    const pathname = usePathname();
+    const { isAuthenticated } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [hasUnread, setHasUnread] = useState(false);
     
@@ -40,12 +42,12 @@ export function SupportChat() {
         }
     }, [messages, isOpen]);
 
-    if (!isInitialized || !isAuthenticated) {
-        return null; // Only show for authenticated users
-    }
+    // Adjust bottom position on cart page to avoid checkout bar
+    const isCartPage = pathname === '/cart';
+    const bottomClass = isCartPage ? 'bottom-20' : 'bottom-6';
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        <div className={`fixed ${bottomClass} right-6 z-50 flex flex-col items-end`}>
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -56,14 +58,14 @@ export function SupportChat() {
                         className="mb-4 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden flex flex-col w-[calc(100vw-3rem)] sm:w-[400px] h-[500px] max-h-[calc(100vh-8rem)]"
                     >
                         {/* Header */}
-                        <div className="bg-indigo-600 text-white px-4 py-3 flex items-center justify-between shadow-sm">
+                        <div className="text-white px-4 py-3 flex items-center justify-between shadow-sm" style={{ background: 'linear-gradient(135deg, #4b2192 0%, #6d3fcf 100%)' }}>
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                                     <MessageCircle className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
                                     <h3 className="font-semibold text-sm">DocNow Support</h3>
-                                    <p className="text-[10px] text-indigo-100 opacity-90">AI Assistant</p>
+                                    <p className="text-[10px] text-white/80 opacity-90">AI Assistant</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-1">
@@ -96,9 +98,9 @@ export function SupportChat() {
                                 <div className="flex w-full mb-4 justify-start">
                                     <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm flex items-center gap-2">
                                         <div className="flex gap-1">
-                                            <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                                            <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                                            <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></span>
+                                            <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                            <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                            <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -108,7 +110,7 @@ export function SupportChat() {
                                     <span>{error}</span>
                                     <button
                                         onClick={resetChat}
-                                        className="text-[11px] underline text-indigo-600 hover:text-indigo-800 font-medium shrink-0"
+                                        className="text-[11px] underline text-primary hover:text-primary/80 font-medium shrink-0"
                                     >
                                         Start new chat
                                     </button>
@@ -128,7 +130,7 @@ export function SupportChat() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-indigo-700 transition-colors relative focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
+                className="w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors relative focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
             >
                 {isOpen ? (
                     <X className="w-6 h-6" />
