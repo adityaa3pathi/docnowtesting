@@ -275,7 +275,9 @@ doctorRoutes.post('/me/consultations/:id/prescription/reissue', ...mineWrite, ra
     try {
         const parse = reissueSchema.safeParse(req.body);
         if (!parse.success) return bad(res, parse);
-        res.status(201).json(await reissuePrescription(await myDoctorId(req), consultId(req), parse.data));
+        const id = consultId(req);
+        res.status(201).json(await reissuePrescription(await myDoctorId(req), id, parse.data));
+        kickConsultPushes(id); // the patient must hear about a correction now, not at the next sweep
     } catch (e) { fail(res, e, 'reissue prescription'); }
 });
 
