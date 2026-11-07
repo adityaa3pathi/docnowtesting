@@ -20,7 +20,10 @@ export async function persistAndSendOtp(mobile: string, flow: OtpFlow) {
         create: { identifier: mobile, code, expiresAt, attempts: 0 }
     });
 
-    console.log(`[AUTH-${flow.toUpperCase()}] DEV OTP CODE for ${mobile}: ${code}`);
+    // A logged code lets anyone with log access sign in as this user, so it is opt-in and never in production.
+    if (process.env.LOG_DEV_OTP === 'true' && process.env.NODE_ENV !== 'production') {
+        console.log(`[AUTH-${flow.toUpperCase()}] DEV OTP CODE for ${mobile}: ${code}`);
+    }
 
     try {
         const result = await sendOtpViaWhatsApp(mobile, code);
