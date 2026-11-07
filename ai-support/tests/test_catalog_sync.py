@@ -72,10 +72,10 @@ async def test_sync_prunes_chunks_for_items_that_are_gone_or_disabled(settings):
 
 
 @pytest.mark.asyncio
-async def test_pruning_an_empty_catalog_clears_every_catalog_chunk(settings):
+async def test_an_empty_catalog_read_never_wipes_the_knowledge_base(settings):
     conn = FakeConn([])
-    assert await prune_stale_catalog_chunks(fake_db(conn), []) == 1
-    assert conn.deleted_with == [[]]
+    assert await prune_stale_catalog_chunks(fake_db(conn), []) == 0
+    assert conn.deleted_with == []
 
 
 # ── Re-embedding on model change (finding 9) ──
