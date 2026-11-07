@@ -68,6 +68,7 @@ export function useCallRoom({ url, token, videoAllowed, audioDeviceId, videoDevi
             videoCaptureDefaults: videoDeviceId ? { deviceId: videoDeviceId } : undefined,
         });
         let closed = false;
+        let rejoinWhenVisible = false;
         // Fire-and-forget: a failed report must never disturb the call.
         const report = (event: CallEventName, reason?: string) => void callEvents.report(token, event, reason).catch(() => {});
         setRoom(r);
@@ -87,12 +88,20 @@ export function useCallRoom({ url, token, videoAllowed, audioDeviceId, videoDevi
         r.on(RoomEvent.Disconnected, (reason) => {
             if (closed) return;
             if (reason === DisconnectReason.ROOM_DELETED) return leaveRef.current();
-            setError('dropped');
             report('disconnected', reason === undefined ? undefined : DisconnectReason[reason]);
+            // Phones pause a hidden page (mini window, app switch); rejoin on return instead of showing an error.
+            if (document.visibilityState === 'hidden') rejoinWhenVisible = true;
+            else setError('dropped');
         });
         r.on(RoomEvent.Reconnected, () => report('reconnected'));
         const leave = () => void r.disconnect();
+        const onVisible = () => {
+            if (!rejoinWhenVisible || document.visibilityState !== 'visible') return;
+            rejoinWhenVisible = false;
+            setAttempt((n) => n + 1);
+        };
         window.addEventListener('beforeunload', leave);
+        document.addEventListener('visibilitychange', onVisible);
 
         (async () => {
             try {
@@ -120,6 +129,7 @@ export function useCallRoom({ url, token, videoAllowed, audioDeviceId, videoDevi
         return () => {
             closed = true;
             window.removeEventListener('beforeunload', leave);
+            document.removeEventListener('visibilitychange', onVisible);
             r.removeAllListeners();
             leave();
         };

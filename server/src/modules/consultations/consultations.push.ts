@@ -19,6 +19,7 @@ import { deliverPush, pushDisabled, sendViaExpo, type ExpoMessage, type ExpoSend
 import { logger } from '../../utils/logger';
 import { claim, dueNotices, LOOKBACK_MS, type AnyRecipient, type NoticeKind } from './consultations.notifications';
 import { isSelf } from './consultations.family';
+import { doctorTitle } from './doctors.types';
 
 export type { ExpoMessage, ExpoSend, ExpoTicket } from '../../services/expoPush';
 
@@ -124,7 +125,7 @@ function caregiverText(kind: PushKind, c: PushRow, dr: string): Text | null {
 }
 
 export function pushMessage(kind: PushKind, to: AnyRecipient, c: PushRow): ConsultPushMessage {
-    const dr = `Dr. ${c.doctor.displayName}`;
+    const dr = doctorTitle(c.doctor.displayName);
     const at = istTime(c.startsAt);
     const url = to === 'doctor' ? `docnow://doctor/consultations/${c.id}` : `docnow://consult/room/${c.id}`;
     const special = to === 'family' ? familyText(kind, c, dr) : to === 'patient' && !isSelf(c.patient.relation) ? caregiverText(kind, c, dr) : null;

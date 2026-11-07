@@ -1,6 +1,7 @@
 /** Renders a prescription PDF from the stored record. The record never changes, so neither does the PDF. */
 import PDFDocument from 'pdfkit';
 import path from 'path';
+import { doctorTitle } from './doctors.types';
 
 const PURPLE = '#4b2192';
 const TEXT = '#1F2937';
@@ -58,7 +59,7 @@ export function renderPrescriptionPdf(p: PrescriptionForPdf): Promise<Buffer> {
     doc.fillColor(TEXT).font('Helvetica-Bold').fontSize(22).text('Prescription', left, 44);
     doc.y = 100;
 
-    doc.fillColor(TEXT).font('Helvetica-Bold').fontSize(12).text(`Dr. ${doctor.displayName}`);
+    doc.fillColor(TEXT).font('Helvetica-Bold').fontSize(12).text(doctorTitle(doctor.displayName));
     doc.fillColor(MUTED).font('Helvetica').fontSize(10)
         .text(`${doctor.qualification} · ${doctor.specialty}`)
         .text(`Reg. No. ${doctor.registrationNumber} (${doctor.registrationCouncil})`);
@@ -99,7 +100,7 @@ export function renderPrescriptionPdf(p: PrescriptionForPdf): Promise<Buffer> {
     }
 
     doc.fillColor(MUTED).font('Helvetica').fontSize(8.5).text(
-        `Issued electronically by Dr. ${doctor.displayName} through DocNow on ${istDateTime(p.issuedAt)}. ` +
+        `Issued electronically by ${doctorTitle(doctor.displayName)} through DocNow on ${istDateTime(p.issuedAt)}. ` +
         `Prescription ID ${p.id}${p.version > 1 ? `, version ${p.version}, which replaces all earlier versions` : ''}. This prescription follows a teleconsultation.`,
         left, doc.y, { width },
     );

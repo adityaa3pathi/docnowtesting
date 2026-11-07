@@ -58,7 +58,8 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
     const seconds = useCallTimer(connected && !!remote, attempt);
     const weak = useWeakNetworkPrompt(quality === ConnectionQuality.Poor && camOn);
     const canFullscreen = fs.native || (iosVideoFullscreen && !!remoteCam);
-    const canPip = videoAllowed && !!remoteCam && document.pictureInPictureEnabled === true;
+    // Phone browsers pause the call while the page sits in the mini window, so it is desktop only.
+    const canPip = videoAllowed && !!remoteCam && document.pictureInPictureEnabled === true && !window.matchMedia('(pointer: coarse)').matches;
 
     useCallShortcuts(connected, (key) => {
         if (key === 'm') void toggle('mic', !micOn);
@@ -107,9 +108,10 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
             onFocusCapture={showControls}
         >
             <div ref={audioBox} hidden />
-            <div className={cn('relative w-full overflow-hidden bg-gray-900', fullscreen ? 'h-screen' : 'min-h-[55vh] max-h-[80vh] rounded-2xl')}>
+            <div className={cn('relative w-full overflow-hidden bg-gray-900', fullscreen ? 'h-screen' : 'h-[60vh] min-h-80 rounded-2xl sm:h-[70vh]')}>
+                {/* A fixed height lets a portrait phone video fit whole instead of overflowing and looking zoomed. */}
                 {!connected ? (
-                    <div role="status" className="flex h-full min-h-[55vh] items-center justify-center gap-2 text-sm text-white">
+                    <div role="status" className="flex h-full items-center justify-center gap-2 text-sm text-white">
                         <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> {copy.connecting}
                     </div>
                 ) : remote ? (
@@ -119,7 +121,7 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                 )}
                 {connected && local && videoAllowed && (
                     <VideoTile participant={local} label={copy.you} mutedLabel={copy.muted} local
-                        className={cn('absolute right-3 border-2 border-white/70 shadow-lg', fullscreen ? 'bottom-32 h-32 w-24 sm:h-36 sm:w-28' : 'bottom-3 h-36 w-28 sm:h-44 sm:w-32')} />
+                        className={cn('absolute right-3 border-2 border-white/70 shadow-lg', 'aspect-[3/4]', fullscreen ? 'bottom-32 w-24 sm:w-28' : 'bottom-3 w-28 sm:w-36')} />
                 )}
                 {/* Three-way calls: the caregiver (or patient, for the doctor) as small tiles. */}
                 {connected && others.length > 0 && (
@@ -131,9 +133,9 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                 )}
                 {connected && (
                     <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
-                        <span className="rounded-lg bg-black/60 px-3 py-1 font-mono text-xs font-semibold text-white" aria-hidden={seconds === 0}>
-                            {seconds > 0 ? formatDuration(seconds) : null}
-                        </span>
+                        {seconds > 0 ? (
+                            <span className="rounded-lg bg-black/60 px-3 py-1 font-mono text-xs font-semibold text-white">{formatDuration(seconds)}</span>
+                        ) : <span />}
                         {reconnecting && (
                             <p role="status" className="rounded-lg bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">{copy.reconnecting}</p>
                         )}

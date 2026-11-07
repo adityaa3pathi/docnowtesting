@@ -17,8 +17,9 @@ export function WaitingRoom({ otherParty, copy, senior }: { otherParty: 'doctor'
     }, [otherParty]);
 
     return (
-        <div className="flex h-full items-center justify-center px-6 py-8">
-            <div className="max-w-md space-y-6 text-center">
+        // Scrolls on short phone screens; m-auto centres without cutting off the top when it overflows.
+        <div className="flex h-full overflow-y-auto px-6 py-8">
+            <div className="m-auto max-w-md space-y-6 text-center">
                 <div className="flex justify-center" aria-hidden>
                     <div className="relative h-20 w-20">
                         <div className="absolute inset-0 rounded-full border-4 border-white/20" />

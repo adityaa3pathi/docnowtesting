@@ -1,9 +1,10 @@
 'use client';
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { MicOff, SignalHigh, SignalLow, SignalMedium, WifiOff } from 'lucide-react';
 import { ConnectionQuality, Track, type Participant } from 'livekit-client';
 import { cn } from '@/lib/utils';
 import type { CallCopy } from './callCopy';
+import { videoFit } from './useCallUi';
 
 export function cameraTrack(p: Participant) {
     const pub = p.getTrackPublication(Track.Source.Camera);
@@ -26,17 +27,41 @@ export function VideoTile({ participant, label, mutedLabel, local, className, vi
     // A back camera shows the world, so mirroring it would flip any text the patient holds up.
     const mirror = local && track?.mediaStreamTrack.getSettings().facingMode !== 'environment';
 
+    const box = useRef<HTMLDivElement>(null);
+    const [videoSize, setVideoSize] = useState<{ w: number; h: number } | null>(null);
+    const [boxSize, setBoxSize] = useState<{ w: number; h: number } | null>(null);
+
     useEffect(() => {
         const el = ref.current;
         if (!el || !track) return;
+        // The other side can rotate their phone mid-call, which fires `resize` with the new shape.
+        const measure = () => el.videoWidth && setVideoSize({ w: el.videoWidth, h: el.videoHeight });
+        el.addEventListener('loadedmetadata', measure);
+        el.addEventListener('resize', measure);
         track.attach(el);
-        return () => void track.detach(el);
+        return () => {
+            el.removeEventListener('loadedmetadata', measure);
+            el.removeEventListener('resize', measure);
+            track.detach(el);
+        };
     }, [track, ref]);
 
+    useEffect(() => {
+        const el = box.current;
+        if (!el || local) return;
+        const observer = new ResizeObserver(([entry]) => setBoxSize({ w: entry.contentRect.width, h: entry.contentRect.height }));
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [local]);
+
+    // Self-view takes the camera's own shape, so it needs neither cropping nor black bars.
+    const fit = local || !videoSize || !boxSize ? 'cover' : videoFit(videoSize.w, videoSize.h, boxSize.w, boxSize.h);
+    const selfShape = local && videoSize ? { aspectRatio: `${videoSize.w} / ${videoSize.h}` } : undefined;
+
     return (
-        <div className={cn('relative overflow-hidden rounded-2xl bg-gray-900', className)}>
+        <div ref={box} style={selfShape} className={cn('relative overflow-hidden rounded-2xl bg-gray-900', className)}>
             {track ? (
-                <video ref={ref} autoPlay muted playsInline className={cn('h-full w-full', local ? 'object-contain' : 'object-cover', mirror && '-scale-x-100')} />
+                <video ref={ref} autoPlay muted playsInline className={cn('h-full w-full', fit === 'contain' ? 'object-contain' : 'object-cover', mirror && '-scale-x-100')} />
             ) : (
                 <div className="flex h-full w-full items-center justify-center">
                     <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-2xl font-bold text-white">
