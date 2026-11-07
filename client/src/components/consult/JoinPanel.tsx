@@ -10,6 +10,7 @@ import { formatIstDateTime } from '@/lib/consult/time';
 import type { ConsultationStatus, ConsultationType, JoinResponse } from '@/lib/consult/types';
 import { ConsultCallRoom } from './ConsultCallRoom';
 import { TelemedicineConsent } from './TelemedicineConsent';
+import { DeviceCheckScreen } from './DeviceCheckScreen';
 
 interface Props {
     status: ConsultationStatus;
@@ -30,6 +31,7 @@ interface Props {
 export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, onChange, onCallChange, consentDoctorName }: Props) {
     const now = useServerNow();
     const [call, setCall] = useState<JoinResponse | null>(null);
+    const [showDeviceCheck, setShowDeviceCheck] = useState(false);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [consented, setConsented] = useState(false);
@@ -44,9 +46,33 @@ export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, on
                 otherParty={otherParty}
                 onLeave={() => {
                     setCall(null);
+                    setShowDeviceCheck(false);
                     onCallChange?.(false);
                     onChange?.();
                 }}
+            />
+        );
+    }
+
+    if (showDeviceCheck) {
+        return (
+            <DeviceCheckScreen
+                videoAllowed={type !== 'AUDIO'}
+                onJoin={async () => {
+                    setBusy(true);
+                    setError(null);
+                    try {
+                        setCall(await join());
+                        onCallChange?.(true);
+                        onChange?.();
+                    } catch (e) {
+                        setError(errorMessage(e));
+                        setShowDeviceCheck(false);
+                    } finally {
+                        setBusy(false);
+                    }
+                }}
+                onCancel={() => setShowDeviceCheck(false)}
             />
         );
     }
@@ -55,20 +81,6 @@ export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, on
 
     const win = joinWindow({ status, startsAt, endsAt }, now);
     if (win.kind === 'not_joinable') return null;
-
-    async function start() {
-        setBusy(true);
-        setError(null);
-        try {
-            setCall(await join());
-            onCallChange?.(true);
-            onChange?.();
-        } catch (e) {
-            setError(errorMessage(e));
-        } finally {
-            setBusy(false);
-        }
-    }
 
     return (
         <div className="space-y-3 rounded-2xl border border-border bg-white p-4">
@@ -81,8 +93,8 @@ export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, on
                 <TelemedicineConsent checked={consented} onChange={setConsented} label={consentText(consentDoctorName)} />
             )}
             {win.kind === 'open' && (
-                <Button size="lg" className="w-full" disabled={busy || needsConsent} onClick={() => void start()}>
-                    {busy ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden /> Joining</> : <><Video className="mr-2 h-5 w-5" aria-hidden /> Join call</>}
+                <Button size="lg" className="w-full" disabled={needsConsent} onClick={() => setShowDeviceCheck(true)}>
+                    <Video className="mr-2 h-5 w-5" aria-hidden /> Join call
                 </Button>
             )}
             {win.kind === 'open' && needsConsent && <p className="text-center text-xs text-muted-foreground">{CONSENT_REQUIRED_HINT}</p>}

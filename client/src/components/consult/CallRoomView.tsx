@@ -26,6 +26,19 @@ const PARTY_LABEL = { doctor: 'Doctor', patient: 'Patient', caretaker: 'Family' 
 const JOIN_FAILED = 'We could not connect the call. Check your internet and allow camera and microphone, then try again.';
 const DROPPED = 'The call was disconnected. Go back and join again.';
 
+function formatDuration(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+const QUALITY_CONFIG = {
+    excellent: { label: '●●●●', color: 'text-green-500', tooltip: 'Excellent connection' },
+    good: { label: '●●●○', color: 'text-yellow-500', tooltip: 'Good connection' },
+    poor: { label: '●●○○', color: 'text-red-500', tooltip: 'Poor connection - consider audio only' },
+    unknown: { label: '○○○○', color: 'text-gray-400', tooltip: 'Connecting...' },
+} as const;
+
 // Every event that changes what the screen shows; each one just triggers a re-render.
 const REDRAW = [
     RoomEvent.ConnectionStateChanged, RoomEvent.ParticipantConnected, RoomEvent.ParticipantDisconnected,
@@ -72,16 +85,20 @@ function VideoTile({ participant, label, local, className }: { participant: Part
 export default function CallRoomView({ url, token, role, otherParty, onLeave, onDoctorJoined, senior = false }: ConsultCallRoomProps) {
     const [room, setRoom] = useState<Room | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [errorType, setErrorType] = useState<'network' | 'permission' | 'server' | 'unknown'>('unknown');
     const [notice, setNotice] = useState<string | null>(null);
     const [leaving, setLeaving] = useState(false);
     const [fullscreen, setFullscreen] = useState(false);
     const [controlsVisible, setControlsVisible] = useState(true);
+    const [callDuration, setCallDuration] = useState(0);
+    const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor' | 'unknown'>('unknown');
     const [, redraw] = useReducer((n: number) => n + 1, 0);
     const audioBox = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const leaveRef = useRef(onLeave);
     const doctorJoinedRef = useRef(onDoctorJoined);
     const hideControlsTimer = useRef<NodeJS.Timeout | null>(null);
+    const callStartTime = useRef<number | null>(null);
     const videoAllowed = !role.endsWith('-audio');
     const viewer = partyOfRole(role);
 
@@ -117,8 +134,21 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
         (async () => {
             try {
                 await r.connect(url, token);
-            } catch {
-                if (!closed) setError(JOIN_FAILED);
+            } catch (err) {
+                if (!closed) {
+                    // Determine error type for better messaging
+                    const errorMsg = err instanceof Error ? err.message.toLowerCase() : '';
+                    if (errorMsg.includes('network') || errorMsg.includes('timeout')) {
+                        setErrorType('network');
+                        setError('Network connection failed. Check your internet and try again.');
+                    } else if (errorMsg.includes('unauthorized') || errorMsg.includes('token')) {
+                        setErrorType('server');
+                        setError('Session expired. Please go back and rejoin.');
+                    } else {
+                        setErrorType('unknown');
+                        setError(JOIN_FAILED);
+                    }
+                }
                 return;
             }
             // The doctor may already be inside when we arrive.
@@ -126,8 +156,16 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
             try {
                 await r.localParticipant.setMicrophoneEnabled(true);
                 if (videoAllowed) await r.localParticipant.setCameraEnabled(true);
-            } catch {
-                if (!closed) setNotice('We could not start your camera or microphone. Check the browser permission, then use the buttons below.');
+            } catch (err) {
+                if (!closed) {
+                    const errorMsg = err instanceof Error ? err.message.toLowerCase() : '';
+                    if (errorMsg.includes('permission') || errorMsg.includes('denied')) {
+                        setErrorType('permission');
+                        setNotice('Camera or microphone blocked. Allow permissions in browser settings, then use the buttons below to enable.');
+                    } else {
+                        setNotice('Could not start camera or microphone. Check browser permissions and try the buttons below.');
+                    }
+                }
             }
         })();
 
@@ -164,6 +202,72 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
         if (hideControlsTimer.current) clearTimeout(hideControlsTimer.current);
     }
 
+    // Call duration timer
+    useEffect(() => {
+        if (!room || room.state !== ConnectionState.Connected) return;
+
+        if (!callStartTime.current) {
+            callStartTime.current = Date.now();
+        }
+
+        const interval = setInterval(() => {
+            if (callStartTime.current) {
+                setCallDuration(Math.floor((Date.now() - callStartTime.current) / 1000));
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [room?.state]);
+
+    // Monitor connection quality
+    useEffect(() => {
+        if (!room) return;
+
+        const updateQuality = () => {
+            const localQuality = room.localParticipant.connectionQuality;
+
+            if (localQuality === 'excellent') setConnectionQuality('excellent');
+            else if (localQuality === 'good') setConnectionQuality('good');
+            else if (localQuality === 'poor') setConnectionQuality('poor');
+            else setConnectionQuality('unknown');
+        };
+
+        room.on(RoomEvent.ConnectionQualityChanged, updateQuality);
+        updateQuality();
+
+        return () => {
+            room.off(RoomEvent.ConnectionQualityChanged, updateQuality);
+        };
+    }, [room]);
+
+    // Keyboard shortcuts for accessibility
+    useEffect(() => {
+        if (!room || room.state !== ConnectionState.Connected) return;
+
+        function handleKeyPress(e: KeyboardEvent) {
+            // Ignore if user is typing in an input field
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+            const key = e.key.toLowerCase();
+            const micEnabled = !!room.localParticipant.isMicrophoneEnabled;
+            const camEnabled = !!room.localParticipant.isCameraEnabled;
+
+            if (key === 'm') {
+                e.preventDefault();
+                void toggle('mic', !micEnabled);
+            } else if (key === 'v' && videoAllowed) {
+                e.preventDefault();
+                void toggle('camera', !camEnabled);
+            } else if (key === 'f') {
+                e.preventDefault();
+                toggleFullscreen();
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyPress);
+        return () => window.removeEventListener('keydown', handleKeyPress);
+    }, [room?.state, videoAllowed]);
+
     async function leave() {
         setLeaving(true);
         try {
@@ -187,9 +291,26 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
 
     if (error) {
         return (
-            <div role="alert" className="flex flex-col items-center gap-3 rounded-2xl border border-red-100 bg-red-50 px-6 py-10 text-center">
-                <p className="text-sm font-semibold text-destructive">{error}</p>
-                <Button variant="outline" size="sm" onClick={onLeave}>Back</Button>
+            <div role="alert" className="flex flex-col items-center gap-4 rounded-2xl border border-red-100 bg-red-50 px-6 py-10 text-center">
+                <div className="space-y-2">
+                    <p className="text-sm font-semibold text-destructive">{error}</p>
+                    {errorType === 'permission' && (
+                        <p className="text-xs text-muted-foreground">
+                            On Chrome: Click the lock icon in address bar → Allow camera and microphone
+                        </p>
+                    )}
+                    {errorType === 'network' && (
+                        <p className="text-xs text-muted-foreground">
+                            Try switching to a different network or moving closer to your router
+                        </p>
+                    )}
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={onLeave}>Back</Button>
+                    {errorType !== 'server' && (
+                        <Button size="sm" onClick={() => window.location.reload()}>Retry</Button>
+                    )}
+                </div>
             </div>
         );
     }
@@ -257,6 +378,23 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                         Reconnecting...
                     </p>
                 )}
+                {/* Call duration timer */}
+                {connected && callDuration > 0 && (
+                    <div className="absolute top-3 left-3 rounded-lg bg-black/60 backdrop-blur-sm px-3 py-1 text-xs font-mono font-semibold text-white">
+                        {formatDuration(callDuration)}
+                    </div>
+                )}
+                {/* Connection quality indicator */}
+                {connected && connectionQuality !== 'unknown' && (
+                    <div
+                        className="absolute top-3 right-3 rounded-lg bg-black/60 backdrop-blur-sm px-2 py-1 text-xs font-semibold"
+                        title={QUALITY_CONFIG[connectionQuality].tooltip}
+                    >
+                        <span className={QUALITY_CONFIG[connectionQuality].color}>
+                            {QUALITY_CONFIG[connectionQuality].label}
+                        </span>
+                    </div>
+                )}
             </div>
             {connected && room && !room.canPlaybackAudio && (
                 <Button className="w-full" onClick={() => void room.startAudio().then(redraw)}>
@@ -271,23 +409,58 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                 senior && '[&_button]:h-14 [&_button]:px-6 [&_button]:text-lg',
                 '[&_button]:min-h-[44px] [&_button]:min-w-[44px]' // Touch-optimized
             )}>
-                <Button variant="outline" size="sm" disabled={!connected} aria-pressed={!micOn} onClick={() => void toggle('mic', !micOn)}>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!connected}
+                    aria-pressed={!micOn}
+                    aria-label={micOn ? "Mute microphone (M)" : "Unmute microphone (M)"}
+                    title="Press M to toggle"
+                    onClick={() => void toggle('mic', !micOn)}
+                >
                     {micOn ? <><MicOff className="mr-1.5 h-4 w-4" aria-hidden /> Mute</> : <><Mic className="mr-1.5 h-4 w-4" aria-hidden /> Unmute</>}
                 </Button>
                 {videoAllowed && (
-                    <Button variant="outline" size="sm" disabled={!connected} aria-pressed={!camOn} onClick={() => void toggle('camera', !camOn)}>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!connected}
+                        aria-pressed={!camOn}
+                        aria-label={camOn ? "Turn camera off (V)" : "Turn camera on (V)"}
+                        title="Press V to toggle"
+                        onClick={() => void toggle('camera', !camOn)}
+                    >
                         {camOn ? <><VideoOff className="mr-1.5 h-4 w-4" aria-hidden /> Camera off</> : <><Video className="mr-1.5 h-4 w-4" aria-hidden /> Camera on</>}
                     </Button>
                 )}
                 {videoAllowed && camOn && (
-                    <Button variant="outline" size="sm" disabled={!connected} onClick={() => void toggle('camera', false)}>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!connected}
+                        aria-label="Switch to audio only"
+                        onClick={() => void toggle('camera', false)}
+                    >
                         Switch to audio
                     </Button>
                 )}
-                <Button variant="outline" size="sm" disabled={!connected} onClick={toggleFullscreen}>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!connected}
+                    aria-label={fullscreen ? "Exit fullscreen (F)" : "Enter fullscreen (F)"}
+                    title="Press F to toggle"
+                    onClick={toggleFullscreen}
+                >
                     {fullscreen ? <><Minimize className="mr-1.5 h-4 w-4" aria-hidden /> Exit fullscreen</> : <><Maximize className="mr-1.5 h-4 w-4" aria-hidden /> Fullscreen</>}
                 </Button>
-                <Button size="sm" disabled={leaving} onClick={() => void leave()} className="bg-destructive hover:bg-destructive/90">
+                <Button
+                    size="sm"
+                    disabled={leaving}
+                    aria-label="Leave call"
+                    className="bg-destructive hover:bg-destructive/90"
+                    onClick={() => void leave()}
+                >
                     <PhoneOff className="mr-1.5 h-4 w-4" aria-hidden /> Leave
                 </Button>
             </div>
