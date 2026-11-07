@@ -51,7 +51,7 @@ function cameraTrack(p: Participant) {
     return pub && !pub.isMuted ? pub.videoTrack : undefined;
 }
 
-function VideoTile({ participant, label, local, className, videoRef }: { participant: Participant; label: string; local?: boolean; className?: string; videoRef?: React.RefObject<HTMLVideoElement> }) {
+function VideoTile({ participant, label, local, className, videoRef }: { participant: Participant; label: string; local?: boolean; className?: string; videoRef?: React.RefObject<HTMLVideoElement | null> }) {
     const internalRef = useRef<HTMLVideoElement>(null);
     const ref = videoRef || internalRef;
     const track = cameraTrack(participant);
