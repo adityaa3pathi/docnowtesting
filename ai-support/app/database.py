@@ -1,6 +1,7 @@
 """Async PostgreSQL connection pool with pgvector support."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from typing import Any
@@ -14,16 +15,29 @@ from app.config import Settings
 logger = logging.getLogger(__name__)
 
 
-def chunk_row(record: Any) -> dict[str, Any]:
-    """A KnowledgeChunk row as a dict; asyncpg hands jsonb back as text, so metadata is decoded here."""
-    row = dict(record)
-    meta = row.get("metadata")
-    if isinstance(meta, str):
+def decode_json_field(row: dict[str, Any], field: str) -> None:
+    """asyncpg hands jsonb back as text; decode in place so callers get real lists and dicts."""
+    value = row.get(field)
+    if isinstance(value, str):
         try:
-            row["metadata"] = json.loads(meta)
+            row[field] = json.loads(value)
         except ValueError:
-            logger.warning("Chunk %s has unreadable metadata; ignoring it", row.get("id"))
-            row["metadata"] = None
+            logger.warning("Row %s has unreadable %s; ignoring it", row.get("id"), field)
+            row[field] = None
+
+
+def chunk_row(record: Any) -> dict[str, Any]:
+    """A KnowledgeChunk row as a dict, with its jsonb metadata decoded."""
+    row = dict(record)
+    decode_json_field(row, "metadata")
+    return row
+
+
+def message_row(record: Any) -> dict[str, Any]:
+    """A SupportMessage row as a dict, with its jsonb columns decoded."""
+    row = dict(record)
+    decode_json_field(row, "sources")
+    decode_json_field(row, "actionsTaken")
     return row
 
 
@@ -35,6 +49,7 @@ class Database:
         self.pool: asyncpg.Pool | None = None
         self._bm25: BM25Index | None = None
         self._bm25_version: tuple | None = None
+        self._bm25_lock = asyncio.Lock()
 
     async def connect(self) -> None:
         """Create the connection pool and register pgvector types."""
@@ -93,12 +108,20 @@ class Database:
         async with self.pool.acquire() as conn:
             version = tuple(await conn.fetchrow('SELECT count(*), max("updatedAt") FROM "KnowledgeChunk"'))
             if self._bm25 is None or version != self._bm25_version:
-                rows = await conn.fetch(
-                    'SELECT id, source, "sourceId", title, content, metadata FROM "KnowledgeChunk"'
-                )
-                self._bm25 = BM25Index([chunk_row(r) for r in rows])
-                self._bm25_version = version
+                # The lock makes concurrent requests wait for one rebuild instead of each doing its own.
+                async with self._bm25_lock:
+                    if self._bm25 is None or version != self._bm25_version:
+                        await self._rebuild_bm25(conn, version)
         return self._bm25.search(query, limit)
+
+    async def _rebuild_bm25(self, conn: asyncpg.Connection, version: tuple) -> None:
+        """Tokenising the whole corpus is CPU-bound, so it runs off the event loop."""
+        rows = await conn.fetch(
+            'SELECT id, source, "sourceId", title, content, metadata FROM "KnowledgeChunk"'
+        )
+        chunks = [chunk_row(r) for r in rows]
+        self._bm25 = await asyncio.to_thread(BM25Index, chunks)
+        self._bm25_version = version
 
     async def insert_chunk(
         self,
@@ -138,6 +161,18 @@ class Database:
                 metadata,
                 version,
             )
+
+    async def get_user_auth_state(self, user_id: str) -> dict | None:
+        """status and tokenVersion for the Express-equivalent auth check; None when the user is gone."""
+        if not self.pool:
+            raise RuntimeError("Database pool not initialized.")
+
+        async with self.pool.acquire() as conn:
+            row = await conn.fetchrow(
+                'SELECT status, "tokenVersion" FROM "User" WHERE id = $1',
+                user_id,
+            )
+            return dict(row) if row else None
 
     async def get_conversation(self, conversation_id: str, user_id: str) -> dict | None:
         """Fetch a conversation with ownership check."""
@@ -238,7 +273,7 @@ class Database:
                 conversation_id,
                 limit,
             )
-            return [dict(r) for r in rows]
+            return [message_row(r) for r in rows]
 
     async def get_recent_messages(self, conversation_id: str, limit: int) -> list[dict]:
         """The latest `limit` messages, oldest first, with only what prompts need."""

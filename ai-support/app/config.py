@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     embedding_model: str = "gemini-embedding-001"
     embedding_dimensions: int = 768
     llm_model: str = "gemini-3.5-flash-lite"
+    # The SDK has no default timeout, so a stalled call would hang the chat until the proxy gives up.
+    genai_timeout_seconds: float = 30.0
 
     # Groq: eval judge only, so grading does not eat the Gemini free quota
     groq_api_key: str = ""
@@ -51,6 +53,12 @@ class Settings(BaseSettings):
     # Auth (MUST match Express server's JWT_SECRET)
     jwt_secret: str = ""
 
+    # Shared secret the Express proxy sends; empty leaves the service open (local dev only).
+    proxy_secret: str = ""
+
+    # Re-sync the catalog into KnowledgeChunk every N seconds; 0 disables the background task.
+    catalog_sync_interval_seconds: int = 0
+
     # Feature flag
     enabled: bool = True
 
@@ -59,3 +67,15 @@ class Settings(BaseSettings):
         "env_file": ".env",
         "env_file_encoding": "utf-8",
     }
+
+    def embedding_fingerprint(self) -> str:
+        """Identifies the embedding setup, so chunks are re-embedded when model or dimensions change."""
+        return f"{self.embedding_model}@{self.embedding_dimensions}"
+
+
+def require_runtime_secrets(settings: Settings) -> None:
+    """An empty jwt_secret only shows up as a 500 for the first logged-in user, so refuse to serve."""
+    if not settings.jwt_secret:
+        raise RuntimeError(
+            "SUPPORT_JWT_SECRET is not set; it must match the Express server's JWT_SECRET."
+        )

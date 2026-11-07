@@ -51,6 +51,8 @@ services:
       UPSTASH_REDIS_REST_TOKEN: local-dev-token
       CORS_ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
       APP_BASE_URL: http://localhost:3000
+      # Must match the ai-support service's SUPPORT_PROXY_SECRET below.
+      SUPPORT_PROXY_SECRET: ${SUPPORT_PROXY_SECRET:-local-docker-support-proxy-secret}
     ports:
       - "5000:5000"
     volumes:
@@ -94,6 +96,8 @@ services:
       SUPPORT_LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
       SUPPORT_LANGFUSE_BASE_URL: ${LANGFUSE_BASE_URL:-https://cloud.langfuse.com}
       SUPPORT_ENABLED: ${SUPPORT_ENABLED:-true}
+      SUPPORT_PROXY_SECRET: ${SUPPORT_PROXY_SECRET:-local-docker-support-proxy-secret}
+      SUPPORT_CATALOG_SYNC_INTERVAL_SECONDS: ${SUPPORT_CATALOG_SYNC_INTERVAL_SECONDS:-0}
     ports:
       - "8000:8000"
     depends_on:

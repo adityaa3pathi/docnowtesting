@@ -1,6 +1,7 @@
 """Sync CatalogItem rows from PostgreSQL into KnowledgeChunk embeddings."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import uuid
@@ -57,15 +58,49 @@ def format_catalog_text(item: dict[str, Any]) -> str:
     return "\n".join(parts)
 
 
+def chunk_is_current(existing: dict | None, text: str, fingerprint: str) -> bool:
+    """Unchanged text is still stale if it was embedded with a different model or dimension count."""
+    if not existing or existing["content"] != text:
+        return False
+    metadata = existing.get("metadata")
+    if isinstance(metadata, str):
+        try:
+            metadata = json.loads(metadata)
+        except ValueError:
+            return False
+    return isinstance(metadata, dict) and metadata.get("embedding") == fingerprint
+
+
+async def prune_stale_catalog_chunks(db: Database, live_ids: list[str]) -> int:
+    """Withdrawn and disabled tests must stop being served; nothing else ever deleted these rows."""
+    if not db.pool:
+        raise RuntimeError("Database pool not initialized")
+
+    async with db.pool.acquire() as conn:
+        deleted = await conn.fetch(
+            """
+            DELETE FROM "KnowledgeChunk"
+            WHERE source = 'catalog'
+              AND ("sourceId" IS NULL OR NOT ("sourceId" = ANY($1::text[])))
+            RETURNING id
+            """,
+            live_ids,
+        )
+    if deleted:
+        logger.info("Removed %d catalog chunks whose item is gone or disabled", len(deleted))
+    return len(deleted)
+
+
 async def sync_catalog(db: Database, settings: Settings) -> dict[str, int]:
     """Sync all enabled CatalogItems into KnowledgeChunk embeddings.
 
-    Returns stats: {created, updated, skipped, errors}.
+    Returns stats: {created, updated, skipped, deleted, errors}.
     """
     if not db.pool:
         raise RuntimeError("Database pool not initialized")
 
-    stats = {"created": 0, "updated": 0, "skipped": 0, "errors": 0}
+    stats = {"created": 0, "updated": 0, "skipped": 0, "deleted": 0, "errors": 0}
+    fingerprint = settings.embedding_fingerprint()
 
     # Fetch all enabled catalog items
     async with db.pool.acquire() as conn:
@@ -97,13 +132,13 @@ async def sync_catalog(db: Database, settings: Settings) -> dict[str, int]:
             async with db.pool.acquire() as conn:
                 existing = await conn.fetchrow(
                     """
-                    SELECT id, content FROM "KnowledgeChunk"
+                    SELECT id, content, metadata FROM "KnowledgeChunk"
                     WHERE source = 'catalog' AND "sourceId" = $1
                     """,
                     item_dict["id"],
                 )
 
-            if existing and existing["content"] == text:
+            if chunk_is_current(dict(existing) if existing else None, text, fingerprint):
                 stats["skipped"] += 1
                 continue
 
@@ -117,6 +152,7 @@ async def sync_catalog(db: Database, settings: Settings) -> dict[str, int]:
                 "partnerCode": item_dict.get("partnerCode"),
                 "displayPrice": float(item_dict["displayPrice"]) if item_dict.get("displayPrice") else None,
                 "discountedPrice": float(item_dict["discountedPrice"]) if item_dict.get("discountedPrice") else None,
+                "embedding": fingerprint,
             })
 
             chunk_id = existing["id"] if existing else str(uuid.uuid4())
@@ -144,4 +180,22 @@ async def sync_catalog(db: Database, settings: Settings) -> dict[str, int]:
             stats["errors"] += 1
             logger.exception("Failed to sync catalog item: %s", item_dict.get("name"))
 
+    stats["deleted"] = await prune_stale_catalog_chunks(db, [dict(i)["id"] for i in items])
     return stats
+
+
+async def run_periodic_catalog_sync(db: Database, settings: Settings) -> None:
+    """Keep the bot's prices in step with admin edits; a manual run was the only path before.
+
+    A failure (DB down, embedding quota) is logged and retried on the next tick.
+    """
+    interval = settings.catalog_sync_interval_seconds
+    while True:
+        await asyncio.sleep(interval)
+        try:
+            stats = await sync_catalog(db, settings)
+            logger.info("Periodic catalog sync: %s", stats)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("Periodic catalog sync failed; retrying in %ds", interval)
