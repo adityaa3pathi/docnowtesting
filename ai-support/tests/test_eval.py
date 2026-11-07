@@ -1,6 +1,9 @@
 """Tests for the eval harness: in-memory KB, fake Express, and our own metrics."""
 from __future__ import annotations
 
+from functools import partial
+from unittest.mock import patch
+
 import httpx
 import pytest
 
@@ -40,12 +43,30 @@ async def test_in_memory_search_orders_by_cosine_similarity():
 @pytest.mark.asyncio
 async def test_fake_express_serves_bookings_and_records_calls():
     express = FakeExpress()
+    auth = {"Authorization": "Bearer t"}
     async with httpx.AsyncClient(transport=httpx.MockTransport(express)) as client:
-        ok = await client.get("http://x/api/bookings/12345/status")
-        missing = await client.post("http://x/api/bookings/nope/cancel")
+        ok = await client.get("http://x/api/bookings/12345/status", headers=auth)
+        missing = await client.post("http://x/api/bookings/nope/cancel", headers=auth)
+        anon = await client.get("http://x/api/bookings", headers={"Cookie": "accessToken=t"})
     assert ok.json()["status"] == "Sample Collector Assigned"
     assert missing.status_code == 404
-    assert express.calls == [("GET", "/bookings/12345/status"), ("POST", "/bookings/nope/cancel")]
+    assert anon.status_code == 401
+    assert express.calls == [
+        ("GET", "/bookings/12345/status"), ("POST", "/bookings/nope/cancel"), ("GET", "/bookings"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_booking_tool_sends_bearer_token(agent_context, settings):
+    """Express only reads the docnow_access cookie or a Bearer header."""
+    from app.agents.action import execute_action
+    from app.models import Intent
+
+    express = FakeExpress()
+    client = partial(httpx.AsyncClient, transport=httpx.MockTransport(express))
+    with patch("app.agents.action.httpx.AsyncClient", client):
+        result = await execute_action(Intent(intent="BOOKING_LIST", tool_name="list_bookings"), agent_context, settings)
+    assert result.success, result.error
 
 
 def test_custom_metrics():
