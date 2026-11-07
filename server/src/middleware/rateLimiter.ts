@@ -73,8 +73,8 @@ export function rateLimiter(points: number, durationSec: number, keyPrefix: stri
 
     return async (req: Request, res: Response, next: NextFunction) => {
         // We identify user by ID if authenticated, else IPv4 address, else anonymous
-        let ip = req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress;
-        if (Array.isArray(ip)) ip = ip[0];
+        // req.ip honours "trust proxy"; reading X-Forwarded-For directly would let callers pick their key.
+        const ip = req.ip || req.socket?.remoteAddress;
         
         const identifier = (req as any).userId || ip || 'anonymous';
         const key = `${keyPrefix}:${identifier}`;
