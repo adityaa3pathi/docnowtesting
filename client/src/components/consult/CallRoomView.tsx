@@ -1,10 +1,16 @@
 'use client';
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import { Loader2, Maximize, Minimize, Mic, MicOff, PhoneOff, PictureInPicture2, Video, VideoOff, Volume2 } from 'lucide-react';
-import { ConnectionQuality, ConnectionState, DisconnectReason, Room, RoomEvent, Track, type Participant } from 'livekit-client';
+import { useRef, useState } from 'react';
+import { Loader2, Volume2 } from 'lucide-react';
+import { ConnectionQuality, type Participant } from 'livekit-client';
 import { Button } from '@/components/ui';
 import { arrangeTiles, partyOf, partyOfRole } from '@/lib/consult/guest';
 import { cn } from '@/lib/utils';
+import { callCopy, type CallLanguage } from './call/callCopy';
+import { ControlBar } from './call/ControlBar';
+import { useCallRoom } from './call/useCallRoom';
+import { formatDuration, iosVideoFullscreen, useAutoHide, useCallShortcuts, useCallTimer, useFullscreen, useWeakNetworkPrompt } from './call/useCallUi';
+import { QualityBadge, VideoTile, cameraTrack } from './call/VideoTile';
+import { WaitingRoom } from './call/WaitingRoom';
 
 export interface ConsultCallRoomProps {
     /** LiveKit server URL and access token from the join call. The token carries the display name. */
@@ -19,6 +25,8 @@ export interface ConsultCallRoomProps {
     onDoctorJoined?: () => void;
     /** Large buttons and text for the family web room. */
     senior?: boolean;
+    /** Screen language; the family room passes its Hindi/English choice. */
+    language?: CallLanguage;
     /** Camera and microphone picked on the device check; browser default when absent. */
     audioDeviceId?: string;
     videoDeviceId?: string;
@@ -26,498 +34,161 @@ export interface ConsultCallRoomProps {
 
 const PARTY_LABEL = { doctor: 'Doctor', patient: 'Patient', caretaker: 'Family' } as const;
 
-const JOIN_FAILED = 'We could not connect the call. Check your internet and allow camera and microphone, then try again.';
-const DROPPED = 'The call was disconnected. Tap Retry, or go back and join again.';
-
-function formatDuration(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
-
-const QUALITY_CONFIG: Record<ConnectionQuality, { label: string; color: string; tooltip: string }> = {
-    [ConnectionQuality.Excellent]: { label: '●●●●', color: 'text-green-500', tooltip: 'Excellent connection' },
-    [ConnectionQuality.Good]: { label: '●●●○', color: 'text-yellow-500', tooltip: 'Good connection' },
-    [ConnectionQuality.Poor]: { label: '●●○○', color: 'text-red-500', tooltip: 'Poor connection - consider audio only' },
-    [ConnectionQuality.Lost]: { label: '○○○○', color: 'text-red-500', tooltip: 'Connection lost - trying to reconnect' },
-    [ConnectionQuality.Unknown]: { label: '○○○○', color: 'text-gray-400', tooltip: 'Connecting...' },
-};
-
-// Every event that changes what the screen shows; each one just triggers a re-render.
-const REDRAW = [
-    RoomEvent.ConnectionStateChanged, RoomEvent.ParticipantConnected, RoomEvent.ParticipantDisconnected,
-    RoomEvent.TrackSubscribed, RoomEvent.TrackUnsubscribed, RoomEvent.TrackMuted, RoomEvent.TrackUnmuted,
-    RoomEvent.LocalTrackPublished, RoomEvent.LocalTrackUnpublished, RoomEvent.AudioPlaybackStatusChanged,
-] as const;
-
-function cameraTrack(p: Participant) {
-    const pub = p.getTrackPublication(Track.Source.Camera);
-    return pub && !pub.isMuted ? pub.videoTrack : undefined;
-}
-
-function VideoTile({ participant, label, local, className, videoRef }: { participant: Participant; label: string; local?: boolean; className?: string; videoRef?: React.RefObject<HTMLVideoElement | null> }) {
-    const internalRef = useRef<HTMLVideoElement>(null);
-    const ref = videoRef || internalRef;
-    const track = cameraTrack(participant);
-
-    useEffect(() => {
-        const el = ref.current;
-        if (!el || !track) return;
-        track.attach(el);
-        return () => void track.detach(el);
-    }, [track, ref]);
-
-    return (
-        <div className={cn('relative overflow-hidden rounded-2xl bg-gray-900', className)}>
-            {track ? (
-                <video ref={ref} autoPlay muted playsInline className={cn(
-                    'h-full w-full',
-                    local ? 'object-contain -scale-x-100' : 'object-cover' // contain for preview, cover for main
-                )} />
-            ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                    <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-2xl font-bold text-white">
-                        {label.trim().charAt(0).toUpperCase() || '?'}
-                    </span>
-                </div>
-            )}
-            <span className="absolute bottom-2 left-2 rounded-lg bg-black/60 px-2 py-0.5 text-xs font-semibold text-white">{label}</span>
-        </div>
-    );
-}
-
-/** Our own call screen on LiveKit's plain JS client. Always leaves the room on unmount or page close. */
-export default function CallRoomView({ url, token, role, otherParty, onLeave, onDoctorJoined, senior = false, audioDeviceId, videoDeviceId }: ConsultCallRoomProps) {
-    const [room, setRoom] = useState<Room | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [errorType, setErrorType] = useState<'network' | 'server' | 'unknown'>('unknown');
-    const [attempt, setAttempt] = useState(0);
-    const [notice, setNotice] = useState<string | null>(null);
-    const [leaving, setLeaving] = useState(false);
-    const [fullscreen, setFullscreen] = useState(false);
-    const [controlsVisible, setControlsVisible] = useState(true);
-    const [callDuration, setCallDuration] = useState(0);
-    const [connectionQuality, setConnectionQuality] = useState<ConnectionQuality>(ConnectionQuality.Unknown);
-    const [, redraw] = useReducer((n: number) => n + 1, 0);
-    const audioBox = useRef<HTMLDivElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const remoteVideoRef = useRef<HTMLVideoElement>(null);
-    const leaveRef = useRef(onLeave);
-    const doctorJoinedRef = useRef(onDoctorJoined);
-    const hideControlsTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-    const callStartTime = useRef<number | null>(null);
+export default function CallRoomView({ url, token, role, otherParty, onLeave, onDoctorJoined, senior = false, language = 'en', audioDeviceId, videoDeviceId }: ConsultCallRoomProps) {
+    const copy = callCopy(language);
     const videoAllowed = !role.endsWith('-audio');
     const viewer = partyOfRole(role);
-    const state = room?.state ?? ConnectionState.Connecting;
-    const reconnecting = state === ConnectionState.Reconnecting || state === ConnectionState.SignalReconnecting;
-    const connected = state === ConnectionState.Connected || reconnecting;
+    const {
+        room, audioBox, error, notice, setNotice, connected, reconnecting, quality, canFlip, attempt,
+        toggle, flipCamera, retry, leave: leaveRoom, redraw,
+    } = useCallRoom({ url, token, videoAllowed, audioDeviceId, videoDeviceId, onLeave, onDoctorJoined });
+    const containerRef = useRef<HTMLDivElement>(null);
+    const remoteVideoRef = useRef<HTMLVideoElement>(null);
+    const [confirmingLeave, setConfirmingLeave] = useState(false);
+    const [leaving, setLeaving] = useState(false);
+    const controls = useAutoHide();
+    const fs = useFullscreen(containerRef, remoteVideoRef, controls.show);
+
     const local = room?.localParticipant;
     const { primary: remote, others } = arrangeTiles(room ? [...room.remoteParticipants.values()] : [], viewer);
+    const remoteCam = remote ? cameraTrack(remote) : undefined;
     const labelOf = (p: Participant) => p.name || PARTY_LABEL[partyOf(p.identity) ?? otherParty];
     const micOn = !!local?.isMicrophoneEnabled;
     const camOn = !!local?.isCameraEnabled;
-    const bothIn = connected && !!remote;
+    const seconds = useCallTimer(connected && !!remote, attempt);
+    const weak = useWeakNetworkPrompt(quality === ConnectionQuality.Poor && camOn);
+    const canFullscreen = fs.native || (iosVideoFullscreen && !!remoteCam);
+    const canPip = videoAllowed && !!remoteCam && document.pictureInPictureEnabled === true;
 
-    useEffect(() => {
-        leaveRef.current = onLeave;
-        doctorJoinedRef.current = onDoctorJoined;
-    }, [onLeave, onDoctorJoined]);
-
-    useEffect(() => {
-        const r = new Room({
-            adaptiveStream: true,
-            dynacast: true,
-            audioCaptureDefaults: audioDeviceId ? { deviceId: audioDeviceId } : undefined,
-            videoCaptureDefaults: videoDeviceId ? { deviceId: videoDeviceId } : undefined,
-        });
-        let closed = false;
-        setRoom(r);
-        setError(null);
-        for (const ev of REDRAW) r.on(ev, redraw);
-        // Remote audio only plays once attached to an element on the page.
-        r.on(RoomEvent.TrackSubscribed, (track) => {
-            if (track.kind === Track.Kind.Audio) audioBox.current?.appendChild(track.attach());
-        });
-        r.on(RoomEvent.TrackUnsubscribed, (track) => {
-            if (track.kind === Track.Kind.Audio) track.detach().forEach((el) => el.remove());
-        });
-        r.on(RoomEvent.ParticipantConnected, (p) => {
-            if (partyOf(p.identity) === 'doctor') doctorJoinedRef.current?.();
-        });
-        r.on(RoomEvent.Disconnected, (reason) => {
-            if (closed) return;
-            if (reason === DisconnectReason.ROOM_DELETED) leaveRef.current();
-            else setError(DROPPED);
-        });
-        const leave = () => void r.disconnect();
-        window.addEventListener('beforeunload', leave);
-
-        (async () => {
-            try {
-                await r.connect(url, token);
-            } catch (err) {
-                if (!closed) {
-                    const errorMsg = err instanceof Error ? err.message.toLowerCase() : '';
-                    if (errorMsg.includes('network') || errorMsg.includes('timeout')) {
-                        setErrorType('network');
-                        setError('Network connection failed. Check your internet and try again.');
-                    } else if (errorMsg.includes('unauthorized') || errorMsg.includes('token')) {
-                        setErrorType('server');
-                        setError('Session expired. Please go back and rejoin.');
-                    } else {
-                        setErrorType('unknown');
-                        setError(JOIN_FAILED);
-                    }
-                }
-                return;
-            }
-            // The doctor may already be inside when we arrive.
-            if ([...r.remoteParticipants.values()].some((p) => partyOf(p.identity) === 'doctor')) doctorJoinedRef.current?.();
-            try {
-                await r.localParticipant.setMicrophoneEnabled(true);
-                if (videoAllowed) await r.localParticipant.setCameraEnabled(true);
-            } catch (err) {
-                if (!closed) {
-                    const blocked = err instanceof Error && err.name === 'NotAllowedError';
-                    setNotice(blocked
-                        ? 'Camera or microphone is blocked. Tap the lock icon next to the web address, allow them, then use the buttons below.'
-                        : 'We could not start your camera or microphone. Check the browser permission, then use the buttons below.');
-                }
-            }
-        })();
-
-        return () => {
-            closed = true;
-            window.removeEventListener('beforeunload', leave);
-            r.removeAllListeners();
-            leave();
-        };
-    }, [url, token, videoAllowed, audioDeviceId, videoDeviceId, attempt]);
-
-    // Each tap, mouse move or focus shows the controls and restarts the 3-second hide timer.
-    const showControls = useCallback(() => {
-        setControlsVisible(true);
-        clearTimeout(hideControlsTimer.current);
-        hideControlsTimer.current = setTimeout(() => setControlsVisible(false), 3000);
-    }, []);
-    useEffect(() => () => clearTimeout(hideControlsTimer.current), []);
-
-    // Listen for fullscreen changes (e.g., Escape key). Above the early return: hooks run in the same order every render.
-    useEffect(() => {
-        const cb = () => {
-            setFullscreen(!!document.fullscreenElement);
-            if (document.fullscreenElement) showControls();
-        };
-        document.addEventListener('fullscreenchange', cb);
-        return () => document.removeEventListener('fullscreenchange', cb);
-    }, [showControls]);
-
-    // Counts from when both sides are in, so doctor and patient see the same time.
-    useEffect(() => {
-        if (!bothIn) return;
-        callStartTime.current ??= Date.now();
-        const tick = () => setCallDuration(Math.floor((Date.now() - (callStartTime.current ?? Date.now())) / 1000));
-        const interval = setInterval(tick, 1000);
-        return () => clearInterval(interval);
-    }, [bothIn]);
-
-    useEffect(() => {
-        if (!room) return;
-        const update = () => setConnectionQuality(room.localParticipant.connectionQuality);
-        room.on(RoomEvent.ConnectionQualityChanged, update);
-        update();
-        return () => {
-            room.off(RoomEvent.ConnectionQualityChanged, update);
-        };
-    }, [room]);
-
-    const toggle = useCallback(async (kind: 'mic' | 'camera', on: boolean) => {
-        if (!room) return;
-        try {
-            if (kind === 'mic') await room.localParticipant.setMicrophoneEnabled(on);
-            else await room.localParticipant.setCameraEnabled(on);
-            setNotice(null);
-        } catch {
-            setNotice(`We could not turn the ${kind === 'mic' ? 'microphone' : 'camera'} ${on ? 'on' : 'off'}. Check the browser permission.`);
-        }
-        redraw();
-    }, [room]);
-
-    const toggleFullscreen = useCallback(() => {
-        if (!containerRef.current) return;
-        if (!document.fullscreenElement) {
-            containerRef.current.requestFullscreen().then(() => setFullscreen(true)).catch(() => {});
-        } else {
-            document.exitFullscreen().then(() => setFullscreen(false)).catch(() => {});
-        }
-    }, []);
-
-    // Keyboard shortcuts: M mic, V camera, F fullscreen. Skipped while typing or with Ctrl/Cmd/Alt held.
-    useEffect(() => {
-        if (!room || !connected) return;
-        function onKey(e: KeyboardEvent) {
-            if (!room || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
-            const t = e.target;
-            if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || (t instanceof HTMLElement && t.isContentEditable)) return;
-            const key = e.key.toLowerCase();
-            if (key === 'm') {
-                e.preventDefault();
-                void toggle('mic', !room.localParticipant.isMicrophoneEnabled);
-            } else if (key === 'v' && videoAllowed) {
-                e.preventDefault();
-                void toggle('camera', !room.localParticipant.isCameraEnabled);
-            } else if (key === 'f') {
-                e.preventDefault();
-                toggleFullscreen();
-            }
-        }
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
-    }, [room, connected, videoAllowed, toggle, toggleFullscreen]);
-
-    function retry() {
-        setError(null);
-        setErrorType('unknown');
-        setNotice(null);
-        callStartTime.current = null;
-        setCallDuration(0);
-        setAttempt((n) => n + 1);
-    }
-
-    async function leave() {
-        setLeaving(true);
-        try {
-            await room?.disconnect();
-        } finally {
-            onLeave();
-        }
-    }
+    useCallShortcuts(connected, (key) => {
+        if (key === 'm') void toggle('mic', !micOn);
+        else if (key === 'v' && videoAllowed) void toggle('camera', !camOn);
+        else if (key === 'f' && canFullscreen) fs.toggle();
+    });
 
     if (error) {
         return (
             <div role="alert" className="flex flex-col items-center gap-4 rounded-2xl border border-red-100 bg-red-50 px-6 py-10 text-center">
                 <div className="space-y-2">
-                    <p className="text-sm font-semibold text-destructive">{error}</p>
-                    {errorType === 'network' && (
-                        <p className="text-xs text-muted-foreground">
-                            Try switching to a different network or moving closer to your router
-                        </p>
-                    )}
+                    <p className={cn('font-semibold text-destructive', senior ? 'text-lg' : 'text-sm')}>{copy.errors[error]}</p>
+                    {error === 'network' && <p className="text-xs text-muted-foreground">{copy.networkHint}</p>}
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={onLeave}>Back</Button>
-                    {errorType !== 'server' && (
-                        <Button size="sm" onClick={retry}>Retry</Button>
-                    )}
+                    <Button variant="outline" size={senior ? 'lg' : 'sm'} onClick={onLeave}>{copy.back}</Button>
+                    {/* An expired token fails the same way again, so only Back is offered. */}
+                    {error !== 'expired' && <Button size={senior ? 'lg' : 'sm'} onClick={retry}>{copy.retry}</Button>}
                 </div>
             </div>
         );
     }
 
     async function togglePictureInPicture() {
-        const video = remoteVideoRef.current;
-        if (!video) return;
-
         try {
-            if (document.pictureInPictureElement) {
-                await document.exitPictureInPicture();
-            } else {
-                await video.requestPictureInPicture();
-            }
-        } catch (err) {
-            console.error('PiP error:', err);
-            setNotice('Picture-in-picture is not supported on this device.');
+            if (document.pictureInPictureElement) await document.exitPictureInPicture();
+            else await remoteVideoRef.current?.requestPictureInPicture();
+        } catch {
+            setNotice('pipUnsupported');
         }
     }
 
+    async function leave() {
+        setLeaving(true);
+        await leaveRoom();
+    }
 
+    const { fullscreen } = fs;
+    const showControls = fullscreen ? controls.show : undefined;
     return (
         <div
-            className={cn("space-y-3", fullscreen && "fixed inset-0 z-50 bg-black p-0 space-y-0")}
             ref={containerRef}
-            onPointerMove={fullscreen ? showControls : undefined}
-            onPointerDown={fullscreen ? showControls : undefined}
-            onFocusCapture={fullscreen ? showControls : undefined}
+            className={cn('space-y-3', fullscreen && 'fixed inset-0 z-50 space-y-0 bg-black')}
+            onPointerMove={showControls}
+            onPointerDown={showControls}
+            onFocusCapture={showControls}
         >
             <div ref={audioBox} hidden />
-            <div
-                className={cn(
-                    "relative w-full overflow-hidden bg-gray-900",
-                    fullscreen ? "h-screen rounded-none" : "rounded-2xl min-h-[55vh] max-h-[80vh]"
-                )}
-            >
+            <div className={cn('relative w-full overflow-hidden bg-gray-900', fullscreen ? 'h-screen' : 'min-h-[55vh] max-h-[80vh] rounded-2xl')}>
                 {!connected ? (
-                    <div role="status" className="flex h-full items-center justify-center gap-2 text-sm text-white">
-                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Connecting...
+                    <div role="status" className="flex h-full min-h-[55vh] items-center justify-center gap-2 text-sm text-white">
+                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> {copy.connecting}
                     </div>
                 ) : remote ? (
-                    <VideoTile participant={remote} label={labelOf(remote)} className="h-full w-full" videoRef={remoteVideoRef} />
+                    <VideoTile participant={remote} label={labelOf(remote)} mutedLabel={copy.muted} className="h-full w-full" videoRef={remoteVideoRef} />
                 ) : (
-                    <div className="flex h-full items-center justify-center px-6">
-                        <div className="max-w-md space-y-6 text-center">
-                            {/* Animated waiting indicator */}
-                            <div className="flex justify-center">
-                                <div className="relative">
-                                    <div className="h-20 w-20 rounded-full border-4 border-white/20" />
-                                    <div className="absolute inset-0 h-20 w-20 animate-spin rounded-full border-4 border-transparent border-t-white" />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <p className="text-lg font-semibold text-white">
-                                    Waiting for the {otherParty}...
-                                </p>
-                                <p className="text-sm text-white/70">
-                                    {otherParty === 'doctor'
-                                        ? 'Your doctor will join shortly. Please stay on the call.'
-                                        : 'The patient will join shortly. You can see them here when they arrive.'}
-                                </p>
-                            </div>
-
-                            {/* Health tips for patients */}
-                            {otherParty === 'doctor' && (
-                                <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 text-left space-y-2">
-                                    <p className="text-xs font-semibold text-white/90">💡 While you wait:</p>
-                                    <ul className="space-y-1 text-xs text-white/80">
-                                        <li>• Keep your symptoms and questions ready</li>
-                                        <li>• Have any previous reports or prescriptions nearby</li>
-                                        <li>• Ensure you&apos;re in a quiet, well-lit area</li>
-                                    </ul>
-                                </div>
-                            )}
-
-                            {/* Doctor tips */}
-                            {otherParty === 'patient' && (
-                                <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 text-left space-y-2">
-                                    <p className="text-xs font-semibold text-white/90">📋 Patient dossier</p>
-                                    <p className="text-xs text-white/80">
-                                        Review patient information in the sidebar while waiting
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <WaitingRoom otherParty={otherParty} copy={copy} senior={senior} />
                 )}
                 {connected && local && videoAllowed && (
-                    <VideoTile participant={local} label="You" local
-                        className={cn(
-                            "absolute border-2 border-white/70 shadow-lg",
-                            fullscreen
-                                ? "bottom-20 right-3 w-24 h-32 sm:w-28 sm:h-36"
-                                : "bottom-3 right-3 w-28 h-36 sm:w-32 sm:h-44"
-                        )}
-                    />
+                    <VideoTile participant={local} label={copy.you} mutedLabel={copy.muted} local
+                        className={cn('absolute right-3 border-2 border-white/70 shadow-lg', fullscreen ? 'bottom-32 h-32 w-24 sm:h-36 sm:w-28' : 'bottom-3 h-36 w-28 sm:h-44 sm:w-32')} />
                 )}
                 {/* Three-way calls: the caregiver (or patient, for the doctor) as small tiles. */}
                 {connected && others.length > 0 && (
-                    <div className="absolute left-3 top-3 flex flex-col gap-2">
+                    <div className="absolute left-3 top-14 flex flex-col gap-2">
                         {others.map((p) => (
-                            <VideoTile key={p.identity} participant={p} label={labelOf(p)} className="aspect-video w-28 border-2 border-white/70 sm:w-36" />
+                            <VideoTile key={p.identity} participant={p} label={labelOf(p)} mutedLabel={copy.muted} className="aspect-video w-28 border-2 border-white/70 sm:w-36" />
                         ))}
                     </div>
                 )}
-                {reconnecting && (
-                    <p role="status" className="absolute inset-x-0 top-3 mx-auto w-fit rounded-lg bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
-                        Reconnecting...
-                    </p>
-                )}
-                {/* Call duration timer */}
-                {connected && callDuration > 0 && (
-                    <div className="absolute top-3 left-3 rounded-lg bg-black/60 backdrop-blur-sm px-3 py-1 text-xs font-mono font-semibold text-white">
-                        {formatDuration(callDuration)}
-                    </div>
-                )}
-                {/* Connection quality indicator */}
-                {connected && connectionQuality !== ConnectionQuality.Unknown && (
-                    <div
-                        className="absolute top-3 right-3 rounded-lg bg-black/60 backdrop-blur-sm px-2 py-1 text-xs font-semibold"
-                        title={QUALITY_CONFIG[connectionQuality].tooltip}
-                    >
-                        <span className={QUALITY_CONFIG[connectionQuality].color}>
-                            {QUALITY_CONFIG[connectionQuality].label}
+                {connected && (
+                    <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
+                        <span className="rounded-lg bg-black/60 px-3 py-1 font-mono text-xs font-semibold text-white" aria-hidden={seconds === 0}>
+                            {seconds > 0 ? formatDuration(seconds) : null}
                         </span>
+                        {reconnecting && (
+                            <p role="status" className="rounded-lg bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">{copy.reconnecting}</p>
+                        )}
+                        <QualityBadge quality={quality} copy={copy} />
                     </div>
                 )}
             </div>
-            {connected && room && !room.canPlaybackAudio && (
-                <Button className="w-full" onClick={() => void room.startAudio().then(redraw)}>
-                    <Volume2 className="mr-2 h-4 w-4" aria-hidden /> Tap to enable sound
-                </Button>
-            )}
-            {notice && <p role="alert" className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">{notice}</p>}
+
+            {/* In fullscreen these float over the video; otherwise they sit under it. */}
+            <div className={cn('space-y-2', fullscreen && 'absolute inset-x-3 top-14 z-10')}>
+                {connected && room && !room.canPlaybackAudio && (
+                    <Button className="w-full" onClick={() => void room.startAudio().then(redraw)}>
+                        <Volume2 className="mr-2 h-4 w-4" aria-hidden /> {copy.enableSound}
+                    </Button>
+                )}
+                {weak.show && (
+                    <div role="alert" className="flex flex-wrap items-center gap-2 rounded-xl bg-amber-50 px-4 py-3">
+                        <p className={cn('flex-1 font-semibold text-amber-900', senior ? 'text-lg' : 'text-sm')}>{copy.weak}</p>
+                        <Button size="sm" onClick={() => void toggle('camera', false)}>{copy.switchAudio}</Button>
+                        <Button size="sm" variant="outline" onClick={weak.dismiss}>{copy.notNow}</Button>
+                    </div>
+                )}
+                {notice && (
+                    <p role="alert" className={cn('rounded-xl bg-amber-50 px-4 py-3 font-semibold text-amber-800', senior ? 'text-lg' : 'text-sm')}>
+                        {copy.notices[notice]}
+                    </p>
+                )}
+            </div>
+
             <div className={cn(
-                'flex flex-wrap items-center justify-center gap-2 transition-opacity duration-300',
-                fullscreen && 'absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm rounded-full px-6 py-3',
-                fullscreen && !controlsVisible && 'opacity-0 pointer-events-none',
-                senior && '[&_button]:h-14 [&_button]:px-6 [&_button]:text-lg',
-                '[&_button]:min-h-[44px] [&_button]:min-w-[44px]' // Touch-optimized
+                'transition-opacity duration-300',
+                fullscreen && 'absolute bottom-6 left-1/2 -translate-x-1/2 rounded-3xl bg-black/60 px-4 py-2',
+                fullscreen && !controls.visible && !confirmingLeave && 'pointer-events-none opacity-0',
             )}>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!connected}
-                    aria-pressed={!micOn}
-                    aria-label={micOn ? "Mute microphone (M)" : "Unmute microphone (M)"}
-                    title="Press M to toggle"
-                    onClick={() => void toggle('mic', !micOn)}
-                >
-                    {micOn ? <><MicOff className="mr-1.5 h-4 w-4" aria-hidden /> Mute</> : <><Mic className="mr-1.5 h-4 w-4" aria-hidden /> Unmute</>}
-                </Button>
-                {videoAllowed && (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={!connected}
-                        aria-pressed={!camOn}
-                        aria-label={camOn ? "Turn camera off (V)" : "Turn camera on (V)"}
-                        title="Press V to toggle"
-                        onClick={() => void toggle('camera', !camOn)}
-                    >
-                        {camOn ? <><VideoOff className="mr-1.5 h-4 w-4" aria-hidden /> Camera off</> : <><Video className="mr-1.5 h-4 w-4" aria-hidden /> Camera on</>}
-                    </Button>
-                )}
-                {videoAllowed && camOn && (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={!connected}
-                        aria-label="Switch to audio only"
-                        onClick={() => void toggle('camera', false)}
-                    >
-                        Switch to audio
-                    </Button>
-                )}
-                <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!connected}
-                    aria-label={fullscreen ? "Exit fullscreen (F)" : "Enter fullscreen (F)"}
-                    title="Press F to toggle"
-                    onClick={toggleFullscreen}
-                >
-                    {fullscreen ? <><Minimize className="mr-1.5 h-4 w-4" aria-hidden /> Exit fullscreen</> : <><Maximize className="mr-1.5 h-4 w-4" aria-hidden /> Fullscreen</>}
-                </Button>
-                {videoAllowed && remote && cameraTrack(remote) && (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={!connected}
-                        aria-label="Picture-in-picture"
-                        title="Minimize to floating window"
-                        onClick={togglePictureInPicture}
-                    >
-                        <PictureInPicture2 className="mr-1.5 h-4 w-4" aria-hidden /> PiP
-                    </Button>
-                )}
-                <Button
-                    size="sm"
-                    disabled={leaving}
-                    aria-label="Leave call"
-                    className="bg-destructive hover:bg-destructive/90"
-                    onClick={() => void leave()}
-                >
-                    <PhoneOff className="mr-1.5 h-4 w-4" aria-hidden /> Leave
-                </Button>
+                <ControlBar
+                    copy={copy}
+                    senior={senior}
+                    connected={connected}
+                    micOn={micOn}
+                    camOn={camOn}
+                    videoAllowed={videoAllowed}
+                    canFlip={canFlip}
+                    canFullscreen={canFullscreen}
+                    fullscreen={fullscreen}
+                    canPip={canPip}
+                    leaving={leaving}
+                    confirmingLeave={confirmingLeave}
+                    onMic={() => void toggle('mic', !micOn)}
+                    onCamera={() => void toggle('camera', !camOn)}
+                    onFlip={() => void flipCamera()}
+                    onFullscreen={fs.toggle}
+                    onPip={() => void togglePictureInPicture()}
+                    onAskLeave={setConfirmingLeave}
+                    onLeave={() => void leave()}
+                />
             </div>
         </div>
     );

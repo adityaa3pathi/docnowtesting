@@ -38,6 +38,21 @@ export const guest = {
         api.post<JoinResponse & { identity: string }>(`/consult/guest/${encodeURIComponent(token)}/join`, { consent, consentVersion: CONSENT_VERSION }).then(data),
 };
 
+// ── Call failures, reported from the call screen ────────
+
+export type CallEventName = 'connect_failed' | 'disconnected' | 'media_failed' | 'reconnected';
+
+/** The LiveKit join token is the credential, so the zero-login family guest can report too. */
+export const callEvents = {
+    report: (token: string, event: CallEventName, reason?: string): Promise<void> =>
+        api.post('/consult/call-events', { token, event, reason: reason?.slice(0, 200) }, {
+            // Every status resolves: a 401 here must not trigger the shared refresh-or-redirect,
+            // which would throw a guest out of the call. Callers still .catch(() => {}) for offline.
+            validateStatus: () => true,
+            timeout: 5_000,
+        }).then(() => undefined),
+};
+
 // ── Patient ─────────────────────────────────────────────
 
 export const consult = {

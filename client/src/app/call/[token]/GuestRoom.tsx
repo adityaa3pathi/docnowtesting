@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Camera, CheckCircle2, Hand, Mic, PhoneCall, Stethoscope } from 'lucide-react';
 import { ConsultCallRoom } from '@/components/consult/ConsultCallRoom';
+import { DeviceCheckScreen, type ChosenDevices } from '@/components/consult/DeviceCheckScreen';
 import { TelemedicineConsent } from '@/components/consult/TelemedicineConsent';
 import { errorMessage, errorStatus, guest } from '@/lib/consult/api';
 import { GUEST_CONSENT_REQUIRED_HINT, GUEST_CONSENT_TEXT } from '@/lib/consult/consent';
@@ -71,6 +72,8 @@ export function GuestRoom({ token }: { token: string }) {
     const [call, setCall] = useState<JoinResponse | null>(null);
     const [ended, setEnded] = useState(false);
     const [consented, setConsented] = useState(false);
+    const [checking, setChecking] = useState(false);
+    const [devices, setDevices] = useState<ChosenDevices>({});
     const audio = useRef<AudioContext | null>(null);
     const chimed = useRef(false);
 
@@ -105,7 +108,7 @@ export function GuestRoom({ token }: { token: string }) {
         if (info?.doctorJoined && !call) doctorArrived();
     }, [info?.doctorJoined, call, doctorArrived]);
 
-    async function start() {
+    function start() {
         if (!consented) return;
         // A tap is what lets the browser play sound later, so the audio is set up here.
         try {
@@ -114,9 +117,15 @@ export function GuestRoom({ token }: { token: string }) {
         } catch {
             audio.current = null;
         }
+        setJoinError(null);
+        setChecking(true);
+    }
+
+    async function join(chosen: ChosenDevices) {
         setJoining(true);
         setJoinError(null);
         try {
+            setDevices(chosen);
             setCall(await guest.join(token, true));
             setEnded(false);
         } catch (e) {
@@ -124,6 +133,7 @@ export function GuestRoom({ token }: { token: string }) {
             void load();
         } finally {
             setJoining(false);
+            setChecking(false);
         }
     }
 
@@ -156,12 +166,30 @@ export function GuestRoom({ token }: { token: string }) {
                     role={call.role}
                     otherParty="doctor"
                     senior
+                    language={shown.language}
+                    audioDeviceId={devices.audioDeviceId}
+                    videoDeviceId={devices.videoDeviceId}
                     onDoctorJoined={doctorArrived}
                     onLeave={() => {
                         setCall(null);
                         setEnded(true);
                         void load();
                     }}
+                />
+            </main>
+        );
+    }
+
+    if (checking) {
+        return (
+            <main className="mx-auto max-w-xl px-4 py-6 text-lg">
+                <DeviceCheckScreen
+                    videoAllowed={!audioOnly}
+                    joining={joining}
+                    onJoin={(chosen) => void join(chosen)}
+                    onCancel={() => setChecking(false)}
+                    language={shown.language}
+                    senior
                 />
             </main>
         );
@@ -226,7 +254,7 @@ export function GuestRoom({ token }: { token: string }) {
 
             <button
                 type="button"
-                onClick={() => void start()}
+                onClick={start}
                 disabled={!open || joining || !consented}
                 className="flex min-h-20 w-full items-center justify-center gap-3 rounded-3xl bg-[#4b2192] px-6 text-2xl font-extrabold text-white shadow-lg transition active:scale-[0.98] disabled:opacity-50">
                 <PhoneCall className="h-8 w-8" aria-hidden />
