@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { Loader2, Maximize, Minimize, Mic, MicOff, PhoneOff, Video, VideoOff, Volume2 } from 'lucide-react';
+import { Loader2, Maximize, Minimize, Mic, MicOff, PhoneOff, PictureInPicture2, Video, VideoOff, Volume2 } from 'lucide-react';
 import { ConnectionState, DisconnectReason, Room, RoomEvent, Track, type Participant } from 'livekit-client';
 import { Button } from '@/components/ui';
 import { arrangeTiles, partyOf, partyOfRole } from '@/lib/consult/guest';
@@ -51,8 +51,9 @@ function cameraTrack(p: Participant) {
     return pub && !pub.isMuted ? pub.videoTrack : undefined;
 }
 
-function VideoTile({ participant, label, local, className }: { participant: Participant; label: string; local?: boolean; className?: string }) {
-    const ref = useRef<HTMLVideoElement>(null);
+function VideoTile({ participant, label, local, className, videoRef }: { participant: Participant; label: string; local?: boolean; className?: string; videoRef?: React.RefObject<HTMLVideoElement> }) {
+    const internalRef = useRef<HTMLVideoElement>(null);
+    const ref = videoRef || internalRef;
     const track = cameraTrack(participant);
 
     useEffect(() => {
@@ -60,7 +61,7 @@ function VideoTile({ participant, label, local, className }: { participant: Part
         if (!el || !track) return;
         track.attach(el);
         return () => void track.detach(el);
-    }, [track]);
+    }, [track, ref]);
 
     return (
         <div className={cn('relative overflow-hidden rounded-2xl bg-gray-900', className)}>
@@ -95,6 +96,7 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
     const [, redraw] = useReducer((n: number) => n + 1, 0);
     const audioBox = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const remoteVideoRef = useRef<HTMLVideoElement>(null);
     const leaveRef = useRef(onLeave);
     const doctorJoinedRef = useRef(onDoctorJoined);
     const hideControlsTimer = useRef<NodeJS.Timeout | null>(null);
@@ -333,6 +335,22 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
         }
     }
 
+    async function togglePictureInPicture() {
+        const video = remoteVideoRef.current;
+        if (!video) return;
+
+        try {
+            if (document.pictureInPictureElement) {
+                await document.exitPictureInPicture();
+            } else {
+                await video.requestPictureInPicture();
+            }
+        } catch (err) {
+            console.error('PiP error:', err);
+            setNotice('Picture-in-picture is not supported on this device.');
+        }
+    }
+
 
     return (
         <div className={cn("space-y-3", fullscreen && "fixed inset-0 z-50 bg-black p-0 space-y-0")} ref={containerRef}>
@@ -349,11 +367,52 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                         <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Connecting...
                     </div>
                 ) : remote ? (
-                    <VideoTile participant={remote} label={labelOf(remote)} className="h-full w-full" />
+                    <VideoTile participant={remote} label={labelOf(remote)} className="h-full w-full" videoRef={remoteVideoRef} />
                 ) : (
-                    <p role="status" className="flex h-full items-center justify-center px-6 text-center text-sm text-white">
-                        Waiting for the {otherParty} to join...
-                    </p>
+                    <div className="flex h-full items-center justify-center px-6">
+                        <div className="max-w-md space-y-6 text-center">
+                            {/* Animated waiting indicator */}
+                            <div className="flex justify-center">
+                                <div className="relative">
+                                    <div className="h-20 w-20 rounded-full border-4 border-white/20" />
+                                    <div className="absolute inset-0 h-20 w-20 animate-spin rounded-full border-4 border-transparent border-t-white" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <p className="text-lg font-semibold text-white">
+                                    Waiting for the {otherParty}...
+                                </p>
+                                <p className="text-sm text-white/70">
+                                    {otherParty === 'doctor'
+                                        ? 'Your doctor will join shortly. Please stay on the call.'
+                                        : 'The patient will join shortly. You can see them here when they arrive.'}
+                                </p>
+                            </div>
+
+                            {/* Health tips for patients */}
+                            {otherParty === 'doctor' && (
+                                <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 text-left space-y-2">
+                                    <p className="text-xs font-semibold text-white/90">💡 While you wait:</p>
+                                    <ul className="space-y-1 text-xs text-white/80">
+                                        <li>• Keep your symptoms and questions ready</li>
+                                        <li>• Have any previous reports or prescriptions nearby</li>
+                                        <li>• Ensure you're in a quiet, well-lit area</li>
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Doctor tips */}
+                            {otherParty === 'patient' && (
+                                <div className="rounded-xl bg-white/10 backdrop-blur-sm p-4 text-left space-y-2">
+                                    <p className="text-xs font-semibold text-white/90">📋 Patient dossier</p>
+                                    <p className="text-xs text-white/80">
+                                        Review patient information in the sidebar while waiting
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 )}
                 {connected && local && videoAllowed && (
                     <VideoTile participant={local} label="You" local
@@ -454,6 +513,18 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                 >
                     {fullscreen ? <><Minimize className="mr-1.5 h-4 w-4" aria-hidden /> Exit fullscreen</> : <><Maximize className="mr-1.5 h-4 w-4" aria-hidden /> Fullscreen</>}
                 </Button>
+                {videoAllowed && remote && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!connected}
+                        aria-label="Picture-in-picture"
+                        title="Minimize to floating window"
+                        onClick={togglePictureInPicture}
+                    >
+                        <PictureInPicture2 className="mr-1.5 h-4 w-4" aria-hidden /> PiP
+                    </Button>
+                )}
                 <Button
                     size="sm"
                     disabled={leaving}
