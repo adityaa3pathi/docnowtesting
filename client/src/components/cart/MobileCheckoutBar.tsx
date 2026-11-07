@@ -1,4 +1,5 @@
 import { Loader2, ShieldCheck } from 'lucide-react';
+import { StickyBottomBar } from '@/components/layout/StickyBottomBar';
 
 interface MobileCheckoutBarProps {
     finalPayable: number;
@@ -32,7 +33,7 @@ export function MobileCheckoutBar({
                 : null;
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-40 md:hidden safe-area-bottom">
+        <StickyBottomBar className="bg-white border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-40 md:hidden safe-area-bottom">
             {hintText && (
                 <div className="px-4 pt-2 pb-0">
                     <p className="text-[11px] text-orange-500 font-medium text-center">
@@ -63,6 +64,6 @@ export function MobileCheckoutBar({
                     )}
                 </button>
             </div>
-        </div>
+        </StickyBottomBar>
     );
 }
