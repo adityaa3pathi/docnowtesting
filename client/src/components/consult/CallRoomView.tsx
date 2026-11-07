@@ -247,6 +247,7 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
         if (!room || room.state !== ConnectionState.Connected) return;
 
         function handleKeyPress(e: KeyboardEvent) {
+            if (!room) return; // Null check for TypeScript
             // Ignore if user is typing in an input field
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
