@@ -57,7 +57,7 @@ const select = {
     doctor: { select: { displayName: true, user: { select: { mobile: true } } } },
     guestToken: true, familyJoinedAt: true,
     patient: { select: { name: true, relation: true, phone: true, preferredLanguage: true, linkedUserId: true, linkDeclinedAt: true } },
-    prescriptions: { where: { voidedAt: null }, select: { medicines: true }, take: 1 },
+    prescriptions: { where: { voidedAt: null }, select: { medicines: true, version: true }, take: 1 },
     refunds: { where: { reason: 'DOCTOR_NO_SHOW' }, select: { amountPaise: true } },
 } satisfies Prisma.ConsultationSelect;
 type Row = Prisma.ConsultationGetPayload<{ select: typeof select }>;
@@ -108,6 +108,14 @@ export function dueNotices(
     if (doctorMissed) due.push(['DOCTOR_NO_SHOW', 'patient']);
     if (c.status === 'NO_SHOW_PATIENT') due.push(['PATIENT_NO_SHOW', 'patient']);
     return due;
+}
+
+/**
+ * Each prescription version is its own notice: the dedupe key had no version, so a corrected
+ * dose (a clinically material change) was silently never sent.
+ */
+export function noticeKey(kind: string, rxVersion = 1): string {
+    return rxVersion > 1 && (kind === 'PRESCRIPTION_ISSUED' || kind === 'FAMILY_PRESCRIPTION') ? `${kind}_V${rxVersion}` : kind;
 }
 
 /**
@@ -209,14 +217,15 @@ export async function sendDueNotices(deps: Deps = {}) {
         for (const { kind, to, mobile, language, body, path } of deliveries) {
             const template = templates[kind as NoticeKind | FamilyNoticeKind];
             if (!template) continue;
-            if (!(await claim(db, c.id, kind, to))) continue;
+            const key = noticeKey(kind, c.prescriptions[0]?.version);
+            if (!(await claim(db, c.id, key, to))) continue;
             try {
                 const res = await send(mobile, template, language, [
                     { type: 'body', parameters: body.map((text) => ({ type: 'text', text })) },
                     { type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: path }] },
                 ]);
                 await db.consultationNotification.update({
-                    where: { consultationId_kind_recipient_channel: { consultationId: c.id, kind, recipient: to, channel: 'whatsapp' } },
+                    where: { consultationId_kind_recipient_channel: { consultationId: c.id, kind: key, recipient: to, channel: 'whatsapp' } },
                     data: { status: 'SENT', providerId: res.id, lastError: null },
                 });
                 sent++;
@@ -224,7 +233,7 @@ export async function sendDueNotices(deps: Deps = {}) {
                 failed++;
                 logger.warn({ consultationId: c.id, kind, to, error: e?.message }, 'consult_notice_failed');
                 await db.consultationNotification.update({
-                    where: { consultationId_kind_recipient_channel: { consultationId: c.id, kind, recipient: to, channel: 'whatsapp' } },
+                    where: { consultationId_kind_recipient_channel: { consultationId: c.id, kind: key, recipient: to, channel: 'whatsapp' } },
                     data: { status: 'FAILED', lastError: String(e?.message ?? e).slice(0, 500) },
                 });
             }

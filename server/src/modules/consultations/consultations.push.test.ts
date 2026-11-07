@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { duePushes, pushMessage, sendDuePushes, type ExpoMessage, type ExpoTicket, type PushRow } from './consultations.push';
+import { noticeKey } from './consultations.notifications';
 
 const START = new Date('2026-11-02T10:00:00.000Z'); // 3:30 PM IST
 const min = (m: number) => new Date(START.getTime() + m * 60_000);
@@ -170,5 +171,21 @@ describe('sendDuePushes', () => {
         const db = fakeDb([waiting], [{ userId: 'doctor-user', token: 'ExponentPushToken[a]' }]);
         expect(await sendDuePushes({ db: db as never })).toEqual({ sent: 0, failed: 0 });
         expect(db.consultation.findMany).not.toHaveBeenCalled();
+    });
+});
+
+describe('prescription corrections', () => {
+    it('keys each prescription version separately, so a correction is sent after v1 was', () => {
+        expect(noticeKey('PRESCRIPTION_ISSUED', 1)).toBe('PRESCRIPTION_ISSUED');
+        expect(noticeKey('PRESCRIPTION_ISSUED', 2)).toBe('PRESCRIPTION_ISSUED_V2');
+        expect(noticeKey('FAMILY_PRESCRIPTION', 3)).toBe('FAMILY_PRESCRIPTION_V3');
+        expect(noticeKey('JOIN_NOW', 4)).toBe('JOIN_NOW');
+    });
+
+    it('tells the patient the prescription was updated', () => {
+        const c = row({ status: 'COMPLETED', prescriptions: [{ id: 'rx-2', recommendedTests: [], version: 2 }] });
+        expect(pushMessage('PRESCRIPTION_ISSUED', 'patient', c).title).toBe('Your prescription was updated');
+        const first = row({ status: 'COMPLETED', prescriptions: [{ id: 'rx-1', recommendedTests: [], version: 1 }] });
+        expect(pushMessage('PRESCRIPTION_ISSUED', 'patient', first).title).toBe('Your prescription is ready');
     });
 });

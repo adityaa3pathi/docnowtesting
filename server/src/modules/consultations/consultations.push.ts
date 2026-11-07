@@ -17,7 +17,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '../../db';
 import { deliverPush, pushDisabled, sendViaExpo, type ExpoMessage, type ExpoSend, type PushChannelId } from '../../services/expoPush';
 import { logger } from '../../utils/logger';
-import { claim, dueNotices, LOOKBACK_MS, type AnyRecipient, type NoticeKind } from './consultations.notifications';
+import { claim, dueNotices, LOOKBACK_MS, noticeKey, type AnyRecipient, type NoticeKind } from './consultations.notifications';
 import { isSelf } from './consultations.family';
 import { doctorTitle } from './doctors.types';
 
@@ -36,7 +36,7 @@ const select = {
     slot: { select: { endsAt: true } },
     doctor: { select: { displayName: true, userId: true } },
     refunds: { where: { reason: 'DOCTOR_NO_SHOW' }, select: { amountPaise: true } },
-    prescriptions: { where: { voidedAt: null }, select: { id: true, recommendedTests: true }, take: 1 },
+    prescriptions: { where: { voidedAt: null }, select: { id: true, recommendedTests: true, version: true }, take: 1 },
     patient: { select: { name: true, relation: true, phone: true, linkedUserId: true, linkDeclinedAt: true } },
     user: { select: { name: true } },
 } satisfies Prisma.ConsultationSelect;
@@ -75,6 +75,7 @@ const istDay = (d: Date) => new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/K
 type Text = { title: string; body: string; channelId: PushChannelId; url?: string };
 
 const firstName = (name: string) => name.trim().split(/\s+/)[0] || name;
+const corrected = (c: PushRow) => (c.prescriptions[0]?.version ?? 1) > 1;
 const hasTests = (c: PushRow) => Array.isArray(c.prescriptions[0]?.recommendedTests) && (c.prescriptions[0]!.recommendedTests as unknown[]).length > 0;
 
 /** The family member's own phone. `linked` = they accepted the booking; otherwise keep it generic. */
@@ -93,8 +94,10 @@ function familyText(kind: PushKind, c: PushRow, dr: string): Text | null {
         case 'PRESCRIPTION_ISSUED':
             return linked
                 ? {
-                    title: 'Your prescription is ready',
-                    body: `Your prescription from ${dr} is ready${hasTests(c) ? ' with recommended tests' : ''}.`,
+                    title: corrected(c) ? 'Your prescription was updated' : 'Your prescription is ready',
+                    body: corrected(c)
+                        ? `${dr} corrected your prescription. Please follow the new version.`
+                        : `Your prescription from ${dr} is ready${hasTests(c) ? ' with recommended tests' : ''}.`,
                     channelId: 'prescriptions-reports',
                     url: `docnow://records/prescription/${c.id}`,
                 }
@@ -114,8 +117,10 @@ function caregiverText(kind: PushKind, c: PushRow, dr: string): Text | null {
             return { title: `${dr} is waiting`, body: `${who} has not joined yet. Tap to join and help.`, channelId: 'teleconsult-call' };
         case 'PRESCRIPTION_ISSUED':
             return {
-                title: `Prescription ready for ${c.patient.name}`,
-                body: `${dr} has issued it.${hasTests(c) ? ' Book the recommended tests in one tap.' : ''}`,
+                title: corrected(c) ? `Prescription updated for ${c.patient.name}` : `Prescription ready for ${c.patient.name}`,
+                body: corrected(c)
+                    ? `${dr} corrected it. Please follow the new version.`
+                    : `${dr} has issued it.${hasTests(c) ? ' Book the recommended tests in one tap.' : ''}`,
                 channelId: 'prescriptions-reports',
                 url: `docnow://records/prescription/${c.id}`,
             };
@@ -152,7 +157,9 @@ export function pushMessage(kind: PushKind, to: AnyRecipient, c: PushRow): Consu
             case 'PATIENT_NO_SHOW':
                 return { title: 'You missed your consultation', body: `Tap to see your booking with ${dr}.`, channelId: 'reminders' };
             case 'PRESCRIPTION_ISSUED':
-                return { title: 'Your prescription is ready', body: `${dr} has issued your prescription.`, channelId: 'prescriptions-reports', url: `docnow://records/prescription/${c.id}` };
+                return corrected(c)
+                    ? { title: 'Your prescription was updated', body: `${dr} corrected your prescription. Please follow the new version.`, channelId: 'prescriptions-reports', url: `docnow://records/prescription/${c.id}` }
+                    : { title: 'Your prescription is ready', body: `${dr} has issued your prescription.`, channelId: 'prescriptions-reports', url: `docnow://records/prescription/${c.id}` };
         }
     })();
     const isCall = text.channelId === 'teleconsult-call';
@@ -212,8 +219,9 @@ export async function sendDuePushes(deps: Deps = {}) {
             const tokens = tokensByUser.get(userId);
             // No phone registered: nothing is claimed, so it still goes out if one registers while it is due.
             if (!tokens?.length) continue;
-            if (!(await claim(db, c.id, kind, to, 'push'))) continue;
-            const key = { consultationId_kind_recipient_channel: { consultationId: c.id, kind, recipient: to, channel: 'push' } };
+            const noticeKind = noticeKey(kind, c.prescriptions[0]?.version);
+            if (!(await claim(db, c.id, noticeKind, to, 'push'))) continue;
+            const key = { consultationId_kind_recipient_channel: { consultationId: c.id, kind: noticeKind, recipient: to, channel: 'push' } };
             const message = pushMessage(kind, to, c);
             try {
                 const { ticketIds, dead } = await deliverPush(db, tokens, message, send);
