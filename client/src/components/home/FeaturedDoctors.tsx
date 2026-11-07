@@ -59,7 +59,31 @@ export function HomeDoctorCard({ doctor }: { doctor: DoctorSummary }) {
 }
 
 function CardSkeleton() {
-    return <div aria-hidden className="h-[244px] w-[280px] shrink-0 animate-pulse rounded-3xl bg-gray-100 sm:w-auto" />;
+    return (
+        <div aria-hidden className="flex w-[280px] shrink-0 snap-start flex-col rounded-3xl border border-gray-100 bg-white p-5 shadow-sm animate-pulse sm:w-auto">
+            <div className="flex gap-4">
+                <div className="h-[72px] w-[72px] shrink-0 rounded-2xl bg-gray-200" />
+                <div className="min-w-0 flex-1 space-y-2">
+                    <div className="h-4 w-3/4 bg-gray-200 rounded" />
+                    <div className="h-4 w-1/2 bg-gray-200 rounded" />
+                    <div className="h-3 w-full bg-gray-200 rounded" />
+                </div>
+            </div>
+            <div className="mt-4 flex gap-2">
+                <div className="h-7 w-24 bg-gray-200 rounded-full" />
+                <div className="h-7 w-28 bg-gray-200 rounded-full" />
+            </div>
+            <div className="mt-3 h-3 w-2/3 bg-gray-200 rounded" />
+            <div className="min-h-4 flex-1" />
+            <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-4">
+                <div className="space-y-1">
+                    <div className="h-6 w-20 bg-gray-200 rounded" />
+                    <div className="h-3 w-24 bg-gray-200 rounded" />
+                </div>
+                <div className="h-11 w-28 bg-gray-200 rounded-xl" />
+            </div>
+        </div>
+    );
 }
 
 /** Client island: approved doctors in a swipeable strip on phones and a grid on larger screens. */

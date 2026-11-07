@@ -43,7 +43,74 @@ function DoctorPage() {
 
     const dropped = Boolean(selectedId && !selected && !slotsApi.loading && slotsApi.data);
 
-    if (doctor.loading) return <main className="mx-auto max-w-3xl space-y-3 px-4 py-6"><Skeleton className="h-32" /><Skeleton className="h-48" /></main>;
+    if (doctor.loading) {
+        return (
+            <>
+                <main className="mx-auto w-full max-w-4xl px-4 py-6 pb-32 md:pb-16 animate-pulse">
+                    <div className="mb-6 flex items-center gap-2">
+                        <div className="h-4 w-4 bg-gray-200 rounded" />
+                        <div className="h-4 w-24 bg-gray-200 rounded" />
+                    </div>
+
+                    {/* Doctor Hero Card Skeleton */}
+                    <Card className="overflow-hidden border-0 shadow-xl">
+                        <div
+                            className="px-6 pb-24 pt-8 md:px-8 md:pb-28"
+                            style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}
+                        >
+                            <div className="flex flex-col items-center gap-4 md:flex-row md:items-start md:gap-6">
+                                <div className="h-24 w-24 shrink-0 rounded-2xl bg-white/20 md:h-28 md:w-28" />
+                                <div className="flex-1 space-y-3 text-center md:text-left">
+                                    <div className="mx-auto h-8 w-48 bg-white/20 rounded md:mx-0" />
+                                    <div className="mx-auto h-6 w-32 bg-white/20 rounded-full md:mx-0" />
+                                    <div className="mx-auto h-5 w-64 bg-white/15 rounded md:mx-0" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Stats Pills Skeleton */}
+                        <div className="-mt-16 px-6 md:px-8">
+                            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                                {[1, 2, 3, 4].map((i) => (
+                                    <div key={i} className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+                                        <div className="mb-2 h-8 w-8 bg-gray-200 rounded-full" />
+                                        <div className="h-3 w-20 bg-gray-200 rounded mb-1" />
+                                        <div className="h-4 w-16 bg-gray-200 rounded" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Bio Skeleton */}
+                        <div className="border-t border-border px-6 py-6 md:px-8">
+                            <div className="mb-2 h-4 w-16 bg-gray-200 rounded" />
+                            <div className="space-y-2">
+                                <div className="h-4 w-full bg-gray-200 rounded" />
+                                <div className="h-4 w-5/6 bg-gray-200 rounded" />
+                            </div>
+                        </div>
+
+                        {/* Registration Skeleton */}
+                        <div className="border-t border-border bg-gray-50 px-6 py-4 md:px-8">
+                            <div className="h-3 w-64 bg-gray-200 rounded" />
+                        </div>
+                    </Card>
+
+                    {/* Slot Picker Section Skeleton */}
+                    <section className="mt-8">
+                        <div className="mb-6">
+                            <div className="mb-4 h-6 w-40 bg-gray-200 rounded-full" />
+                            <div className="h-10 w-48 bg-gray-200 rounded" />
+                        </div>
+                        <Card className="p-6 shadow-sm md:p-8">
+                            <div className="h-32 w-full bg-gray-200 rounded" />
+                        </Card>
+                    </section>
+                </main>
+                <Footer />
+            </>
+        );
+    }
     if (!doctor.data) {
         const notFound = doctor.error?.toLowerCase().includes('not found') || !doctor.error;
         return (
@@ -161,7 +228,15 @@ function DoctorPage() {
                     </div>
 
                     <Card className="p-6 shadow-sm md:p-8">
-                        {slotsApi.loading && <Skeleton className="h-32" />}
+                        {slotsApi.loading && (
+                            <div className="space-y-4 animate-pulse">
+                                <div className="grid grid-cols-3 gap-2 md:grid-cols-4 md:gap-3">
+                                    {Array.from({ length: 12 }).map((_, i) => (
+                                        <div key={i} className="h-12 bg-gray-200 rounded-xl" />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         {!slotsApi.loading && slotsApi.error && <ErrorState message={slotsApi.error} onRetry={slotsApi.refetch} />}
                         {!slotsApi.loading && !slotsApi.error && slots.length === 0 && (
                             <EmptyState

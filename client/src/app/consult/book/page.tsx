@@ -119,7 +119,62 @@ function BookPage() {
         );
     }
     if (loadError) return <main className="mx-auto max-w-md px-4 py-10"><ErrorState message={loadError} onRetry={() => router.refresh()} /></main>;
-    if (!doctor || !slot || !people) return <LoadingBlock label="Getting your booking ready" />;
+    if (!doctor || !slot || !people) {
+        return (
+            <>
+                <main className="mx-auto w-full max-w-2xl px-4 py-6 pb-16 animate-pulse">
+                    <div className="mb-6 h-4 w-24 bg-gray-200 rounded" />
+
+                    {/* Progress Stepper Skeleton */}
+                    <div className="mt-6 flex items-center justify-center gap-2">
+                        <div className="h-5 w-5 bg-gray-200 rounded-full" />
+                        <div className="h-4 w-24 bg-gray-200 rounded" />
+                        <div className="h-px w-8 bg-gray-200" />
+                        <div className="h-5 w-5 bg-gray-200 rounded-full" />
+                        <div className="h-4 w-24 bg-gray-200 rounded" />
+                        <div className="h-px w-8 bg-gray-200" />
+                        <div className="h-5 w-5 bg-gray-200 rounded-full" />
+                        <div className="h-4 w-28 bg-gray-200 rounded" />
+                    </div>
+
+                    <div className="mt-8 h-10 w-48 bg-gray-200 rounded mx-auto" />
+
+                    {/* Booking Summary Skeleton */}
+                    <Card className="mt-8 p-6 shadow-xl">
+                        <div className="space-y-4">
+                            <div className="h-6 w-3/4 bg-gray-200 rounded" />
+                            <div className="h-4 w-1/2 bg-gray-200 rounded" />
+                            <div className="h-4 w-2/3 bg-gray-200 rounded" />
+                            <div className="flex justify-between border-t pt-4">
+                                <div className="h-5 w-20 bg-gray-200 rounded" />
+                                <div className="h-5 w-24 bg-gray-200 rounded" />
+                            </div>
+                        </div>
+                    </Card>
+
+                    {/* Patient Picker Skeleton */}
+                    <Card className="mt-6 p-6 shadow-md">
+                        <div className="mb-4 flex items-center gap-3">
+                            <div className="h-10 w-10 bg-gray-200 rounded-full" />
+                            <div className="h-6 w-64 bg-gray-200 rounded" />
+                        </div>
+                        <div className="space-y-2">
+                            <div className="h-12 w-full bg-gray-200 rounded-xl" />
+                            <div className="h-12 w-full bg-gray-200 rounded-xl" />
+                        </div>
+                    </Card>
+
+                    {/* Pay Button Skeleton */}
+                    <div className="mt-8 h-14 w-full bg-gray-200 rounded-2xl" />
+                    <div className="mt-4 flex justify-center gap-2">
+                        <div className="h-4 w-4 bg-gray-200 rounded" />
+                        <div className="h-4 w-64 bg-gray-200 rounded" />
+                    </div>
+                </main>
+                <Footer />
+            </>
+        );
+    }
 
     return (
         <>
