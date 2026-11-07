@@ -52,13 +52,13 @@ async def execute_action(
             error="Authentication required. Please log in to access booking features.",
         )
 
-    # Build headers — forward access token for auth-required tools
     headers: dict[str, str] = {
         "Content-Type": "application/json",
         "User-Agent": "DocNow-AISupport/1.0",
     }
+    # Express reads Bearer as a fallback; with no auth cookie it also skips the CSRF check.
     if tool_def.requires_auth and ctx.access_token:
-        headers["Cookie"] = f"accessToken={ctx.access_token}"
+        headers["Authorization"] = f"Bearer {ctx.access_token}"
 
     # Build URL with path parameters; drop anything the tool does not declare
     url = f"{settings.express_api_url}{tool_def.endpoint_template}"
