@@ -76,6 +76,12 @@ async def prune_stale_catalog_chunks(db: Database, live_ids: list[str]) -> int:
     if not db.pool:
         raise RuntimeError("Database pool not initialized")
 
+    # An empty live list almost always means a wrong database or schema, not an empty catalog;
+    # deleting every chunk on that read would blank the bot, so refuse and say so.
+    if not live_ids:
+        logger.error("Catalog returned no enabled items; skipping prune so the knowledge base is not wiped")
+        return 0
+
     async with db.pool.acquire() as conn:
         deleted = await conn.fetch(
             """
