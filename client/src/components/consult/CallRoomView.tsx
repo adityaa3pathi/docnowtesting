@@ -52,7 +52,10 @@ function VideoTile({ participant, label, local, className }: { participant: Part
     return (
         <div className={cn('relative overflow-hidden rounded-2xl bg-gray-900', className)}>
             {track ? (
-                <video ref={ref} autoPlay muted playsInline className={cn('h-full w-full object-cover', local && '-scale-x-100')} />
+                <video ref={ref} autoPlay muted playsInline className={cn(
+                    'h-full w-full',
+                    local ? 'object-contain -scale-x-100' : 'object-cover' // contain for preview, cover for main
+                )} />
             ) : (
                 <div className="flex h-full w-full items-center justify-center">
                     <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-2xl font-bold text-white">
@@ -72,11 +75,13 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
     const [notice, setNotice] = useState<string | null>(null);
     const [leaving, setLeaving] = useState(false);
     const [fullscreen, setFullscreen] = useState(false);
+    const [controlsVisible, setControlsVisible] = useState(true);
     const [, redraw] = useReducer((n: number) => n + 1, 0);
     const audioBox = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const leaveRef = useRef(onLeave);
     const doctorJoinedRef = useRef(onDoctorJoined);
+    const hideControlsTimer = useRef<NodeJS.Timeout | null>(null);
     const videoAllowed = !role.endsWith('-audio');
     const viewer = partyOfRole(role);
 
@@ -141,6 +146,24 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
         return () => document.removeEventListener('fullscreenchange', cb);
     }, []);
 
+    // Auto-hide controls after 3 seconds of inactivity
+    useEffect(() => {
+        if (!controlsVisible) return;
+
+        hideControlsTimer.current = setTimeout(() => {
+            setControlsVisible(false);
+        }, 3000);
+
+        return () => {
+            if (hideControlsTimer.current) clearTimeout(hideControlsTimer.current);
+        };
+    }, [controlsVisible]);
+
+    function showControls() {
+        setControlsVisible(true);
+        if (hideControlsTimer.current) clearTimeout(hideControlsTimer.current);
+    }
+
     async function leave() {
         setLeaving(true);
         try {
@@ -191,9 +214,15 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
 
 
     return (
-        <div className="space-y-3" ref={containerRef}>
+        <div className={cn("space-y-3", fullscreen && "fixed inset-0 z-50 bg-black p-0 space-y-0")} ref={containerRef}>
             <div ref={audioBox} hidden />
-            <div className="relative w-full overflow-hidden rounded-2xl bg-gray-900" style={{ minHeight: fullscreen ? '100vh' : '55vh', maxHeight: fullscreen ? '100vh' : '80vh' }}>
+            <div
+                className={cn(
+                    "relative w-full overflow-hidden bg-gray-900",
+                    fullscreen ? "h-screen rounded-none" : "rounded-2xl min-h-[55vh] max-h-[80vh]"
+                )}
+                onClick={showControls}
+            >
                 {!connected ? (
                     <div role="status" className="flex h-full items-center justify-center gap-2 text-sm text-white">
                         <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Connecting...
@@ -207,7 +236,13 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                 )}
                 {connected && local && videoAllowed && (
                     <VideoTile participant={local} label="You" local
-                        className="absolute bottom-3 right-3 aspect-video w-1/4 min-w-28 border-2 border-white/70" />
+                        className={cn(
+                            "absolute border-2 border-white/70 shadow-lg",
+                            fullscreen
+                                ? "bottom-20 right-3 w-24 h-32 sm:w-28 sm:h-36"
+                                : "bottom-3 right-3 w-28 h-36 sm:w-32 sm:h-44"
+                        )}
+                    />
                 )}
                 {/* Three-way calls: the caregiver (or patient, for the doctor) as small tiles. */}
                 {connected && others.length > 0 && (
@@ -229,7 +264,13 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                 </Button>
             )}
             {notice && <p role="alert" className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">{notice}</p>}
-            <div className={cn('flex flex-wrap items-center justify-center gap-2', senior && '[&_button]:h-14 [&_button]:px-6 [&_button]:text-lg')}>
+            <div className={cn(
+                'flex flex-wrap items-center justify-center gap-2 transition-opacity duration-300',
+                fullscreen && 'absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm rounded-full px-6 py-3',
+                fullscreen && !controlsVisible && 'opacity-0 pointer-events-none',
+                senior && '[&_button]:h-14 [&_button]:px-6 [&_button]:text-lg',
+                '[&_button]:min-h-[44px] [&_button]:min-w-[44px]' // Touch-optimized
+            )}>
                 <Button variant="outline" size="sm" disabled={!connected} aria-pressed={!micOn} onClick={() => void toggle('mic', !micOn)}>
                     {micOn ? <><MicOff className="mr-1.5 h-4 w-4" aria-hidden /> Mute</> : <><Mic className="mr-1.5 h-4 w-4" aria-hidden /> Unmute</>}
                 </Button>

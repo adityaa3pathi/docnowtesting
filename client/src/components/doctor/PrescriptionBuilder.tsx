@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { ConfirmDialog } from '@/components/consult/ConfirmDialog';
+import { TestSelector } from './TestSelector';
 import { doctor as doctorApi } from '@/lib/consult/api';
 import { REISSUE_REASON_MAX, REISSUE_REASON_MIN, buildPrescription, builderFromPrescription, emptyBuilder, emptyMedicine } from '@/lib/consult/room';
 import type { Medicine, Prescription, PrescriptionInput } from '@/lib/consult/types';
@@ -115,15 +116,11 @@ export function PrescriptionBuilder({ consultationId, correcting, onIssued, onCa
                 <Plus className="mr-1.5 h-4 w-4" aria-hidden /> Add medicine
             </Button>
             <div>
-                <label htmlFor="rx-tests" className="mb-1 block text-sm font-semibold text-foreground">Recommended test codes</label>
-                <input id="rx-tests" value={codes} onChange={(e) => setCodes(e.target.value)} className={fieldCls}
-                    placeholder="e.g. CBC, TSH" list="test-suggestions" />
-                <datalist id="test-suggestions">
-                    {TEST_SUGGESTIONS.filter((t) => !codes || t.toLowerCase().includes(codes.split(/[\s,]+/).pop()?.toLowerCase() || '')).map((t) => (
-                        <option key={t} value={t} />
-                    ))}
-                </datalist>
-                <p className="mt-1 text-xs text-muted-foreground">Catalog test codes, separated by commas. Names show after you issue.</p>
+                <label className="mb-2 block text-sm font-semibold text-foreground">Recommended tests</label>
+                <TestSelector
+                    selectedCodes={codes.split(',').map(c => c.trim()).filter(Boolean)}
+                    onChange={(newCodes) => setCodes(newCodes.join(', '))}
+                />
             </div>
             <div>
                 <label htmlFor="rx-advice" className="mb-1 block text-sm font-semibold text-foreground">Advice</label>
