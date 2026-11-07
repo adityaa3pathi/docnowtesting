@@ -47,6 +47,8 @@ import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 import { rateLimiter } from './middleware/rateLimiter';
 
 const app = express();
+// Without this every visitor is the Nginx address: one shared rate limit, useless consent IPs.
+app.set('trust proxy', trustProxySetting());
 const PORT = process.env.PORT || 5000;
 
 function parseAllowedOrigins() {
@@ -91,21 +93,22 @@ app.post('/api/webhooks/healthians', express.raw({ type: '*/*' }), healthiansWeb
 
 app.use(express.json());
 
-// ── UAT Response Logger ─────────────────────────────────
-// Intercepts all JSON responses and logs them to the terminal.
-// Remove this block after UAT is complete.
-app.use((req: any, res: any, next: any) => {
-    const originalJson = res.json.bind(res);
-    res.json = (body: any) => {
-        console.log(`\n${'═'.repeat(60)}`);
-        console.log(`[UAT] ${req.method} ${req.originalUrl} → ${res.statusCode}`);
-        console.log(`${'─'.repeat(60)}`);
-        console.log(JSON.stringify(body, null, 2));
-        console.log(`${'═'.repeat(60)}\n`);
-        return originalJson(body);
-    };
-    next();
-});
+// ── Response body logger (debug only) ──────────────────
+// Prints whole responses, patient data included, so it never runs in production.
+if (process.env.LOG_RESPONSE_BODIES === 'true' && process.env.NODE_ENV !== 'production') {
+    app.use((req: any, res: any, next: any) => {
+        const originalJson = res.json.bind(res);
+        res.json = (body: any) => {
+            console.log(`\n${'═'.repeat(60)}`);
+            console.log(`[UAT] ${req.method} ${req.originalUrl} → ${res.statusCode}`);
+            console.log(`${'─'.repeat(60)}`);
+            console.log(JSON.stringify(body, null, 2));
+            console.log(`${'═'.repeat(60)}\n`);
+            return originalJson(body);
+        };
+        next();
+    });
+}
 
 app.use(csrfProtection);
 
@@ -226,6 +229,7 @@ app.use((err: any, req: RequestWithContext, res: Response, next: NextFunction) =
 });
 
 import { startReconciler } from './workers/reconciler';
+import { trustProxySetting } from './utils/trustProxy';
 
 app.listen(PORT, () => {
     logger.info({ port: PORT, nodeEnv: process.env.NODE_ENV }, 'server_started');

@@ -82,13 +82,23 @@ export async function createSession(userId: string, mobile: string, ipAddress?: 
     return { accessToken, refreshToken: rawRefreshToken, csrfToken, sessionId: session.id };
 }
 
+/** Two tabs (or a retried request) refreshed with the same token; the other one already won. */
+export class RefreshRaceError extends Error {
+    constructor() {
+        super('Session already refreshed');
+    }
+}
+
+// A revoked token seen this soon after its own rotation is a parallel refresh, not a stolen token.
+const ROTATION_GRACE_MS = 30_000;
+
 /**
- * Rotates an existing refresh token.
- * Includes token reuse detection: if a revoked token is used, revokes the entire family.
+ * Rotates a refresh token atomically: only one caller can revoke the old session, so a race can
+ * never mint two live tokens. Reuse of a token rotated long ago revokes the whole family.
  */
 export async function rotateRefreshToken(oldRefreshToken: string, ipAddress?: string, userAgent?: string) {
     const hash = hashToken(oldRefreshToken);
-    
+
     const oldSession = await prisma.session.findFirst({
         where: { refreshTokenHash: hash },
         include: { user: { select: { mobile: true, tokenVersion: true, status: true } } }
@@ -102,8 +112,9 @@ export async function rotateRefreshToken(oldRefreshToken: string, ipAddress?: st
         throw new Error('Account is blocked');
     }
 
-    // Token Reuse Detection
     if (oldSession.revokedAt) {
+        const justRotated = !!oldSession.replacedById && Date.now() - oldSession.revokedAt.getTime() < ROTATION_GRACE_MS;
+        if (justRotated) throw new RefreshRaceError();
         console.warn(`[AUTH] Token Reuse Detected! Revoking entire family for user ${oldSession.userId}`);
         await revokeFamily(oldSession.familyId);
         throw new Error('Invalid refresh token - Session revoked');
@@ -113,14 +124,12 @@ export async function rotateRefreshToken(oldRefreshToken: string, ipAddress?: st
         throw new Error('Refresh token expired');
     }
 
-    // Token is valid. Rotate it.
     const newRawRefreshToken = crypto.randomBytes(40).toString('hex');
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_EXPIRY_DAYS);
 
-    // Transaction to safely rotate
-    const [newSession, _] = await prisma.$transaction([
-        prisma.session.create({
+    const newSession = await prisma.$transaction(async (tx) => {
+        const created = await tx.session.create({
             data: {
                 userId: oldSession.userId,
                 refreshTokenHash: hashToken(newRawRefreshToken),
@@ -130,25 +139,22 @@ export async function rotateRefreshToken(oldRefreshToken: string, ipAddress?: st
                 userAgent,
                 clientType: oldSession.clientType
             }
-        }),
-        prisma.session.update({
-            where: { id: oldSession.id },
-            data: { revokedAt: new Date() } // Soft revoke old token
-        })
-    ]);
-
-    // Link the rotation chain (needs to happen after new session is created to have its ID)
-    await prisma.session.update({
-        where: { id: oldSession.id },
-        data: { replacedById: newSession.id }
+        });
+        // The conditional update is the lock: a parallel rotation finds count 0 and rolls back.
+        const claimed = await tx.session.updateMany({
+            where: { id: oldSession.id, revokedAt: null },
+            data: { revokedAt: new Date(), replacedById: created.id }
+        });
+        if (claimed.count !== 1) throw new RefreshRaceError();
+        return created;
     });
 
     const accessToken = jwt.sign(
-        { 
-            userId: oldSession.userId, 
-            mobile: oldSession.user.mobile, 
-            sessionId: newSession.id, 
-            tokenVersion: oldSession.user.tokenVersion 
+        {
+            userId: oldSession.userId,
+            mobile: oldSession.user.mobile,
+            sessionId: newSession.id,
+            tokenVersion: oldSession.user.tokenVersion
         } as TokenPayload,
         JWT_SECRET as string,
         { expiresIn: ACCESS_TOKEN_EXPIRY }
