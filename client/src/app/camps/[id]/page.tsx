@@ -10,6 +10,7 @@ import {
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
+import { StickyBottomBar } from '@/components/layout/StickyBottomBar';
 
 interface CampDetail {
     id: string;
@@ -733,7 +734,7 @@ export default function CampRegistrationPage() {
             </div>
 
             {/* ═══ Mobile Sticky CTA ═══ */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-3 md:hidden z-50 shadow-2xl shadow-black/10">
+            <StickyBottomBar className="bg-white border-t border-gray-100 px-4 py-3 md:hidden z-50 shadow-2xl shadow-black/10">
                 <div className="flex items-center justify-between gap-4 max-w-4xl mx-auto">
                     <div>
                         <div className="text-xs text-gray-400 font-medium">Total</div>
@@ -758,7 +759,7 @@ export default function CampRegistrationPage() {
                         )}
                     </button>
                 </div>
-            </div>
+            </StickyBottomBar>
         </div>
     );
 }

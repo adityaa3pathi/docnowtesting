@@ -5,6 +5,7 @@ import { Phone, MessageCircle, ShoppingCart, Stethoscope } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { usePathname } from 'next/navigation';
 import { SUPPORT_PHONE_LINK } from '@/lib/supportConfig';
+import { StickyBottomBar } from '@/components/layout/StickyBottomBar';
 
 const WHATSAPP_NUMBER = '919649089089';
 const WHATSAPP_MESSAGE = encodeURIComponent('Hi DocNow, I need help with a doctor consultation or a lab test.');
@@ -18,7 +19,7 @@ export function StickyMobileCTA() {
     if (hiddenPaths.some(p => pathname.startsWith(p))) return null;
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+        <StickyBottomBar className="z-50 md:hidden">
             {/* Glass bar */}
             <div
                 className="flex items-stretch border-t border-white/20 bg-white/95 backdrop-blur-xl shadow-[0_-4px_24px_rgba(0,0,0,0.08)]"
@@ -79,6 +80,6 @@ export function StickyMobileCTA() {
                     <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">Cart</span>
                 </Link>
             </div>
-        </div>
+        </StickyBottomBar>
     );
 }

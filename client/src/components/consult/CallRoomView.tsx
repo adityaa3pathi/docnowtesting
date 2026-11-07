@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Loader2, Volume2 } from 'lucide-react';
 import { ConnectionQuality, type Participant } from 'livekit-client';
 import { Button } from '@/components/ui';
@@ -60,6 +60,12 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
     const canFullscreen = fs.native || (iosVideoFullscreen && !!remoteCam);
     // Phone browsers pause the call while the page sits in the mini window, so it is desktop only.
     const canPip = videoAllowed && !!remoteCam && document.pictureInPictureEnabled === true && !window.matchMedia('(pointer: coarse)').matches;
+
+    // Hides the floating support chat, which would sit on the call controls.
+    useEffect(() => {
+        document.documentElement.dataset.inCall = '';
+        return () => void delete document.documentElement.dataset.inCall;
+    }, []);
 
     useCallShortcuts(connected, (key) => {
         if (key === 'm') void toggle('mic', !micOn);

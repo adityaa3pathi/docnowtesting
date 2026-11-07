@@ -70,3 +70,7 @@
     display: none;
   }
 }
+/* A live video call needs its controls; CallRoomView sets data-in-call on <html> while mounted. */
+html[data-in-call] [data-support-launcher] {
+  display: none;
+}

@@ -14,6 +14,7 @@ import { EmptyState, ErrorState, Skeleton } from '@/components/consult/States';
 import { Button, Card } from '@/components/ui';
 import { Footer } from '@/components/Footer';
 import type { Slot } from '@/lib/consult/types';
+import { StickyBottomBar } from '@/components/layout/StickyBottomBar';
 
 const NOTICES: Record<string, string> = {
     slot_gone: 'That time is no longer available. Please pick another.',
@@ -270,7 +271,7 @@ function DoctorPage() {
 
             {/* Mobile Sticky Bottom Bar */}
             {selected && (
-                <div className="safe-area-bottom fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white px-4 py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] md:hidden">
+                <StickyBottomBar className="safe-area-bottom z-40 border-t border-gray-200 bg-white px-4 py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] md:hidden">
                     <div className="flex items-center justify-between gap-4">
                         <div className="min-w-0">
                             <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Your Time</p>
@@ -280,7 +281,7 @@ function DoctorPage() {
                             Continue
                         </Button>
                     </div>
-                </div>
+                </StickyBottomBar>
             )}
 
             <Footer />
