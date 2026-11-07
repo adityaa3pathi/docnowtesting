@@ -31,8 +31,8 @@ const FAQ_SOURCE_FILE = 'Frequently Asked Questions.md';
 
 const readSupportSource = cache(async () => {
     const candidatePaths = [
-        path.resolve(process.cwd(), FAQ_SOURCE_FILE),
-        path.resolve(process.cwd(), '..', FAQ_SOURCE_FILE),
+        path.resolve(/*turbopackIgnore: true*/ process.cwd(), FAQ_SOURCE_FILE),
+        path.resolve(/*turbopackIgnore: true*/ process.cwd(), '..', FAQ_SOURCE_FILE),
     ];
 
     for (const candidatePath of candidatePaths) {
