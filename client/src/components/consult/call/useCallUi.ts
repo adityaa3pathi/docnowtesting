@@ -104,3 +104,14 @@ export function useCallShortcuts(enabled: boolean, onKey: (key: ShortcutKey) => 
         return () => window.removeEventListener('keydown', listener);
     }, [enabled]);
 }
+
+/**
+ * Fill the box (crop) unless that would cut away too much: a landscape doctor on a portrait
+ * phone would lose two thirds of the picture, so it is shown whole with bars instead.
+ */
+export function videoFit(videoW: number, videoH: number, boxW: number, boxH: number): 'cover' | 'contain' {
+    if (!videoW || !videoH || !boxW || !boxH) return 'cover';
+    const ratio = (videoW / videoH) / (boxW / boxH);
+    const kept = Math.min(ratio, 1 / ratio);
+    return kept < 0.7 ? 'contain' : 'cover';
+}

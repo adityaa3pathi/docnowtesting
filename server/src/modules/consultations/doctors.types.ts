@@ -67,3 +67,9 @@ export const specialtySchema = z.object({
     description: z.string().trim().max(300).optional(),
     isActive: z.boolean().optional(),
 });
+
+/** "Dr. <name>", without doubling it when the name was saved with the title already. */
+export const doctorTitle = (displayName: string) => {
+    const name = displayName.trim();
+    return /^dr\.?\s/i.test(name) ? name : `Dr. ${name}`;
+};

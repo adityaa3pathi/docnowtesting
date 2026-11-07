@@ -8,6 +8,7 @@ import { ConsultVideo, VideoRole, realConsultVideo } from './consultations.video
 import type { ConsultationStatus } from './consultations.types';
 import { resolveAccess } from './consultations.family';
 import { DEFAULT_RULES, type Rules } from './consultations.policy';
+import { doctorTitle } from './doctors.types';
 
 const JOINABLE: ConsultationStatus[] = ['CONFIRMED', 'WAITING', 'IN_PROGRESS'];
 export const JOIN_EARLY_MS = 10 * 60_000;
@@ -227,7 +228,7 @@ export async function doctorJoin(doctorId: string, doctorUserId: string, consult
     await assertStillJoinable(c.id);
     const r = role('doctor', c.type);
     const identity = callIdentity.doctor(doctorId);
-    return { url: video.url(), roomId, role: r, identity, token: await video.joinToken(roomId, identity, `Dr. ${c.doctor.displayName}`, r) };
+    return { url: video.url(), roomId, role: r, identity, token: await video.joinToken(roomId, identity, doctorTitle(c.doctor.displayName), r) };
 }
 
 export async function endConsultation(doctorId: string, consultationId: string, deps: Deps = {}) {

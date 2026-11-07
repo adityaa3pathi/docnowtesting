@@ -10,6 +10,7 @@ import { sendTemplateViaWhatsApp, type WappieTemplateComponent } from '../../ser
 import { JOIN_EARLY_MS, JOIN_LATE_MS } from './consultations.room';
 import { dosageSummary, type FamilyLanguage } from './consultations.familyMessages';
 import { createSignedToken } from '../../services/signedToken';
+import { doctorTitle } from './doctors.types';
 
 export type NoticeKind = 'CONFIRMED' | 'REMINDER' | 'JOIN_NOW' | 'PARTNER_WAITING' | 'DOCTOR_NO_SHOW' | 'PATIENT_NO_SHOW';
 export type Recipient = 'patient' | 'doctor';
@@ -65,8 +66,8 @@ type Row = Prisma.ConsultationGetPayload<{ select: typeof select }>;
 function message(kind: NoticeKind, to: Recipient, c: Row): { body: string[]; path: string } {
     const when = istDateTime(c.startsAt);
     const path = to === 'doctor' ? `doctor/consultations/${c.id}` : `consult/booking/${c.id}`;
-    const other = to === 'doctor' ? c.patient.name : `Dr. ${c.doctor.displayName}`;
-    const name = to === 'doctor' ? `Dr. ${c.doctor.displayName}` : c.patient.name;
+    const other = to === 'doctor' ? c.patient.name : doctorTitle(c.doctor.displayName);
+    const name = to === 'doctor' ? doctorTitle(c.doctor.displayName) : c.patient.name;
     switch (kind) {
         case 'CONFIRMED': return { body: [name, other, when], path };
         case 'REMINDER': return { body: [name, other, when], path };
@@ -160,7 +161,7 @@ const WA_LANGUAGE: Record<FamilyLanguage, string> = {
 function familyMessage(kind: FamilyNoticeKind, c: Row): { body: string[]; path: string; language: string } {
     const lang = familyLanguage(c.patient.preferredLanguage);
     const first = c.patient.name.trim().split(/\s+/)[0] || c.patient.name;
-    const doctor = `Dr. ${c.doctor.displayName}`;
+    const doctor = doctorTitle(c.doctor.displayName);
     const booker = (c.user.name ?? '').trim().split(/\s+/)[0] || (lang === 'hi' ? 'आपके परिवार' : 'your family');
     const callPath = `call/${c.guestToken}`;
     switch (kind) {

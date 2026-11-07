@@ -6,7 +6,7 @@ import { ConnectionError } from 'livekit-client';
 import { callCopy } from './callCopy';
 import { ControlBar } from './ControlBar';
 import { classifyConnectError } from './useCallRoom';
-import { formatDuration, useCallShortcuts, useWeakNetworkPrompt, type ShortcutKey } from './useCallUi';
+import { formatDuration, useCallShortcuts, useWeakNetworkPrompt, videoFit, type ShortcutKey } from './useCallUi';
 import { WaitingRoom } from './WaitingRoom';
 
 beforeAll(() => {
@@ -135,5 +135,15 @@ describe('useCallShortcuts', () => {
         press('m', {}, el.querySelector('input')!);
         press('x');
         expect(onKey.mock.calls).toEqual([['m'], ['f']]);
+    });
+});
+
+describe('videoFit', () => {
+    it('shows a landscape laptop camera whole on a portrait phone, but fills when shapes are close', () => {
+        expect(videoFit(1280, 720, 390, 844)).toBe('contain');
+        expect(videoFit(720, 1280, 1440, 900)).toBe('contain');
+        expect(videoFit(1280, 720, 1440, 900)).toBe('cover');
+        expect(videoFit(640, 480, 1280, 720)).toBe('cover');
+        expect(videoFit(0, 0, 100, 100)).toBe('cover');
     });
 });
