@@ -280,17 +280,27 @@ export default function CampRegistrationPage() {
                 handler: async function (response: any) {
                     try {
                         setIsCheckingOut(true);
-                        await api.post('/payments/verify', {
+                        const verifyRes = await api.post('/payments/verify', {
                             bookingId: data.bookingId,
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_signature: response.razorpay_signature,
                         });
-                        toast.success('Registration confirmed!');
+                        // Same contract as the lab checkout: only a confirmed booking is "confirmed".
+                        const verified = verifyRes.data?.status;
+                        if (verified === 'confirmed' || verified === 'already_confirmed') {
+                            toast.success('Registration confirmed!');
+                        } else if (verified === 'refunded_due_to_partner_error') {
+                            toast.error('We could not register you with the lab, so your payment is being refunded.', { duration: 8000 });
+                        } else {
+                            toast.success('Payment received. We are confirming your registration; check My Bookings shortly.', { duration: 8000 });
+                        }
                         router.push('/profile?tab=bookings');
                     } catch (verifyError: any) {
+                        // A failed verify says nothing about the payment itself.
                         console.error('Payment verification error:', verifyError);
-                        toast.error('Payment verification failed. If amount was deducted, it will be refunded within 5-7 days.');
+                        toast.error('We could not confirm your payment yet. Check My Bookings in a minute; if it is not there, contact support.', { duration: 8000 });
+                        router.push('/profile?tab=bookings');
                     } finally {
                         setIsCheckingOut(false);
                     }
@@ -308,6 +318,10 @@ export default function CampRegistrationPage() {
             };
 
             const rzp = new (window as any).Razorpay(options);
+            // A declined card otherwise looks the same as closing the popup.
+            rzp.on('payment.failed', (resp: any) => {
+                toast.error(`Payment failed: ${resp?.error?.description || 'please try another method'}.`, { duration: 6000 });
+            });
             rzp.open();
         } catch (error: any) {
             console.error('Checkout error:', error);
