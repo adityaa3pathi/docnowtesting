@@ -26,7 +26,7 @@ import { useCheckout } from '@/hooks/useCheckout';
 import { Patient, Address } from '@/types/cart';
 
 export default function CartPage() {
-    const { cart, removeFromCart, updateCartItem, loading, refreshCart } = useCart();
+    const { cart, removeFromCart, updateCartItem, loading, loadFailed, refreshCart } = useCart();
     const router = useRouter();
 
     // Data Fetching State
@@ -152,7 +152,15 @@ export default function CartPage() {
                         </p>
                     </div>
 
-                    {(!cart || cart.items.length === 0) ? (
+                    {!cart && loadFailed ? (
+                        // A failed load is not an empty cart: re-adding items would duplicate them.
+                        <div role="alert" className="rounded-2xl border border-border bg-white px-6 py-14 text-center shadow-sm">
+                            <p className="mb-4 text-base font-semibold text-foreground sm:text-lg">We could not load your cart.</p>
+                            <button onClick={() => void refreshCart()} className="font-bold text-primary hover:underline">
+                                Try again
+                            </button>
+                        </div>
+                    ) : (!cart || cart.items.length === 0) ? (
                         <div className="mx-auto max-w-md text-center">
                             <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-purple-100">
                                 <ShoppingBag className="h-10 w-10 text-primary" aria-hidden />
