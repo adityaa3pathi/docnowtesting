@@ -8,3 +8,4 @@ export { ConsultationStatus, ConsultationType } from './consultations.types';
 export { assertTransition, canTransition } from './consultations.stateMachine';
 export { consultPublicRoutes, doctorRoutes, consultAdminRoutes } from './doctors.routes';
 export { consultGuestRoutes, consultPatientRoutes } from './consultations.routes';
+export { consultCallEventRoutes } from './consultations.callEvents';
