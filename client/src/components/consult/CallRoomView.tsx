@@ -1,7 +1,7 @@
 'use client';
-import { useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { Loader2, Maximize, Minimize, Mic, MicOff, PhoneOff, PictureInPicture2, Video, VideoOff, Volume2 } from 'lucide-react';
-import { ConnectionState, DisconnectReason, Room, RoomEvent, Track, type Participant } from 'livekit-client';
+import { ConnectionQuality, ConnectionState, DisconnectReason, Room, RoomEvent, Track, type Participant } from 'livekit-client';
 import { Button } from '@/components/ui';
 import { arrangeTiles, partyOf, partyOfRole } from '@/lib/consult/guest';
 import { cn } from '@/lib/utils';
@@ -19,12 +19,15 @@ export interface ConsultCallRoomProps {
     onDoctorJoined?: () => void;
     /** Large buttons and text for the family web room. */
     senior?: boolean;
+    /** Camera and microphone picked on the device check; browser default when absent. */
+    audioDeviceId?: string;
+    videoDeviceId?: string;
 }
 
 const PARTY_LABEL = { doctor: 'Doctor', patient: 'Patient', caretaker: 'Family' } as const;
 
 const JOIN_FAILED = 'We could not connect the call. Check your internet and allow camera and microphone, then try again.';
-const DROPPED = 'The call was disconnected. Go back and join again.';
+const DROPPED = 'The call was disconnected. Tap Retry, or go back and join again.';
 
 function formatDuration(seconds: number): string {
     const mins = Math.floor(seconds / 60);
@@ -32,12 +35,13 @@ function formatDuration(seconds: number): string {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-const QUALITY_CONFIG = {
-    excellent: { label: '●●●●', color: 'text-green-500', tooltip: 'Excellent connection' },
-    good: { label: '●●●○', color: 'text-yellow-500', tooltip: 'Good connection' },
-    poor: { label: '●●○○', color: 'text-red-500', tooltip: 'Poor connection - consider audio only' },
-    unknown: { label: '○○○○', color: 'text-gray-400', tooltip: 'Connecting...' },
-} as const;
+const QUALITY_CONFIG: Record<ConnectionQuality, { label: string; color: string; tooltip: string }> = {
+    [ConnectionQuality.Excellent]: { label: '●●●●', color: 'text-green-500', tooltip: 'Excellent connection' },
+    [ConnectionQuality.Good]: { label: '●●●○', color: 'text-yellow-500', tooltip: 'Good connection' },
+    [ConnectionQuality.Poor]: { label: '●●○○', color: 'text-red-500', tooltip: 'Poor connection - consider audio only' },
+    [ConnectionQuality.Lost]: { label: '○○○○', color: 'text-red-500', tooltip: 'Connection lost - trying to reconnect' },
+    [ConnectionQuality.Unknown]: { label: '○○○○', color: 'text-gray-400', tooltip: 'Connecting...' },
+};
 
 // Every event that changes what the screen shows; each one just triggers a re-render.
 const REDRAW = [
@@ -83,26 +87,36 @@ function VideoTile({ participant, label, local, className, videoRef }: { partici
 }
 
 /** Our own call screen on LiveKit's plain JS client. Always leaves the room on unmount or page close. */
-export default function CallRoomView({ url, token, role, otherParty, onLeave, onDoctorJoined, senior = false }: ConsultCallRoomProps) {
+export default function CallRoomView({ url, token, role, otherParty, onLeave, onDoctorJoined, senior = false, audioDeviceId, videoDeviceId }: ConsultCallRoomProps) {
     const [room, setRoom] = useState<Room | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [errorType, setErrorType] = useState<'network' | 'permission' | 'server' | 'unknown'>('unknown');
+    const [errorType, setErrorType] = useState<'network' | 'server' | 'unknown'>('unknown');
+    const [attempt, setAttempt] = useState(0);
     const [notice, setNotice] = useState<string | null>(null);
     const [leaving, setLeaving] = useState(false);
     const [fullscreen, setFullscreen] = useState(false);
     const [controlsVisible, setControlsVisible] = useState(true);
     const [callDuration, setCallDuration] = useState(0);
-    const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor' | 'unknown'>('unknown');
+    const [connectionQuality, setConnectionQuality] = useState<ConnectionQuality>(ConnectionQuality.Unknown);
     const [, redraw] = useReducer((n: number) => n + 1, 0);
     const audioBox = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
     const leaveRef = useRef(onLeave);
     const doctorJoinedRef = useRef(onDoctorJoined);
-    const hideControlsTimer = useRef<NodeJS.Timeout | null>(null);
+    const hideControlsTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
     const callStartTime = useRef<number | null>(null);
     const videoAllowed = !role.endsWith('-audio');
     const viewer = partyOfRole(role);
+    const state = room?.state ?? ConnectionState.Connecting;
+    const reconnecting = state === ConnectionState.Reconnecting || state === ConnectionState.SignalReconnecting;
+    const connected = state === ConnectionState.Connected || reconnecting;
+    const local = room?.localParticipant;
+    const { primary: remote, others } = arrangeTiles(room ? [...room.remoteParticipants.values()] : [], viewer);
+    const labelOf = (p: Participant) => p.name || PARTY_LABEL[partyOf(p.identity) ?? otherParty];
+    const micOn = !!local?.isMicrophoneEnabled;
+    const camOn = !!local?.isCameraEnabled;
+    const bothIn = connected && !!remote;
 
     useEffect(() => {
         leaveRef.current = onLeave;
@@ -110,7 +124,12 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
     }, [onLeave, onDoctorJoined]);
 
     useEffect(() => {
-        const r = new Room({ adaptiveStream: true, dynacast: true });
+        const r = new Room({
+            adaptiveStream: true,
+            dynacast: true,
+            audioCaptureDefaults: audioDeviceId ? { deviceId: audioDeviceId } : undefined,
+            videoCaptureDefaults: videoDeviceId ? { deviceId: videoDeviceId } : undefined,
+        });
         let closed = false;
         setRoom(r);
         setError(null);
@@ -138,7 +157,6 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                 await r.connect(url, token);
             } catch (err) {
                 if (!closed) {
-                    // Determine error type for better messaging
                     const errorMsg = err instanceof Error ? err.message.toLowerCase() : '';
                     if (errorMsg.includes('network') || errorMsg.includes('timeout')) {
                         setErrorType('network');
@@ -160,13 +178,10 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                 if (videoAllowed) await r.localParticipant.setCameraEnabled(true);
             } catch (err) {
                 if (!closed) {
-                    const errorMsg = err instanceof Error ? err.message.toLowerCase() : '';
-                    if (errorMsg.includes('permission') || errorMsg.includes('denied')) {
-                        setErrorType('permission');
-                        setNotice('Camera or microphone blocked. Allow permissions in browser settings, then use the buttons below to enable.');
-                    } else {
-                        setNotice('Could not start camera or microphone. Check browser permissions and try the buttons below.');
-                    }
+                    const blocked = err instanceof Error && err.name === 'NotAllowedError';
+                    setNotice(blocked
+                        ? 'Camera or microphone is blocked. Tap the lock icon next to the web address, allow them, then use the buttons below.'
+                        : 'We could not start your camera or microphone. Check the browser permission, then use the buttons below.');
                 }
             }
         })();
@@ -177,99 +192,97 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
             r.removeAllListeners();
             leave();
         };
-    }, [url, token, videoAllowed]);
+    }, [url, token, videoAllowed, audioDeviceId, videoDeviceId, attempt]);
+
+    // Each tap, mouse move or focus shows the controls and restarts the 3-second hide timer.
+    const showControls = useCallback(() => {
+        setControlsVisible(true);
+        clearTimeout(hideControlsTimer.current);
+        hideControlsTimer.current = setTimeout(() => setControlsVisible(false), 3000);
+    }, []);
+    useEffect(() => () => clearTimeout(hideControlsTimer.current), []);
 
     // Listen for fullscreen changes (e.g., Escape key). Above the early return: hooks run in the same order every render.
     useEffect(() => {
-        const cb = () => setFullscreen(!!document.fullscreenElement);
+        const cb = () => {
+            setFullscreen(!!document.fullscreenElement);
+            if (document.fullscreenElement) showControls();
+        };
         document.addEventListener('fullscreenchange', cb);
         return () => document.removeEventListener('fullscreenchange', cb);
-    }, []);
+    }, [showControls]);
 
-    // Auto-hide controls after 3 seconds of inactivity
+    // Counts from when both sides are in, so doctor and patient see the same time.
     useEffect(() => {
-        if (!controlsVisible) return;
-
-        hideControlsTimer.current = setTimeout(() => {
-            setControlsVisible(false);
-        }, 3000);
-
-        return () => {
-            if (hideControlsTimer.current) clearTimeout(hideControlsTimer.current);
-        };
-    }, [controlsVisible]);
-
-    function showControls() {
-        setControlsVisible(true);
-        if (hideControlsTimer.current) clearTimeout(hideControlsTimer.current);
-    }
-
-    // Call duration timer
-    useEffect(() => {
-        if (!room || room.state !== ConnectionState.Connected) return;
-
-        if (!callStartTime.current) {
-            callStartTime.current = Date.now();
-        }
-
-        const interval = setInterval(() => {
-            if (callStartTime.current) {
-                setCallDuration(Math.floor((Date.now() - callStartTime.current) / 1000));
-            }
-        }, 1000);
-
+        if (!bothIn) return;
+        callStartTime.current ??= Date.now();
+        const tick = () => setCallDuration(Math.floor((Date.now() - (callStartTime.current ?? Date.now())) / 1000));
+        const interval = setInterval(tick, 1000);
         return () => clearInterval(interval);
-    }, [room?.state]);
+    }, [bothIn]);
 
-    // Monitor connection quality
     useEffect(() => {
         if (!room) return;
-
-        const updateQuality = () => {
-            const localQuality = room.localParticipant.connectionQuality;
-
-            if (localQuality === 'excellent') setConnectionQuality('excellent');
-            else if (localQuality === 'good') setConnectionQuality('good');
-            else if (localQuality === 'poor') setConnectionQuality('poor');
-            else setConnectionQuality('unknown');
-        };
-
-        room.on(RoomEvent.ConnectionQualityChanged, updateQuality);
-        updateQuality();
-
+        const update = () => setConnectionQuality(room.localParticipant.connectionQuality);
+        room.on(RoomEvent.ConnectionQualityChanged, update);
+        update();
         return () => {
-            room.off(RoomEvent.ConnectionQualityChanged, updateQuality);
+            room.off(RoomEvent.ConnectionQualityChanged, update);
         };
     }, [room]);
 
-    // Keyboard shortcuts for accessibility
+    const toggle = useCallback(async (kind: 'mic' | 'camera', on: boolean) => {
+        if (!room) return;
+        try {
+            if (kind === 'mic') await room.localParticipant.setMicrophoneEnabled(on);
+            else await room.localParticipant.setCameraEnabled(on);
+            setNotice(null);
+        } catch {
+            setNotice(`We could not turn the ${kind === 'mic' ? 'microphone' : 'camera'} ${on ? 'on' : 'off'}. Check the browser permission.`);
+        }
+        redraw();
+    }, [room]);
+
+    const toggleFullscreen = useCallback(() => {
+        if (!containerRef.current) return;
+        if (!document.fullscreenElement) {
+            containerRef.current.requestFullscreen().then(() => setFullscreen(true)).catch(() => {});
+        } else {
+            document.exitFullscreen().then(() => setFullscreen(false)).catch(() => {});
+        }
+    }, []);
+
+    // Keyboard shortcuts: M mic, V camera, F fullscreen. Skipped while typing or with Ctrl/Cmd/Alt held.
     useEffect(() => {
-        if (!room || room.state !== ConnectionState.Connected) return;
-
-        function handleKeyPress(e: KeyboardEvent) {
-            if (!room) return; // Null check for TypeScript
-            // Ignore if user is typing in an input field
-            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
+        if (!room || !connected) return;
+        function onKey(e: KeyboardEvent) {
+            if (!room || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+            const t = e.target;
+            if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || (t instanceof HTMLElement && t.isContentEditable)) return;
             const key = e.key.toLowerCase();
-            const micEnabled = !!room.localParticipant.isMicrophoneEnabled;
-            const camEnabled = !!room.localParticipant.isCameraEnabled;
-
             if (key === 'm') {
                 e.preventDefault();
-                void toggle('mic', !micEnabled);
+                void toggle('mic', !room.localParticipant.isMicrophoneEnabled);
             } else if (key === 'v' && videoAllowed) {
                 e.preventDefault();
-                void toggle('camera', !camEnabled);
+                void toggle('camera', !room.localParticipant.isCameraEnabled);
             } else if (key === 'f') {
                 e.preventDefault();
                 toggleFullscreen();
             }
         }
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [room, connected, videoAllowed, toggle, toggleFullscreen]);
 
-        window.addEventListener('keydown', handleKeyPress);
-        return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [room?.state, videoAllowed]);
+    function retry() {
+        setError(null);
+        setErrorType('unknown');
+        setNotice(null);
+        callStartTime.current = null;
+        setCallDuration(0);
+        setAttempt((n) => n + 1);
+    }
 
     async function leave() {
         setLeaving(true);
@@ -280,28 +293,11 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
         }
     }
 
-    async function toggle(kind: 'mic' | 'camera', on: boolean) {
-        if (!room) return;
-        try {
-            if (kind === 'mic') await room.localParticipant.setMicrophoneEnabled(on);
-            else await room.localParticipant.setCameraEnabled(on);
-            setNotice(null);
-        } catch {
-            setNotice(`We could not turn the ${kind === 'mic' ? 'microphone' : 'camera'} ${on ? 'on' : 'off'}. Check the browser permission.`);
-        }
-        redraw();
-    }
-
     if (error) {
         return (
             <div role="alert" className="flex flex-col items-center gap-4 rounded-2xl border border-red-100 bg-red-50 px-6 py-10 text-center">
                 <div className="space-y-2">
                     <p className="text-sm font-semibold text-destructive">{error}</p>
-                    {errorType === 'permission' && (
-                        <p className="text-xs text-muted-foreground">
-                            On Chrome: Click the lock icon in address bar → Allow camera and microphone
-                        </p>
-                    )}
                     {errorType === 'network' && (
                         <p className="text-xs text-muted-foreground">
                             Try switching to a different network or moving closer to your router
@@ -311,29 +307,11 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                 <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={onLeave}>Back</Button>
                     {errorType !== 'server' && (
-                        <Button size="sm" onClick={() => window.location.reload()}>Retry</Button>
+                        <Button size="sm" onClick={retry}>Retry</Button>
                     )}
                 </div>
             </div>
         );
-    }
-
-    const state = room?.state ?? ConnectionState.Connecting;
-    const reconnecting = state === ConnectionState.Reconnecting || state === ConnectionState.SignalReconnecting;
-    const connected = state === ConnectionState.Connected || reconnecting;
-    const local = room?.localParticipant;
-    const { primary: remote, others } = arrangeTiles(room ? [...room.remoteParticipants.values()] : [], viewer);
-    const labelOf = (p: Participant) => p.name || PARTY_LABEL[partyOf(p.identity) ?? otherParty];
-    const micOn = !!local?.isMicrophoneEnabled;
-    const camOn = !!local?.isCameraEnabled;
-
-    function toggleFullscreen() {
-        if (!containerRef.current) return;
-        if (!document.fullscreenElement) {
-            containerRef.current.requestFullscreen().then(() => setFullscreen(true)).catch(() => {});
-        } else {
-            document.exitFullscreen().then(() => setFullscreen(false)).catch(() => {});
-        }
     }
 
     async function togglePictureInPicture() {
@@ -354,14 +332,19 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
 
 
     return (
-        <div className={cn("space-y-3", fullscreen && "fixed inset-0 z-50 bg-black p-0 space-y-0")} ref={containerRef}>
+        <div
+            className={cn("space-y-3", fullscreen && "fixed inset-0 z-50 bg-black p-0 space-y-0")}
+            ref={containerRef}
+            onPointerMove={fullscreen ? showControls : undefined}
+            onPointerDown={fullscreen ? showControls : undefined}
+            onFocusCapture={fullscreen ? showControls : undefined}
+        >
             <div ref={audioBox} hidden />
             <div
                 className={cn(
                     "relative w-full overflow-hidden bg-gray-900",
                     fullscreen ? "h-screen rounded-none" : "rounded-2xl min-h-[55vh] max-h-[80vh]"
                 )}
-                onClick={showControls}
             >
                 {!connected ? (
                     <div role="status" className="flex h-full items-center justify-center gap-2 text-sm text-white">
@@ -398,7 +381,7 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                                     <ul className="space-y-1 text-xs text-white/80">
                                         <li>• Keep your symptoms and questions ready</li>
                                         <li>• Have any previous reports or prescriptions nearby</li>
-                                        <li>• Ensure you're in a quiet, well-lit area</li>
+                                        <li>• Ensure you&apos;re in a quiet, well-lit area</li>
                                     </ul>
                                 </div>
                             )}
@@ -445,7 +428,7 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                     </div>
                 )}
                 {/* Connection quality indicator */}
-                {connected && connectionQuality !== 'unknown' && (
+                {connected && connectionQuality !== ConnectionQuality.Unknown && (
                     <div
                         className="absolute top-3 right-3 rounded-lg bg-black/60 backdrop-blur-sm px-2 py-1 text-xs font-semibold"
                         title={QUALITY_CONFIG[connectionQuality].tooltip}
@@ -514,7 +497,7 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                 >
                     {fullscreen ? <><Minimize className="mr-1.5 h-4 w-4" aria-hidden /> Exit fullscreen</> : <><Maximize className="mr-1.5 h-4 w-4" aria-hidden /> Fullscreen</>}
                 </Button>
-                {videoAllowed && remote && (
+                {videoAllowed && remote && cameraTrack(remote) && (
                     <Button
                         variant="outline"
                         size="sm"

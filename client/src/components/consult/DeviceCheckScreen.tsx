@@ -1,311 +1,180 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import { Video, Mic, Volume2, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { AlertCircle, CheckCircle2, Loader2, Mic, Video, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
-interface DeviceCheckScreenProps {
-    onJoin: () => void;
-    onCancel: () => void;
-    videoAllowed: boolean;
+/** Device IDs picked on the check screen; empty means the browser default. */
+export interface ChosenDevices {
+    audioDeviceId?: string;
+    videoDeviceId?: string;
 }
 
-export function DeviceCheckScreen({ onJoin, onCancel, videoAllowed }: DeviceCheckScreenProps) {
-    const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
-    const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
-    const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
-    const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
-    const [selectedVideoDevice, setSelectedVideoDevice] = useState<string>('');
-    const [selectedAudioDevice, setSelectedAudioDevice] = useState<string>('');
-    const [videoStatus, setVideoStatus] = useState<'checking' | 'success' | 'error'>('checking');
-    const [audioStatus, setAudioStatus] = useState<'checking' | 'success' | 'error'>('checking');
-    const [audioLevel, setAudioLevel] = useState(0);
-    const [permissionDenied, setPermissionDenied] = useState(false);
+interface DeviceCheckScreenProps {
+    videoAllowed: boolean;
+    /** True while the join request is running, so Join cannot be sent twice. */
+    joining: boolean;
+    onJoin: (devices: ChosenDevices) => void;
+    onCancel: () => void;
+}
+
+type Status = 'checking' | 'ok' | 'error';
+
+function problemText(err: unknown): string {
+    const name = err instanceof Error ? err.name : '';
+    if (name === 'NotAllowedError') return 'Camera or microphone is blocked. Tap the lock icon next to the web address and allow them.';
+    if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'No camera or microphone was found.';
+    if (name === 'NotReadableError') return 'Another app is using your camera or microphone. Close it, then check again.';
+    return 'We could not check your camera and microphone.';
+}
+
+export function DeviceCheckScreen({ videoAllowed, joining, onJoin, onCancel }: DeviceCheckScreenProps) {
+    const [status, setStatus] = useState<Status>('checking');
+    const [problem, setProblem] = useState<string | null>(null);
+    const [attempt, setAttempt] = useState(0);
+    const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+    const [mics, setMics] = useState<MediaDeviceInfo[]>([]);
+    // What the user picked (drives the stream) vs. what the browser actually opened (shown and sent on).
+    const [pickedCamera, setPickedCamera] = useState('');
+    const [pickedMic, setPickedMic] = useState('');
+    const [active, setActive] = useState<ChosenDevices>({});
+    const [level, setLevel] = useState(0);
     const videoRef = useRef<HTMLVideoElement>(null);
-    const audioContextRef = useRef<AudioContext | null>(null);
-    const analyserRef = useRef<AnalyserNode | null>(null);
-    const animationFrameRef = useRef<number | null>(null);
 
-    // Get available devices
+    // Asking for the stream is what shows the permission prompt; device names are hidden until then.
     useEffect(() => {
-        async function getDevices() {
+        let cancelled = false;
+        let stream: MediaStream | null = null;
+        let audioCtx: AudioContext | null = null;
+        let frame = 0;
+        setStatus('checking');
+        (async () => {
             try {
+                if (!navigator.mediaDevices?.getUserMedia) throw new Error('unsupported');
+                const s = await navigator.mediaDevices.getUserMedia({
+                    audio: pickedMic ? { deviceId: { exact: pickedMic } } : true,
+                    video: videoAllowed ? (pickedCamera ? { deviceId: { exact: pickedCamera } } : true) : false,
+                });
+                if (cancelled) return s.getTracks().forEach((t) => t.stop());
+                stream = s;
                 const devices = await navigator.mediaDevices.enumerateDevices();
-                const videoDev = devices.filter(d => d.kind === 'videoinput');
-                const audioDev = devices.filter(d => d.kind === 'audioinput');
-
-                setVideoDevices(videoDev);
-                setAudioDevices(audioDev);
-
-                if (videoDev.length > 0 && !selectedVideoDevice) {
-                    setSelectedVideoDevice(videoDev[0].deviceId);
-                }
-                if (audioDev.length > 0 && !selectedAudioDevice) {
-                    setSelectedAudioDevice(audioDev[0].deviceId);
-                }
-            } catch (err) {
-                console.error('Error getting devices:', err);
-            }
-        }
-
-        getDevices();
-    }, []);
-
-    // Get video stream
-    useEffect(() => {
-        if (!videoAllowed || !selectedVideoDevice) return;
-
-        let stream: MediaStream | null = null;
-
-        async function startVideo() {
-            setVideoStatus('checking');
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: { deviceId: selectedVideoDevice ? { exact: selectedVideoDevice } : undefined },
-                    audio: false
+                if (cancelled) return;
+                setCameras(devices.filter((d) => d.kind === 'videoinput' && d.deviceId));
+                setMics(devices.filter((d) => d.kind === 'audioinput' && d.deviceId));
+                setActive({
+                    audioDeviceId: s.getAudioTracks()[0]?.getSettings().deviceId,
+                    videoDeviceId: s.getVideoTracks()[0]?.getSettings().deviceId,
                 });
+                if (videoRef.current) videoRef.current.srcObject = s;
 
-                setVideoStream(stream);
-                setVideoStatus('success');
-
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                }
-            } catch (err) {
-                console.error('Video error:', err);
-                setVideoStatus('error');
-                if (err instanceof Error && err.name === 'NotAllowedError') {
-                    setPermissionDenied(true);
-                }
-            }
-        }
-
-        startVideo();
-
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-        };
-    }, [selectedVideoDevice, videoAllowed]);
-
-    // Get audio stream and analyze
-    useEffect(() => {
-        if (!selectedAudioDevice) return;
-
-        let stream: MediaStream | null = null;
-
-        async function startAudio() {
-            setAudioStatus('checking');
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    audio: { deviceId: selectedAudioDevice ? { exact: selectedAudioDevice } : undefined },
-                    video: false
-                });
-
-                setAudioStream(stream);
-                setAudioStatus('success');
-
-                // Setup audio level monitoring
-                const audioContext = new AudioContext();
-                const analyser = audioContext.createAnalyser();
-                const microphone = audioContext.createMediaStreamSource(stream);
-                const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-                analyser.smoothingTimeConstant = 0.8;
+                audioCtx = new AudioContext();
+                const analyser = audioCtx.createAnalyser();
                 analyser.fftSize = 1024;
-                microphone.connect(analyser);
-
-                audioContextRef.current = audioContext;
-                analyserRef.current = analyser;
-
-                function updateAudioLevel() {
-                    if (!analyserRef.current) return;
-
-                    analyserRef.current.getByteFrequencyData(dataArray);
-                    const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-                    setAudioLevel(Math.min(100, (average / 255) * 200)); // Amplify for visibility
-
-                    animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
-                }
-
-                updateAudioLevel();
+                analyser.smoothingTimeConstant = 0.8;
+                audioCtx.createMediaStreamSource(s).connect(analyser);
+                const data = new Uint8Array(analyser.frequencyBinCount);
+                const tick = () => {
+                    analyser.getByteFrequencyData(data);
+                    const average = data.reduce((a, b) => a + b, 0) / data.length;
+                    setLevel(Math.min(100, (average / 255) * 200)); // doubled so normal speech fills the bar
+                    frame = requestAnimationFrame(tick);
+                };
+                tick();
+                setProblem(null);
+                setStatus('ok');
             } catch (err) {
-                console.error('Audio error:', err);
-                setAudioStatus('error');
-                if (err instanceof Error && err.name === 'NotAllowedError') {
-                    setPermissionDenied(true);
-                }
+                if (cancelled) return;
+                setActive({});
+                setProblem(problemText(err));
+                setStatus('error');
             }
-        }
-
-        startAudio();
-
+        })();
         return () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-            if (audioContextRef.current) {
-                audioContextRef.current.close();
-            }
-            if (animationFrameRef.current) {
-                cancelAnimationFrame(animationFrameRef.current);
-            }
+            cancelled = true;
+            cancelAnimationFrame(frame);
+            stream?.getTracks().forEach((t) => t.stop());
+            void audioCtx?.close();
         };
-    }, [selectedAudioDevice]);
+    }, [pickedCamera, pickedMic, videoAllowed, attempt]);
 
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
-            }
-            if (audioStream) {
-                audioStream.getTracks().forEach(track => track.stop());
-            }
-        };
-    }, [videoStream, audioStream]);
-
-    const isReady = (!videoAllowed || videoStatus === 'success') && audioStatus === 'success';
+    const showVideo = status === 'ok'; // a successful stream always includes the camera when video is allowed
+    const statusIcon = status === 'checking'
+        ? <Loader2 className="h-4 w-4 animate-spin text-gray-400" aria-hidden />
+        : status === 'ok'
+            ? <CheckCircle2 className="h-4 w-4 text-green-600" aria-hidden />
+            : <AlertCircle className="h-4 w-4 text-red-600" aria-hidden />;
+    const selectClass = 'w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring';
 
     return (
-        <div className="max-w-2xl mx-auto space-y-6">
-            <div className="text-center space-y-2">
-                <h2 className="text-2xl font-bold text-foreground">Device Check</h2>
-                <p className="text-sm text-muted-foreground">
-                    Make sure your camera and microphone are working before joining
-                </p>
+        <div className="mx-auto max-w-2xl space-y-6">
+            <div className="space-y-2 text-center">
+                <h2 className="text-2xl font-bold text-foreground">Device check</h2>
+                <p className="text-sm text-muted-foreground">Make sure your camera and microphone work before joining.</p>
             </div>
 
-            {/* Video preview */}
             {videoAllowed && (
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <label className="text-sm font-semibold text-foreground flex items-center gap-2">
-                            <Video className="h-4 w-4" />
-                            Camera
-                        </label>
-                        <div className="flex items-center gap-2">
-                            {videoStatus === 'checking' && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
-                            {videoStatus === 'success' && <CheckCircle2 className="h-4 w-4 text-green-600" />}
-                            {videoStatus === 'error' && <AlertCircle className="h-4 w-4 text-red-600" />}
-                        </div>
+                        <span className="flex items-center gap-2 text-sm font-semibold text-foreground"><Video className="h-4 w-4" aria-hidden /> Camera</span>
+                        {statusIcon}
                     </div>
-
-                    <div className="relative aspect-video bg-gray-900 rounded-2xl overflow-hidden">
-                        {videoStream ? (
-                            <video
-                                ref={videoRef}
-                                autoPlay
-                                muted
-                                playsInline
-                                className="w-full h-full object-cover -scale-x-100"
-                            />
-                        ) : (
-                            <div className="flex items-center justify-center h-full text-white text-sm">
-                                {videoStatus === 'checking' ? 'Starting camera...' : 'Camera not available'}
+                    <div className="relative aspect-video overflow-hidden rounded-2xl bg-gray-900">
+                        {/* Always mounted so the stream can be attached as soon as it arrives. */}
+                        <video ref={videoRef} autoPlay muted playsInline className={cn('h-full w-full -scale-x-100 object-cover', !showVideo && 'hidden')} />
+                        {!showVideo && (
+                            <div className="absolute inset-0 flex items-center justify-center text-sm text-white">
+                                {status === 'checking' ? 'Starting camera...' : 'Camera not available'}
                             </div>
                         )}
                     </div>
-
-                    {videoDevices.length > 1 && (
-                        <select
-                            value={selectedVideoDevice}
-                            onChange={(e) => setSelectedVideoDevice(e.target.value)}
-                            className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                        >
-                            {videoDevices.map(device => (
-                                <option key={device.deviceId} value={device.deviceId}>
-                                    {device.label || `Camera ${device.deviceId.slice(0, 5)}`}
-                                </option>
-                            ))}
+                    {cameras.length > 1 && (
+                        <select aria-label="Camera" value={active.videoDeviceId ?? pickedCamera} onChange={(e) => setPickedCamera(e.target.value)} className={selectClass}>
+                            {cameras.map((d, i) => <option key={d.deviceId} value={d.deviceId}>{d.label || `Camera ${i + 1}`}</option>)}
                         </select>
                     )}
                 </div>
             )}
 
-            {/* Audio preview */}
             <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                    <label className="text-sm font-semibold text-foreground flex items-center gap-2">
-                        <Mic className="h-4 w-4" />
-                        Microphone
-                    </label>
-                    <div className="flex items-center gap-2">
-                        {audioStatus === 'checking' && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
-                        {audioStatus === 'success' && <CheckCircle2 className="h-4 w-4 text-green-600" />}
-                        {audioStatus === 'error' && <AlertCircle className="h-4 w-4 text-red-600" />}
-                    </div>
+                    <span className="flex items-center gap-2 text-sm font-semibold text-foreground"><Mic className="h-4 w-4" aria-hidden /> Microphone</span>
+                    {statusIcon}
                 </div>
-
-                {/* Audio level meter */}
-                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-                    <Volume2 className="h-5 w-5 text-muted-foreground shrink-0" />
-                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="flex items-center gap-3 rounded-xl bg-gray-50 p-4">
+                    <Volume2 className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200">
                         <div
-                            className={cn(
-                                "h-full transition-all duration-100 rounded-full",
-                                audioLevel > 70 ? "bg-green-500" :
-                                audioLevel > 30 ? "bg-yellow-500" :
-                                "bg-gray-400"
-                            )}
-                            style={{ width: `${audioLevel}%` }}
+                            className={cn('h-full rounded-full transition-all duration-100', level > 70 ? 'bg-green-500' : level > 30 ? 'bg-yellow-500' : 'bg-gray-400')}
+                            style={{ width: `${level}%` }}
                         />
                     </div>
-                    <span className="text-xs text-muted-foreground shrink-0 w-16">
-                        {audioLevel > 5 ? 'Speaking' : 'Quiet'}
-                    </span>
+                    <span className="w-16 shrink-0 text-xs text-muted-foreground">{level > 5 ? 'Speaking' : 'Quiet'}</span>
                 </div>
-
-                {audioDevices.length > 1 && (
-                    <select
-                        value={selectedAudioDevice}
-                        onChange={(e) => setSelectedAudioDevice(e.target.value)}
-                        className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                    >
-                        {audioDevices.map(device => (
-                            <option key={device.deviceId} value={device.deviceId}>
-                                {device.label || `Microphone ${device.deviceId.slice(0, 5)}`}
-                            </option>
-                        ))}
+                {mics.length > 1 && (
+                    <select aria-label="Microphone" value={active.audioDeviceId ?? pickedMic} onChange={(e) => setPickedMic(e.target.value)} className={selectClass}>
+                        {mics.map((d, i) => <option key={d.deviceId} value={d.deviceId}>{d.label || `Microphone ${i + 1}`}</option>)}
                     </select>
                 )}
-
-                <p className="text-xs text-muted-foreground">
-                    Speak to test your microphone. The bar should move when you talk.
-                </p>
+                <p className="text-xs text-muted-foreground">Speak to test your microphone. The bar should move when you talk.</p>
             </div>
 
-            {/* Permission denied warning */}
-            {permissionDenied && (
-                <div className="rounded-xl bg-red-50 border border-red-100 p-4">
-                    <div className="flex items-start gap-3">
-                        <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
-                        <div className="space-y-1">
-                            <p className="text-sm font-semibold text-red-900">Permission denied</p>
-                            <p className="text-xs text-red-700">
-                                Click the lock icon in your browser's address bar and allow camera and microphone access.
-                            </p>
-                        </div>
+            {problem && (
+                <div role="alert" className="flex items-start gap-3 rounded-xl border border-red-100 bg-red-50 p-4">
+                    <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" aria-hidden />
+                    <div className="space-y-2">
+                        <p className="text-sm font-semibold text-red-900">{problem}</p>
+                        <p className="text-xs text-red-700">You can still join, but the other side may not see or hear you.</p>
+                        <Button variant="outline" size="sm" onClick={() => setAttempt((n) => n + 1)}>Check again</Button>
                     </div>
                 </div>
             )}
 
-            {/* Actions */}
             <div className="flex gap-3 pt-4">
-                <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={onCancel}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    className="flex-1"
-                    disabled={!isReady}
-                    onClick={onJoin}
-                >
-                    {isReady ? 'Join Call' : 'Checking devices...'}
+                <Button variant="outline" className="flex-1" disabled={joining} onClick={onCancel}>Cancel</Button>
+                <Button className="flex-1" disabled={status === 'checking' || joining} onClick={() => onJoin(active)}>
+                    {joining
+                        ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> Joining</>
+                        : status === 'checking' ? 'Checking devices...' : status === 'error' ? 'Join anyway' : 'Join call'}
                 </Button>
             </div>
         </div>

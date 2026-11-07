@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Loader2, Video } from 'lucide-react';
+import { Video } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { useServerNow } from '@/hooks/useServerNow';
 import { errorMessage } from '@/lib/consult/api';
@@ -10,7 +10,7 @@ import { formatIstDateTime } from '@/lib/consult/time';
 import type { ConsultationStatus, ConsultationType, JoinResponse } from '@/lib/consult/types';
 import { ConsultCallRoom } from './ConsultCallRoom';
 import { TelemedicineConsent } from './TelemedicineConsent';
-import { DeviceCheckScreen } from './DeviceCheckScreen';
+import { DeviceCheckScreen, type ChosenDevices } from './DeviceCheckScreen';
 
 interface Props {
     status: ConsultationStatus;
@@ -32,6 +32,7 @@ export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, on
     const now = useServerNow();
     const [call, setCall] = useState<JoinResponse | null>(null);
     const [showDeviceCheck, setShowDeviceCheck] = useState(false);
+    const [devices, setDevices] = useState<ChosenDevices>({});
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [consented, setConsented] = useState(false);
@@ -44,6 +45,8 @@ export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, on
                 token={call.token}
                 role={call.role}
                 otherParty={otherParty}
+                audioDeviceId={devices.audioDeviceId}
+                videoDeviceId={devices.videoDeviceId}
                 onLeave={() => {
                     setCall(null);
                     setShowDeviceCheck(false);
@@ -58,10 +61,12 @@ export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, on
         return (
             <DeviceCheckScreen
                 videoAllowed={type !== 'AUDIO'}
-                onJoin={async () => {
+                joining={busy}
+                onJoin={async (chosen) => {
                     setBusy(true);
                     setError(null);
                     try {
+                        setDevices(chosen);
                         setCall(await join());
                         onCallChange?.(true);
                         onChange?.();

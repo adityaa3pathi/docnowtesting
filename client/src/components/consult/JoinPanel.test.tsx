@@ -43,8 +43,13 @@ describe('JoinPanel telemedicine consent', () => {
         act(() => (el.querySelector('[data-testid="consent-checkbox"]') as HTMLInputElement).click());
         expect(joinButton(el).disabled).toBe(false);
         expect(el.textContent).not.toContain('Please accept teleconsultation consent to join');
+        // Join opens the device check; jsdom has no camera, so the check fails and offers "Join anyway".
         await act(async () => joinButton(el).click());
+        expect(join).not.toHaveBeenCalled();
+        const joinAnyway = [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Join anyway'))!;
+        await act(async () => joinAnyway.click());
         expect(join).toHaveBeenCalledTimes(1);
+        expect(joinAnyway.disabled).toBe(true);
     });
 
     it('shows no consent box on the doctor side', () => {
