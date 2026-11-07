@@ -18,7 +18,7 @@ async def get_history(request: Request, conversation_id: str):
     """Return paginated conversation history for the authenticated user."""
     from app.main import db, settings
 
-    user_id = await get_current_user(request, settings)
+    user_id = await get_current_user(request, settings, db)
     if not user_id:
         raise HTTPException(status_code=401, detail="Authentication required")
 
@@ -33,7 +33,8 @@ async def get_history(request: Request, conversation_id: str):
     for m in messages:
         sources = []
         if m.get("sources"):
-            raw_sources = m["sources"] if isinstance(m["sources"], list) else []
+            # database.decode_json_field already turned the jsonb text into a list.
+            raw_sources = [s for s in m["sources"] if isinstance(s, dict)] if isinstance(m["sources"], list) else []
             sources = [
                 SourceRef(
                     id=s.get("id", ""),

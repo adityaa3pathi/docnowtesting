@@ -23,6 +23,7 @@ from langfuse import observe
 from app.agents import usage
 from app.agents.llm import AIBusyError, call_gemini
 from app.agents.retrieval import retrieve
+from app.agents.tool_output import compact_tool_output
 from app.agents.verifier import verify
 from app.models import (
     ActionResult,
@@ -66,9 +67,6 @@ ERROR_RESPONSE = (
     "I'm sorry, something went wrong while processing your request. "
     "Please try again or contact our support team at +91 9649089089."
 )
-
-TOOL_OUTPUT_CHARS = 800
-MAX_BOOKINGS_IN_PROMPT = 5
 
 ACTION_FAILED_RESPONSE = (
     "I couldn't complete that just now. Please check the booking details and try again, "
@@ -149,21 +147,6 @@ async def classify_intent(
     except Exception:
         logger.exception("Intent classification failed")
         return Intent(intent="UNKNOWN", requires_action=False, confidence=0.0)
-
-
-def _booking_line(b: dict) -> str:
-    tests = b.get("items") or b.get("tests") or []
-    when = b.get("slot") or " ".join(str(v) for v in (b.get("slotDate"), b.get("slotTime")) if v)
-    return f"id={b.get('id')} | tests={', '.join(map(str, tests))} | when={when} | status={b.get('status')}"
-
-
-def compact_tool_output(tool: str, output: Any) -> str:
-    """Tool output as short lines for the prompt; bookings keep only id, tests, time and status."""
-    if tool == "list_bookings":
-        rows = output.get("bookings", []) if isinstance(output, dict) else output
-        if isinstance(rows, list):
-            return "\n".join(_booking_line(b) for b in rows[:MAX_BOOKINGS_IN_PROMPT] if isinstance(b, dict))
-    return json.dumps(output, default=str)[:TOOL_OUTPUT_CHARS]
 
 
 @observe(name="draft-generation", capture_input=False, capture_output=False)

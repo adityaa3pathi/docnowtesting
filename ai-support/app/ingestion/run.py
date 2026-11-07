@@ -15,7 +15,7 @@ import uuid
 
 from app.config import Settings
 from app.database import Database
-from app.ingestion.catalog_sync import sync_catalog
+from app.ingestion.catalog_sync import chunk_is_current, sync_catalog
 from app.ingestion.embeddings import DOCUMENT, generate_embedding
 from app.ingestion.static_docs import STATIC_DOCUMENTS
 
@@ -29,25 +29,27 @@ logger = logging.getLogger(__name__)
 async def ingest_static_docs(db: Database, settings: Settings) -> dict[str, int]:
     """Embed and insert all static FAQ/policy documents."""
     stats = {"created": 0, "updated": 0, "skipped": 0, "errors": 0}
+    fingerprint = settings.embedding_fingerprint()
 
     logger.info("Ingesting %d static documents...", len(STATIC_DOCUMENTS))
 
     for doc in STATIC_DOCUMENTS:
+        existing = None
         try:
             # Deterministic ID based on source + title
             chunk_id = str(
                 uuid.uuid5(uuid.NAMESPACE_DNS, f"docnow:{doc['source']}:{doc['title']}")
             )
 
-            # Check if already exists with same content
+            # Check if already exists with same content and the same embedding setup
             if db.pool:
                 async with db.pool.acquire() as conn:
                     existing = await conn.fetchrow(
-                        'SELECT id, content FROM "KnowledgeChunk" WHERE id = $1',
+                        'SELECT id, content, metadata FROM "KnowledgeChunk" WHERE id = $1',
                         chunk_id,
                     )
 
-                if existing and existing["content"] == doc["content"]:
+                if chunk_is_current(dict(existing) if existing else None, doc["content"], fingerprint):
                     stats["skipped"] += 1
                     logger.debug("Skipped (unchanged): %s", doc["title"])
                     continue
@@ -62,8 +64,8 @@ async def ingest_static_docs(db: Database, settings: Settings) -> dict[str, int]
                 title=doc["title"],
                 content=doc["content"],
                 embedding=embedding,
-                metadata=json.dumps({"source": doc["source"]}),
-                version=2 if (existing if db.pool else None) else 1,
+                metadata=json.dumps({"source": doc["source"], "embedding": fingerprint}),
+                version=2 if existing else 1,
             )
 
             if existing:
@@ -80,8 +82,12 @@ async def ingest_static_docs(db: Database, settings: Settings) -> dict[str, int]
     return stats
 
 
-async def main() -> None:
-    """Run the full ingestion pipeline."""
+def _print_stats(label: str, stats: dict[str, int]) -> None:
+    print(f"   {label}: " + "  ".join(f"{k}={v}" for k, v in stats.items()))
+
+
+async def main() -> int:
+    """Run the full ingestion pipeline; returns the process exit code."""
     args = set(sys.argv[1:])
     do_static = "--static" in args or not args
     do_catalog = "--catalog" in args or not args
@@ -89,6 +95,7 @@ async def main() -> None:
     settings = Settings()
     db = Database(settings)
     await db.connect()
+    errors = 0
 
     try:
         print("=" * 60)
@@ -98,18 +105,14 @@ async def main() -> None:
         if do_static:
             print("\n📄 Ingesting static documents (FAQs, policies)...")
             static_stats = await ingest_static_docs(db, settings)
-            print(f"   Created: {static_stats['created']}")
-            print(f"   Updated: {static_stats['updated']}")
-            print(f"   Skipped: {static_stats['skipped']}")
-            print(f"   Errors:  {static_stats['errors']}")
+            _print_stats("static", static_stats)
+            errors += static_stats["errors"]
 
         if do_catalog:
             print("\n🧪 Syncing catalog items...")
             catalog_stats = await sync_catalog(db, settings)
-            print(f"   Created: {catalog_stats['created']}")
-            print(f"   Updated: {catalog_stats['updated']}")
-            print(f"   Skipped: {catalog_stats['skipped']}")
-            print(f"   Errors:  {catalog_stats['errors']}")
+            _print_stats("catalog", catalog_stats)
+            errors += catalog_stats["errors"]
 
         # Summary
         if db.pool:
@@ -121,11 +124,17 @@ async def main() -> None:
             print(f"\n📊 Total chunks in knowledge base: {count}")
             print(f"   With embeddings: {with_emb}")
 
+        # A zero exit with failed items let a broken cron or deploy step look successful.
+        if errors:
+            print(f"\n❌ Ingestion finished with {errors} failed item(s); see the log above.")
+            return 1
+
         print("\n✅ Ingestion complete!")
+        return 0
 
     finally:
         await db.disconnect()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    sys.exit(asyncio.run(main()))
