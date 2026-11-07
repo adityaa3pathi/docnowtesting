@@ -22,7 +22,7 @@ async def submit_feedback(request: Request, body: FeedbackRequest):
     """
     from app.main import db, settings
 
-    user_id = await get_current_user(request, settings)
+    user_id = await get_current_user(request, settings, db)
     if not user_id:
         raise HTTPException(status_code=401, detail="Authentication required")
 

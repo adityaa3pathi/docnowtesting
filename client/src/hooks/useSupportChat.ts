@@ -27,6 +27,13 @@ const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
     createdAt: new Date().toISOString(),
 };
 
+/** FastAPI sends `detail`, Express sends `error`; showing it beats a generic failure line. */
+function serverErrorMessage(err: any): string | null {
+    const data = err?.response?.data;
+    const message = data?.detail ?? data?.error ?? data?.message;
+    return typeof message === 'string' && message.trim() ? message : null;
+}
+
 export function useSupportChat() {
     const { isAuthenticated, isInitialized } = useAuth();
     const [messages, setMessages] = useState<ChatMessage[]>([DEFAULT_WELCOME_MESSAGE]);
@@ -170,12 +177,13 @@ export function useSupportChat() {
             setMessages((prev) => [...prev, assistantMessage]);
         } catch (err: any) {
             console.error('Failed to send message:', err);
-            if (err?.response?.status === 404) {
-                // If conversation was not found on backend, clear invalid ID so next attempt creates new conversation
+            const status = err?.response?.status;
+            // 404 = conversation gone; 400 = turn cap reached, so this id can never accept another message.
+            if (status === 404 || status === 400) {
                 localStorage.removeItem('docnow_support_conversation_id');
                 setConversationId(null);
             }
-            setError('Failed to send message.');
+            setError(serverErrorMessage(err) || 'Failed to send message.');
         } finally {
             setIsLoading(false);
         }

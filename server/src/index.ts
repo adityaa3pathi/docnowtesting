@@ -129,13 +129,28 @@ if (rawSupportUrl.includes('onrender.com')) {
 
 // Each chat message costs several Gemini calls, so cap bursts and daily use per caller.
 app.use('/api/support/chat', rateLimiter(10, 60, 'support_chat_min'), rateLimiter(100, 24 * 60 * 60, 'support_chat_day'));
+
+// Proves the call came through here; without it a direct caller skips the rate limits above.
+const SUPPORT_PROXY_SECRET = process.env.SUPPORT_PROXY_SECRET || '';
+if (!SUPPORT_PROXY_SECRET) {
+    logger.warn({}, 'support_proxy_secret_missing');
+}
+
 app.use('/api/support', createProxyMiddleware({
     target: AI_SUPPORT_TARGET,
     changeOrigin: true,
     timeout: 60000,
     proxyTimeout: 60000,
-    // express.json() already read the body; resend it or the AI gets nothing and the call times out.
-    on: { proxyReq: fixRequestBody },
+    on: {
+        proxyReq: (proxyReq, req) => {
+            // Set before the body is written, or the header never reaches FastAPI.
+            if (SUPPORT_PROXY_SECRET) {
+                proxyReq.setHeader('x-docnow-support-proxy', SUPPORT_PROXY_SECRET);
+            }
+            // express.json() already read the body; resend it or the AI gets nothing and the call times out.
+            fixRequestBody(proxyReq, req);
+        },
+    },
 }));
 
 // Register booking strategies at boot

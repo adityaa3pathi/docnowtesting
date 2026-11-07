@@ -60,7 +60,7 @@ async def chat(request: Request, body: ChatRequest):
     start = time.monotonic()
 
     # 1. Auth
-    user_id = await get_current_user(request, settings)
+    user_id = await get_current_user(request, settings, db)
     access_token = get_access_token(request)
 
     if not user_id:
