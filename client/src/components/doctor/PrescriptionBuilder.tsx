@@ -5,7 +5,7 @@ import { Button } from '@/components/ui';
 import { ConfirmDialog } from '@/components/consult/ConfirmDialog';
 import { TestSelector } from './TestSelector';
 import { doctor as doctorApi } from '@/lib/consult/api';
-import { REISSUE_REASON_MAX, REISSUE_REASON_MIN, buildPrescription, builderFromPrescription, emptyBuilder, emptyMedicine } from '@/lib/consult/room';
+import { REISSUE_REASON_MAX, REISSUE_REASON_MIN, buildPrescription, builderFromPrescription, emptyBuilder, emptyMedicine, parseTestCodes } from '@/lib/consult/room';
 import type { Medicine, Prescription, PrescriptionInput } from '@/lib/consult/types';
 
 // Common drug name suggestions for autocomplete
@@ -18,16 +18,6 @@ const DRUG_SUGGESTIONS = [
     'Cefixime', 'Clarithromycin', 'Fluconazole', 'Ketoconazole', 'Clotrimazole', 'Betamethasone',
     'Hydrocortisone', 'Dexamethasone', 'Atenolol', 'Enalapril', 'Ramipril', 'Telmisartan',
     'Hydrochlorothiazide', 'Furosemide', 'Glimepiride', 'Insulin', 'Thyroxine', 'Carbimazole',
-];
-
-// Common lab test code suggestions
-const TEST_SUGGESTIONS = [
-    'CBC', 'Lipid Profile', 'LFT', 'KFT', 'RFT', 'TSH', 'T3', 'T4', 'HbA1c', 'FBS', 'PPBS',
-    'Vitamin D', 'Vitamin B12', 'Serum Iron', 'Ferritin', 'Urine Routine', 'Urine Culture',
-    'Blood Culture', 'CRP', 'ESR', 'RA Factor', 'ANA', 'Dengue NS1', 'Malaria Antigen',
-    'Widal Test', 'HBsAg', 'Anti-HCV', 'HIV', 'VDRL', 'PT/INR', 'APTT', 'D-Dimer',
-    'Serum Calcium', 'Serum Uric Acid', 'Lipase', 'Amylase', 'PSA', 'CEA', 'CA-125',
-    'ECG', 'Chest X-Ray', 'USG Abdomen', '2D Echo', 'PFT', 'TMT', 'Hb Electrophoresis',
 ];
 
 const COLUMNS = [
@@ -118,8 +108,9 @@ export function PrescriptionBuilder({ consultationId, correcting, onIssued, onCa
             <div>
                 <label className="mb-2 block text-sm font-semibold text-foreground">Recommended tests</label>
                 <TestSelector
-                    selectedCodes={codes.split(',').map(c => c.trim()).filter(Boolean)}
+                    selectedCodes={parseTestCodes(codes)}
                     onChange={(newCodes) => setCodes(newCodes.join(', '))}
+                    knownNames={correcting && Object.fromEntries(correcting.recommendedTests.map((t) => [t.code, t.name]))}
                 />
             </div>
             <div>
