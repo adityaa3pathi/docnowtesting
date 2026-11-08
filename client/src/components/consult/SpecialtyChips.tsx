@@ -14,7 +14,8 @@ export function SpecialtyChips({ specialties, value, onChange }: Props) {
             active ? 'border-primary bg-primary-soft text-primary' : 'border-border bg-surface text-ink hover:border-border-strong'
         );
     return (
-        <div role="group" aria-label="Filter by specialty" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+        // No visible scroll bar (it read as a broken line); the faded right edge shows there is more to swipe.
+        <div role="group" aria-label="Filter by specialty" className="scrollbar-hide -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,black_88%,transparent)] md:[mask-image:none] md:flex-wrap">
             <button type="button" aria-pressed={value === null} onClick={() => onChange(null)} className={chip(value === null)}>
                 All
             </button>

@@ -35,7 +35,7 @@ function ConsultHome() {
 
     return (
         <>
-            <main className="w-full bg-surface pb-16 md:pb-24">
+            <main className="w-full bg-surface pb-28 md:pb-24">
                 {/* Header: calm and light, facts instead of badges (DESIGN.md "calm clinical"). */}
                 <section className="border-b border-border bg-surface-subtle">
                     <div className="container mx-auto max-w-7xl px-4 py-10 md:py-14">
