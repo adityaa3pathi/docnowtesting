@@ -10,6 +10,8 @@
     /* Inter has no Devanagari, so Hindi falls through to Noto Sans Devanagari. */
     font-family: var(--font-inter), var(--font-devanagari), system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
+    /* Long order ids, emails and links wrap instead of pushing the page wider than a phone. */
+    overflow-wrap: break-word;
   }
 }
 
