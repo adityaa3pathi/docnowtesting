@@ -38,10 +38,10 @@ export function PaymentStatus({ result, fresh, statusLabel, doctorId }: Props) {
     }, [result, fresh]);
 
     return (
-        <div role="status" aria-live="polite" className={`rounded-2xl p-4 ${toneClasses[tone]}`}>
-            <h1 ref={heading} tabIndex={-1} className="text-lg font-bold outline-none">{title}</h1>
+        <div role="status" aria-live="polite" className={`rounded-xl p-4 ${toneClasses[tone]}`}>
+            <h1 ref={heading} tabIndex={-1} className="text-lg font-semibold outline-none">{title}</h1>
             {body && <p className="mt-1 text-sm">{body}</p>}
-            <div className="mt-3 flex flex-wrap gap-3 text-sm font-bold">
+            <div className="mt-3 flex flex-wrap gap-3 text-sm font-semibold">
                 <Link href="/consult/my" className="underline">My consultations</Link>
                 {result === 'hold_ended' && <Link href={`/consult/doctors/${doctorId}`} className="underline">Pick a new time</Link>}
             </div>
@@ -51,8 +51,8 @@ export function PaymentStatus({ result, fresh, statusLabel, doctorId }: Props) {
 
 export function ConfirmingNotice() {
     return (
-        <div role="status" className="rounded-2xl bg-amber-100 p-4 text-amber-900">
-            <p className="font-bold">{CONFIRMING_MESSAGE}</p>
+        <div role="status" className="rounded-xl bg-warning-soft p-4 text-warning-ink">
+            <p className="font-semibold">{CONFIRMING_MESSAGE}</p>
             <p className="mt-1 text-sm">This usually takes a few seconds.</p>
         </div>
     );

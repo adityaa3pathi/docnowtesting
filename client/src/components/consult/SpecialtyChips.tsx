@@ -10,8 +10,8 @@ interface Props {
 export function SpecialtyChips({ specialties, value, onChange }: Props) {
     const chip = (active: boolean) =>
         cn(
-            'shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors',
-            active ? 'border-primary bg-primary text-white' : 'border-border bg-white text-foreground hover:bg-accent'
+            'inline-flex h-10 shrink-0 items-center rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+            active ? 'border-primary bg-primary-soft text-primary' : 'border-border bg-surface text-ink hover:border-border-strong'
         );
     return (
         <div role="group" aria-label="Filter by specialty" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
