@@ -12,14 +12,28 @@ export function HowItWorks() {
     return (
         <section aria-labelledby="how-title" className="border-y border-border bg-surface-subtle">
             <div className="container mx-auto max-w-6xl px-4 py-14">
-                <h2 id="how-title" className="text-2xl font-bold text-ink">How a consultation works</h2>
-                <ol className="mt-8 grid gap-8 md:grid-cols-4 md:gap-6">
+                <h2 id="how-title" className="text-2xl font-bold text-ink md:text-3xl">How a consultation works</h2>
+                <p className="mt-2 text-base text-ink-muted">Four steps, from booking to your prescription.</p>
+                {/* Phone: a numbered rail down the left. Desktop: four cards joined by a line. */}
+                <ol className="mt-8 md:grid md:grid-cols-4 md:gap-6">
                     {STEPS.map(({ icon: Icon, title, body }, i) => (
-                        <li key={title} className="relative">
-                            {i < STEPS.length - 1 && <span aria-hidden className="absolute left-12 right-0 top-5 hidden h-px bg-border-strong/40 md:block" />}
-                            <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-semibold text-on-primary">{i + 1}</span>
-                            <h3 className="mt-4 flex items-center gap-2 font-semibold text-ink"><Icon className="h-4 w-4 text-primary" aria-hidden />{title}</h3>
-                            <p className="mt-1 text-sm text-ink-muted">{body}</p>
+                        <li key={title} className="relative flex gap-4 pb-6 last:pb-0 md:flex-col md:gap-4 md:pb-0">
+                            {i < STEPS.length - 1 && (
+                                <>
+                                    <span aria-hidden className="absolute bottom-0 left-5 top-10 w-0.5 -translate-x-1/2 bg-primary/20 md:hidden" />
+                                    <span aria-hidden className="absolute left-12 right-0 top-5 hidden h-0.5 bg-primary/20 md:block" />
+                                </>
+                            )}
+                            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-base font-bold text-on-primary">{i + 1}</span>
+                            <div className="min-w-0 flex-1 rounded-xl border border-border bg-surface p-4 md:p-5">
+                                <div className="flex items-center gap-3">
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+                                        <Icon className="h-5 w-5" aria-hidden />
+                                    </span>
+                                    <h3 className="text-base font-bold leading-snug text-ink">{title}</h3>
+                                </div>
+                                <p className="mt-3 text-sm leading-relaxed text-ink-muted">{body}</p>
+                            </div>
                         </li>
                     ))}
                 </ol>
