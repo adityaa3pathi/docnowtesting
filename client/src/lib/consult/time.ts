@@ -12,6 +12,12 @@ export const formatIstDateTime = (iso: string) => fullLabel.format(new Date(iso)
 /** A stable key such as 2026-10-07 for the Indian calendar day of an instant. */
 export const istDayKey = (iso: string) => dayKeyFormat.format(new Date(iso));
 
+/** "Today, 4:30 PM" / "Mon, 10 Nov, 9:00 AM": when a doctor can next be seen. */
+export function nextFreeLabel(iso: string, now = serverNow()): string {
+    const today = istDayKey(new Date(now).toISOString()) === istDayKey(iso);
+    return `${today ? 'Today' : formatIstDay(iso)}, ${formatIstTime(iso)}`;
+}
+
 export interface DaySlots<T> {
     key: string;
     label: string;

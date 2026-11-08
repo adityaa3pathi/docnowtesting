@@ -83,13 +83,19 @@ function ConsultHome() {
                             {doctors.loading && (
                                 <>
                                     {[1, 2, 3, 4].map((i) => (
-                                        <div key={i} className="flex gap-4 rounded-xl border border-border bg-surface p-5">
-                                            <Skeleton className="h-16 w-16 shrink-0 rounded-xl" />
-                                            <div className="min-w-0 flex-1 space-y-2">
-                                                <Skeleton className="h-5 w-2/3" />
-                                                <Skeleton className="h-4 w-1/3" />
-                                                <Skeleton className="h-4 w-full" />
-                                                <Skeleton className="h-5 w-24" />
+                                        <div key={i} className="overflow-hidden rounded-xl border border-border bg-surface">
+                                            <div className="flex gap-4 p-5">
+                                                <Skeleton className="h-20 w-20 shrink-0 rounded-xl" />
+                                                <div className="min-w-0 flex-1 space-y-2">
+                                                    <Skeleton className="h-5 w-2/3" />
+                                                    <Skeleton className="h-4 w-1/3" />
+                                                    <Skeleton className="h-4 w-full" />
+                                                </div>
+                                            </div>
+                                            <div className="px-5 pb-4"><Skeleton className="h-9 w-full rounded-lg" /></div>
+                                            <div className="flex items-center justify-between border-t border-border bg-surface-subtle px-5 py-3">
+                                                <Skeleton className="h-10 w-24" />
+                                                <Skeleton className="h-11 w-32 rounded-lg" />
                                             </div>
                                         </div>
                                     ))}

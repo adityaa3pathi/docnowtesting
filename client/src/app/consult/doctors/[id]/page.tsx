@@ -7,7 +7,7 @@ import { useApi } from '@/hooks/useApi';
 import { useAuthGate } from '@/contexts/AuthGateContext';
 import { consult } from '@/lib/consult/api';
 import { formatRupees } from '@/lib/consult/format';
-import { formatIstDateTime, formatIstDay, formatIstTime, istDayKey, serverNow } from '@/lib/consult/time';
+import { formatIstDateTime, nextFreeLabel, serverNow } from '@/lib/consult/time';
 import { HOME_SPECIALTIES } from '@/lib/home/specialties';
 import { DoctorAvatar } from '@/components/consult/DoctorCard';
 import { SlotPicker } from '@/components/consult/SlotPicker';
@@ -80,7 +80,7 @@ function DoctorPage() {
 
     const d = doctor.data;
     // Real data only: the first open slot, and the common problems for this doctor's specialty.
-    const nextFree = slots[0] ? `${istDayKey(slots[0].startsAt) === istDayKey(new Date(serverNow()).toISOString()) ? 'Today' : formatIstDay(slots[0].startsAt)}, ${formatIstTime(slots[0].startsAt)}` : null;
+    const nextFree = slots[0] ? nextFreeLabel(slots[0].startsAt) : null;
     const helpsWith = HOME_SPECIALTIES.find((h) => h.match.test(`${d.specialty.slug} ${d.specialty.name}`.toLowerCase()))?.symptoms ?? [];
     const goBook = () => {
         if (!selected) return;
