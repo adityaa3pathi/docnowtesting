@@ -13,10 +13,10 @@ import { ErrorState, LoadingBlock } from './States';
 function CartResult({ result, prescription }: { result: CartAddResult; prescription: Prescription }) {
     const name = (code: string) => prescription.recommendedTests.find((t) => t.code === code)?.name ?? code;
     return (
-        <div role="status" className="space-y-1 rounded-xl bg-primary/5 px-4 py-3 text-sm">
-            {result.added.length > 0 && <p className="font-semibold text-foreground">Added to cart: {result.added.map(name).join(', ')}</p>}
-            {result.skipped.map((s) => <p key={s.code} className="text-muted-foreground">{name(s.code)}: {s.reason}</p>)}
-            <Link href="/cart" className="inline-block font-bold text-primary">Go to cart</Link>
+        <div role="status" className="space-y-1 rounded-xl bg-primary-soft px-4 py-3 text-sm">
+            {result.added.length > 0 && <p className="font-semibold text-ink">Added to cart: {result.added.map(name).join(', ')}</p>}
+            {result.skipped.map((s) => <p key={s.code} className="text-ink-muted">{name(s.code)}: {s.reason}</p>)}
+            <Link href="/cart" className="inline-block font-semibold text-primary">Go to cart</Link>
         </div>
     );
 }
@@ -49,8 +49,8 @@ export function PatientPrescription({ bookingId }: { bookingId: string }) {
     if (error || !data) return <ErrorState message={error ?? 'We could not load your prescription.'} onRetry={refetch} />;
 
     return (
-        <section aria-label="Prescription" className="space-y-4 rounded-2xl border border-border bg-white p-4">
-            <h2 className="text-lg font-bold text-foreground">Your prescription</h2>
+        <section aria-label="Prescription" className="space-y-4 rounded-xl border border-border bg-surface p-4">
+            <h2 className="text-lg font-semibold text-ink">Your prescription</h2>
             <PrescriptionView prescription={data} />
             <div className="flex flex-col gap-2 sm:flex-row">
                 <Button variant="outline" className="flex-1" disabled={busy !== null} onClick={() => void run('pdf')}>

@@ -10,20 +10,20 @@ export function BookingCard({ booking, holdLive }: { booking: BookingView; holdL
     return (
         <Link
             href={`/consult/booking/${booking.consultationId}`}
-            className="block rounded-2xl border border-border bg-white p-4 shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="block rounded-xl border border-border bg-surface p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                    <p className="truncate font-bold text-foreground">{booking.doctorName}</p>
-                    <p className="text-sm text-muted-foreground">{booking.specialty}</p>
+                    <p className="truncate font-semibold text-ink">{booking.doctorName}</p>
+                    <p className="text-sm text-ink-muted">{booking.specialty}</p>
                 </div>
                 <Badge tone={info.tone}>{info.label}</Badge>
             </div>
-            <p className="mt-2 text-sm font-semibold text-foreground">{formatIstDateTime(booking.startsAt)}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="mt-2 text-sm font-semibold text-ink">{formatIstDateTime(booking.startsAt)}</p>
+            <p className="text-xs text-ink-muted">
                 For {booking.patientName} · {formatPaise(booking.amountPaise)}
             </p>
-            {holdLive && <p className="mt-2 text-sm font-bold text-primary">Continue to pay</p>}
+            {holdLive && <p className="mt-2 text-sm font-semibold text-primary">Continue to pay</p>}
         </Link>
     );
 }

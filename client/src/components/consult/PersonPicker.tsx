@@ -20,9 +20,9 @@ interface Props {
 export function PersonPicker({ people, value, onChange, onAdd }: Props) {
     return (
         <fieldset>
-            <legend className="text-sm font-bold text-foreground">Who is this visit for?</legend>
+            <legend className="text-sm font-semibold text-ink">Who is this visit for?</legend>
             {people.length === 0 && (
-                <p className="mt-2 text-sm text-muted-foreground">You have no saved people yet. Add yourself or a family member to continue.</p>
+                <p className="mt-2 text-sm text-ink-muted">You have no saved people yet. Add yourself or a family member to continue.</p>
             )}
             <div role="radiogroup" aria-label="Who is this visit for?" className="mt-2 space-y-2">
                 {people.map((p) => {
@@ -32,13 +32,13 @@ export function PersonPicker({ people, value, onChange, onAdd }: Props) {
                             key={p.id}
                             className={cn(
                                 'flex cursor-pointer items-center gap-3 rounded-xl border p-3 focus-within:ring-2 focus-within:ring-primary',
-                                checked ? 'border-primary bg-primary/5' : 'border-border bg-white'
+                                checked ? 'border-primary bg-primary-soft' : 'border-border bg-surface'
                             )}
                         >
                             <input type="radio" name="person" value={p.id} checked={checked} onChange={() => onChange(p.id)} className="h-4 w-4 accent-primary" />
                             <span className="min-w-0">
-                                <span className="block truncate text-sm font-semibold text-foreground">{p.name}</span>
-                                <span className="block text-xs text-muted-foreground">
+                                <span className="block truncate text-sm font-semibold text-ink">{p.name}</span>
+                                <span className="block text-xs text-ink-muted">
                                     {p.relation?.toLowerCase() === 'self' ? 'Me' : p.relation} · {p.age} years
                                 </span>
                             </span>
@@ -46,7 +46,7 @@ export function PersonPicker({ people, value, onChange, onAdd }: Props) {
                     );
                 })}
             </div>
-            <button type="button" onClick={onAdd} className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-primary">
+            <button type="button" onClick={onAdd} className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
                 <Plus className="h-4 w-4" aria-hidden /> Add a person
             </button>
         </fieldset>

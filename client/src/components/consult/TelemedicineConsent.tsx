@@ -19,8 +19,8 @@ export function TelemedicineConsent({ checked, onChange, label, senior = false, 
     const about = ABOUT_TELEMEDICINE[language];
     const other = ABOUT_TELEMEDICINE[language === 'hi' ? 'en' : 'hi'];
     return (
-        <div className={`rounded-2xl border-2 p-4 ${checked ? 'border-[#4b2192] bg-[#F4F0FA]' : 'border-gray-200 bg-white'}`}>
-            <label className={`flex cursor-pointer items-start gap-3 ${senior ? 'text-lg' : 'text-sm'} leading-relaxed text-gray-900`}>
+        <div className={`rounded-xl border-2 p-4 ${checked ? 'border-[#4b2192] bg-[#F4F0FA]' : 'border-border bg-surface'}`}>
+            <label className={`flex cursor-pointer items-start gap-3 ${senior ? 'text-lg' : 'text-sm'} leading-relaxed text-ink`}>
                 <input
                     type="checkbox"
                     data-testid="consent-checkbox"
@@ -43,7 +43,7 @@ export function TelemedicineConsent({ checked, onChange, label, senior = false, 
                         <DialogTitle>{about.title}</DialogTitle>
                         <DialogDescription>{other.title}</DialogDescription>
                     </DialogHeader>
-                    <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-gray-800">
+                    <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-ink">
                         {about.points.map((p) => <li key={p}>{p}</li>)}
                     </ul>
                 </DialogContent>

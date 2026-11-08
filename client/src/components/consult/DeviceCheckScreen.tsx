@@ -106,17 +106,17 @@ export function DeviceCheckScreen({ videoAllowed, joining, onJoin, onCancel, lan
 
     const showVideo = status === 'ok'; // a successful stream always includes the camera when video is allowed
     const statusIcon = status === 'checking'
-        ? <Loader2 className="h-4 w-4 animate-spin text-gray-400" aria-hidden />
+        ? <Loader2 className="h-4 w-4 animate-spin text-ink-subtle" aria-hidden />
         : status === 'ok'
-            ? <CheckCircle2 className="h-4 w-4 text-green-600" aria-hidden />
-            : <AlertCircle className="h-4 w-4 text-red-600" aria-hidden />;
+            ? <CheckCircle2 className="h-4 w-4 text-success" aria-hidden />
+            : <AlertCircle className="h-4 w-4 text-danger" aria-hidden />;
     const size = senior ? 'lg' : 'md';
     const selectClass = 'w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring';
 
     return (
         <div className="mx-auto max-w-2xl space-y-6">
             <div className="space-y-2 text-center">
-                <h2 className="text-2xl font-bold text-foreground">{t.title}</h2>
+                <h2 className="text-2xl font-semibold text-foreground">{t.title}</h2>
                 <p className={cn('text-muted-foreground', senior ? 'text-lg' : 'text-sm')}>{t.subtitle}</p>
             </div>
 
@@ -126,7 +126,7 @@ export function DeviceCheckScreen({ videoAllowed, joining, onJoin, onCancel, lan
                         <span className="flex items-center gap-2 text-sm font-semibold text-foreground"><Video className="h-4 w-4" aria-hidden /> {t.camera}</span>
                         {statusIcon}
                     </div>
-                    <div className="relative aspect-video overflow-hidden rounded-2xl bg-gray-900">
+                    <div className="relative aspect-video overflow-hidden rounded-2xl bg-ink">
                         {/* Always mounted so the stream can be attached as soon as it arrives. */}
                         <video ref={videoRef} autoPlay muted playsInline className={cn('h-full w-full -scale-x-100 object-cover', !showVideo && 'hidden')} />
                         {!showVideo && (
@@ -148,11 +148,11 @@ export function DeviceCheckScreen({ videoAllowed, joining, onJoin, onCancel, lan
                     <span className="flex items-center gap-2 text-sm font-semibold text-foreground"><Mic className="h-4 w-4" aria-hidden /> {t.microphone}</span>
                     {statusIcon}
                 </div>
-                <div className="flex items-center gap-3 rounded-xl bg-gray-50 p-4">
+                <div className="flex items-center gap-3 rounded-xl bg-surface-subtle p-4">
                     <Volume2 className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-muted">
                         <div
-                            className={cn('h-full rounded-full transition-all duration-100', level > 70 ? 'bg-green-500' : level > 30 ? 'bg-yellow-500' : 'bg-gray-400')}
+                            className={cn('h-full rounded-full transition-all duration-100', level > 70 ? 'bg-success' : level > 30 ? 'bg-warning' : 'bg-border-strong')}
                             style={{ width: `${level}%` }}
                         />
                     </div>
@@ -167,11 +167,11 @@ export function DeviceCheckScreen({ videoAllowed, joining, onJoin, onCancel, lan
             </div>
 
             {problem && (
-                <div role="alert" className="flex items-start gap-3 rounded-xl border border-red-100 bg-red-50 p-4">
-                    <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" aria-hidden />
+                <div role="alert" className="flex items-start gap-3 rounded-xl border border-danger-soft bg-danger-soft p-4">
+                    <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-danger" aria-hidden />
                     <div className="space-y-2">
-                        <p className={cn('font-semibold text-red-900', senior ? 'text-lg' : 'text-sm')}>{t.problems[problem]}</p>
-                        <p className={cn('text-red-700', senior ? 'text-base' : 'text-xs')}>{t.canStillJoin}</p>
+                        <p className={cn('font-semibold text-danger-ink', senior ? 'text-lg' : 'text-sm')}>{t.problems[problem]}</p>
+                        <p className={cn('text-danger-ink', senior ? 'text-base' : 'text-xs')}>{t.canStillJoin}</p>
                         <Button variant="outline" size="sm" onClick={() => setAttempt((n) => n + 1)}>{t.checkAgain}</Button>
                     </div>
                 </div>

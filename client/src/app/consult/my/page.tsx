@@ -8,7 +8,7 @@ import { consult } from '@/lib/consult/api';
 import { groupBookings } from '@/lib/consult/bookingFlow';
 import { serverNow } from '@/lib/consult/time';
 import { BookingCard } from '@/components/consult/BookingCard';
-import { EmptyState, ErrorState, LoadingBlock } from '@/components/consult/States';
+import { ErrorState, LoadingBlock } from '@/components/consult/States';
 import { Button } from '@/components/ui';
 import { Footer } from '@/components/Footer';
 import type { BookingView } from '@/lib/consult/types';
@@ -18,8 +18,8 @@ function Group({ title, items, holdLive }: { title: string; items: BookingView[]
     return (
         <section aria-label={title} className="mt-8">
             <div className="mb-4 flex items-center gap-3">
-                <h2 className="text-lg font-black text-foreground md:text-xl">{title}</h2>
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                <h2 className="text-lg font-semibold text-ink md:text-xl">{title}</h2>
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary">
                     {items.length}
                 </span>
             </div>
@@ -38,21 +38,21 @@ function MyList() {
                 {/* Upcoming Section Skeleton */}
                 <section>
                     <div className="mb-4 flex items-center gap-3">
-                        <div className="h-6 w-24 bg-gray-200 rounded" />
-                        <div className="h-6 w-6 bg-gray-200 rounded-full" />
+                        <div className="h-6 w-24 bg-surface-muted rounded" />
+                        <div className="h-6 w-6 bg-surface-muted rounded-full" />
                     </div>
                     <div className="space-y-3">
                         {[1, 2].map((i) => (
-                            <div key={i} className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+                            <div key={i} className="rounded-xl border border-border bg-surface p-4">
                                 <div className="mb-3 flex items-center justify-between">
-                                    <div className="h-5 w-40 bg-gray-200 rounded" />
-                                    <div className="h-6 w-24 bg-gray-200 rounded-full" />
+                                    <div className="h-5 w-40 bg-surface-muted rounded" />
+                                    <div className="h-6 w-24 bg-surface-muted rounded-full" />
                                 </div>
-                                <div className="mb-2 h-4 w-32 bg-gray-200 rounded" />
-                                <div className="mb-2 h-4 w-48 bg-gray-200 rounded" />
-                                <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-                                    <div className="h-6 w-20 bg-gray-200 rounded" />
-                                    <div className="h-9 w-28 bg-gray-200 rounded-xl" />
+                                <div className="mb-2 h-4 w-32 bg-surface-muted rounded" />
+                                <div className="mb-2 h-4 w-48 bg-surface-muted rounded" />
+                                <div className="flex items-center justify-between border-t border-border pt-3">
+                                    <div className="h-6 w-20 bg-surface-muted rounded" />
+                                    <div className="h-9 w-28 bg-surface-muted rounded-xl" />
                                 </div>
                             </div>
                         ))}
@@ -62,18 +62,18 @@ function MyList() {
                 {/* Past Section Skeleton */}
                 <section>
                     <div className="mb-4 flex items-center gap-3">
-                        <div className="h-6 w-16 bg-gray-200 rounded" />
-                        <div className="h-6 w-6 bg-gray-200 rounded-full" />
+                        <div className="h-6 w-16 bg-surface-muted rounded" />
+                        <div className="h-6 w-6 bg-surface-muted rounded-full" />
                     </div>
                     <div className="space-y-3">
                         {[1].map((i) => (
-                            <div key={i} className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+                            <div key={i} className="rounded-xl border border-border bg-surface p-4">
                                 <div className="mb-3 flex items-center justify-between">
-                                    <div className="h-5 w-40 bg-gray-200 rounded" />
-                                    <div className="h-6 w-24 bg-gray-200 rounded-full" />
+                                    <div className="h-5 w-40 bg-surface-muted rounded" />
+                                    <div className="h-6 w-24 bg-surface-muted rounded-full" />
                                 </div>
-                                <div className="mb-2 h-4 w-32 bg-gray-200 rounded" />
-                                <div className="mb-2 h-4 w-48 bg-gray-200 rounded" />
+                                <div className="mb-2 h-4 w-32 bg-surface-muted rounded" />
+                                <div className="mb-2 h-4 w-48 bg-surface-muted rounded" />
                             </div>
                         ))}
                     </div>
@@ -85,16 +85,16 @@ function MyList() {
     if (!data || data.length === 0) {
         return (
             <div className="mt-12 text-center">
-                <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-purple-100">
-                    <Stethoscope className="h-10 w-10 text-primary" aria-hidden />
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft">
+                    <Stethoscope className="h-6 w-6 text-primary" aria-hidden />
                 </div>
-                <h2 className="mb-3 text-2xl font-black text-foreground">No consultations yet</h2>
-                <p className="mb-6 text-muted-foreground">When you book a doctor, it will show up here.</p>
+                <h2 className="mb-2 text-xl font-semibold text-ink">No consultations yet</h2>
+                <p className="mb-6 text-ink-muted">When you book a doctor, it will show up here.</p>
                 <Link
                     href="/consult"
-                    className="inline-flex rounded-2xl bg-primary px-8 py-3 font-extrabold text-white shadow-lg hover:bg-primary/90"
+                    className="inline-flex h-11 items-center rounded-lg border border-border-strong bg-surface px-4 text-sm font-medium text-ink hover:bg-surface-muted"
                 >
-                    Find a Doctor
+                    Find a doctor
                 </Link>
             </div>
         );
@@ -115,27 +115,19 @@ export default function MyConsultationsPage() {
 
     return (
         <>
-            <main className="w-full bg-white pb-16 md:pb-24">
-                {/* Mini Hero */}
-                <section
-                    className="pb-12 pt-12 md:pb-16 md:pt-16"
-                    style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}
-                >
-                    <div className="container mx-auto max-w-6xl px-4">
-                        <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-                            <div className="text-center md:text-left">
-                                <h1 className="text-3xl font-black text-white md:text-4xl">My Consultations</h1>
-                                <p className="mt-2 text-base font-medium text-white/80 md:text-lg">
-                                    Track your appointments and access prescriptions
-                                </p>
-                            </div>
-                            <Link
-                                href="/consult"
-                                className="shrink-0 rounded-2xl bg-white px-6 py-3 font-extrabold text-primary shadow-lg hover:bg-white/90"
-                            >
-                                Book New Consultation
-                            </Link>
+            <main className="w-full bg-surface pb-16 md:pb-24">
+                <section className="border-b border-border bg-surface-subtle">
+                    <div className="container mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 md:flex-row md:items-end md:justify-between md:py-10">
+                        <div>
+                            <h1 className="text-3xl font-semibold text-ink">My consultations</h1>
+                            <p className="mt-1 text-base text-ink-muted">Your appointments and prescriptions.</p>
                         </div>
+                        <Link
+                            href="/consult"
+                            className="inline-flex h-11 w-fit items-center rounded-lg bg-primary px-4 text-sm font-medium text-on-primary transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                        >
+                            Book a consultation
+                        </Link>
                     </div>
                 </section>
 
@@ -143,12 +135,12 @@ export default function MyConsultationsPage() {
                     {!isInitialized && <LoadingBlock />}
                     {isInitialized && !isAuthenticated && (
                         <div className="mt-12 text-center">
-                            <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-purple-100">
-                                <Stethoscope className="h-10 w-10 text-primary" aria-hidden />
+                            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft">
+                                <Stethoscope className="h-6 w-6 text-primary" aria-hidden />
                             </div>
-                            <h2 className="mb-3 text-2xl font-black text-foreground">Log in to continue</h2>
-                            <p className="mb-6 text-muted-foreground">Please log in to see your consultations.</p>
-                            <Button className="bg-primary px-8 py-3 font-extrabold" onClick={openAuthDialog}>
+                            <h2 className="mb-3 text-2xl font-semibold text-ink">Log in to continue</h2>
+                            <p className="mb-6 text-ink-muted">Please log in to see your consultations.</p>
+                            <Button onClick={openAuthDialog}>
                                 Log in
                             </Button>
                         </div>

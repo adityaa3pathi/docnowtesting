@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { Loader2, ChevronLeft, Clock } from 'lucide-react';
+import { ChevronLeft, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthGate } from '@/contexts/AuthGateContext';
 import { useBookingFlow } from '@/hooks/useBookingFlow';
@@ -17,7 +17,8 @@ import { JoinPanel } from '@/components/consult/JoinPanel';
 import { PatientPrescription } from '@/components/consult/PatientPrescription';
 import { ConfirmingNotice, PaymentStatus } from '@/components/consult/PaymentStatus';
 import { ErrorState, LoadingBlock } from '@/components/consult/States';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, Notice } from '@/components/ui';
+import { cn } from '@/lib/utils';
 import { Footer } from '@/components/Footer';
 import type { BookingView } from '@/lib/consult/types';
 
@@ -30,7 +31,7 @@ const REFUND_TEXT = {
 function RefundLine({ booking }: { booking: BookingView }) {
     if (booking.refundPaise <= 0) return null;
     return (
-        <p className="rounded-xl bg-primary/5 px-4 py-3 text-sm font-semibold">
+        <p className="rounded-xl bg-primary-soft px-4 py-3 text-sm font-semibold">
             {formatPaise(booking.refundPaise)}: {booking.refundStatus ? REFUND_TEXT[booking.refundStatus] : 'Refund being prepared'}
         </p>
     );
@@ -58,8 +59,8 @@ function BookingDetail() {
     if (!isAuthenticated) {
         return (
             <main className="mx-auto max-w-md px-4 py-10 text-center">
-                <h1 className="text-xl font-bold">Log in to see this booking</h1>
-                <p className="mt-2 text-sm text-muted-foreground">If you paid, your booking is safe. Log in to see where it stands.</p>
+                <h1 className="text-xl font-semibold">Log in to see this booking</h1>
+                <p className="mt-2 text-sm text-ink-muted">If you paid, your booking is safe. Log in to see where it stands.</p>
                 <Button className="mt-4" onClick={openAuthDialog}>Log in</Button>
             </main>
         );
@@ -69,37 +70,37 @@ function BookingDetail() {
             <>
                 <main className="mx-auto w-full max-w-2xl px-4 py-6 pb-16 animate-pulse">
                     <div className="mb-6 flex items-center gap-2">
-                        <div className="h-4 w-4 bg-gray-200 rounded" />
-                        <div className="h-4 w-32 bg-gray-200 rounded" />
+                        <div className="h-4 w-4 bg-surface-muted rounded" />
+                        <div className="h-4 w-32 bg-surface-muted rounded" />
                     </div>
                     <div className="space-y-6">
                         {/* Status Card Skeleton */}
                         <div className="text-center">
-                            <div className="mx-auto h-10 w-64 bg-gray-200 rounded" />
+                            <div className="mx-auto h-10 w-64 bg-surface-muted rounded" />
                         </div>
 
                         {/* Main Card Skeleton */}
-                        <Card className="p-8 shadow-2xl">
-                            <div className="mb-6 mx-auto h-8 w-48 bg-gray-200 rounded-full" />
-                            <div className="mx-auto h-20 w-48 bg-gray-200 rounded" />
-                            <div className="mt-4 mx-auto h-4 w-56 bg-gray-200 rounded" />
+                        <Card className="p-8">
+                            <div className="mb-6 mx-auto h-8 w-48 bg-surface-muted rounded-full" />
+                            <div className="mx-auto h-20 w-48 bg-surface-muted rounded" />
+                            <div className="mt-4 mx-auto h-4 w-56 bg-surface-muted rounded" />
                         </Card>
 
                         {/* Booking Summary Skeleton */}
-                        <Card className="p-6 shadow-md">
+                        <Card className="p-6">
                             <div className="space-y-4">
-                                <div className="h-6 w-3/4 bg-gray-200 rounded" />
-                                <div className="h-4 w-1/2 bg-gray-200 rounded" />
-                                <div className="h-4 w-2/3 bg-gray-200 rounded" />
+                                <div className="h-6 w-3/4 bg-surface-muted rounded" />
+                                <div className="h-4 w-1/2 bg-surface-muted rounded" />
+                                <div className="h-4 w-2/3 bg-surface-muted rounded" />
                                 <div className="flex justify-between border-t pt-4">
-                                    <div className="h-5 w-20 bg-gray-200 rounded" />
-                                    <div className="h-5 w-24 bg-gray-200 rounded" />
+                                    <div className="h-5 w-20 bg-surface-muted rounded" />
+                                    <div className="h-5 w-24 bg-surface-muted rounded" />
                                 </div>
                             </div>
                         </Card>
 
                         {/* Action Button Skeleton */}
-                        <div className="h-14 w-full bg-gray-200 rounded-2xl" />
+                        <div className="h-14 w-full bg-surface-muted rounded-xl" />
                     </div>
                 </main>
                 <Footer />
@@ -110,7 +111,7 @@ function BookingDetail() {
         return (
             <main className="mx-auto max-w-md px-4 py-10">
                 <ErrorState message={flow.error?.message ?? 'We could not load this booking.'} onRetry={() => void flow.refetch()} />
-                <p className="mt-4 text-center text-sm"><Link href="/consult/my" className="font-bold text-primary">My consultations</Link></p>
+                <p className="mt-4 text-center text-sm"><Link href="/consult/my" className="font-semibold text-primary">My consultations</Link></p>
             </main>
         );
     }
@@ -134,55 +135,31 @@ function BookingDetail() {
     return (
         <>
             <main className="mx-auto w-full max-w-2xl px-4 py-6 pb-16">
-                <Link href="/consult/my" className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-primary/80">
+                <Link href="/consult/my" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
                     <ChevronLeft className="h-4 w-4" aria-hidden />
                     My consultations
                 </Link>
                 <div className="mt-6 space-y-6">
                     {decision.kind === 'pay' && (
                         <>
-                            <div className="text-center">
-                                <h1 className="text-3xl font-black text-foreground md:text-4xl">Complete Your Payment</h1>
-                            </div>
+                            <h1 className="text-2xl font-semibold text-ink md:text-3xl">Complete your payment</h1>
 
-                            {/* Countdown Timer Card */}
-                            <Card
-                                className="overflow-hidden border-0 p-8 text-center shadow-2xl"
-                                style={{ background: 'radial-gradient(594.6% 81.5% at 50% 63.68%, #4B0082 25.49%, #2A004A 74.17%)' }}
-                            >
-                                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 backdrop-blur-sm">
-                                    <Clock className="h-4 w-4 text-white" aria-hidden />
-                                    <span className="text-xs font-bold uppercase tracking-wider text-white">Time Remaining</span>
+                            {/* The hold countdown: clear and calm; it turns amber only in the last minutes. */}
+                            <Card className={cn('flex items-center gap-4 p-5', flow.secondsLeft <= 120 && 'border-warning bg-warning-soft')}>
+                                <Clock className={cn('h-6 w-6 shrink-0', flow.secondsLeft <= 120 ? 'text-warning' : 'text-primary')} aria-hidden />
+                                <div className="flex-1">
+                                    <p className="text-sm text-ink-muted">Your slot is held while you pay</p>
+                                    <p aria-hidden className="text-3xl font-semibold tabular-nums text-ink">{formatCountdown(flow.secondsLeft)}</p>
                                 </div>
-                                <p aria-hidden className="text-6xl font-black tabular-nums text-white md:text-7xl">
-                                    {formatCountdown(flow.secondsLeft)}
-                                </p>
                                 <p className="sr-only" role="status" aria-live="polite">{flow.announcement}</p>
-                                <p className="mt-3 text-sm font-medium text-white/80">Your slot is held while you complete payment</p>
                             </Card>
 
-                            <Card className="shadow-md">{summary}</Card>
+                            <Card>{summary}</Card>
 
-                            {flow.payNote && (
-                                <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 shadow-sm">
-                                    <p className="text-sm font-semibold text-amber-800">{flow.payNote}</p>
-                                </div>
-                            )}
+                            {flow.payNote && <Notice tone="warning">{flow.payNote}</Notice>}
 
-                            <Button
-                                size="lg"
-                                className="w-full bg-primary py-6 text-lg font-extrabold shadow-lg"
-                                disabled={flow.opening}
-                                onClick={() => void pay()}
-                            >
-                                {flow.opening ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden />
-                                        Opening payment
-                                    </>
-                                ) : (
-                                    `Pay ${formatPaise(booking.amountPaise)}`
-                                )}
+                            <Button size="lg" className="w-full" loading={flow.opening} onClick={() => void pay()}>
+                                {flow.opening ? 'Opening payment' : `Pay ${formatPaise(booking.amountPaise)}`}
                             </Button>
                         </>
                     )}
@@ -192,14 +169,11 @@ function BookingDetail() {
                             {paidButUnsettled || booking.paymentCaptured || flow.paidHere ? (
                                 <ConfirmingNotice />
                             ) : (
-                                <Card className="border-blue-200 bg-blue-50 p-6 shadow-sm">
-                                    <p className="font-bold text-blue-900">Checking your booking</p>
-                                    <p className="mt-2 text-sm text-blue-800">
-                                        The payment window has ended. We are making sure no payment is on the way.
-                                    </p>
-                                </Card>
+                                <Notice tone="info" title="Checking your booking">
+                                    The payment window has ended. We are making sure no payment is on the way.
+                                </Notice>
                             )}
-                            <Card className="shadow-md">{summary}</Card>
+                            <Card>{summary}</Card>
                             <Button size="lg" className="w-full" disabled>Pay</Button>
                         </>
                     )}
@@ -207,7 +181,7 @@ function BookingDetail() {
                     {decision.kind === 'result' && (
                         <>
                             <PaymentStatus result={decision.result} fresh={fresh} statusLabel={info.label} doctorId={booking.doctorId} />
-                            <Card className="shadow-md">{summary}</Card>
+                            <Card>{summary}</Card>
                             <RefundLine booking={booking} />
                             <JoinPanel
                                 status={booking.status}
@@ -222,8 +196,8 @@ function BookingDetail() {
                             {booking.hasPrescription ? (
                                 <PatientPrescription bookingId={booking.consultationId} />
                             ) : (booking.status === 'IN_PROGRESS' || booking.status === 'COMPLETED') && (
-                                <Card className="flex items-center justify-between gap-3 bg-gray-50 p-4">
-                                    <p className="text-sm text-gray-700">Your prescription will show here once the doctor issues it.</p>
+                                <Card className="flex items-center justify-between gap-3 bg-surface-subtle p-4">
+                                    <p className="text-sm text-ink">Your prescription will show here once the doctor issues it.</p>
                                     <Button variant="outline" size="sm" onClick={() => void flow.refetch()}>Check again</Button>
                                 </Card>
                             )}
