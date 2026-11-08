@@ -15,12 +15,14 @@ export function HowItWorks() {
                 <h2 id="how-title" className="text-2xl font-bold text-ink md:text-3xl">How a consultation works</h2>
                 <p className="mt-2 text-base text-ink-muted">Four steps, from booking to your prescription.</p>
                 {/* Phone: a numbered rail down the left. Desktop: four cards joined by a line. */}
-                <ol className="mt-8 md:grid md:grid-cols-4 md:gap-6">
+                <ol className="-my-3 mt-5 md:my-0 md:mt-8 md:grid md:grid-cols-4 md:gap-6">
                     {STEPS.map(({ icon: Icon, title, body }, i) => (
-                        <li key={title} className="relative flex gap-4 pb-6 last:pb-0 md:flex-col md:gap-4 md:pb-0">
+                        <li key={title} className="relative flex items-center gap-4 py-3 md:flex-col md:items-stretch md:gap-4 md:py-0">
+                            {/* Phone rail: each step draws its half-line above and below its number, so they join up. */}
+                            {i > 0 && <span aria-hidden className="absolute left-5 top-0 h-1/2 w-0.5 -translate-x-1/2 bg-primary/20 md:hidden" />}
                             {i < STEPS.length - 1 && (
                                 <>
-                                    <span aria-hidden className="absolute bottom-0 left-5 top-10 w-0.5 -translate-x-1/2 bg-primary/20 md:hidden" />
+                                    <span aria-hidden className="absolute bottom-0 left-5 top-1/2 w-0.5 -translate-x-1/2 bg-primary/20 md:hidden" />
                                     <span aria-hidden className="absolute left-12 right-0 top-5 hidden h-0.5 bg-primary/20 md:block" />
                                 </>
                             )}
