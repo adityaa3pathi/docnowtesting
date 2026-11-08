@@ -61,7 +61,7 @@ function ConsultHome() {
                     {/* Specialty Filter */}
                     {specialties.data && specialties.data.length > 0 && (
                         <div className="mb-8">
-                            <h2 className="mb-4 text-xl font-semibold text-ink">Choose by specialty</h2>
+                            <h2 className="mb-4 text-xl font-bold text-ink">Choose by specialty</h2>
                             <SpecialtyChips specialties={specialties.data} value={specialtyId} onChange={setSpecialtyId} />
                         </div>
                     )}
@@ -69,7 +69,7 @@ function ConsultHome() {
                     {/* Doctors Grid */}
                     <div>
                         <div className="mb-6 flex items-center justify-between">
-                            <h2 className="text-xl font-semibold text-ink">
+                            <h2 className="text-xl font-bold text-ink">
                                 {specialtyId ? 'Available doctors' : 'Our doctors'}
                             </h2>
 

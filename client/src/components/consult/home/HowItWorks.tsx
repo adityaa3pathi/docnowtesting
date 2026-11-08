@@ -12,7 +12,7 @@ export function HowItWorks() {
     return (
         <section aria-labelledby="how-title" className="border-y border-border bg-surface-subtle">
             <div className="container mx-auto max-w-6xl px-4 py-14">
-                <h2 id="how-title" className="text-2xl font-semibold text-ink">How a consultation works</h2>
+                <h2 id="how-title" className="text-2xl font-bold text-ink">How a consultation works</h2>
                 <ol className="mt-8 grid gap-8 md:grid-cols-4 md:gap-6">
                     {STEPS.map(({ icon: Icon, title, body }, i) => (
                         <li key={title} className="relative">

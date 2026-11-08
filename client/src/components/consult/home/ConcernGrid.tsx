@@ -14,7 +14,7 @@ export function ConcernGrid({ specialties, onPick }: { specialties: Specialty[];
     if (offered.length === 0) return null;
     return (
         <section aria-labelledby="concerns-title" className="container mx-auto max-w-6xl px-4">
-            <h2 id="concerns-title" className="text-2xl font-semibold text-ink">What do you need help with?</h2>
+            <h2 id="concerns-title" className="text-2xl font-bold text-ink">What do you need help with?</h2>
             <p className="mt-1 text-base text-ink-muted">Pick what is bothering you and we will show the right doctors.</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {offered.map((c) => (

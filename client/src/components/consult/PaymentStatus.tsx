@@ -39,7 +39,7 @@ export function PaymentStatus({ result, fresh, statusLabel, doctorId }: Props) {
 
     return (
         <div role="status" aria-live="polite" className={`rounded-xl p-4 ${toneClasses[tone]}`}>
-            <h1 ref={heading} tabIndex={-1} className="text-lg font-semibold outline-none">{title}</h1>
+            <h1 ref={heading} tabIndex={-1} className="text-lg font-bold outline-none">{title}</h1>
             {body && <p className="mt-1 text-sm">{body}</p>}
             <div className="mt-3 flex flex-wrap gap-3 text-sm font-semibold">
                 <Link href="/consult/my" className="underline">My consultations</Link>

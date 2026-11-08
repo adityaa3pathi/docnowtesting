@@ -59,7 +59,7 @@ function BookingDetail() {
     if (!isAuthenticated) {
         return (
             <main className="mx-auto max-w-md px-4 py-10 text-center">
-                <h1 className="text-xl font-semibold">Log in to see this booking</h1>
+                <h1 className="text-xl font-bold">Log in to see this booking</h1>
                 <p className="mt-2 text-sm text-ink-muted">If you paid, your booking is safe. Log in to see where it stands.</p>
                 <Button className="mt-4" onClick={openAuthDialog}>Log in</Button>
             </main>
@@ -142,14 +142,14 @@ function BookingDetail() {
                 <div className="mt-6 space-y-6">
                     {decision.kind === 'pay' && (
                         <>
-                            <h1 className="text-2xl font-semibold text-ink md:text-3xl">Complete your payment</h1>
+                            <h1 className="text-2xl font-bold text-ink md:text-3xl">Complete your payment</h1>
 
                             {/* The hold countdown: clear and calm; it turns amber only in the last minutes. */}
                             <Card className={cn('flex items-center gap-4 p-5', flow.secondsLeft <= 120 && 'border-warning bg-warning-soft')}>
                                 <Clock className={cn('h-6 w-6 shrink-0', flow.secondsLeft <= 120 ? 'text-warning' : 'text-primary')} aria-hidden />
                                 <div className="flex-1">
                                     <p className="text-sm text-ink-muted">Your slot is held while you pay</p>
-                                    <p aria-hidden className="text-3xl font-semibold tabular-nums text-ink">{formatCountdown(flow.secondsLeft)}</p>
+                                    <p aria-hidden className="text-3xl font-bold tabular-nums text-ink">{formatCountdown(flow.secondsLeft)}</p>
                                 </div>
                                 <p className="sr-only" role="status" aria-live="polite">{flow.announcement}</p>
                             </Card>

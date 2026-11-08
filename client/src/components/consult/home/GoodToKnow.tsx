@@ -8,7 +8,7 @@ export function GoodToKnow() {
     const points = ABOUT_TELEMEDICINE.en.points;
     return (
         <section aria-labelledby="good-title" className="container mx-auto max-w-3xl px-4">
-            <h2 id="good-title" className="text-2xl font-semibold text-ink">Good to know before you book</h2>
+            <h2 id="good-title" className="text-2xl font-bold text-ink">Good to know before you book</h2>
             <div className="mt-6 divide-y divide-border rounded-xl border border-border bg-surface">
                 {points.map((answer, i) => (
                     <details key={answer} className="group px-5 [&_summary::-webkit-details-marker]:hidden">

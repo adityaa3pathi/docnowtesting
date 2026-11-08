@@ -4,9 +4,9 @@
   --color-primary-hover: #3d1a7a;
   --color-primary-soft: #f4f0fa;
   --color-on-primary: #ffffff;
-  --color-ink: #1f1a2b;
-  --color-ink-muted: #57526a;
-  --color-ink-subtle: #6f6a80;
+  --color-ink: #140f1f;
+  --color-ink-muted: #433e55;
+  --color-ink-subtle: #5c576d;
   --color-surface: #ffffff;
   --color-surface-subtle: #f8f7fa;
   --color-surface-muted: #f1eff5;
@@ -50,9 +50,9 @@
   --primary-hover: #3d1a7a;
   --primary-soft: #f4f0fa;
   --on-primary: #ffffff;
-  --ink: #1f1a2b;
-  --ink-muted: #57526a;
-  --ink-subtle: #6f6a80;
+  --ink: #140f1f;
+  --ink-muted: #433e55;
+  --ink-subtle: #5c576d;
   --surface: #ffffff;
   --surface-subtle: #f8f7fa;
   --surface-muted: #f1eff5;

@@ -112,7 +112,7 @@ function BookPage() {
     if (!isAuthenticated) {
         return (
             <main className="mx-auto max-w-md px-4 py-10 text-center">
-                <h1 className="text-xl font-semibold">Log in to book</h1>
+                <h1 className="text-xl font-bold">Log in to book</h1>
                 <p className="mt-2 text-sm text-ink-muted">Please log in to finish your booking. Your chosen time is kept.</p>
                 <Button className="mt-4" onClick={openAuthDialog}>Log in</Button>
             </main>
@@ -195,7 +195,7 @@ function BookPage() {
                     </li>
                 </ol>
 
-                <h1 className="mt-6 text-2xl font-semibold text-ink md:text-3xl">Review and pay</h1>
+                <h1 className="mt-6 text-2xl font-bold text-ink md:text-3xl">Review and pay</h1>
 
                 {/* Booking Summary Card */}
                 <Card className="mt-6">
@@ -210,7 +210,7 @@ function BookPage() {
 
                 {/* Patient Picker Card */}
                 <Card className="mt-6 p-6">
-                    <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
+                    <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-ink">
                         <Users className="h-5 w-5 text-ink-subtle" aria-hidden /> Who is this consultation for?
                     </h2>
                     <PersonPicker people={people} value={personId} onChange={setPersonId} onAdd={() => setAddOpen(true)} />
