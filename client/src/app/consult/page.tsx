@@ -1,11 +1,14 @@
 'use client';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
-import { BadgeCheck, Calendar, Stethoscope, Video, Lock, FileText } from 'lucide-react';
 import { useApi } from '@/hooks/useApi';
 import { consult } from '@/lib/consult/api';
 import { DoctorCard } from '@/components/consult/DoctorCard';
+import { ConcernGrid } from '@/components/consult/home/ConcernGrid';
+import { ConsultHeader } from '@/components/consult/home/ConsultHeader';
+import { FamilyBooking } from '@/components/consult/home/FamilyBooking';
+import { GoodToKnow } from '@/components/consult/home/GoodToKnow';
+import { HowItWorks } from '@/components/consult/home/HowItWorks';
 import { SpecialtyChips } from '@/components/consult/SpecialtyChips';
 import { EmptyState, ErrorState, Skeleton } from '@/components/consult/States';
 import { Button, Notice } from '@/components/ui';
@@ -32,57 +35,22 @@ function ConsultHome() {
     // Asked for a specialty this deployment does not offer yet: say so, and show everyone instead.
     const unmatched = !!wanted && picked === undefined && !!specialties.data && !fromUrl;
     const doctors = useApi(() => consult.doctors(specialtyId ?? undefined), [specialtyId]);
+    // The header shows one real doctor; fetched unfiltered so it stays put while the list filters.
+    const featured = useApi(() => consult.doctors(), []);
+    const pickConcern = (id: string) => {
+        setSpecialtyId(id);
+        document.getElementById('doctors')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
 
     return (
         <>
             <main className="w-full bg-surface pb-28 md:pb-24">
-                {/* Header: calm and light, facts instead of badges (DESIGN.md "calm clinical"). */}
-                <section className="border-b border-border bg-surface-subtle">
-                    <div className="container mx-auto max-w-7xl px-4 py-10 md:py-14">
-                        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-                            <div className="max-w-2xl space-y-3">
-                                <p className="flex items-center gap-2 text-sm font-medium text-primary">
-                                    <Stethoscope className="h-4 w-4" aria-hidden /> Doctor consultation
-                                </p>
-                                <h1 className="text-3xl font-semibold text-ink md:text-4xl">Talk to a doctor from home</h1>
-                                <p className="text-base text-ink-muted md:text-lg">
-                                    Registered doctors on video or audio. Book a time that suits you and get your prescription on your phone.
-                                </p>
-                            </div>
-                            <Link
-                                href="/consult/my"
-                                className="inline-flex h-11 w-fit items-center rounded-lg border border-border-strong bg-surface px-4 text-sm font-medium text-ink transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                            >
-                                My consultations
-                            </Link>
-                        </div>
+                <ConsultHeader featured={featured.data?.[0]} loading={featured.loading} />
 
-                        <ul className="mt-8 grid gap-3 text-sm text-ink-muted sm:grid-cols-3">
-                            <li className="flex items-center gap-2"><BadgeCheck className="h-5 w-5 text-primary" aria-hidden /> Verified registration</li>
-                            <li className="flex items-center gap-2"><FileText className="h-5 w-5 text-primary" aria-hidden /> Digital prescription after the call</li>
-                            <li className="flex items-center gap-2"><Lock className="h-5 w-5 text-primary" aria-hidden /> Private and confidential</li>
-                        </ul>
-                    </div>
-                </section>
+                <div className="space-y-16 pt-12 md:pt-20 lg:pt-28">
+                {specialties.data && <ConcernGrid specialties={specialties.data} onPick={pickConcern} />}
 
-                {/* How it works: three plain steps. */}
-                <section aria-label="How it works" className="border-b border-border bg-surface">
-                    <ol className="container mx-auto grid max-w-7xl gap-4 px-4 py-6 sm:grid-cols-3">
-                        {[
-                            { icon: Stethoscope, text: 'Pick a doctor' },
-                            { icon: Calendar, text: 'Choose a time' },
-                            { icon: Video, text: 'Talk on video or audio' },
-                        ].map(({ icon: Icon, text }, i) => (
-                            <li key={text} className="flex items-center gap-3">
-                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-sm font-medium text-primary">{i + 1}</span>
-                                <Icon className="h-5 w-5 text-ink-subtle" aria-hidden />
-                                <span className="text-sm font-medium text-ink">{text}</span>
-                            </li>
-                        ))}
-                    </ol>
-                </section>
-
-                <div className="container mx-auto max-w-7xl px-4 py-12 md:py-16">
+                <div id="doctors" className="container mx-auto max-w-6xl scroll-mt-24 px-4">
                     {/* Unmatched Warning */}
                     {unmatched && (
                         <Notice tone="warning" className="mb-6">
@@ -104,7 +72,6 @@ function ConsultHome() {
                             <h2 className="text-xl font-semibold text-ink">
                                 {specialtyId ? 'Available doctors' : 'Our doctors'}
                             </h2>
-                            {/* My Consultations Link - Mobile */}
 
                         </div>
 
@@ -145,6 +112,11 @@ function ConsultHome() {
                             {!doctors.loading && !doctors.error && doctors.data?.map((d) => <DoctorCard key={d.id} doctor={d} />)}
                         </section>
                     </div>
+                </div>
+
+                <HowItWorks />
+                <FamilyBooking />
+                <GoodToKnow />
                 </div>
             </main>
             <Footer />
