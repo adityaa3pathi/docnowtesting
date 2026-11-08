@@ -26,6 +26,8 @@ export interface DoctorSummary {
     consultationFee: number;
     slotMinutes: number;
     specialty: { id: string; name: string; slug: string };
+    /** Earliest bookable time (list endpoint only); null when nothing is open. */
+    nextSlotAt?: string | null;
 }
 
 export interface DoctorPublicProfile extends DoctorSummary {
