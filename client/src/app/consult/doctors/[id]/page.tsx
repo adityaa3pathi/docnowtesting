@@ -125,8 +125,9 @@ function DoctorPage() {
                     </div>
                 </section>
 
-                <div className="container mx-auto grid max-w-6xl gap-6 px-4 lg:grid-cols-[1fr_400px] lg:items-start">
-                    <div className="-mt-12 space-y-6">
+                {/* minmax(0,1fr): the scrolling day strip must not widen the column past the phone screen. */}
+                <div className="container mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start">
+                    <div className="-mt-12 min-w-0 space-y-6">
                         {notice && <Notice tone="warning">{notice}</Notice>}
 
                         <Card className="p-6 md:p-8">
@@ -172,7 +173,7 @@ function DoctorPage() {
                     </div>
 
                     {/* Booking panel: stays in view on desktop while the profile scrolls. */}
-                    <section aria-label="Available times" className="lg:sticky lg:top-24 lg:-mt-12">
+                    <section aria-label="Available times" className="min-w-0 lg:sticky lg:top-24 lg:-mt-12">
                         <Card className="overflow-hidden shadow-raised">
                             <div className="flex items-baseline justify-between gap-3 border-b border-border bg-surface-subtle px-5 py-4 md:px-6">
                                 <span className="text-sm font-medium text-ink-muted">Consultation</span>
