@@ -31,7 +31,7 @@ function PreviewCard({ doctor, loading }: { doctor?: DoctorSummary; loading: boo
                             </p>
                             <p className="text-sm text-ink-muted">{doctor.specialty.name} · {doctor.qualification}</p>
                             <p className="mt-1 text-sm text-ink">
-                                <span className="font-semibold tabular-nums">{formatRupees(doctor.consultationFee)}</span>
+                                <span className="font-bold tabular-nums">{formatRupees(doctor.consultationFee)}</span>
                                 <span className="text-ink-muted"> · {doctor.slotMinutes} min consultation</span>
                             </p>
                         </div>
@@ -65,7 +65,7 @@ export function ConsultHeader({ featured, loading }: { featured?: DoctorSummary;
         <section className="relative bg-primary-hover text-on-primary">
             <div className="container mx-auto grid max-w-6xl gap-10 px-4 pb-24 pt-12 md:pb-28 md:pt-16 lg:grid-cols-[1.15fr_1fr] lg:items-center lg:pb-20">
                 <div className="space-y-6">
-                    <h1 className="max-w-xl text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+                    <h1 className="max-w-xl text-4xl font-bold leading-tight tracking-tight md:text-5xl">
                         Talk to a doctor from home
                     </h1>
                     <p className="max-w-lg text-lg text-primary-soft">

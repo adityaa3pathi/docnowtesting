@@ -28,7 +28,7 @@ export function DoctorCard({ doctor }: { doctor: DoctorSummary }) {
         >
             <DoctorAvatar doctor={doctor} className="h-14 w-14 text-base md:h-16 md:w-16 md:text-lg" />
             <div className="min-w-0 flex-1 space-y-1">
-                <h3 className="flex items-center gap-1.5 font-semibold text-ink">
+                <h3 className="flex items-center gap-1.5 font-bold text-ink">
                     {doctor.displayName}
                     <BadgeCheck className="h-4 w-4 shrink-0 text-primary" aria-label="Verified" />
                 </h3>
@@ -40,7 +40,7 @@ export function DoctorCard({ doctor }: { doctor: DoctorSummary }) {
                 {/* The price says what it buys; "Book now" is the one forward sign (no extra arrow). */}
                 <div className="flex items-end justify-between gap-3 pt-2">
                     <p className="text-ink">
-                        <span className="text-lg font-semibold tabular-nums">{formatRupees(doctor.consultationFee)}</span>
+                        <span className="text-lg font-bold tabular-nums">{formatRupees(doctor.consultationFee)}</span>
                         <span className="text-sm text-ink-muted"> · {doctor.slotMinutes} min consultation</span>
                     </p>
                     <span className="shrink-0 text-sm font-medium text-primary group-hover:underline">Book now</span>

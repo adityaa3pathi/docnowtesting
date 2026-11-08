@@ -116,7 +116,7 @@ export function DeviceCheckScreen({ videoAllowed, joining, onJoin, onCancel, lan
     return (
         <div className="mx-auto max-w-2xl space-y-6">
             <div className="space-y-2 text-center">
-                <h2 className="text-2xl font-semibold text-foreground">{t.title}</h2>
+                <h2 className="text-2xl font-bold text-foreground">{t.title}</h2>
                 <p className={cn('text-muted-foreground', senior ? 'text-lg' : 'text-sm')}>{t.subtitle}</p>
             </div>
 

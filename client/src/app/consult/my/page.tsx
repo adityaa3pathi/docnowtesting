@@ -18,7 +18,7 @@ function Group({ title, items, holdLive }: { title: string; items: BookingView[]
     return (
         <section aria-label={title} className="mt-8">
             <div className="mb-4 flex items-center gap-3">
-                <h2 className="text-lg font-semibold text-ink md:text-xl">{title}</h2>
+                <h2 className="text-lg font-bold text-ink md:text-xl">{title}</h2>
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary">
                     {items.length}
                 </span>
@@ -88,7 +88,7 @@ function MyList() {
                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft">
                     <Stethoscope className="h-6 w-6 text-primary" aria-hidden />
                 </div>
-                <h2 className="mb-2 text-xl font-semibold text-ink">No consultations yet</h2>
+                <h2 className="mb-2 text-xl font-bold text-ink">No consultations yet</h2>
                 <p className="mb-6 text-ink-muted">When you book a doctor, it will show up here.</p>
                 <Link
                     href="/consult"
@@ -119,7 +119,7 @@ export default function MyConsultationsPage() {
                 <section className="border-b border-border bg-surface-subtle">
                     <div className="container mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 md:flex-row md:items-end md:justify-between md:py-10">
                         <div>
-                            <h1 className="text-3xl font-semibold text-ink">My consultations</h1>
+                            <h1 className="text-3xl font-bold text-ink">My consultations</h1>
                             <p className="mt-1 text-base text-ink-muted">Your appointments and prescriptions.</p>
                         </div>
                         <Link
@@ -138,7 +138,7 @@ export default function MyConsultationsPage() {
                             <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft">
                                 <Stethoscope className="h-6 w-6 text-primary" aria-hidden />
                             </div>
-                            <h2 className="mb-3 text-2xl font-semibold text-ink">Log in to continue</h2>
+                            <h2 className="mb-3 text-2xl font-bold text-ink">Log in to continue</h2>
                             <p className="mb-6 text-ink-muted">Please log in to see your consultations.</p>
                             <Button onClick={openAuthDialog}>
                                 Log in

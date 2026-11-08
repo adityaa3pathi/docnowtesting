@@ -2,12 +2,13 @@
 import Link from 'next/link';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { BadgeCheck, Calendar, ChevronLeft, Clock, FileText, FlaskConical, Languages, Briefcase, IndianRupee, Users, Video } from 'lucide-react';
+import { BadgeCheck, Calendar, ChevronLeft, FileText, FlaskConical, Users, Video } from 'lucide-react';
 import { useApi } from '@/hooks/useApi';
 import { useAuthGate } from '@/contexts/AuthGateContext';
 import { consult } from '@/lib/consult/api';
 import { formatRupees } from '@/lib/consult/format';
-import { formatIstDateTime, serverNow } from '@/lib/consult/time';
+import { formatIstDateTime, formatIstDay, formatIstTime, istDayKey, serverNow } from '@/lib/consult/time';
+import { HOME_SPECIALTIES } from '@/lib/home/specialties';
 import { DoctorAvatar } from '@/components/consult/DoctorCard';
 import { SlotPicker } from '@/components/consult/SlotPicker';
 import { EmptyState, ErrorState, Skeleton } from '@/components/consult/States';
@@ -78,6 +79,9 @@ function DoctorPage() {
     }
 
     const d = doctor.data;
+    // Real data only: the first open slot, and the common problems for this doctor's specialty.
+    const nextFree = slots[0] ? `${istDayKey(slots[0].startsAt) === istDayKey(new Date(serverNow()).toISOString()) ? 'Today' : formatIstDay(slots[0].startsAt)}, ${formatIstTime(slots[0].startsAt)}` : null;
+    const helpsWith = HOME_SPECIALTIES.find((h) => h.match.test(`${d.specialty.slug} ${d.specialty.name}`.toLowerCase()))?.symptoms ?? [];
     const goBook = () => {
         if (!selected) return;
         requireAuth(() => router.push(`/consult/book?doctorId=${d.id}&slotId=${selected.id}`));
@@ -96,13 +100,28 @@ function DoctorPage() {
                         <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:items-center">
                             <DoctorAvatar doctor={d} className="h-20 w-20 text-xl ring-4 ring-on-primary/15 md:h-24 md:w-24 md:text-2xl" />
                             <div className="min-w-0 space-y-1">
-                                <h1 className="flex flex-wrap items-center gap-2 text-3xl font-semibold tracking-tight md:text-4xl">
+                                <h1 className="flex flex-wrap items-center gap-2 text-3xl font-bold tracking-tight md:text-4xl">
                                     {d.displayName}
                                     <BadgeCheck className="h-6 w-6" aria-label="Verified" />
                                 </h1>
-                                <p className="text-lg text-primary-soft">{d.specialty.name} · {d.qualification}</p>
+                                <p className="text-lg font-medium text-primary-soft">{d.specialty.name} · {d.qualification}</p>
                             </div>
                         </div>
+
+                        {/* Key facts at a glance, in the band, so the decision needs no scrolling. */}
+                        <dl className="mt-8 grid grid-cols-2 gap-3 lg:max-w-[calc(100%-424px)] lg:grid-cols-4">
+                            {[
+                                { label: 'Next free', value: nextFree ?? (slotsApi.loading ? '…' : 'No times yet') },
+                                { label: 'Fee', value: `${formatRupees(d.consultationFee)} · ${d.slotMinutes} min` },
+                                { label: 'Experience', value: `${d.experienceYears} ${d.experienceYears === 1 ? 'year' : 'years'}` },
+                                ...(d.languages.length > 0 ? [{ label: 'Speaks', value: d.languages.join(', ') }] : []),
+                            ].map(({ label, value }) => (
+                                <div key={label} className="rounded-xl bg-on-primary/10 px-4 py-3">
+                                    <dt className="text-sm text-primary-soft">{label}</dt>
+                                    <dd className="mt-0.5 font-bold text-on-primary">{value}</dd>
+                                </div>
+                            ))}
+                        </dl>
                     </div>
                 </section>
 
@@ -111,29 +130,26 @@ function DoctorPage() {
                         {notice && <Notice tone="warning">{notice}</Notice>}
 
                         <Card className="p-6 md:p-8">
-                            <dl className="grid grid-cols-2 gap-5 sm:grid-cols-4">
-                                {[
-                                    { icon: Briefcase, label: 'Experience', value: `${d.experienceYears} ${d.experienceYears === 1 ? 'year' : 'years'}` },
-                                    { icon: IndianRupee, label: 'Fee', value: formatRupees(d.consultationFee) },
-                                    ...(d.languages.length > 0 ? [{ icon: Languages, label: 'Languages', value: d.languages.join(', ') }] : []),
-                                    { icon: Clock, label: 'Visit length', value: `${d.slotMinutes} min` },
-                                ].map(({ icon: Icon, label, value }) => (
-                                    <div key={label} className="space-y-1">
-                                        <dt className="flex items-center gap-1.5 text-sm text-ink-muted"><Icon className="h-4 w-4 text-ink-subtle" aria-hidden />{label}</dt>
-                                        <dd className="font-medium text-ink">{value}</dd>
-                                    </div>
-                                ))}
-                            </dl>
+                            {helpsWith.length > 0 && (
+                                <div className="mb-6 border-b border-border pb-6">
+                                    <h2 className="mb-3 text-lg font-bold text-ink">Commonly helps with</h2>
+                                    <ul className="flex flex-wrap gap-2">
+                                        {helpsWith.map((t) => (
+                                            <li key={t} className="rounded-full bg-primary-soft px-3 py-1.5 text-sm font-medium text-primary">{t}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
 
                             {d.bio && (
-                                <div className="mt-6 border-t border-border pt-6">
-                                    <h2 className="mb-2 text-lg font-semibold text-ink">About</h2>
+                                <div className="mb-6 border-b border-border pb-6">
+                                    <h2 className="mb-2 text-lg font-bold text-ink">About</h2>
                                     <p className="max-w-prose text-base leading-relaxed text-ink">{d.bio}</p>
                                 </div>
                             )}
 
-                            <div className="mt-6 border-t border-border pt-6">
-                                <h2 className="mb-3 text-lg font-semibold text-ink">What you get</h2>
+                            <div>
+                                <h2 className="mb-3 text-lg font-bold text-ink">What you get</h2>
                                 <ul className="grid gap-3 sm:grid-cols-2">
                                     {[
                                         { icon: Video, text: `A ${d.slotMinutes}-minute video call (switch to audio any time)` },
@@ -157,8 +173,13 @@ function DoctorPage() {
 
                     {/* Booking panel: stays in view on desktop while the profile scrolls. */}
                     <section aria-label="Available times" className="lg:sticky lg:top-24 lg:-mt-12">
-                        <Card className="p-5 shadow-raised md:p-6">
-                            <h2 className="flex items-center gap-2 text-xl font-semibold text-ink">
+                        <Card className="overflow-hidden shadow-raised">
+                            <div className="flex items-baseline justify-between gap-3 border-b border-border bg-surface-subtle px-5 py-4 md:px-6">
+                                <span className="text-sm font-medium text-ink-muted">Consultation</span>
+                                <span><span className="text-2xl font-bold tabular-nums text-ink">{formatRupees(d.consultationFee)}</span><span className="text-sm text-ink-muted"> · {d.slotMinutes} min</span></span>
+                            </div>
+                            <div className="p-5 md:p-6">
+                            <h2 className="flex items-center gap-2 text-xl font-bold text-ink">
                                 <Calendar className="h-5 w-5 text-primary" aria-hidden /> Pick a time
                             </h2>
                             <p className="mb-4 mt-1 text-sm text-ink-muted">All times are Indian time.</p>
@@ -179,11 +200,9 @@ function DoctorPage() {
                             {dropped && <Notice tone="warning" className="mt-4">The time you chose was just taken. Please pick another.</Notice>}
 
                             <div className="mt-5 hidden border-t border-border pt-5 lg:block">
-                                <div className="mb-4 flex items-baseline justify-between gap-3">
-                                    <span className="text-sm text-ink-muted">{selected ? formatIstDateTime(selected.startsAt) : 'Choose a time above'}</span>
-                                    <span className="text-lg font-semibold tabular-nums text-ink">{formatRupees(d.consultationFee)}</span>
-                                </div>
+                                <p className="mb-4 text-sm font-medium text-ink">{selected ? formatIstDateTime(selected.startsAt) : 'Choose a time above'}</p>
                                 <Button size="lg" className="w-full" disabled={!selected} onClick={goBook}>Continue to payment</Button>
+                            </div>
                             </div>
                         </Card>
                     </section>

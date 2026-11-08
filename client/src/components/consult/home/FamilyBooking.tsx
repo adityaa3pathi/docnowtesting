@@ -33,7 +33,7 @@ export function FamilyBooking() {
         <section aria-labelledby="family-title" className="container mx-auto max-w-6xl px-4">
             <div className="grid items-center gap-10 rounded-2xl bg-primary-soft p-6 md:p-10 lg:grid-cols-[1.3fr_1fr]">
                 <div>
-                    <h2 id="family-title" className="text-2xl font-semibold text-ink md:text-3xl">Book a doctor for your parents</h2>
+                    <h2 id="family-title" className="text-2xl font-bold text-ink md:text-3xl">Book a doctor for your parents</h2>
                     <p className="mt-2 max-w-prose text-base text-ink-muted">Wherever you are, you can book and pay, and your parents just tap a link.</p>
                     <ul className="mt-6 space-y-5">
                         {POINTS.map(({ icon: Icon, title, body }) => (

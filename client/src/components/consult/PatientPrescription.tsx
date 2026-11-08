@@ -50,7 +50,7 @@ export function PatientPrescription({ bookingId }: { bookingId: string }) {
 
     return (
         <section aria-label="Prescription" className="space-y-4 rounded-xl border border-border bg-surface p-4">
-            <h2 className="text-lg font-semibold text-ink">Your prescription</h2>
+            <h2 className="text-lg font-bold text-ink">Your prescription</h2>
             <PrescriptionView prescription={data} />
             <div className="flex flex-col gap-2 sm:flex-row">
                 <Button variant="outline" className="flex-1" disabled={busy !== null} onClick={() => void run('pdf')}>
