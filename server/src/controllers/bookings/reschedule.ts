@@ -6,6 +6,7 @@ import { validationSchemas } from '../../utils/helpers';
 import { BookingService } from '../../services/booking.service';
 import { sendBookingRescheduledViaWhatsApp } from '../../services/bookingRescheduleNotifications';
 import { Ratelimit } from '@upstash/ratelimit';
+import { underLimit } from '../../utils/rateLimit';
 import { Redis } from '@upstash/redis';
 
 const healthians = HealthiansAdapter.getInstance();
@@ -48,11 +49,8 @@ export async function rescheduleBooking(req: AuthRequest, res: Response) {
         }
 
         // 2. Rate Limiting
-        if (rescheduleRateLimit) {
-            const { success } = await rescheduleRateLimit.limit(`reschedule:${userId}`);
-            if (!success) {
-                return res.status(429).json({ error: 'Too many reschedule attempts. Please wait a minute.' });
-            }
+        if (!(await underLimit(rescheduleRateLimit, `reschedule:${userId}`))) {
+            return res.status(429).json({ error: 'Too many reschedule attempts. Please wait a minute.' });
         }
 
         // 3. Ownership & Eligibility Check
