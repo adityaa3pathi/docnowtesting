@@ -45,6 +45,7 @@ import { requestContextMiddleware } from './middleware/requestContext';
 import { logger } from './utils/logger';
 import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 import { rateLimiter } from './middleware/rateLimiter';
+import { trustProxySetting } from './utils/trustProxy';
 
 const app = express();
 // Without this every visitor is the Nginx address: one shared rate limit, useless consent IPs.
@@ -229,7 +230,6 @@ app.use((err: any, req: RequestWithContext, res: Response, next: NextFunction) =
 });
 
 import { startReconciler } from './workers/reconciler';
-import { trustProxySetting } from './utils/trustProxy';
 
 app.listen(PORT, () => {
     logger.info({ port: PORT, nodeEnv: process.env.NODE_ENV }, 'server_started');
