@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, ShoppingBag } from 'lucide-react';
+import { Loader2, ShoppingBag, Stethoscope, TestTube2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useRouter } from 'next/navigation';
@@ -17,6 +17,7 @@ import { CartItemCard } from '@/components/cart/CartItemCard';
 import { PromoSection } from '@/components/cart/PromoSection';
 import { OrderSummary } from '@/components/cart/OrderSummary';
 import { MobileCheckoutBar } from '@/components/cart/MobileCheckoutBar';
+import { Footer } from '@/components/Footer';
 
 // Custom Hooks & Types
 import { useSlots } from '@/hooks/useSlots';
@@ -25,7 +26,7 @@ import { useCheckout } from '@/hooks/useCheckout';
 import { Patient, Address } from '@/types/cart';
 
 export default function CartPage() {
-    const { cart, removeFromCart, updateCartItem, loading, refreshCart } = useCart();
+    const { cart, removeFromCart, updateCartItem, loading, loadFailed, refreshCart } = useCart();
     const router = useRouter();
 
     // Data Fetching State
@@ -138,22 +139,51 @@ export default function CartPage() {
     const finalPayable = Math.max(0, payableAfterDiscount - walletDeduction);
 
     return (
-        <div className="w-full min-h-screen bg-gray-50 pb-32 md:pb-20 overflow-x-hidden">
+        <>
+            <div className="w-full min-h-screen bg-gray-50 pb-32 md:pb-20">
 
-            <div className="container mx-auto px-3 sm:px-4 py-5 sm:py-8 max-w-4xl">
-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-5 sm:mb-8">Your Cart</h1>
-
-                {(!cart || cart.items.length === 0) ? (
-                    <div className="text-center py-14 sm:py-20 bg-white rounded-xl shadow-sm border border-gray-100">
-                        <ShoppingBag className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-300" />
-                        <p className="text-gray-500 mb-4 text-base sm:text-lg font-medium">Your cart is empty</p>
-                        <button
-                            onClick={() => router.push('/search')}
-                            className="text-primary font-bold hover:underline"
-                        >
-                            Browse Packages
-                        </button>
+                <div className="container mx-auto max-w-6xl px-4 py-8 sm:py-12">
+                    <div className="mb-8">
+                        <h1 className="mb-2 text-3xl font-black text-foreground sm:text-4xl">
+                            Your Cart
+                        </h1>
+                        <p className="text-base font-medium text-muted-foreground">
+                            Review your items and complete your booking
+                        </p>
                     </div>
+
+                    {!cart && loadFailed ? (
+                        // A failed load is not an empty cart: re-adding items would duplicate them.
+                        <div role="alert" className="rounded-2xl border border-border bg-white px-6 py-14 text-center shadow-sm">
+                            <p className="mb-4 text-base font-semibold text-foreground sm:text-lg">We could not load your cart.</p>
+                            <button onClick={() => void refreshCart()} className="font-bold text-primary hover:underline">
+                                Try again
+                            </button>
+                        </div>
+                    ) : (!cart || cart.items.length === 0) ? (
+                        <div className="mx-auto max-w-md text-center">
+                            <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-purple-100">
+                                <ShoppingBag className="h-10 w-10 text-primary" aria-hidden />
+                            </div>
+                            <h2 className="mb-3 text-2xl font-black text-foreground">Your cart is empty</h2>
+                            <p className="mb-8 text-muted-foreground">Add lab tests and packages to get started</p>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+                                <button
+                                    onClick={() => router.push('/search')}
+                                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3 font-extrabold text-white shadow-lg hover:bg-primary/90"
+                                >
+                                    <TestTube2 className="h-5 w-5" aria-hidden />
+                                    Browse Tests
+                                </button>
+                                <button
+                                    onClick={() => router.push('/consult')}
+                                    className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-primary bg-white px-6 py-3 font-extrabold text-primary hover:bg-accent"
+                                >
+                                    <Stethoscope className="h-5 w-5" aria-hidden />
+                                    Consult a Doctor
+                                </button>
+                            </div>
+                        </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-8">
                         <div className="md:col-span-2 space-y-4 sm:space-y-6">
@@ -289,7 +319,8 @@ export default function CartPage() {
                 />
             )}
         </div>
-    );
+        <Footer />
+    </>);
 }
 
 function CartSkeleton() {

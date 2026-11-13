@@ -12,7 +12,7 @@ import { PaymentStatus } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { getBookingStrategy } from './bookingStrategyRegistry';
 import { sendDeadLetterAlert } from '../utils/slack';
-import { getRazorpay } from './razorpay';
+import { refundCardPayment, restoreWalletAndPromo } from './refunds';
 import { prisma } from '../db';
 import { logAlert, logBusinessEvent, logger } from '../utils/logger';
 import { sendBookingConfirmationViaWhatsApp } from './bookingConfirmationNotifications';
@@ -129,34 +129,9 @@ export async function finalizeBooking(bookingId: string) {
     } catch (error: any) {
         logAlert('partner_booking_failed', { error, bookingId, attemptId });
 
-        // Auto Refund Logic
-        let statusToSet: 'PARTNER_FAILED' | 'REFUNDED' = 'PARTNER_FAILED';
-        if (booking.razorpayPaymentId) {
-            try {
-                // Initialize refund via Razorpay
-                logBusinessEvent('refund_started', {
-                    bookingId,
-                    razorpayPaymentId: booking.razorpayPaymentId,
-                    reason: 'partner_booking_failed',
-                });
-                await getRazorpay().payments.refund(booking.razorpayPaymentId, {
-                    notes: {
-                        reason: 'Healthians booking failed',
-                        bookingId: bookingId
-                    }
-                });
-                statusToSet = 'REFUNDED';
-            } catch (refundError: any) {
-                logAlert('refund_failed_manual_required', {
-                    error: refundError,
-                    bookingId,
-                    razorpayPaymentId: booking.razorpayPaymentId,
-                });
-            }
-        } else {
-             // For zero-amount bookings or other cases where payment isn't required but failed
-             statusToSet = 'REFUNDED';
-        }
+        // Refund now; a failed card refund leaves the booking for the retry queue instead.
+        const refund = await refundCardPayment(booking, 'Healthians booking failed');
+        const statusToSet: 'PARTNER_FAILED' | 'REFUNDED' = refund === 'refunded' ? 'REFUNDED' : 'PARTNER_FAILED';
 
         const updated = await prisma.booking.updateMany({
             where: {
@@ -173,8 +148,16 @@ export async function finalizeBooking(bookingId: string) {
             }
         });
 
-        // Only create retry record if we didn't refund it successfully
-        if (updated.count > 0 && statusToSet !== 'REFUNDED') {
+        if (updated.count === 0) {
+            // Money may already have left Razorpay while another worker owns the booking.
+            logAlert('partner_failure_lease_lost', { bookingId, attemptId, refund });
+            await sendDeadLetterAlert(bookingId, attemptId, `Lease lost after partner failure; card refund: ${refund}`);
+            return { status: 'lease_lost' };
+        }
+
+        if (statusToSet === 'REFUNDED') {
+            await restoreWalletAndPromo(booking);
+        } else {
             await prisma.partnerRetry.upsert({
                 where: { bookingId },
                 update: {
@@ -190,9 +173,9 @@ export async function finalizeBooking(bookingId: string) {
         }
 
         await syncManagerOrder(bookingId, statusToSet === 'REFUNDED' ? 'REFUNDED' : 'BOOKING_FAILED');
-        return { 
-            status: statusToSet === 'REFUNDED' ? 'refunded_due_to_partner_error' : 'partner_failed', 
-            error: error.message 
+        return {
+            status: statusToSet === 'REFUNDED' ? 'refunded_due_to_partner_error' : 'partner_failed',
+            error: error.message
         };
     }
 }

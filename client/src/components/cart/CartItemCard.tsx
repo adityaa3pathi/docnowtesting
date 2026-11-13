@@ -32,33 +32,37 @@ export function CartItemCard({
             isUnavailable ? 'border-orange-400 ring-1 ring-orange-300' : 'border-gray-100'
         }`}>
             {isUnavailable && (
-                <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 mb-3 text-sm text-orange-800">
-                    <AlertTriangle className="w-4 h-4 text-orange-500 shrink-0" />
+                <div role="alert" className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 mb-3 text-sm text-orange-800">
+                    <AlertTriangle className="w-4 h-4 text-orange-500 shrink-0" aria-hidden />
                     <span>
                         <strong>{item.testName}</strong> is not available at your selected location.
-                        Please <button onClick={() => onRemove(item.id)} className="underline font-semibold hover:text-orange-900">remove it</button> to proceed.
+                        Please <button type="button" onClick={() => onRemove(item.id)} className="underline font-semibold hover:text-orange-900">remove it</button> to proceed.
                     </span>
                 </div>
             )}
             <div className="flex items-start gap-3 sm:gap-4">
                 <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-lg flex-shrink-0 flex items-center justify-center">
-                    <span className="text-xl sm:text-2xl">🧪</span>
+                    <span className="text-xl sm:text-2xl" aria-hidden>🧪</span>
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                         <h3 className="font-semibold text-slate-900 text-sm sm:text-base line-clamp-2 break-words">{item.testName}</h3>
                         <button
+                            type="button"
                             onClick={() => onRemove(item.id)}
+                            aria-label={`Remove ${item.testName} from cart`}
+                            title="Remove"
                             className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 active:scale-90 transition-all flex-shrink-0 -mt-0.5"
                         >
-                            <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden />
                         </button>
                     </div>
 
                     {/* Patient Assignment */}
                     <div className="mt-2 mb-2">
-                        <label className="text-[11px] text-gray-500 font-medium mb-1 block">Assign to:</label>
+                        <label htmlFor={`assign-${item.id}`} className="text-[11px] text-gray-500 font-medium mb-1 block">Assign to:</label>
                         <select
+                            id={`assign-${item.id}`}
                             value={item.patientId || 'self'}
                             onChange={(e) => {
                                 if (e.target.value === '__add_new__') {

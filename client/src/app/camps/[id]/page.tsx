@@ -10,6 +10,7 @@ import {
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
+import { StickyBottomBar } from '@/components/layout/StickyBottomBar';
 
 interface CampDetail {
     id: string;
@@ -279,17 +280,27 @@ export default function CampRegistrationPage() {
                 handler: async function (response: any) {
                     try {
                         setIsCheckingOut(true);
-                        await api.post('/payments/verify', {
+                        const verifyRes = await api.post('/payments/verify', {
                             bookingId: data.bookingId,
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_signature: response.razorpay_signature,
                         });
-                        toast.success('Registration confirmed!');
+                        // Same contract as the lab checkout: only a confirmed booking is "confirmed".
+                        const verified = verifyRes.data?.status;
+                        if (verified === 'confirmed' || verified === 'already_confirmed') {
+                            toast.success('Registration confirmed!');
+                        } else if (verified === 'refunded_due_to_partner_error') {
+                            toast.error('We could not register you with the lab, so your payment is being refunded.', { duration: 8000 });
+                        } else {
+                            toast.success('Payment received. We are confirming your registration; check My Bookings shortly.', { duration: 8000 });
+                        }
                         router.push('/profile?tab=bookings');
                     } catch (verifyError: any) {
+                        // A failed verify says nothing about the payment itself.
                         console.error('Payment verification error:', verifyError);
-                        toast.error('Payment verification failed. If amount was deducted, it will be refunded within 5-7 days.');
+                        toast.error('We could not confirm your payment yet. Check My Bookings in a minute; if it is not there, contact support.', { duration: 8000 });
+                        router.push('/profile?tab=bookings');
                     } finally {
                         setIsCheckingOut(false);
                     }
@@ -307,6 +318,10 @@ export default function CampRegistrationPage() {
             };
 
             const rzp = new (window as any).Razorpay(options);
+            // A declined card otherwise looks the same as closing the popup.
+            rzp.on('payment.failed', (resp: any) => {
+                toast.error(`Payment failed: ${resp?.error?.description || 'please try another method'}.`, { duration: 6000 });
+            });
             rzp.open();
         } catch (error: any) {
             console.error('Checkout error:', error);
@@ -733,7 +748,7 @@ export default function CampRegistrationPage() {
             </div>
 
             {/* ═══ Mobile Sticky CTA ═══ */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-3 md:hidden z-50 shadow-2xl shadow-black/10">
+            <StickyBottomBar className="bg-white border-t border-gray-100 px-4 py-3 md:hidden z-50 shadow-2xl shadow-black/10">
                 <div className="flex items-center justify-between gap-4 max-w-4xl mx-auto">
                     <div>
                         <div className="text-xs text-gray-400 font-medium">Total</div>
@@ -758,7 +773,7 @@ export default function CampRegistrationPage() {
                         )}
                     </button>
                 </div>
-            </div>
+            </StickyBottomBar>
         </div>
     );
 }
@@ -773,7 +788,7 @@ function CampDetailSkeleton() {
                     <div className="h-4 w-12 bg-white/10 rounded mb-5 animate-pulse" />
                     <div className="h-5 w-20 bg-white/10 rounded-full mb-4 animate-pulse" />
                     <div className="h-9 w-72 bg-white/15 rounded-lg mb-2 animate-pulse" />
-                    <div className="h-5 w-96 bg-white/10 rounded-lg mb-5 animate-pulse" />
+                    <div className="h-5 w-full max-w-96 bg-white/10 rounded-lg mb-5 animate-pulse" />
                     <div className="flex gap-2">
                         <div className="h-8 w-32 bg-white/10 rounded-lg animate-pulse" />
                         <div className="h-8 w-40 bg-white/10 rounded-lg animate-pulse" />

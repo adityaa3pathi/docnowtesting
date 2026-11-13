@@ -83,8 +83,31 @@ export function FeaturedPackages() {
   return (
     <>
       {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm animate-pulse">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div className="flex-1 space-y-2">
+                  <div className="h-6 w-3/4 bg-gray-200 rounded" />
+                  <div className="h-4 w-1/2 bg-gray-200 rounded" />
+                </div>
+                <div className="h-6 w-16 bg-gray-200 rounded-full" />
+              </div>
+              <div className="h-4 w-full bg-gray-200 rounded mb-2" />
+              <div className="h-4 w-5/6 bg-gray-200 rounded mb-4" />
+              <div className="flex items-center gap-6 py-3 mb-4">
+                <div className="h-4 w-20 bg-gray-200 rounded" />
+                <div className="h-4 w-20 bg-gray-200 rounded" />
+              </div>
+              <div className="flex items-baseline justify-between pt-4 border-t border-gray-100">
+                <div className="space-y-1">
+                  <div className="h-7 w-24 bg-gray-200 rounded" />
+                  <div className="h-4 w-16 bg-gray-200 rounded" />
+                </div>
+                <div className="h-10 w-28 bg-gray-200 rounded-xl" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : packages.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
@@ -165,8 +188,31 @@ export function FeaturedTests() {
   return (
     <>
       {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm animate-pulse">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div className="flex-1 space-y-2">
+                  <div className="h-6 w-3/4 bg-gray-200 rounded" />
+                  <div className="h-4 w-1/2 bg-gray-200 rounded" />
+                </div>
+                <div className="h-6 w-12 bg-gray-200 rounded-full" />
+              </div>
+              <div className="h-4 w-full bg-gray-200 rounded mb-2" />
+              <div className="h-4 w-5/6 bg-gray-200 rounded mb-4" />
+              <div className="flex items-center gap-6 py-3 mb-4">
+                <div className="h-4 w-20 bg-gray-200 rounded" />
+                <div className="h-4 w-20 bg-gray-200 rounded" />
+              </div>
+              <div className="flex items-baseline justify-between pt-4 border-t border-gray-100">
+                <div className="space-y-1">
+                  <div className="h-7 w-24 bg-gray-200 rounded" />
+                  <div className="h-4 w-16 bg-gray-200 rounded" />
+                </div>
+                <div className="h-10 w-28 bg-gray-200 rounded-xl" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : tests.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">

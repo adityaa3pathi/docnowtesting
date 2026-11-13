@@ -48,6 +48,7 @@ export function PromoSection({
                         <div className="flex-1 relative">
                             <input
                                 type="text"
+                                aria-label="Promo code"
                                 placeholder="Enter Promo Code"
                                 value={promoCode}
                                 onChange={(e) => {
@@ -62,16 +63,18 @@ export function PromoSection({
                             disabled={!promoCode || verifyingPromo}
                             className="px-4 sm:px-5 py-3 sm:py-2.5 bg-gray-900 text-white rounded-lg text-sm font-semibold hover:bg-gray-800 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex-shrink-0"
                         >
-                            {verifyingPromo ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
+                            {verifyingPromo ? <><Loader2 className="w-4 h-4 animate-spin" aria-hidden /><span className="sr-only">Checking code</span></> : 'Apply'}
                         </button>
                     </div>
                     {promoError && (
-                        <p className="text-xs text-red-500 flex items-center gap-1">
-                            <X className="w-3 h-3" />{promoError}
+                        <p role="alert" className="text-xs text-red-500 flex items-center gap-1">
+                            <X className="w-3 h-3" aria-hidden />{promoError}
                         </p>
                     )}
 
                     <button
+                        type="button"
+                        aria-expanded={showPromoList}
                         onClick={() => setShowPromoList(!showPromoList)}
                         className="w-full flex items-center justify-between text-sm text-[#4b2192] font-medium py-1 hover:underline"
                     >
@@ -156,8 +159,8 @@ export function PromoSection({
                             <p className="text-xs text-green-600">You saved ₹{appliedPromo.discountAmount}</p>
                         </div>
                     </div>
-                    <button onClick={removePromo} className="text-gray-400 hover:text-red-500 transition-colors">
-                        <X className="w-4 h-4" />
+                    <button type="button" onClick={removePromo} aria-label={`Remove promo code ${appliedPromo.code}`} className="text-gray-400 hover:text-red-500 transition-colors">
+                        <X className="w-4 h-4" aria-hidden />
                     </button>
                 </div>
             )}
@@ -165,15 +168,15 @@ export function PromoSection({
             {walletBalance > 0 && (
                 <div className="mt-4 pt-4 border-t border-gray-100">
                     <label className="flex items-center gap-3 cursor-pointer select-none">
-                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${useWallet ? 'bg-[#4b2192] border-[#4b2192]' : 'border-gray-300 bg-white'}`}>
-                            {useWallet && <Check className="w-3.5 h-3.5 text-white" />}
-                        </div>
                         <input
                             type="checkbox"
                             checked={useWallet}
                             onChange={(e) => setUseWallet(e.target.checked)}
-                            className="hidden"
+                            className="peer sr-only"
                         />
+                        <div aria-hidden className={`w-5 h-5 rounded border flex items-center justify-center transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[#4b2192]/40 ${useWallet ? 'bg-[#4b2192] border-[#4b2192]' : 'border-gray-300 bg-white'}`}>
+                            {useWallet && <Check className="w-3.5 h-3.5 text-white" />}
+                        </div>
                         <div className="flex-1">
                             <p className="text-sm font-medium text-gray-700 flex items-center gap-2">
                                 <Wallet className="w-4 h-4 text-gray-500" /> Use Wallet Balance

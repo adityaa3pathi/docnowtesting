@@ -74,6 +74,18 @@ class VerificationResult(BaseModel):
     claims_grounded: int = 0
 
 
+class ProductCard(BaseModel):
+    """A catalog test or package the chat shows as a tappable card."""
+
+    code: str  # partnerCode; the cart and the product page key on it
+    name: str
+    type: str  # TEST | PROFILE | PACKAGE
+    price: float
+    mrp: float | None = None
+    sample_type: str | None = None
+    report_time: str | None = None
+
+
 class SupportResponse(BaseModel):
     """Final response sent back to the customer."""
 
@@ -87,6 +99,7 @@ class SupportResponse(BaseModel):
     usage: dict[str, Any] = Field(default_factory=dict)
     langfuse_trace_id: str | None = None
     pending_action: Intent | None = None
+    cards: list[ProductCard] = Field(default_factory=list)
 
 
 # ──────────────────────────────────────────────
@@ -128,6 +141,7 @@ class ChatResponse(BaseModel):
     actions_taken: list[ActionSummary] = Field(default_factory=list)
     verified: bool = False
     was_abstained: bool = False
+    cards: list[ProductCard] = Field(default_factory=list)
 
 
 class MessageEntry(BaseModel):
@@ -139,6 +153,7 @@ class MessageEntry(BaseModel):
     sources: list[SourceRef] = Field(default_factory=list)
     verified: bool = False
     was_abstained: bool = False
+    cards: list[ProductCard] = Field(default_factory=list)
     feedback_score: int | None = None
     created_at: datetime
 

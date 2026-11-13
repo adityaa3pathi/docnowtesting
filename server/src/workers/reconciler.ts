@@ -13,6 +13,7 @@ import { rollbackInitiatedBooking } from '../services/rollback';
 import { assertTransition, canTransition } from '../utils/paymentStateMachine';
 import { sendDeadLetterAlert } from '../utils/slack';
 import { finalizeBooking, syncManagerOrder } from '../services/bookingFinalization';
+import { refundCardPayment, restoreWalletAndPromo } from '../services/refunds';
 import { Redis } from '@upstash/redis';
 import { logAlert, logBusinessEvent, logger } from '../utils/logger';
 import { getBookingStrategy } from '../services/bookingStrategyRegistry';
@@ -28,27 +29,40 @@ const INITIATED_TTL_MS = 30 * 60 * 1000;    // 30 minutes
 const AUTHORIZED_STUCK_MS = 5 * 60 * 1000;  // 5 minutes
 const RETRY_DELAYS = [60, 300, 900];         // seconds: 1m, 5m, 15m
 const PROCESSING_LEASE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+// Gives staff time to check Healthians for a booking the crashed attempt may have made.
+const STALE_LEASE_RETRY_DELAY_MS = 15 * 60 * 1000;
+const BUSY_RETRY_DELAY_MS = 5 * 60 * 1000;
 
 /**
- * Release stale PROCESSING leases back to PARTNER_FAILED.
+ * Release stale PROCESSING leases back to PARTNER_FAILED and queue them for retry.
+ * A lease only goes stale when the process died mid-call (calls time out well before), so
+ * Healthians may hold a booking we never recorded: the alert names them so staff check first.
  */
 async function recoverStuckProcessing() {
     const cutoff = new Date(Date.now() - PROCESSING_LEASE_TTL_MS);
-
-    const stuck = await prisma.booking.updateMany({
-        where: {
-            paymentStatus: 'PROCESSING',
-            processingStartedAt: { lt: cutoff }
-        },
-        data: {
-            paymentStatus: 'PARTNER_FAILED',
-            processingAttemptId: null,
-            processingStartedAt: null
-        }
+    const stale = await prisma.booking.findMany({
+        where: { paymentStatus: 'PROCESSING', processingStartedAt: { lt: cutoff } },
+        select: { id: true },
+        take: 50,
     });
 
-    if (stuck.count > 0) {
-        logBusinessEvent('reconciler_stale_processing_released', { count: stuck.count }, 'warn');
+    const released: string[] = [];
+    for (const { id } of stale) {
+        const res = await prisma.booking.updateMany({
+            where: { id, paymentStatus: 'PROCESSING', processingStartedAt: { lt: cutoff } },
+            data: { paymentStatus: 'PARTNER_FAILED', processingAttemptId: null, processingStartedAt: null }
+        });
+        if (res.count === 0) continue;
+        released.push(id);
+        await prisma.partnerRetry.upsert({
+            where: { bookingId: id },
+            update: { lastError: 'Processing lease expired', nextRetryAt: new Date(Date.now() + STALE_LEASE_RETRY_DELAY_MS) },
+            create: { bookingId: id, lastError: 'Processing lease expired', nextRetryAt: new Date(Date.now() + STALE_LEASE_RETRY_DELAY_MS) },
+        });
+    }
+
+    if (released.length > 0) {
+        logAlert('reconciler_stale_processing_released', { count: released.length, bookingIds: released });
     }
 }
 
@@ -127,6 +141,7 @@ async function retryPartnerBookings() {
             nextRetryAt: { lte: new Date() },
         },
         include: { booking: true },
+        orderBy: { nextRetryAt: 'asc' },
         take: 10
     });
 
@@ -170,13 +185,17 @@ async function retryPartnerBookings() {
                     // Offline payment — can't auto-refund. Alert admin only.
                     logger.warn({ bookingId: retry.bookingId, managerOrderId: linkedMO.id }, 'reconciler_offline_order_auto_refund_skipped');
                 } else {
-                    await prisma.booking.update({
-                        where: { id: retry.bookingId },
-                        data: { paymentStatus: 'REFUNDED' }
-                    });
-                    
-                    if (linkedMO) {
-                        await syncManagerOrder(retry.bookingId, 'REFUNDED');
+                    // Marking REFUNDED without sending the refund kept the customer's money.
+                    const refund = await refundCardPayment(retry.booking, 'Partner booking failed after retries');
+                    if (refund === 'refunded') {
+                        const moved = await prisma.booking.updateMany({
+                            where: { id: retry.bookingId, paymentStatus: retry.booking.paymentStatus },
+                            data: { paymentStatus: 'REFUNDED', status: 'Refunded' }
+                        });
+                        if (moved.count > 0) {
+                            await restoreWalletAndPromo(retry.booking);
+                            if (linkedMO) await syncManagerOrder(retry.bookingId, 'REFUNDED');
+                        }
                     }
                 }
             }
@@ -197,8 +216,15 @@ async function retryPartnerBookings() {
             logBusinessEvent('partner_booking_retry_succeeded', { bookingId: retry.bookingId });
             // finalizeBooking handles the ManagerOrder sync. We just need to clean up the retry queue.
             await prisma.partnerRetry.delete({ where: { id: retry.id } });
-        } else if (result.status === 'already_confirmed') {
-             await prisma.partnerRetry.delete({ where: { id: retry.id } });
+        } else if (result.status === 'already_confirmed' || result.status === 'refunded_due_to_partner_error' || result.status === 'not_found') {
+            // Done one way or another; a row left behind stays due forever and blocks the queue.
+            await prisma.partnerRetry.delete({ where: { id: retry.id } });
+        } else if (result.status === 'lease_lost' || result.status === 'already_processing_or_confirmed') {
+            // Another worker holds it right now; look again later without spending an attempt.
+            await prisma.partnerRetry.update({
+                where: { id: retry.id },
+                data: { nextRetryAt: new Date(Date.now() + BUSY_RETRY_DELAY_MS) }
+            });
         } else if (result.status === 'partner_failed') {
             // Exponential backoff
             const nextDelay = RETRY_DELAYS[Math.min(retry.attempts, RETRY_DELAYS.length - 1)];
@@ -235,6 +261,7 @@ export function startReconciler() {
         logger.info({}, 'reconciler_cycle_started');
 
         const lockKey = 'reconciler:lock';
+        let locked = false;
         if (redis) {
             try {
                 // Try to acquire lock for 4.5 minutes (270 seconds)
@@ -243,7 +270,9 @@ export function startReconciler() {
                     logger.info({}, 'reconciler_cycle_skipped_lock_held');
                     return;
                 }
+                locked = true;
             } catch (err) {
+                // Run anyway (every step is lease- or condition-guarded), but never delete a lock we don't hold.
                 logger.error({ error: err }, 'reconciler_redis_lock_failed');
             }
         }
@@ -256,8 +285,8 @@ export function startReconciler() {
         } catch (err) {
             logAlert('reconciler_cycle_failed', { error: err });
         } finally {
-            if (redis) {
-                try { await redis.del(lockKey); } catch (e) {}
+            if (redis && locked) {
+                try { await redis.del(lockKey); } catch (err) { logger.warn({ error: err }, 'reconciler_lock_release_failed'); }
             }
         }
 

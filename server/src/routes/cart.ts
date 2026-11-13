@@ -1,6 +1,8 @@
 import express, { Response } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { prisma } from '../db';
+import { addCatalogItemToCart } from '../services/cartService';
+import { claimOnce, type Claim } from '../utils/idempotency';
 const router = express.Router();
 
 // GET /api/cart - Get user's cart with all items + availability status
@@ -62,6 +64,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 // POST /api/cart/items - Add item to cart
 // Security: validates against internal catalog, enforces server-side price
 router.post('/items', authMiddleware, async (req: AuthRequest, res: Response) => {
+    let claim: Claim = { status: 'unchecked' };
     try {
         const { testCode, patientId } = req.body;
 
@@ -70,61 +73,26 @@ router.post('/items', authMiddleware, async (req: AuthRequest, res: Response) =>
             return;
         }
 
-        // 1. Validate against internal catalog
-        const catalogItem = await prisma.catalogItem.findUnique({
-            where: { partnerCode: testCode }
-        });
-
-        if (!catalogItem) {
-            res.status(404).json({ error: 'Product not found in catalog' });
+        // A double tap or a network retry from the chat card must not add a second line.
+        claim = await claimOnce('cart-add', req.userId!, req.get('Idempotency-Key'));
+        if (claim.status === 'repeat') {
+            res.status(200).json({ message: 'Item already added', duplicate: true });
             return;
         }
 
-        if (!catalogItem.isEnabled) {
-            res.status(400).json({ error: 'This product is currently unavailable', code: 'ITEM_DISABLED' });
+        const result = await addCatalogItemToCart(req.userId!, testCode, patientId || null);
+        if (!result.ok) {
+            if (claim.status === 'first') await claim.release();
+            res.status(result.status).json(result.code ? { error: result.error, code: result.code } : { error: result.error });
             return;
         }
-
-        // 2. Use server-side price (ignore client-sent price)
-        const serverPrice = catalogItem.discountedPrice ?? catalogItem.displayPrice;
-        const serverMrp = catalogItem.discountedPrice ? catalogItem.displayPrice : null;
-
-        // 3. Get or create cart
-        let cart = await prisma.cart.findUnique({ where: { userId: req.userId } });
-        if (!cart) {
-            cart = await prisma.cart.create({ data: { userId: req.userId! } });
-        }
-
-        // 4. Allow duplicate items (for multi-patient booking)
-        // We do NOT check for existing item.
-        // Each add call creates a new row, allowing user to assign different patients later.
-
-        // 5. Create cart item with server-side data and bump lastActivityAt
-        const [cartItem] = await prisma.$transaction([
-            prisma.cartItem.create({
-                data: {
-                    cartId: cart.id,
-                    testCode,
-                    testName: catalogItem.name,
-                    price: serverPrice,
-                    mrp: serverMrp,
-                    patientId: patientId || null
-                },
-                include: {
-                    patient: { select: { id: true, name: true, relation: true } }
-                }
-            }),
-            prisma.cart.update({
-                where: { id: cart.id },
-                data: { lastActivityAt: new Date() }
-            })
-        ]);
 
         res.status(201).json({
             message: 'Item added to cart',
-            item: cartItem
+            item: result.item
         });
     } catch (error) {
+        if (claim.status === 'first') await claim.release();
         console.error('Add to Cart Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }

@@ -34,6 +34,8 @@ import invoiceRoutes from './routes/invoices';
 import healthRoutes from './routes/health';
 import heroSlidesRoutes from './routes/heroSlides';
 import { campAdminRoutes, campPublicRoutes } from './modules/camps';
+import { buildCorsOptions } from './utils/corsOptions';
+import { consultCallEventRoutes, consultGuestRoutes, consultPublicRoutes, consultPatientRoutes, doctorRoutes, consultAdminRoutes } from './modules/consultations';
 
 import { registerBookingStrategy } from './services/bookingStrategyRegistry';
 import { HomeCollectionStrategy } from './services/homeCollectionStrategy';
@@ -45,8 +47,11 @@ import { requestContextMiddleware } from './middleware/requestContext';
 import { logger } from './utils/logger';
 import { createProxyMiddleware, fixRequestBody } from 'http-proxy-middleware';
 import { rateLimiter } from './middleware/rateLimiter';
+import { trustProxySetting } from './utils/trustProxy';
 
 const app = express();
+// Without this every visitor is the Nginx address: one shared rate limit, useless consent IPs.
+app.set('trust proxy', trustProxySetting());
 const PORT = process.env.PORT || 5000;
 
 function parseAllowedOrigins() {
@@ -69,16 +74,7 @@ function parseAllowedOrigins() {
 }
 
 const allowedOrigins = parseAllowedOrigins();
-app.use(cors({
-    origin(origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-
-        return callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-}));
+app.use(cors(buildCorsOptions(allowedOrigins)));
 
 app.use(requestContextMiddleware);
 app.use(cookieParser());
@@ -91,21 +87,22 @@ app.post('/api/webhooks/healthians', express.raw({ type: '*/*' }), healthiansWeb
 
 app.use(express.json());
 
-// ── UAT Response Logger ─────────────────────────────────
-// Intercepts all JSON responses and logs them to the terminal.
-// Remove this block after UAT is complete.
-app.use((req: any, res: any, next: any) => {
-    const originalJson = res.json.bind(res);
-    res.json = (body: any) => {
-        console.log(`\n${'═'.repeat(60)}`);
-        console.log(`[UAT] ${req.method} ${req.originalUrl} → ${res.statusCode}`);
-        console.log(`${'─'.repeat(60)}`);
-        console.log(JSON.stringify(body, null, 2));
-        console.log(`${'═'.repeat(60)}\n`);
-        return originalJson(body);
-    };
-    next();
-});
+// ── Response body logger (debug only) ──────────────────
+// Prints whole responses, patient data included, so it never runs in production.
+if (process.env.LOG_RESPONSE_BODIES === 'true' && process.env.NODE_ENV !== 'production') {
+    app.use((req: any, res: any, next: any) => {
+        const originalJson = res.json.bind(res);
+        res.json = (body: any) => {
+            console.log(`\n${'═'.repeat(60)}`);
+            console.log(`[UAT] ${req.method} ${req.originalUrl} → ${res.statusCode}`);
+            console.log(`${'─'.repeat(60)}`);
+            console.log(JSON.stringify(body, null, 2));
+            console.log(`${'═'.repeat(60)}\n`);
+            return originalJson(body);
+        };
+        next();
+    });
+}
 
 app.use(csrfProtection);
 
@@ -129,13 +126,28 @@ if (rawSupportUrl.includes('onrender.com')) {
 
 // Each chat message costs several Gemini calls, so cap bursts and daily use per caller.
 app.use('/api/support/chat', rateLimiter(10, 60, 'support_chat_min'), rateLimiter(100, 24 * 60 * 60, 'support_chat_day'));
+
+// Proves the call came through here; without it a direct caller skips the rate limits above.
+const SUPPORT_PROXY_SECRET = process.env.SUPPORT_PROXY_SECRET || '';
+if (!SUPPORT_PROXY_SECRET) {
+    logger.warn({}, 'support_proxy_secret_missing');
+}
+
 app.use('/api/support', createProxyMiddleware({
     target: AI_SUPPORT_TARGET,
     changeOrigin: true,
     timeout: 60000,
     proxyTimeout: 60000,
-    // express.json() already read the body; resend it or the AI gets nothing and the call times out.
-    on: { proxyReq: fixRequestBody },
+    on: {
+        proxyReq: (proxyReq, req) => {
+            // Set before the body is written, or the header never reaches FastAPI.
+            if (SUPPORT_PROXY_SECRET) {
+                proxyReq.setHeader('x-docnow-support-proxy', SUPPORT_PROXY_SECRET);
+            }
+            // express.json() already read the body; resend it or the AI gets nothing and the call times out.
+            fixRequestBody(proxyReq, req);
+        },
+    },
 }));
 
 // Register booking strategies at boot
@@ -162,6 +174,12 @@ app.use('/api/promos', promoRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/camps', campPublicRoutes);
+app.use('/api/consult', consultPublicRoutes);
+app.use('/api/consult', consultPatientRoutes);
+app.use('/api/consult', consultGuestRoutes);
+app.use('/api/consult', consultCallEventRoutes);
+app.use('/api/doctor', doctorRoutes);
+app.use('/api/admin/consult', consultAdminRoutes);
 app.use('/api/hero-slides', heroSlidesRoutes);
 
 
@@ -226,8 +244,16 @@ app.use((err: any, req: RequestWithContext, res: Response, next: NextFunction) =
 });
 
 import { startReconciler } from './workers/reconciler';
+import { startSlotGenerator } from './workers/slotGenerator';
+import { startConsultReconciler } from './workers/consultReconciler';
+import { startConsultTimers } from './workers/consultTimers';
+import { startReportPushRetry } from './workers/reportPushRetry';
 
 app.listen(PORT, () => {
     logger.info({ port: PORT, nodeEnv: process.env.NODE_ENV }, 'server_started');
     startReconciler();
+    startSlotGenerator();
+    startConsultReconciler();
+    startConsultTimers();
+    startReportPushRetry();
 });

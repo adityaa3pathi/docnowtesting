@@ -103,11 +103,12 @@ export function OrderSummary({
             )}
 
             <div className="border-t border-gray-100 pt-4 mb-4">
-                <label className="text-xs text-gray-500 font-medium mb-1.5 flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5" /> Invoice Name
+                <label htmlFor="invoice-name" className="text-xs text-gray-500 font-medium mb-1.5 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" aria-hidden /> Invoice Name
                     <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <select
+                    id="invoice-name"
                     value={billingPatientId}
                     onChange={(e) => setBillingPatientId(e.target.value)}
                     className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2"

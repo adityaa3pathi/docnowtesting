@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { useAuth } from './AuthContext';
@@ -31,7 +31,10 @@ interface CartContextType {
     cart: Cart | null;
     cartCount: number;
     loading: boolean;
-    addToCart: (testCode: string, testName: string, price: number, mrp?: number) => Promise<boolean>;
+    /** The last load failed; the cart is unknown, which is not the same as empty. */
+    loadFailed: boolean;
+    /** `idempotencyKey`: the same key twice adds once (chat cards send one per tap). */
+    addToCart: (testCode: string, testName: string, price: number, mrp?: number, opts?: { idempotencyKey?: string }) => Promise<boolean>;
     removeFromCart: (itemId: string) => Promise<void>;
     updateCartItem: (itemId: string, patientId: string | null) => Promise<void>;
     clearCart: () => Promise<void>;
@@ -52,28 +55,31 @@ export function useCart() {
 export function CartProvider({ children }: { children: ReactNode }) {
     const [cart, setCart] = useState<Cart | null>(null);
     const [loading, setLoading] = useState(false);
+    const [loadFailed, setLoadFailed] = useState(false);
     const { isAuthenticated, isInitialized, onLogout } = useAuth();
+    // Bumped on every load and on logout, so a late /cart reply from an old account is dropped.
+    const generation = useRef(0);
 
     const fetchCart = async () => {
+        const mine = ++generation.current;
         if (!isAuthenticated) {
             setCart(null);
+            setLoadFailed(false);
             return;
         }
 
         try {
             setLoading(true);
             const response = await api.get('/cart');
+            if (mine !== generation.current) return;
             setCart(response.data);
+            setLoadFailed(false);
         } catch (error: any) {
-            // Network errors are silently ignored — cart stays null, page works normally
-            if (error?.isNetworkError) {
-                console.warn('[Cart] Server unreachable, using empty cart');
-            } else {
-                console.error('Error fetching cart:', error);
-            }
-            setCart(null);
+            if (mine !== generation.current) return;
+            console.warn('[Cart] Could not load cart:', error?.message || error);
+            setLoadFailed(true);
         } finally {
-            setLoading(false);
+            if (mine === generation.current) setLoading(false);
         }
     };
 
@@ -81,8 +87,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     // without waiting for any API call. Used during logout so the badge
     // and cart page reflect the signed-out state in the same render cycle.
     const resetCart = useCallback(() => {
+        generation.current++;
         setCart(null);
         setLoading(false);
+        setLoadFailed(false);
     }, []);
 
     // Register resetCart as the logout callback so AuthContext.logout()
@@ -97,14 +105,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
     }, [isAuthenticated, isInitialized]);
 
-    const addToCart = async (testCode: string, testName: string, price: number, mrp?: number): Promise<boolean> => {
+    const addToCart = async (testCode: string, testName: string, price: number, mrp?: number, opts?: { idempotencyKey?: string }): Promise<boolean> => {
         try {
             await api.post('/cart/items', {
                 testCode,
                 testName,
                 price,
                 mrp: mrp || null
-            });
+            }, opts?.idempotencyKey ? { headers: { 'Idempotency-Key': opts.idempotencyKey } } : undefined);
             await fetchCart();
             return true;
         } catch (error: any) {
@@ -157,6 +165,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             cart,
             cartCount,
             loading,
+            loadFailed,
             addToCart,
             removeFromCart,
             updateCartItem,
