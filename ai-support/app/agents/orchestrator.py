@@ -21,6 +21,7 @@ from typing import Any
 from langfuse import observe
 
 from app.agents import usage
+from app.agents.cards import cards_from_actions
 from app.agents.llm import AIBusyError, call_gemini
 from app.agents.retrieval import retrieve
 from app.agents.tool_output import compact_tool_output
@@ -367,7 +368,7 @@ async def _run_pipeline(
                 latency_ms=_elapsed(start_time),
             )
 
-        # 8. Return verified response
+        # 8. Return verified response; cards come only from catalog rows, after the reply passed the verifier.
         return SupportResponse(
             content=verification.cleaned_response,
             sources=retrieval.chunks,
@@ -375,6 +376,7 @@ async def _run_pipeline(
             verifier_verdict=verification.verdict,
             was_abstained=False,
             latency_ms=_elapsed(start_time),
+            cards=cards_from_actions(actions),
         )
 
     except AIBusyError:
