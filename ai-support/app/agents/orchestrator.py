@@ -22,6 +22,7 @@ from langfuse import observe
 
 from app.agents import usage
 from app.agents.cards import cards_from_actions
+from app.agents.symptoms import symptom_reply
 from app.agents.llm import AIBusyError, call_gemini
 from app.agents.retrieval import retrieve
 from app.agents.tool_output import compact_tool_output
@@ -35,7 +36,8 @@ from app.models import (
     SupportResponse,
 )
 from app.observability import annotate, current_trace_id
-from app.prompts.intent import INTENT_CLASSIFICATION_PROMPT, intent_schema
+from app.symptoms.safety import EMERGENCY_RESPONSE, MEDICAL_ADVICE_RESPONSE, emergency_sign
+from app.prompts.intent import INTENT_CLASSIFICATION_PROMPT, SYMPTOM_TOPIC_IDS, intent_schema
 from app.prompts.system import DRAFT_GENERATION_PROMPT, ORCHESTRATOR_SYSTEM_PROMPT
 from app.prompts.verifier import ABSTENTION_MESSAGE
 from app.tools.registry import TOOL_REGISTRY, render_tool_list
@@ -122,6 +124,7 @@ async def classify_intent(
         is_authenticated=str(ctx.is_authenticated),
         conversation_history=_history_text(ctx) or "(new conversation)",
         tools=render_tool_list(),
+        symptom_topics=", ".join(SYMPTOM_TOPIC_IDS),
     )
 
     try:
@@ -235,6 +238,11 @@ async def _run_pipeline(
         if _GREETING.match(message):
             return SupportResponse(content=GREETING_RESPONSE, latency_ms=_elapsed(start_time))
 
+        # Emergency signs get the fixed 112 reply before any model call, and never a test.
+        if settings.symptom_suggestions and emergency_sign(message):
+            annotate(symptom_flow="emergency")
+            return SupportResponse(content=EMERGENCY_RESPONSE, verifier_verdict="FIXED_TEXT", latency_ms=_elapsed(start_time))
+
         # A "yes" to the write action asked about last turn runs it; no search needed.
         confirmed = ctx.pending_action is not None and bool(_CONFIRM.match(message))
         retrieval = RetrievalResult()
@@ -252,6 +260,20 @@ async def _run_pipeline(
             "Intent: %s (tool=%s, action=%s, conf=%.2f)",
             intent.intent, intent.tool_name, intent.requires_action, intent.confidence,
         )
+
+        # Symptom and medical-advice turns get fixed, doctor-approved wording, never a model draft.
+        if intent.intent in ("SYMPTOM_CHECK", "MEDICAL_ADVICE"):
+            if not settings.symptom_suggestions:
+                intent = intent.model_copy(update={"intent": "FAQ", "tool_name": None, "requires_action": False})
+            elif intent.intent == "MEDICAL_ADVICE":
+                annotate(symptom_flow="medical_advice")
+                return SupportResponse(content=MEDICAL_ADVICE_RESPONSE, verifier_verdict="FIXED_TEXT", latency_ms=_elapsed(start_time))
+            else:
+                content, actions, cards = await symptom_reply(intent, ctx, settings)
+                return SupportResponse(
+                    content=content, actions_taken=actions, cards=cards,
+                    verifier_verdict="FIXED_TEXT", latency_ms=_elapsed(start_time),
+                )
 
         # 3. Greeting — return immediately without verification
         if intent.intent == "GREETING":
