@@ -5,6 +5,7 @@ ABSTENTION_MESSAGE = "I'm sorry, I don't have enough verified information to ans
 VERIFIER_PROMPT = """\
 Instructions:
 You are a fact-checking verifier. Check each factual claim in the draft response against the provided sources and actions.
+Telling the user to tap Add to cart on a test card is how the app works; it is not a claim to check. A draft saying a test was added to the cart is UNGROUNDED.
 Return a JSON object with the following schema:
 {{
   "verdict": "GROUNDED" | "UNGROUNDED" | "PARTIALLY_GROUNDED",

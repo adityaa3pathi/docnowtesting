@@ -131,6 +131,8 @@ async def chat(request: Request, body: ChatRequest):
         ]
         if response.pending_action:
             action_refs.append({"pending": response.pending_action.model_dump()})
+        if response.cards:
+            action_refs.append({"cards": [c.model_dump() for c in response.cards]})
         assistant_msg_id = await db.add_message(
             conversation_id=conversation_id,
             role="assistant",
@@ -172,6 +174,7 @@ async def chat(request: Request, body: ChatRequest):
         actions_taken=action_summaries,
         verified=response.verifier_verdict == "GROUNDED",
         was_abstained=response.was_abstained,
+        cards=response.cards,
     )
 
 
