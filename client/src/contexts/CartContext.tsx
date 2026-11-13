@@ -31,7 +31,8 @@ interface CartContextType {
     cart: Cart | null;
     cartCount: number;
     loading: boolean;
-    addToCart: (testCode: string, testName: string, price: number, mrp?: number) => Promise<boolean>;
+    /** `idempotencyKey`: the same key twice adds once (chat cards send one per tap). */
+    addToCart: (testCode: string, testName: string, price: number, mrp?: number, opts?: { idempotencyKey?: string }) => Promise<boolean>;
     removeFromCart: (itemId: string) => Promise<void>;
     updateCartItem: (itemId: string, patientId: string | null) => Promise<void>;
     clearCart: () => Promise<void>;
@@ -97,14 +98,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
     }, [isAuthenticated, isInitialized]);
 
-    const addToCart = async (testCode: string, testName: string, price: number, mrp?: number): Promise<boolean> => {
+    const addToCart = async (testCode: string, testName: string, price: number, mrp?: number, opts?: { idempotencyKey?: string }): Promise<boolean> => {
         try {
             await api.post('/cart/items', {
                 testCode,
                 testName,
                 price,
                 mrp: mrp || null
-            });
+            }, opts?.idempotencyKey ? { headers: { 'Idempotency-Key': opts.idempotencyKey } } : undefined);
             await fetchCart();
             return true;
         } catch (error: any) {

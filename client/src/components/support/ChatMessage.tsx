@@ -4,6 +4,7 @@ import React from 'react';
 import { ThumbsUp, ThumbsDown, CheckCircle, ShieldAlert, Link as LinkIcon, Info } from 'lucide-react';
 import type { ChatMessage as ChatMessageType, ChatSource } from '@/hooks/useSupportChat';
 import { clsx } from 'clsx';
+import { ChatProductCards } from './ChatProductCards';
 
 interface ChatMessageProps {
     message: ChatMessageType;
@@ -222,6 +223,8 @@ export function ChatMessage({ message, onFeedback }: ChatMessageProps) {
                 )}
 
                 {/* Actions Summary */}
+                {!isUser && message.cards && <ChatProductCards cards={message.cards} />}
+
                 {message.actions && message.actions.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-gray-100/50">
                         <div className="text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
