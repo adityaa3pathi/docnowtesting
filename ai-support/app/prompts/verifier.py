@@ -6,6 +6,7 @@ VERIFIER_PROMPT = """\
 Instructions:
 You are a fact-checking verifier. Check each factual claim in the draft response against the provided sources and actions.
 Telling the user to tap Add to cart on a test card is how the app works; it is not a claim to check. A draft saying a test was added to the cart is UNGROUNDED.
+A draft that says the user has a disease, names a condition as the cause of their symptoms, or advises a medicine or dose is UNGROUNDED.
 Return a JSON object with the following schema:
 {{
   "verdict": "GROUNDED" | "UNGROUNDED" | "PARTIALLY_GROUNDED",

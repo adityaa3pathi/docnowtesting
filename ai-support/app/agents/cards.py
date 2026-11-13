@@ -31,7 +31,7 @@ def _card(row: Any) -> ProductCard | None:
     )
 
 
-def cards_from_actions(actions: list[ActionResult]) -> list[ProductCard]:
+def cards_from_actions(actions: list[ActionResult], limit: int = MAX_CARDS) -> list[ProductCard]:
     """Up to MAX_CARDS unique products from successful catalog tool calls, in result order."""
     cards: list[ProductCard] = []
     seen: set[str] = set()
@@ -45,4 +45,4 @@ def cards_from_actions(actions: list[ActionResult]) -> list[ProductCard]:
             if card and card.code not in seen:
                 seen.add(card.code)
                 cards.append(card)
-    return cards[:MAX_CARDS]
+    return cards[:limit]
