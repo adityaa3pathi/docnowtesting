@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
     Loader2, MapPin, Calendar, TestTubes, Shield, Tag,
@@ -151,7 +151,8 @@ export default function CampRegistrationPage() {
 
                 // Fetch wallet balance
                 try {
-                    const walletRes = await api.get('/wallet/balance');
+                    // /wallet/balance never existed, so the wallet option was hidden; this is the real route.
+                    const walletRes = await api.get('/profile/wallet');
                     setWalletBalance(walletRes.data.balance || 0);
                 } catch {
                     // Wallet not available, ignore
@@ -187,13 +188,14 @@ export default function CampRegistrationPage() {
         setIsVerifyingPromo(true);
         setPromoError('');
         try {
-            const res = await api.post('/promos/verify', {
+            // /promos/verify never existed, so every camp promo failed; validate is the real route.
+            const res = await api.post('/promos/validate', {
                 code: promoCode.trim(),
-                amount: camp?.price || 0,
+                cartAmount: camp?.price || 0,
             });
             setPromoDiscount(res.data.discountAmount || 0);
             setPromoApplied(true);
-            toast.success(`Promo applied! You save ₹${res.data.discountAmount}`);
+            toast.success(`Promo applied. You save ₹${res.data.discountAmount}`);
         } catch (err: any) {
             const msg = err.response?.data?.error || 'Invalid promo code';
             setPromoError(msg);
@@ -235,8 +237,13 @@ export default function CampRegistrationPage() {
         });
     };
 
+    // One key per registration attempt: a retry or double click returns the same booking.
+    const checkoutKey = useRef<{ key: string; for: string } | null>(null);
+    const checkingOut = useRef(false);
+
     // Handle checkout
     const handleCheckout = async () => {
+        if (checkingOut.current) return;
         if (!selectedPatientId) {
             toast.error('Please select a patient');
             return;
@@ -246,6 +253,12 @@ export default function CampRegistrationPage() {
             return;
         }
 
+        // A changed person, promo or wallet choice is a new order, so it gets a new key.
+        const choice = [campId, selectedPatientId, promoApplied ? promoCode.trim() : '', useWallet].join('|');
+        if (checkoutKey.current?.for !== choice) {
+            checkoutKey.current = { key: crypto.randomUUID(), for: choice };
+        }
+        checkingOut.current = true;
         setIsCheckingOut(true);
         try {
             const checkoutRes = await api.post('/camps/checkout', {
@@ -254,7 +267,7 @@ export default function CampRegistrationPage() {
                 dob,
                 promoCode: promoApplied ? promoCode.trim() : undefined,
                 useWallet,
-            });
+            }, { headers: { 'x-idempotency-key': checkoutKey.current.key } });
 
             const data: CheckoutResponse = checkoutRes.data;
 
@@ -302,6 +315,7 @@ export default function CampRegistrationPage() {
                         toast.error('We could not confirm your payment yet. Check My Bookings in a minute; if it is not there, contact support.', { duration: 8000 });
                         router.push('/profile?tab=bookings');
                     } finally {
+                        checkingOut.current = false;
                         setIsCheckingOut(false);
                     }
                 },
@@ -312,6 +326,7 @@ export default function CampRegistrationPage() {
                 theme: { color: '#4b2192' },
                 modal: {
                     ondismiss: () => {
+                        checkingOut.current = false;
                         setIsCheckingOut(false);
                     },
                 },
@@ -326,6 +341,7 @@ export default function CampRegistrationPage() {
         } catch (error: any) {
             console.error('Checkout error:', error);
             toast.error(error.response?.data?.error || 'Failed to initiate checkout. Please try again.');
+            checkingOut.current = false;
             setIsCheckingOut(false);
         }
     };
