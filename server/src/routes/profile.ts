@@ -65,15 +65,24 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 // PUT /api/profile - Update user profile
 router.put('/', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-        const { gender, age, email } = req.body;
+        const { gender, age, email, name } = req.body;
 
         // Validate at least one field is provided
-        if (gender === undefined && age === undefined && email === undefined) {
+        if (gender === undefined && age === undefined && email === undefined && name === undefined) {
             res.status(400).json({ error: 'At least one field to update is required' });
             return;
         }
 
         const updateData: any = {};
+        // Checkout needs a name; app users who signed in by OTP may not have one yet. Same rules as sign-up.
+        if (name !== undefined) {
+            const clean = typeof name === 'string' ? name.trim() : '';
+            if (clean.length < 2 || clean.length > 60 || /\d/.test(clean)) {
+                res.status(400).json({ error: 'Enter your name (2 to 60 letters, no numbers)' });
+                return;
+            }
+            updateData.name = clean;
+        }
         if (gender !== undefined) updateData.gender = gender;
         if (age !== undefined) updateData.age = parseInt(age);
         if (email !== undefined) updateData.email = email;
