@@ -28,7 +28,7 @@ function mapUniqueError(e: unknown): never {
 
 export async function registerDoctor(userId: string, data: {
     displayName: string; specialtyId: string; qualification: string; registrationNumber: string;
-    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; photoUrl?: string;
+    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; photoUrl?: string; gender?: string;
 }) {
     await assertActiveSpecialty(data.specialtyId);
     if (await prisma.doctorProfile.findUnique({ where: { userId } })) {
@@ -45,7 +45,7 @@ export async function registerDoctor(userId: string, data: {
 /** A rejected doctor fixes the application and sends it back for review. */
 export async function resubmitDoctor(userId: string, data: {
     displayName: string; specialtyId: string; qualification: string; registrationNumber: string;
-    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; photoUrl?: string;
+    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; photoUrl?: string; gender?: string;
 }) {
     const current = await prisma.doctorProfile.findUnique({ where: { userId } });
     if (!current) throw new DoctorError(404, 'No doctor profile');
@@ -63,7 +63,7 @@ export async function resubmitDoctor(userId: string, data: {
 
 export async function adminCreateDoctor(adminId: string, data: {
     mobile: string; displayName: string; specialtyId: string; qualification: string; registrationNumber: string;
-    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; photoUrl?: string;
+    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; photoUrl?: string; gender?: string;
     consultationFee: number; slotMinutes: number;
 }) {
     await assertActiveSpecialty(data.specialtyId);
@@ -101,6 +101,10 @@ export async function reviewDoctor(
     assertDoctorTransition(doctor.status, to);
     if (to === 'APPROVED' && doctor.consultationFee <= 0) {
         throw new DoctorError(400, 'Set a consultation fee before approving');
+    }
+    // Patients choose doctors by face; a self-registered doctor goes live only with a real photo.
+    if (to === 'APPROVED' && !doctor.photoUrl && !doctor.createdByAdminId) {
+        throw new DoctorError(400, 'The doctor must upload a photo before approval');
     }
 
     return prisma.$transaction(async (tx) => {

@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { DoctorAvatar } from '@/components/consult/DoctorCard';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui';
 import { Badge } from '@/components/consult/Badge';
@@ -78,6 +79,11 @@ export function DoctorDetail({ id }: { id: string }) {
                     <div><dt className="text-gray-500">Registration</dt><dd className="font-medium">{doc.registrationNumber} ({doc.registrationCouncil})</dd></div>
                     <div><dt className="text-gray-500">Mobile</dt><dd className="font-medium">{doc.user?.mobile ?? 'Not shown'}</dd></div>
                     <div><dt className="text-gray-500">Languages</dt><dd className="font-medium">{doc.languages.join(', ')}</dd></div>
+                    <div><dt className="text-gray-500">Gender</dt><dd className="font-medium">{doc.gender ?? 'Not given'}</dd></div>
+                    <div>
+                        <dt className="text-gray-500">Photo</dt>
+                        <dd className="mt-1">{doc.photoUrl ? <DoctorAvatar doctor={doc} className="h-20 w-20 text-xl" /> : <span className="font-medium text-danger">Not uploaded (needed before approval)</span>}</dd>
+                    </div>
                     <div><dt className="text-gray-500">Current fee</dt><dd className="font-medium">{doc.consultationFee > 0 ? formatRupees(doc.consultationFee) : 'Not set'}</dd></div>
                 </dl>
                 {doc.statusReason && (

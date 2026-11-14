@@ -76,7 +76,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
             </>
         );
     } else if (doctor && approved) body = <DoctorContext.Provider value={{ doctor, setDoctor }}>{children}</DoctorContext.Provider>;
-    else if (doctor?.status === 'PENDING') body = <PendingScreen doctor={doctor} />;
+    else if (doctor?.status === 'PENDING') body = <PendingScreen doctor={doctor} onPhoto={(photoUrl) => setDoctor({ ...doctor, photoUrl })} />;
     else if (doctor?.status === 'SUSPENDED') body = <SuspendedScreen doctor={doctor} />;
     else if (doctor) {
         body = (

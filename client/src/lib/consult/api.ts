@@ -5,7 +5,7 @@ import { CONSENT_VERSION } from './consent';
 import { recordServerDate } from './time';
 import type { GuestInfo } from './guest';
 import type {
-    AdminAppointment, AdminAppointmentDetail, AdminDoctor, AvailabilityWindow, BookingView, CancelPreview, CancelResult,
+    AdminAppointment, AdminAppointmentDetail, AdminDoctor, AvailabilityWindow, BookingView, CancelPreview, DoctorGender, CancelResult,
     CartAddResult, ConsultNote, ConsultRules, ConsultationStatus, CreateBookingResponse, DoctorConsultationPage,
     DoctorConsultationRecord, DoctorMe, DoctorProfileInput, DoctorPublicProfile, DoctorSummary, JoinResponse, LeaveEntry,
     NoteInput, PolicyResponse, Prescription, PrescriptionInput, ReviewQueue, Slot, Specialty, VerifyResponse,
@@ -84,6 +84,12 @@ export const doctor = {
     me: () => api.get<DoctorMe>('/doctor/me').then(data),
     register: (body: DoctorProfileInput) => api.post<DoctorMe>('/doctor/register', body).then(data),
     resubmit: (body: DoctorProfileInput) => api.post<DoctorMe>('/doctor/resubmit', body).then(data),
+    updateMe: (body: { gender?: DoctorGender }) => api.patch<DoctorMe>('/doctor/me', body).then(data),
+    uploadPhoto: (photo: Blob) => {
+        const form = new FormData();
+        form.append('photo', photo, 'photo.jpg');
+        return api.post<{ photoUrl: string }>('/doctor/me/photo', form).then(data);
+    },
     setAvailability: (windows: AvailabilityWindow[], slotMinutes?: number) =>
         api.put<AvailabilityWindow[]>('/doctor/me/availability', { windows, slotMinutes }).then(data),
     leave: () => api.get<LeaveEntry[]>('/doctor/me/leave').then(data),
