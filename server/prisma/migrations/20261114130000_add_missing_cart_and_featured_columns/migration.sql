@@ -1,6 +1,5 @@
--- Columns and indexes that schema.prisma declares but no migration creates, so a database built
--- from prisma/migrations alone cannot serve them. Added here only so the test database matches
--- Prisma Client; the missing migrations are a real gap in prisma/migrations.
+-- These columns were in schema.prisma but never in a migration (added outside migrations on live
+-- databases). IF NOT EXISTS keeps this safe where they already exist.
 ALTER TABLE "Cart" ADD COLUMN IF NOT EXISTS "lastActivityAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
 CREATE INDEX IF NOT EXISTS "Cart_lastActivityAt_idx" ON "Cart"("lastActivityAt");
 

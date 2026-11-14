@@ -16,7 +16,7 @@ const USER = 'postgres';
 const PASSWORD = 'postgres';
 const serverDir = new URL('..', import.meta.url).pathname;
 const MIGRATIONS_DIR = join(serverDir, 'prisma', 'migrations');
-const SHIMS = [join('prisma', 'test-shims', 'pgvector-free.sql'), join('prisma', 'test-shims', 'schema-drift.sql')];
+const SHIMS = [join('prisma', 'test-shims', 'pgvector-free.sql')];
 
 async function freePort() {
     return new Promise((resolve, reject) => {
