@@ -13,6 +13,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { useLocation } from '@/contexts/LocationContext';
@@ -23,24 +24,14 @@ import { useAuthGate } from '@/contexts/AuthGateContext';
 import { getApiUrl } from '@/lib/api';
 import { DocnowLogo } from './DocnowLogo';
 import { GlobalSearch } from './global-search/GlobalSearch';
+import { CityLandmarkIcon, TOP_CITIES } from './CityLandmarkIcon';
 
-const metroCities = [
-    { name: 'Bengaluru', icon: '🏛️' },
-    { name: 'Chennai', icon: '🕌' },
-    { name: 'Delhi', icon: '🏛️' },
-    { name: 'Gurgaon', icon: '🏢' },
-    { name: 'Hyderabad', icon: '🕌' },
-    { name: 'Kolkata', icon: '🏛️' },
-    { name: 'Mumbai', icon: '🏛️' },
-    { name: 'Noida', icon: '🏢' },
-    { name: 'Pune', icon: '⚡' },
-];
 
 const otherCities = [
     'Agra', 'Ahmadnagar', 'Ahmedabad', 'Aligarh', 'Allahabad', 'Almora', 'Alwar', 'Ambala', 'Ambedkar Nagar', 'Amravati', 'Amritsar', 'Amroha', 'Aurangabad', 'Ayodhya', 'Azamgarh', 'Baghpat', 'Bahadurgarh', 'Bardhaman', 'Bareilly', 'Belgaum', 'Bharatpur', 'Bhatinda', 'Bhilai', 'Bhilwara', 'Bhiwani', 'Bhopal', 'Bhubaneswar', 'Bijnor', 'Bikaner', 'Bilaspur', 'Bokaro', 'Bulandshahar', 'Chandigarh', 'Darbhanga', 'Dehradun', 'Deulpur', 'Dhampur', 'Dhanbad', 'Durgapur', 'Etah', 'Faizabad', 'Faridabad', 'Firozabad', 'Gadarpur', 'Gandhinagar', 'Ganganagar', 'Gaya', 'Ghaziabad', 'Ghazipur', 'Gonda', 'Gorakhpur', 'Greater Noida', 'Guwahati', 'Gwalior', 'Hajipur', 'Haldwani', 'Hapur', 'Hardoi', 'Haridwar', 'Hathras', 'Hazaribagh', 'Hisar', 'Hoshiarpur', 'Indore', 'Jabalpur', 'Jaipur', 'Jalandhar', 'Jamnagar', 'Jamshedpur', 'Jaunpur', 'Jhansi', 'Jodhpur', 'Kanpur', 'Karimnagar', 'Karnal', 'Kasganj', 'Kashipur', 'Khagaria', 'Khurja', 'Kota', 'Lakhimpur', 'Latur', 'Lucknow', 'Ludhiana', 'Mainpuri', 'Mathura', 'Meerut', 'Mehsana', 'Modinagar', 'Moga', 'Mohali', 'Moradabad', 'Munger', 'Muzaffarnagar', 'Mysuru', 'Nagpur', 'Nashik', 'Palwal', 'Panchkula', 'Panipat', 'Paschim Medinipur', 'Patiala', 'Patna', 'Pratapgarh', 'Prayagraj', 'Raebareli', 'Raipur', 'Rajkot', 'Rampur', 'Ranchi', 'Rewa', 'Rewari', 'Rishikesh', 'Rohtak', 'Roorkee', 'Rudrapur Udham Singh Nagar', 'Sagar', 'Saharanpur', 'Samastipur', 'Sambhal', 'Shahabad', 'Shamli', 'Sohna', 'Sonipat', 'Srinagar', 'Sultanpur', 'Surat', 'Tarn Taran', 'Udaipur', 'Ujjain', 'Una', 'Vadodara', 'Varanasi', 'Vijayawada', 'Visakhapatnam', 'Warangal', 'Yamuna Nagar'
 ];
 
-const callbackCities = Array.from(new Set([...metroCities.map((city) => city.name), ...otherCities])).sort((a, b) =>
+const callbackCities = Array.from(new Set([...TOP_CITIES, ...otherCities])).sort((a, b) =>
     a.localeCompare(b)
 );
 
@@ -189,9 +180,10 @@ export function Header() {
         }
     };
 
+    // Search covers every city; without a search, the top cities sit above the rest.
     const filteredCities = citySearch
-        ? otherCities.filter(city => city.toLowerCase().includes(citySearch.toLowerCase()))
-        : otherCities;
+        ? callbackCities.filter(city => city.toLowerCase().includes(citySearch.toLowerCase()))
+        : otherCities.filter(city => !(TOP_CITIES as readonly string[]).includes(city));
 
     const handleCitySelect = (city: string) => {
         updateCity(city);
@@ -230,7 +222,7 @@ export function Header() {
 
                     {/* Desktop Global Search — hidden on pages with their own search */}
                     {!hideSearch && (
-                        <div className="hidden md:flex flex-1 max-w-xl mx-8 relative">
+                        <div className="hidden md:flex flex-1 min-w-[300px] max-w-2xl mx-6 relative">
                             <GlobalSearch />
                         </div>
                     )}
@@ -268,7 +260,10 @@ export function Header() {
                                 </button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-hidden flex flex-col">
-                                <DialogHeader><DialogTitle className="text-2xl font-black">Select your Location</DialogTitle></DialogHeader>
+                                <DialogHeader>
+                                    <DialogTitle className="text-2xl font-bold">Select your location</DialogTitle>
+                                    <DialogDescription className="sr-only">Search and choose your city</DialogDescription>
+                                </DialogHeader>
                                 <div className="space-y-6 mt-4 flex-1 overflow-y-auto pr-2">
                                     <div className="relative">
                                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -283,23 +278,24 @@ export function Header() {
 
                                     {!citySearch && (
                                         <div>
-                                            <h3 className="mb-4 text-xs font-black uppercase tracking-widest text-muted-foreground">Metro Cities</h3>
-                                            <div className="grid grid-cols-3 gap-3">
-                                                {metroCities.map((city) => (
+                                            <h3 className="mb-3 text-base font-semibold text-foreground">Select your city</h3>
+                                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                                                {TOP_CITIES.map((city) => (
                                                     <button
-                                                        key={city.name}
-                                                        onClick={() => handleCitySelect(city.name)}
-                                                        className="flex flex-col items-center justify-center rounded-2xl border border-border p-4 text-center hover:border-primary hover:bg-primary/5 transition-all group"
+                                                        key={city}
+                                                        onClick={() => handleCitySelect(city)}
+                                                        aria-pressed={selectedCity === city}
+                                                        className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center transition-colors hover:border-primary hover:bg-primary/5 ${selectedCity === city ? 'border-primary bg-primary/5' : 'border-border'}`}
                                                     >
-                                                        <span className="text-2xl mb-2 group-hover:scale-110 transition-transform">{city.icon}</span>
-                                                        <span className="text-xs font-bold text-foreground">{city.name}</span>
+                                                        <CityLandmarkIcon city={city} className="h-8 w-8 text-primary" />
+                                                        <span className="text-sm font-semibold text-foreground">{city}</span>
                                                     </button>
                                                 ))}
                                             </div>
                                         </div>
                                     )}
                                     <div>
-                                        {!citySearch && <h3 className="mb-4 text-xs font-black uppercase tracking-widest text-muted-foreground">Other Cities</h3>}
+                                        {!citySearch && <h3 className="mb-3 text-base font-semibold text-foreground">Other cities</h3>}
                                         <div className="grid grid-cols-3 gap-2">
                                             {filteredCities.map((city) => (
                                                 <button
