@@ -833,7 +833,10 @@ model DoctorProfile {
   userId              String       @unique
   specialtyId         String
   displayName         String
+  // Stable DocNow link that redirects to a fresh private-storage link; photoKey is the stored file.
   photoUrl            String?
+  photoKey            String?
+  gender              String? // Male | Female | Other, given at onboarding; older profiles fill it in later
   qualification       String
   registrationNumber  String
   registrationCouncil String

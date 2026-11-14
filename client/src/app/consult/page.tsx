@@ -1,9 +1,11 @@
 'use client';
 import { useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { useApi } from '@/hooks/useApi';
 import { consult } from '@/lib/consult/api';
 import { DoctorCard } from '@/components/consult/DoctorCard';
+import { DoctorFilters } from '@/components/consult/DoctorFilters';
+import { applyDoctorFilters, languageOptions, NO_FILTERS } from '@/lib/consult/doctorFilters';
 import { ConcernGrid } from '@/components/consult/home/ConcernGrid';
 import { ConsultHeader } from '@/components/consult/home/ConsultHeader';
 import { FamilyBooking } from '@/components/consult/home/FamilyBooking';
@@ -35,6 +37,9 @@ function ConsultHome() {
     // Asked for a specialty this deployment does not offer yet: say so, and show everyone instead.
     const unmatched = !!wanted && picked === undefined && !!specialties.data && !fromUrl;
     const doctors = useApi(() => consult.doctors(specialtyId ?? undefined), [specialtyId]);
+    const [filters, setFilters] = useState(NO_FILTERS);
+    const shown = useMemo(() => applyDoctorFilters(doctors.data ?? [], filters), [doctors.data, filters]);
+    const languages = useMemo(() => languageOptions(doctors.data ?? []), [doctors.data]);
     // The header shows one real doctor; fetched unfiltered so it stays put while the list filters.
     const featured = useApi(() => consult.doctors(), []);
     const pickConcern = (id: string) => {
@@ -68,11 +73,13 @@ function ConsultHome() {
 
                     {/* Doctors Grid */}
                     <div>
-                        <div className="mb-6 flex items-center justify-between">
+                        <div className="mb-6 space-y-4">
                             <h2 className="text-xl font-bold text-ink">
                                 {specialtyId ? 'Available doctors' : 'Our doctors'}
                             </h2>
-
+                            {!doctors.loading && !doctors.error && (doctors.data?.length ?? 0) > 0 && (
+                                <DoctorFilters value={filters} onChange={setFilters} languages={languages} shown={shown.length} total={doctors.data!.length} />
+                            )}
                         </div>
 
                         <section
@@ -115,7 +122,16 @@ function ConsultHome() {
                                     />
                                 </div>
                             )}
-                            {!doctors.loading && !doctors.error && doctors.data?.map((d) => <DoctorCard key={d.id} doctor={d} />)}
+                            {!doctors.loading && !doctors.error && (doctors.data?.length ?? 0) > 0 && shown.length === 0 && (
+                                <div className="md:col-span-2">
+                                    <EmptyState
+                                        title="No doctors match these filters"
+                                        body="Try removing a filter to see more doctors."
+                                        action={<Button variant="secondary" size="sm" onClick={() => setFilters(NO_FILTERS)}>Clear filters</Button>}
+                                    />
+                                </div>
+                            )}
+                            {!doctors.loading && !doctors.error && shown.map((d) => <DoctorCard key={d.id} doctor={d} />)}
                         </section>
                     </div>
                 </div>

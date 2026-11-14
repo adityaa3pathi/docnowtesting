@@ -2,10 +2,19 @@ import { Card } from '@/components/ui';
 import { Badge } from '@/components/consult/Badge';
 import { doctorStatusInfo } from '@/lib/consult/status';
 import type { DoctorMe } from '@/lib/consult/types';
+import { DoctorPhotoUpload } from './DoctorPhotoUpload';
 
-export function PendingScreen({ doctor }: { doctor: DoctorMe }) {
+export function PendingScreen({ doctor, onPhoto }: { doctor: DoctorMe; onPhoto: (url: string) => void }) {
     const info = doctorStatusInfo('PENDING');
     return (
+        <div className="space-y-4">
+        {!doctor.photoUrl && (
+            <Card className="space-y-3 border-warning/30 bg-warning-soft p-5">
+                <h2 className="font-bold text-warning-ink">Add your photo</h2>
+                <p className="text-sm text-ink">We can approve you only once your photo is added.</p>
+                <DoctorPhotoUpload name={doctor.displayName} photoUrl={doctor.photoUrl} onUploaded={onPhoto} />
+            </Card>
+        )}
         <Card className="space-y-3 p-6 text-center sm:p-10">
             <Badge tone={info.tone}>{info.label}</Badge>
             <h1 className="text-xl font-bold text-foreground">Thanks, {doctor.displayName}</h1>
@@ -13,6 +22,7 @@ export function PendingScreen({ doctor }: { doctor: DoctorMe }) {
                 We are checking your details. This page updates when you open it again. You can set your hours once you are approved.
             </p>
         </Card>
+        </div>
     );
 }
 

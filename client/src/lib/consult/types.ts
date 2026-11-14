@@ -26,6 +26,8 @@ export interface DoctorSummary {
     consultationFee: number;
     slotMinutes: number;
     specialty: { id: string; name: string; slug: string };
+    /** Given at onboarding; older profiles may not have it yet. */
+    gender?: DoctorGender | null;
     /** Earliest bookable time (list endpoint only); null when nothing is open. */
     nextSlotAt?: string | null;
 }
@@ -109,7 +111,10 @@ export interface DoctorProfileInput {
     languages: string[];
     bio?: string;
     photoUrl?: string;
+    gender?: DoctorGender;
 }
+
+export type DoctorGender = 'Male' | 'Female' | 'Other';
 
 export interface DoctorMe extends DoctorSummary {
     userId: string;

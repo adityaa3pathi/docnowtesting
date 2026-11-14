@@ -53,14 +53,15 @@ export async function uploadImage(
   buffer: Buffer,
   originalFilename: string,
   mimeType: string,
-  folder: string = 'hero-banners'
+  folder: string = 'hero-banners',
+  maxBytes: number = MAX_FILE_SIZE
 ): Promise<UploadResult> {
   if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
     throw new Error(`Invalid file type: ${mimeType}. Allowed: WebP, PNG, JPEG`);
   }
 
-  if (buffer.length > MAX_FILE_SIZE) {
-    throw new Error(`File too large (${Math.round(buffer.length / 1024)} KB). Max: ${MAX_FILE_SIZE / 1024} KB`);
+  if (buffer.length > maxBytes) {
+    throw new Error(`File too large (${Math.round(buffer.length / 1024)} KB). Max: ${maxBytes / 1024} KB`);
   }
 
   const ext = originalFilename.split('.').pop()?.toLowerCase() || 'webp';

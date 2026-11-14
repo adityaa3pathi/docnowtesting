@@ -21,6 +21,8 @@ import {
     leaveSchema, registerDoctorSchema, reviewReasonSchema, specialtySchema,
 } from './doctors.types';
 import { DoctorError } from './doctors.status';
+import { doctorPhotoLink, MAX_PHOTO_BYTES, saveDoctorPhoto } from './doctors.photo';
+import multer from 'multer';
 import { withNextSlot } from './doctors.nextSlot';
 import { doctorListQuery, listDoctorConsultations } from './doctors.consultations';
 import { policyRoutes } from './consultations.policy.routes';
@@ -60,7 +62,7 @@ async function audit(req: AuthRequest, action: string, targetId: string, newValu
 
 const publicDoctorSelect = {
     id: true, displayName: true, photoUrl: true, qualification: true, experienceYears: true,
-    languages: true, bio: true, consultationFee: true, slotMinutes: true,
+    languages: true, bio: true, consultationFee: true, slotMinutes: true, gender: true,
     specialty: { select: { id: true, name: true, slug: true } },
 } as const;
 
@@ -107,6 +109,17 @@ consultPublicRoutes.get('/doctors/:id', async (req, res) => {
     } catch (e) { fail(res, e, 'get doctor'); }
 });
 
+// Stable photo link: redirects to a fresh signed link; browsers keep it for an hour.
+consultPublicRoutes.get('/doctors/:id/photo', async (req, res) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        const link = id.success ? await doctorPhotoLink(id.data) : null;
+        if (!link) return res.status(404).json({ error: 'No photo' });
+        res.set('Cache-Control', 'public, max-age=3600');
+        res.redirect(302, link);
+    } catch (e) { fail(res, e, 'doctor photo'); }
+});
+
 consultPublicRoutes.get('/doctors/:id/slots', async (req, res) => {
     try {
         // Slots inside the lead time cannot be booked, so they are not offered.
@@ -151,6 +164,23 @@ doctorRoutes.get('/me', authMiddleware, async (req: AuthRequest, res: Response) 
         if (!doctor) return res.status(404).json({ error: 'No doctor profile' });
         res.json(doctor);
     } catch (e) { fail(res, e, 'get me'); }
+});
+
+const photoUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_PHOTO_BYTES, files: 1 } });
+
+// Any profile owner, approved or not: applicants need a photo before they can be approved.
+doctorRoutes.post('/me/photo', authMiddleware, consultCsrfGuard, rateLimiter(10, 3600, 'doctor_photo'), (req: AuthRequest, res: Response) => {
+    photoUpload.single('photo')(req, res, async (err: unknown) => {
+        try {
+            if (err instanceof multer.MulterError) {
+                return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'Photos can be up to 3 MB' : 'Upload one photo' });
+            }
+            if (err) throw err;
+            const file = (req as AuthRequest & { file?: { buffer: Buffer } }).file;
+            if (!file) return res.status(400).json({ error: 'Choose a photo to upload' });
+            res.json(await saveDoctorPhoto(req.userId!, file.buffer, `${req.protocol}://${req.get('host')}`));
+        } catch (e) { fail(res, e, 'upload photo'); }
+    });
 });
 
 const mine = [authMiddleware, requireDoctor] as const;

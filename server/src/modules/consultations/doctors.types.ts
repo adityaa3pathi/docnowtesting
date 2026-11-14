@@ -5,6 +5,8 @@
  */
 import { z } from 'zod';
 
+export const DOCTOR_GENDERS = ['Male', 'Female', 'Other'] as const;
+
 const mobile = z.string().regex(/^\d{10}$/, 'Valid 10-digit mobile number required');
 
 const profileFields = {
@@ -17,11 +19,13 @@ const profileFields = {
     languages: z.array(z.string().trim().min(2)).min(1, 'At least one language is required'),
     bio: z.string().trim().max(1000).optional(),
     photoUrl: z.string().url().optional(),
+    gender: z.enum(DOCTOR_GENDERS).optional(),
 };
 
 export const SLOT_MINUTES = [10, 15, 20, 30, 45, 60] as const;
 
-export const registerDoctorSchema = z.object(profileFields);
+// Self sign-up must give gender (patients filter by it); admin-created profiles may add it later.
+export const registerDoctorSchema = z.object({ ...profileFields, gender: z.enum(DOCTOR_GENDERS, 'Please choose your gender') });
 
 export const adminCreateDoctorSchema = z.object({
     ...profileFields,
@@ -41,6 +45,7 @@ export const doctorSelfUpdateSchema = z.object({
     photoUrl: profileFields.photoUrl,
     languages: profileFields.languages,
     experienceYears: profileFields.experienceYears,
+    gender: profileFields.gender,
 }).partial();
 
 export const reviewReasonSchema = z.object({

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,6 +8,7 @@ import { ErrorState, LoadingBlock } from '@/components/consult/States';
 import { useApi } from '@/hooks/useApi';
 import { consult, doctor as doctorApi, errorMessage } from '@/lib/consult/api';
 import type { DoctorMe } from '@/lib/consult/types';
+import { PHOTO_TYPES, shrinkPhoto } from '@/lib/consult/photo';
 
 /** Mirrors the server limits so most mistakes are caught before sending. */
 const schema = z.object({
@@ -20,18 +21,11 @@ const schema = z.object({
     languages: z.string().refine((v) => splitLanguages(v).length >= 1, 'Add at least one language.')
         .refine((v) => splitLanguages(v).every((l) => l.length >= 2), 'Each language needs at least 2 letters.'),
     bio: z.string().trim().max(1000, 'Keep your bio under 1000 characters.'),
-    photoUrl: z.string().trim().refine((v) => v === '' || isWebAddress(v), 'Enter a full web address, like https://example.com/photo.jpg.'),
+    gender: z.enum(['Male', 'Female', 'Other'], 'Choose your gender.'),
 });
 type FormValues = z.infer<typeof schema>;
 
 const splitLanguages = (text: string) => text.split(',').map((l) => l.trim()).filter(Boolean);
-function isWebAddress(v: string) {
-    try {
-        return ['http:', 'https:'].includes(new URL(v).protocol);
-    } catch {
-        return false;
-    }
-}
 
 const fieldClass = 'w-full rounded-xl border border-border bg-white px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20';
 
@@ -49,6 +43,11 @@ function Field({ id, label, hint, error, children }: { id: string; label: string
 export function ApplicationForm({ existing, onDone }: { existing?: DoctorMe; onDone: (d: DoctorMe) => void }) {
     const specialties = useApi(() => consult.specialties());
     const [formError, setFormError] = useState<string | null>(null);
+    // The photo uploads after the profile exists; a doctor is approved only with one.
+    const [photo, setPhoto] = useState<File | null>(null);
+    const [photoError, setPhotoError] = useState<string | null>(null);
+    const preview = useMemo(() => (photo ? URL.createObjectURL(photo) : null), [photo]);
+    useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
         resolver: zodResolver(schema),
         defaultValues: {
@@ -60,12 +59,16 @@ export function ApplicationForm({ existing, onDone }: { existing?: DoctorMe; onD
             experienceYears: String(existing?.experienceYears ?? 0),
             languages: existing?.languages.join(', ') ?? '',
             bio: existing?.bio ?? '',
-            photoUrl: existing?.photoUrl ?? '',
+            gender: existing?.gender ?? undefined,
         },
     });
 
     const submit = handleSubmit(async (v) => {
         setFormError(null);
+        if (!photo && !existing?.photoUrl) {
+            setPhotoError('Add a photo of yourself.');
+            return;
+        }
         const body = {
             displayName: v.displayName,
             specialtyId: v.specialtyId,
@@ -75,13 +78,22 @@ export function ApplicationForm({ existing, onDone }: { existing?: DoctorMe; onD
             experienceYears: Number(v.experienceYears),
             languages: splitLanguages(v.languages),
             ...(v.bio ? { bio: v.bio } : {}),
-            ...(v.photoUrl ? { photoUrl: v.photoUrl } : {}),
+            gender: v.gender,
         };
+        let saved: DoctorMe;
         try {
-            onDone(existing ? await doctorApi.resubmit(body) : await doctorApi.register(body));
+            saved = existing ? await doctorApi.resubmit(body) : await doctorApi.register(body);
         } catch (e) {
             setFormError(errorMessage(e));
+            return;
         }
+        // A failed photo upload still lands on the status page, which offers the upload again.
+        if (photo) {
+            try {
+                saved = { ...saved, photoUrl: (await doctorApi.uploadPhoto(await shrinkPhoto(photo))).photoUrl };
+            } catch { /* the pending screen shows "Add your photo" */ }
+        }
+        onDone(saved);
     });
 
     if (specialties.loading) return <LoadingBlock label="Loading the form" />;
@@ -114,6 +126,14 @@ export function ApplicationForm({ existing, onDone }: { existing?: DoctorMe; onD
                         <input id="registrationCouncil" className={fieldClass} aria-invalid={!!errors.registrationCouncil} {...register('registrationCouncil')} />
                     </Field>
                 </div>
+                <Field id="gender" label="Gender" hint="Patients can filter doctors by gender." error={errors.gender?.message}>
+                    <select id="gender" className={fieldClass} aria-invalid={!!errors.gender} {...register('gender')}>
+                        <option value="">Choose</option>
+                        <option value="Female">Female</option>
+                        <option value="Male">Male</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </Field>
                 <Field id="experienceYears" label="Years of experience" error={errors.experienceYears?.message}>
                     <input id="experienceYears" inputMode="numeric" className={fieldClass} aria-invalid={!!errors.experienceYears} {...register('experienceYears')} />
                 </Field>
@@ -123,8 +143,23 @@ export function ApplicationForm({ existing, onDone }: { existing?: DoctorMe; onD
                 <Field id="bio" label="About you (optional)" hint="Up to 1000 characters." error={errors.bio?.message}>
                     <textarea id="bio" rows={4} className={fieldClass} aria-invalid={!!errors.bio} {...register('bio')} />
                 </Field>
-                <Field id="photoUrl" label="Photo web address (optional)" error={errors.photoUrl?.message}>
-                    <input id="photoUrl" inputMode="url" className={fieldClass} placeholder="https://" aria-invalid={!!errors.photoUrl} {...register('photoUrl')} />
+                <Field id="photo" label="Your photo" hint="A clear, recent photo of your face. Patients see it when booking." error={photoError ?? undefined}>
+                    <div className="flex items-center gap-4">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {(preview || existing?.photoUrl) && <img src={preview ?? existing!.photoUrl!} alt="" className="h-16 w-16 rounded-xl object-cover" />}
+                        <input
+                            id="photo"
+                            type="file"
+                            accept={PHOTO_TYPES.join(',')}
+                            aria-invalid={!!photoError}
+                            className="text-sm file:mr-3 file:h-11 file:rounded-lg file:border file:border-border-strong file:bg-surface file:px-4 file:font-medium"
+                            onChange={(e) => {
+                                const f = e.target.files?.[0] ?? null;
+                                setPhotoError(f && !PHOTO_TYPES.includes(f.type) ? 'Choose a JPG, PNG or WebP photo.' : null);
+                                setPhoto(f && PHOTO_TYPES.includes(f.type) ? f : null);
+                            }}
+                        />
+                    </div>
                 </Field>
                 <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
                     {isSubmitting ? 'Sending...' : existing ? 'Send again for review' : 'Send application'}
