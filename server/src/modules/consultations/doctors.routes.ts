@@ -138,7 +138,7 @@ consultPublicRoutes.get('/doctors/:id/slots', async (req, res) => {
 
 export const doctorRoutes = Router();
 
-doctorRoutes.post('/register', authMiddleware, rateLimiter(5, 3600, 'doctor_register'), async (req: AuthRequest, res: Response) => {
+doctorRoutes.post('/register', authMiddleware, consultCsrfGuard, rateLimiter(5, 3600, 'doctor_register'), async (req: AuthRequest, res: Response) => {
     try {
         const parse = registerDoctorSchema.safeParse(req.body);
         if (!parse.success) return bad(res, parse);
