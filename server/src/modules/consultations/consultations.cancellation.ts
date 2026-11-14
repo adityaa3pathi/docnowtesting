@@ -59,7 +59,13 @@ export async function cancelPreview(userId: string, consultationId: string, deps
     if (!(CANCELLABLE as readonly string[]).includes(c.status)) throw new DoctorError(409, 'This consultation can no longer be cancelled');
     const payment = c.payments.find((p) => p.razorpayPaymentId && p.razorpayPaymentId === c.confirmingPaymentId);
     if (!payment) throw new DoctorError(409, 'No confirmed payment found for this consultation');
-    return { ...estimateRefund(c, payment.amountPaise, now), paidPaise: payment.amountPaise };
+    // The policy copied at booking, so the box shows the rules this booking is actually held to.
+    const rules = c.policySnapshot as Rules;
+    return {
+        ...estimateRefund(c, payment.amountPaise, now),
+        paidPaise: payment.amountPaise,
+        policy: { refundTiers: rules.refundTiers, doctorNoShowFullRefund: rules.doctorNoShowOutcome === 'FULL_REFUND' },
+    };
 }
 
 export async function cancelConsultation(consultationId: string, actor: CancelActor, rawReason: string | undefined, deps: CancelDeps = {}) {

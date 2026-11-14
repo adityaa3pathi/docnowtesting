@@ -53,6 +53,8 @@ export interface CreateBookingResponse {
 }
 
 export interface BookingView extends CreateBookingResponse {
+    /** Consent ticked at sign-up covers this join (own consultation, current wording). */
+    consentOnFile?: boolean;
     startsAt: string;
     endsAt: string;
     doctorId: string;
@@ -79,6 +81,8 @@ export interface CancelPreview {
     percent: number;
     refundPaise: number;
     paidPaise: number;
+    /** The cancellation policy saved with this booking (older servers leave it out). */
+    policy?: { refundTiers: { minHoursBefore: number; percent: number }[]; doctorNoShowFullRefund: boolean };
 }
 
 export interface CancelResult {

@@ -123,6 +123,18 @@ describeDb('video consultations: join, notes, prescription (real Postgres)', () 
             expect(await testDb.consultationConsent.count({ where: { consultationId: b.c.id } })).toBe(0);
         });
 
+        it('lets the account holder join without the tick after consenting at sign-up', async () => {
+            const b = await confirmed(2);
+            expect(await room.signupConsentFor(b.user.id, b.c.id)).toBeNull();
+            await testDb.user.update({ where: { id: b.user.id }, data: { telemedicineConsentAt: new Date(), telemedicineConsentVersion: 'old-wording' } });
+            expect(await room.signupConsentFor(b.user.id, b.c.id)).toBeNull();
+            await testDb.user.update({ where: { id: b.user.id }, data: { telemedicineConsentVersion: room.CONSENT_VERSION } });
+            expect(await room.signupConsentFor(b.user.id, b.c.id)).toEqual({ channel: 'signup', version: room.CONSENT_VERSION, userId: b.user.id });
+            // Past the consent check: the route now fails only on the missing video keys.
+            const res = await post(`${patientApp.url}/consult/bookings/${b.c.id}/join`, tokenFor(b.user as any), {});
+            expect(res.status).toBe(503);
+        });
+
         it('records consent once per person, even across rejoins', async () => {
             const b = await confirmed(2);
             const consent = { channel: 'app', version: room.CONSENT_VERSION, userId: b.user.id, ipAddress: '203.0.113.7', userAgent: 'DocNow/1.0' } as const;

@@ -90,6 +90,9 @@ model User {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   isVerified    Boolean    @default(false)
+  // NMC telemedicine consent ticked at sign-up; covers the account holder's own consultations.
+  telemedicineConsentAt      DateTime?
+  telemedicineConsentVersion String?
   gender        String?
   age           Int?
   dob           DateTime?

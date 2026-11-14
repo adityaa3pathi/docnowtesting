@@ -9,6 +9,10 @@ export const consentText = (doctorName: string) => {
     return `I consent to an online telemedicine video consultation with ${dr} in accordance with the National Medical Commission (NMC) Telemedicine Practice Guidelines.`;
 };
 
+/** Ticked once at sign-up; covers the account holder's own consultations (same version as the join text). */
+export const SIGNUP_CONSENT_TEXT =
+    'I consent to online telemedicine consultations with registered doctors on DocNow, in accordance with the National Medical Commission (NMC) Telemedicine Practice Guidelines.';
+
 /** The family member's zero-login room shows Hindi and English together. */
 export const GUEST_CONSENT_TEXT =
     'मैं राष्ट्रीय चिकित्सा आयोग (NMC) के दिशा-निर्देशों के तहत टेलीकंसल्टेशन के लिए सहमति देता/देती हूँ (I consent to online teleconsultation under NMC guidelines)';

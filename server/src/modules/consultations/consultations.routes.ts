@@ -13,7 +13,7 @@ import { createBooking, getBooking, listBookings } from './consultations.booking
 import { cancelConsultation, cancelPreview } from './consultations.cancellation';
 import { verifyAndConfirm } from './consultations.payments';
 import { sendConsultError } from './consultations.http';
-import { CONSENT_REQUIRED, CONSENT_VERSION, guestInfo, guestJoin, patientJoin } from './consultations.room';
+import { CONSENT_REQUIRED, CONSENT_VERSION, guestInfo, guestJoin, patientJoin, signupConsentFor } from './consultations.room';
 import { acceptFamilyLink, declineFamilyLink } from './consultations.family';
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_BOOKING, removeAttachment, uploadAttachment } from './consultations.attachments';
 import { reassignBooking, reassignOption, rescheduleBooking, rescheduleSlots } from './consultations.reschedule';
@@ -118,7 +118,8 @@ consultPatientRoutes.get('/bookings/:id', ...patient, async (req: AuthRequest, r
     try {
         const id = z.string().uuid().safeParse(req.params.id);
         if (!id.success) return res.status(404).json({ error: 'Not found' });
-        res.json(await getBooking(req.userId!, id.data));
+        const [booking, consentOnFile] = await Promise.all([getBooking(req.userId!, id.data), signupConsentFor(req.userId!, id.data)]);
+        res.json({ ...booking, consentOnFile: consentOnFile !== null });
     } catch (e) { fail(res, e); }
 });
 
@@ -198,10 +199,11 @@ consultPatientRoutes.post('/bookings/:id/join', ...patient, rateLimiter(20, 60, 
         const id = z.string().uuid().safeParse(req.params.id);
         if (!id.success) return res.status(404).json({ error: 'Not found' });
         const consent = consentSchema.safeParse(req.body ?? {});
-        if (!consent.success) return res.status(400).json({ error: CONSENT_REQUIRED, code: 'CONSENT_REQUIRED' });
-        res.json(await patientJoin(req.userId!, id.data, {
-            consent: { ...consentOf(req, consent.data), channel: consent.data.channel ?? 'app', userId: req.userId! },
-        }));
+        const given = consent.success
+            ? { ...consentOf(req, consent.data), channel: consent.data.channel ?? 'app', userId: req.userId! }
+            : await signupConsentFor(req.userId!, id.data);
+        if (!given) return res.status(400).json({ error: CONSENT_REQUIRED, code: 'CONSENT_REQUIRED' });
+        res.json(await patientJoin(req.userId!, id.data, { consent: { ...given, ipAddress: req.ip ?? null, userAgent: req.get('user-agent') ?? null } }));
         kickConsultPushes(id.data);
     } catch (e) { fail(res, e); }
 });

@@ -6,6 +6,7 @@ import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { Redis } from '@upstash/redis';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db';
+import { CONSENT_VERSION } from '../modules/consultations/consultations.consent';
 import { generateReferralCode, awardSignupBonus } from '../utils/referralService';
 import { OTP_EXPIRY_MINS, isValidMobile, persistAndSendOtp } from '../services/otp';
 
@@ -70,7 +71,7 @@ router.post('/signup/send-otp', authRateLimiter, async (req: Request, res: Respo
 // POST /api/auth/signup/verify
 router.post('/signup/verify', verifyRateLimiter, async (req: Request, res: Response) => {
     try {
-        const { mobile, code, password, age, name, email, gender, referralCode: appliedCode } = req.body;
+        const { mobile, code, password, age, name, email, gender, referralCode: appliedCode, telemedicineConsent } = req.body;
 
         if (!mobile || !code || !password || !age || !name || !gender) {
             return res.status(400).json({ error: 'Missing required fields' });
@@ -124,7 +125,9 @@ router.post('/signup/verify', verifyRateLimiter, async (req: Request, res: Respo
                 email: email || null,
                 isVerified: true,
                 referralCode: generateReferralCode(name),
-                referredById: referrerId
+                referredById: referrerId,
+                // Only an explicit tick counts; older app builds send nothing and consent at join instead.
+                ...(telemedicineConsent === true ? { telemedicineConsentAt: new Date(), telemedicineConsentVersion: CONSENT_VERSION } : {}),
             }
         });
 
@@ -414,12 +417,13 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
         
         const user = await prisma.user.findUnique({
             where: { id: req.userId },
-            select: { id: true, name: true, mobile: true, email: true, role: true, isVerified: true, referralCode: true }
+            select: { id: true, name: true, mobile: true, email: true, role: true, isVerified: true, referralCode: true, telemedicineConsentVersion: true }
         });
         
         if (!user) return res.status(404).json({ error: 'User not found' });
         
-        res.status(200).json({ user });
+        const { telemedicineConsentVersion, ...rest } = user;
+        res.status(200).json({ user: { ...rest, telemedicineConsent: telemedicineConsentVersion === CONSENT_VERSION } });
     } catch (error) {
         console.error('Get Me Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
