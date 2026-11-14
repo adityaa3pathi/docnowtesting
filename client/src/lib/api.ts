@@ -124,7 +124,24 @@ api.interceptors.request.use((config) => {
 });
 
 // Response interceptor — graceful handling of network errors & silent refresh
-let refreshPromise: Promise<any> | null = null;
+type RefreshOutcome = { kind: 'ok'; data: { accessToken?: string } | undefined } | { kind: 'race' } | { kind: 'offline' } | { kind: 'expired' };
+let refreshPromise: Promise<RefreshOutcome> | null = null;
+
+/**
+ * Only an answered refusal ends the session. A parallel refresh from another tab (409) already
+ * set fresh cookies, and a network failure says nothing about the session, so neither logs out.
+ */
+function refreshSession(): Promise<RefreshOutcome> {
+    refreshPromise ??= api.post('/auth/refresh')
+        .then((r): RefreshOutcome => ({ kind: 'ok', data: r.data }))
+        .catch((e): RefreshOutcome => {
+            if (e?.isNetworkError) return { kind: 'offline' };
+            if (e?.response?.status === 409) return { kind: 'race' };
+            return { kind: 'expired' };
+        })
+        .finally(() => { refreshPromise = null; });
+    return refreshPromise;
+}
 
 api.interceptors.response.use(
     (response) => response,
@@ -142,29 +159,27 @@ api.interceptors.response.use(
         if (error.response.status === 401 && !error.config._retry && error.config.url !== '/auth/refresh') {
             error.config._retry = true;
 
-            if (!refreshPromise) {
-                refreshPromise = api.post('/auth/refresh')
-                    .then(r => r.data)
-                    .catch(() => null)
-                    .finally(() => { refreshPromise = null; });
+            const outcome = await refreshSession();
+            if (outcome.kind === 'offline') {
+                return Promise.reject({
+                    message: 'Unable to reach the server. Please check your connection.',
+                    isNetworkError: true,
+                    originalError: error,
+                });
             }
-
-            const data = await refreshPromise;
-            if (!data) {
+            if (outcome.kind === 'expired') {
                 accessToken = null;
-                if (typeof window !== 'undefined') {
-                    if (window.location.pathname !== '/') {
-                        window.location.href = '/?login=true';
-                    }
+                if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+                    window.location.href = '/?login=true';
                 }
                 return Promise.reject(error);
             }
 
-            if (data?.accessToken) {
-                accessToken = data.accessToken;
+            if (outcome.kind === 'ok' && outcome.data?.accessToken) {
+                accessToken = outcome.data.accessToken;
             }
 
-            // Retry original request
+            // Retry original request (the request interceptor re-reads the fresh CSRF cookie)
             if (accessToken) {
                 error.config.headers.Authorization = `Bearer ${accessToken}`;
             } else if (error.config.headers.Authorization) {

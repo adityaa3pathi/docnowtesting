@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { createSession, rotateRefreshToken, revokeSession, revokeAllUserSessions } from '../services/sessionService';
+import { createSession, rotateRefreshToken, revokeSession, revokeAllUserSessions, RefreshRaceError } from '../services/sessionService';
 import { setAuthResponse, clearAuthCookies, isWebClient } from '../utils/cookieHelpers';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { Redis } from '@upstash/redis';
@@ -30,6 +30,8 @@ import { rateLimiter } from '../middleware/rateLimiter';
 // 5 requests per 15 minutes for OTP endpoints
 const authRateLimiter = rateLimiter(5, 15 * 60, 'auth_otp');
 const verifyRateLimiter = rateLimiter(10, 15 * 60, 'auth_verify_otp');
+// Password guessing had no limit at all while every OTP route did.
+const passwordRateLimiter = rateLimiter(10, 15 * 60, 'auth_password');
 
 // --- SIGNUP FLOW ---
 
@@ -160,7 +162,7 @@ router.post('/signup/verify', verifyRateLimiter, async (req: Request, res: Respo
 // --- LOGIN FLOW ---
 
 // POST /api/auth/login/password
-router.post('/login/password', async (req: Request, res: Response) => {
+router.post('/login/password', passwordRateLimiter, async (req: Request, res: Response) => {
     try {
         const { mobile, password } = req.body;
 
@@ -353,6 +355,10 @@ router.post('/refresh', async (req: Request, res: Response) => {
         const session = await rotateRefreshToken(refreshToken, req.ip, req.headers['user-agent']);
         setAuthResponse(req, res, session, null); // Do not send user data on refresh to save payload
     } catch (error: any) {
+        // Another tab already rotated; clearing cookies here would wipe the fresh ones it just set.
+        if (error instanceof RefreshRaceError) {
+            return res.status(409).json({ error: error.message, code: 'REFRESH_RACE' });
+        }
         console.error('Refresh Token Error:', error.message);
         clearAuthCookies(res);
         res.status(401).json({ error: error.message || 'Invalid session' });

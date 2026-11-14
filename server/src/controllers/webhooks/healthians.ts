@@ -38,9 +38,10 @@ function getHeaderValue(value: string | string[] | undefined): string | undefine
 
 function isValidWebhookSecret(providedSecret: string | undefined) {
     const expectedSecret = process.env.HEALTHIANS_WEBHOOK_SECRET;
+    // Unset secret means only the IP allow-list can admit a call; it must never mean "allow".
     if (!expectedSecret) {
         logger.warn({}, 'healthians_webhook_secret_not_configured');
-        return true;
+        return false;
     }
 
     if (!providedSecret) return false;
@@ -54,17 +55,14 @@ function isValidWebhookSecret(providedSecret: string | undefined) {
 const HEALTHIANS_ALLOWED_IPS = new Set([
     '161.118.179.139',  // Production
     '161.118.163.82',   // Non-production
-    '127.0.0.1',        // Localhost (testing)
-    '::1',              // Localhost IPv6
+    // Behind Nginx every request arrives from loopback, so loopback is only trusted in development.
+    ...(process.env.NODE_ENV === 'production' ? [] : ['127.0.0.1', '::1']),
 ]);
 
 function extractClientIp(req: Request): string {
-    // Behind Cloudflare/Nginx, real IP is in x-forwarded-for or cf-connecting-ip
-    const cfIp = getHeaderValue(req.headers['cf-connecting-ip']);
-    if (cfIp) return cfIp;
-    const xff = getHeaderValue(req.headers['x-forwarded-for']);
-    if (xff) return xff.split(',')[0].trim();
-    return req.ip || req.socket.remoteAddress || '';
+    // req.ip honours "trust proxy"; raw cf-connecting-ip / x-forwarded-for headers are caller-controlled.
+    const ip = req.ip || req.socket.remoteAddress || '';
+    return ip.startsWith('::ffff:') ? ip.slice(7) : ip; // IPv4 seen through an IPv6 socket
 }
 
 export const healthiansWebhookHandler = async (req: Request, res: Response) => {
