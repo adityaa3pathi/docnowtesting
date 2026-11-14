@@ -113,8 +113,8 @@ export function GlobalSearch() {
                     }}
                     onKeyDown={handleKeyDown}
                     onFocus={() => { if (hasQuery) setIsOpen(true); }}
-                    placeholder="Search for test packages, doctor consultation and more"
-                    aria-label="Search for test packages, doctor consultation and more"
+                    placeholder="Search for tests, packages and more"
+                    aria-label="Search for tests, packages and more"
                     className="w-full h-10 md:h-11 pl-10 md:pl-12 pr-10 text-sm text-gray-900 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-shadow shadow-sm placeholder:text-gray-500 text-ellipsis"
                     role="combobox"
                     aria-expanded={showDropdown}
