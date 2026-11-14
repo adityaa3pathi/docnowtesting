@@ -9,6 +9,7 @@ import type { ConsultationStatus } from './consultations.types';
 import { resolveAccess } from './consultations.family';
 import { DEFAULT_RULES, type Rules } from './consultations.policy';
 import { doctorTitle } from './doctors.types';
+import { CONSENT_VERSION } from './consultations.consent';
 
 const JOINABLE: ConsultationStatus[] = ['CONFIRMED', 'WAITING', 'IN_PROGRESS'];
 export const JOIN_EARLY_MS = 10 * 60_000;
@@ -16,15 +17,14 @@ export const JOIN_LATE_MS = 15 * 60_000;
 
 /** Telemedicine consent the person gave on the join screen (the routes refuse a join without it). */
 export interface JoinConsent {
-    channel: 'app' | 'web' | 'guest-link';
+    channel: 'app' | 'web' | 'guest-link' | 'signup';
     /** Which wording was shown, e.g. CONSENT_VERSION. */
     version: string;
     userId?: string | null;
     ipAddress?: string | null;
     userAgent?: string | null;
 }
-/** The current consent wording: NMC Telemedicine Practice Guidelines (2020), first DocNow text. */
-export const CONSENT_VERSION = 'nmc-tpg-2020-v1';
+export { CONSENT_VERSION } from './consultations.consent';
 export const CONSENT_REQUIRED = 'Please accept the teleconsultation consent to join';
 
 type Deps = { video?: ConsultVideo; now?: Date; consent?: JoinConsent };
@@ -141,6 +141,18 @@ async function joinPatientSide(c: Joining, party: 'patient' | 'caretaker', who: 
  * Join from the app. The booker of their own visit is the patient; the booker of a family visit is
  * the caregiver; the family member who accepted the booking is the patient.
  */
+/**
+ * Consent given at sign-up, used when the join screen sent none: only for the account holder's
+ * own consultation and the current wording. Family and guest joins always tick at join.
+ */
+export async function signupConsentFor(userId: string, consultationId: string): Promise<JoinConsent | null> {
+    const found = await resolveAccess(userId, consultationId);
+    if (!found || found.access.kind !== 'booker' || found.access.forFamily) return null;
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { telemedicineConsentVersion: true } });
+    if (user?.telemedicineConsentVersion !== CONSENT_VERSION) return null;
+    return { channel: 'signup', version: CONSENT_VERSION, userId };
+}
+
 export async function patientJoin(userId: string, consultationId: string, deps: Deps = {}) {
     const found = await resolveAccess(userId, consultationId);
     if (!found) throw new DoctorError(404, 'Not found');

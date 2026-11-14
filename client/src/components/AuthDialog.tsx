@@ -16,6 +16,8 @@ import { cn } from '@/lib/utils';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { TelemedicineConsent } from './consult/TelemedicineConsent';
+import { SIGNUP_CONSENT_TEXT } from '@/lib/consult/consent';
 
 // --- Zod Schemas ---
 
@@ -43,6 +45,7 @@ const signupSchema = z.object({
     password: z.string().min(6, 'Password must be at least 6 characters'),
     confirmPassword: z.string(),
     referralCode: z.string().optional(),
+    telemedicineConsent: z.boolean().refine(v => v, 'Please tick the consent to create your account'),
 }).refine(d => d.password === d.confirmPassword, {
     message: 'Passwords do not match', path: ['confirmPassword'],
 });
@@ -125,6 +128,7 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
         defaultValues: {
             mobile: '', age: '', gender: '', password: '',
             confirmPassword: '', email: '', name: '', referralCode: '',
+            telemedicineConsent: false,
         },
     });
 
@@ -651,6 +655,15 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
                             />
                         </div>
                     </>
+
+                    <TelemedicineConsent
+                        checked={watch('telemedicineConsent')}
+                        onChange={(v) => setValue('telemedicineConsent', v, { shouldValidate: true })}
+                        label={SIGNUP_CONSENT_TEXT}
+                    />
+                    {errors.telemedicineConsent && (
+                        <p role="alert" className="text-xs text-red-500">{errors.telemedicineConsent.message}</p>
+                    )}
 
                     <Button type="submit" className="w-full" disabled={loading}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

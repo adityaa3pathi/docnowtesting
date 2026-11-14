@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { consult, errorMessage } from '@/lib/consult/api';
+import { cancelPolicyLines } from '@/lib/consult/cancelPolicy';
 import { formatPaise } from '@/lib/consult/format';
 import type { CancelPreview, CancelResult } from '@/lib/consult/types';
 
@@ -99,6 +100,19 @@ export function CancelDialog({ open, bookingId, unpaid, onClose, onCancelled }: 
                                 {!preview && !previewError && <p>Checking your refund...</p>}
                                 {previewError && <p className="font-semibold text-destructive">{previewError}</p>}
                             </div>
+                        )}
+                        {!unpaid && preview?.policy && (
+                            <section aria-labelledby="cancel-policy" className="rounded-xl border border-border p-3 text-sm">
+                                <h3 id="cancel-policy" className="font-semibold text-ink">Cancellation policy</h3>
+                                <p className="mt-0.5 text-ink-muted">Refund depends on how long before your consultation you cancel:</p>
+                                <ul className="mt-2 list-disc space-y-1 pl-5 text-ink">
+                                    {cancelPolicyLines(preview.policy.refundTiers).map((line) => <li key={line}>{line}</li>)}
+                                </ul>
+                                {preview.policy.doctorNoShowFullRefund && (
+                                    <p className="mt-2 text-ink-muted">If the doctor does not join, you get a full refund.</p>
+                                )}
+                                <p className="mt-2 text-ink-muted">Refunds go to your original payment method.</p>
+                            </section>
                         )}
                         <label htmlFor="cancel-reason" className="block text-sm font-semibold">Reason (optional)</label>
                         <textarea

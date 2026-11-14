@@ -189,8 +189,8 @@ function BookingDetail() {
                                 startsAt={booking.startsAt}
                                 endsAt={booking.endsAt}
                                 otherParty="doctor"
-                                join={() => consult.join(booking.consultationId, true)}
-                                consentDoctorName={booking.doctorName}
+                                join={() => consult.join(booking.consultationId, !booking.consentOnFile)}
+                                consentDoctorName={booking.consentOnFile ? undefined : booking.doctorName}
                                 onChange={() => void flow.refetch()}
                             />
                             {booking.hasPrescription ? (
