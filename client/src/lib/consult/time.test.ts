@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { formatIstDateTime, formatIstTime, groupSlotsByDay, istDayKey, minutesToTime, recordServerDate, resetServerClockForTests, secondsUntil, serverNow, timeToMinutes } from './time';
+import { formatIstDateTime, formatIstTime, groupSlotsByDay, istDayKey, minutesToTime, nextFreeLabel, recordServerDate, resetServerClockForTests, secondsUntil, serverNow, timeToMinutes } from './time';
 
 describe('Indian time', () => {
     it('shows a late-evening UTC instant as the next morning in India', () => {
@@ -57,5 +57,13 @@ describe('server clock', () => {
         recordServerDate('not a date');
         expect(serverNow(1000)).toBe(1000);
         expect(secondsUntil('2026-10-07T10:00:00Z', Date.parse('2026-10-07T11:00:00Z'))).toBe(0);
+    });
+});
+
+describe('nextFreeLabel', () => {
+    it('says Today for a time later the same IST day, else the day name', () => {
+        const now = Date.parse('2026-11-08T05:00:00Z'); // 10:30 IST
+        expect(nextFreeLabel('2026-11-08T11:00:00Z', now)).toBe('Today, 4:30 PM');
+        expect(nextFreeLabel('2026-11-09T04:00:00Z', now)).not.toMatch(/^Today/);
     });
 });

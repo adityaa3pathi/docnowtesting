@@ -44,7 +44,7 @@ export function ReasonDialog({ open, title, description, confirmLabel, destructi
                     <DialogTitle>{title}</DialogTitle>
                     {description && <DialogDescription>{description}</DialogDescription>}
                 </DialogHeader>
-                <label className="block text-sm font-semibold text-foreground" htmlFor="reason-input">
+                <label className="block text-sm font-semibold text-ink" htmlFor="reason-input">
                     Reason
                 </label>
                 <textarea
@@ -54,7 +54,7 @@ export function ReasonDialog({ open, title, description, confirmLabel, destructi
                     onChange={(e) => setReason(e.target.value)}
                     className="mt-1 min-h-24 w-full rounded-xl border border-border bg-input p-3 text-sm outline-none focus:ring-2 focus:ring-ring"
                 />
-                <p className="text-xs text-muted-foreground">At least {minLength} characters.</p>
+                <p className="text-xs text-ink-muted">At least {minLength} characters.</p>
                 {error && <p role="alert" className="text-sm font-semibold text-destructive">{error}</p>}
                 <div className="flex justify-end gap-2 pt-2">
                     <Button variant="outline" onClick={onClose} disabled={busy}>

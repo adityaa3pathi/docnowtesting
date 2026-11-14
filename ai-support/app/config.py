@@ -61,6 +61,8 @@ class Settings(BaseSettings):
 
     # Feature flag
     enabled: bool = True
+    # Doctor-approved symptom suggestions and the emergency check (app/symptoms). Off until launch.
+    symptom_suggestions: bool = False
 
     model_config = {
         "env_prefix": "SUPPORT_",

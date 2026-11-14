@@ -56,7 +56,7 @@ export function SlotPicker({ slots, selectedId, onSelect }: Props) {
                         onClick={() => setChosenDay(d.key)}
                         className={cn(
                             'shrink-0 rounded-xl border px-4 py-2 text-sm font-semibold',
-                            d.key === activeKey ? 'border-primary bg-primary text-white' : 'border-border bg-white hover:bg-accent'
+                            d.key === activeKey ? 'border-primary bg-primary text-white' : 'border-border bg-surface hover:bg-surface-muted'
                         )}
                     >
                         {d.label}
@@ -84,7 +84,7 @@ export function SlotPicker({ slots, selectedId, onSelect }: Props) {
                                 onClick={() => onSelect(slot)}
                                 className={cn(
                                     'rounded-xl border px-2 py-2.5 text-sm font-semibold',
-                                    checked ? 'border-primary bg-primary text-white' : 'border-border bg-white hover:border-primary'
+                                    checked ? 'border-primary bg-primary text-on-primary' : 'border-border bg-surface hover:border-primary'
                                 )}
                             >
                                 {formatIstTime(slot.startsAt)}
@@ -92,7 +92,7 @@ export function SlotPicker({ slots, selectedId, onSelect }: Props) {
                         );
                     })}
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">All times are Indian time.</p>
+                <p className="mt-2 text-xs text-ink-muted">All times are Indian time.</p>
             </div>
         </div>
     );

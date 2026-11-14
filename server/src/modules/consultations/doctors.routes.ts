@@ -21,6 +21,7 @@ import {
     leaveSchema, registerDoctorSchema, reviewReasonSchema, specialtySchema,
 } from './doctors.types';
 import { DoctorError } from './doctors.status';
+import { withNextSlot } from './doctors.nextSlot';
 import { doctorListQuery, listDoctorConsultations } from './doctors.consultations';
 import { policyRoutes } from './consultations.policy.routes';
 import { reviewRoutes } from './consultations.review.routes';
@@ -76,11 +77,22 @@ consultPublicRoutes.get('/specialties', async (_req, res) => {
 consultPublicRoutes.get('/doctors', async (req, res) => {
     try {
         const specialtyId = typeof req.query.specialtyId === 'string' ? req.query.specialtyId : undefined;
-        res.json(await prisma.doctorProfile.findMany({
+        const doctors = await prisma.doctorProfile.findMany({
             where: { status: 'APPROVED', specialtyId },
             select: publicDoctorSelect,
             orderBy: { displayName: 'asc' },
-        }));
+        });
+        // People pick a doctor by when they can be seen: one grouped query adds each doctor's next bookable time.
+        const { rules } = await getActivePolicy();
+        const earliest = new Date(Date.now() + rules.minLeadMinutes * 60_000);
+        const next = doctors.length
+            ? await prisma.slot.groupBy({
+                by: ['doctorId'],
+                where: { doctorId: { in: doctors.map((d) => d.id) }, status: 'AVAILABLE', startsAt: { gt: earliest } },
+                _min: { startsAt: true },
+            })
+            : [];
+        res.json(withNextSlot(doctors, next));
     } catch (e) { fail(res, e, 'list doctors'); }
 });
 

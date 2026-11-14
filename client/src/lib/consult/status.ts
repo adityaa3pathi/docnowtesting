@@ -46,10 +46,5 @@ export const VERIFY_MESSAGES: Record<VerifyOutcome, { title: string; body: strin
 export const HOLD_ENDED_MESSAGE = 'This hold ended. If you already paid, it will show in My consultations once confirmed.';
 export const CONFIRMING_MESSAGE = 'We are confirming your payment, please do not pay again.';
 
-export const toneClasses: Record<Tone, string> = {
-    success: 'bg-green-100 text-green-700',
-    warning: 'bg-amber-100 text-amber-800',
-    danger: 'bg-red-100 text-red-700',
-    info: 'bg-primary/10 text-primary',
-    muted: 'bg-gray-100 text-gray-600',
-};
+// Colours for each tone come from the shared design tokens.
+export { toneClasses } from '@/components/ui';

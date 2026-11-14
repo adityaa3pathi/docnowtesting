@@ -1,12 +1,13 @@
 """GET /api/support/history — Conversation history endpoint."""
 from __future__ import annotations
 
+import json
 import logging
 
 from fastapi import APIRouter, HTTPException, Request
 
 from app.auth import get_current_user
-from app.models import HistoryResponse, MessageEntry, SourceRef
+from app.models import HistoryResponse, MessageEntry, ProductCard, SourceRef
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +55,23 @@ async def get_history(request: Request, conversation_id: str):
                 sources=sources,
                 verified=m.get("verifierVerdict") == "GROUNDED",
                 was_abstained=m.get("wasAbstained", False),
+                cards=stored_cards(m.get("actionsTaken")),
                 feedback_score=m.get("feedbackScore"),
                 created_at=m["createdAt"],
             )
         )
 
     return HistoryResponse(conversation_id=conversation_id, messages=entries)
+
+
+def stored_cards(refs) -> list[ProductCard]:
+    """Cards saved with an assistant message; a bad row is skipped, never fatal to history."""
+    refs = json.loads(refs) if isinstance(refs, str) else refs or []
+    rows = next((r["cards"] for r in refs if isinstance(r, dict) and isinstance(r.get("cards"), list)), [])
+    cards = []
+    for row in rows:
+        try:
+            cards.append(ProductCard.model_validate(row))
+        except ValueError:
+            continue
+    return cards

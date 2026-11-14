@@ -82,18 +82,18 @@ export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, on
         );
     }
 
-    if (type === 'CHAT') return <p className="rounded-xl bg-gray-100 px-4 py-3 text-sm text-gray-700">Chat consultations are not available yet.</p>;
+    if (type === 'CHAT') return <p className="rounded-xl bg-surface-muted px-4 py-3 text-sm text-ink">Chat consultations are not available yet.</p>;
 
     const win = joinWindow({ status, startsAt, endsAt }, now);
     if (win.kind === 'not_joinable') return null;
 
     return (
-        <div className="space-y-3 rounded-2xl border border-border bg-white p-4">
-            <p className="font-bold text-foreground">{type === 'AUDIO' ? 'Audio call' : 'Video call'}</p>
+        <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
+            <p className="font-semibold text-ink">{type === 'AUDIO' ? 'Audio call' : 'Video call'}</p>
             {win.kind === 'early' && (
-                <p className="text-sm text-muted-foreground">Join from {formatIstDateTime(win.opensAt)} (Indian time).</p>
+                <p className="text-sm text-ink-muted">Join from {formatIstDateTime(win.opensAt)} (Indian time).</p>
             )}
-            {win.kind === 'ended' && <p className="text-sm text-muted-foreground">The time to join this call has passed.</p>}
+            {win.kind === 'ended' && <p className="text-sm text-ink-muted">The time to join this call has passed.</p>}
             {win.kind !== 'ended' && consentDoctorName !== undefined && (
                 <TelemedicineConsent checked={consented} onChange={setConsented} label={consentText(consentDoctorName)} />
             )}
@@ -102,8 +102,8 @@ export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, on
                     <Video className="mr-2 h-5 w-5" aria-hidden /> Join call
                 </Button>
             )}
-            {win.kind === 'open' && needsConsent && <p className="text-center text-xs text-muted-foreground">{CONSENT_REQUIRED_HINT}</p>}
-            {error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>}
+            {win.kind === 'open' && needsConsent && <p className="text-center text-xs text-ink-muted">{CONSENT_REQUIRED_HINT}</p>}
+            {error && <p role="alert" className="rounded-lg bg-danger-soft px-4 py-3 text-sm font-medium text-danger-ink">{error}</p>}
         </div>
     );
 }

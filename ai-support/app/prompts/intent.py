@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from app.symptoms.safety import topics
+
+SYMPTOM_TOPIC_IDS = list(topics())
+
 INTENT_CLASSIFICATION_PROMPT = """\
 Instructions:
 Classify the customer's intent into one of the following categories:
@@ -11,6 +15,8 @@ Classify the customer's intent into one of the following categories:
 - BOOKING_RESCHEDULE: wants to reschedule
 - RESCHEDULE_SLOTS: wants to see available slots
 - FAQ: asking about policies, processes
+- SYMPTOM_CHECK: describes a health symptom or asks which test to take for one. Set parameters.symptom_topic to the closest of: {symptom_topics}, or "other"
+- MEDICAL_ADVICE: asks what disease they have, what a report result means, or which medicine or dose to take
 - GREETING: hello/hi/thanks
 - OFF_TOPIC: not related to DocNow services
 
@@ -42,7 +48,7 @@ Knowledge-base matches: {context_summary}
 
 INTENTS = [
     "CATALOG_SEARCH", "PRODUCT_DETAILS", "BOOKING_STATUS", "BOOKING_LIST", "BOOKING_CANCEL",
-    "BOOKING_RESCHEDULE", "RESCHEDULE_SLOTS", "FAQ", "GREETING", "OFF_TOPIC",
+    "BOOKING_RESCHEDULE", "RESCHEDULE_SLOTS", "FAQ", "SYMPTOM_CHECK", "MEDICAL_ADVICE", "GREETING", "OFF_TOPIC",
 ]
 
 
@@ -54,6 +60,7 @@ def intent_schema(tools: dict) -> dict:
         for tool in tools.values()
         for name, spec in tool.parameters.items()
     }
+    param_props["symptom_topic"] = {"type": "string", "enum": [*SYMPTOM_TOPIC_IDS, "other"]}
     return {
         "type": "object",
         "properties": {

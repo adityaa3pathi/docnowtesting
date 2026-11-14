@@ -788,7 +788,7 @@ function CampDetailSkeleton() {
                     <div className="h-4 w-12 bg-white/10 rounded mb-5 animate-pulse" />
                     <div className="h-5 w-20 bg-white/10 rounded-full mb-4 animate-pulse" />
                     <div className="h-9 w-72 bg-white/15 rounded-lg mb-2 animate-pulse" />
-                    <div className="h-5 w-96 bg-white/10 rounded-lg mb-5 animate-pulse" />
+                    <div className="h-5 w-full max-w-96 bg-white/10 rounded-lg mb-5 animate-pulse" />
                     <div className="flex gap-2">
                         <div className="h-8 w-32 bg-white/10 rounded-lg animate-pulse" />
                         <div className="h-8 w-40 bg-white/10 rounded-lg animate-pulse" />
