@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { Ratelimit } from '@upstash/ratelimit';
+import { underLimit } from '../../utils/rateLimit';
 import { Redis } from '@upstash/redis';
 import { z } from 'zod';
 import { AuthRequest } from '../../middleware/auth';
@@ -34,11 +35,8 @@ export async function cancelBooking(req: AuthRequest, res: Response) {
             });
         }
 
-        if (cancelRateLimit) {
-            const { success } = await cancelRateLimit.limit(`cancel:${userId}`);
-            if (!success) {
-                return res.status(429).json({ error: 'Too many cancellation attempts. Please wait a minute.' });
-            }
+        if (!(await underLimit(cancelRateLimit, `cancel:${userId}`))) {
+            return res.status(429).json({ error: 'Too many cancellation attempts. Please wait a minute.' });
         }
 
         const result = await cancelCustomerBooking({

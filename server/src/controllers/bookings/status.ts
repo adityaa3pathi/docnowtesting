@@ -5,6 +5,7 @@ import { HealthiansAdapter } from '../../adapters/healthians';
 import { validationSchemas } from '../../utils/helpers';
 import { BookingService } from '../../services/booking.service';
 import { Ratelimit } from '@upstash/ratelimit';
+import { underLimit } from '../../utils/rateLimit';
 import { Redis } from '@upstash/redis';
 import { ingestReport } from '../../services/reportIngestion';
 import { logger } from '../../utils/logger';
@@ -107,11 +108,8 @@ export async function getStatus(req: AuthRequest, res: Response) {
         }
 
         // 2. Rate Limiting
-        if (statusRateLimit) {
-            const { success } = await statusRateLimit.limit(`status:${userId}`);
-            if (!success) {
-                return res.status(429).json({ error: 'Please wait a moment before checking the latest update again.' });
-            }
+        if (!(await underLimit(statusRateLimit, `status:${userId}`))) {
+            return res.status(429).json({ error: 'Please wait a moment before checking the latest update again.' });
         }
 
         // 3. Ownership Check with details
