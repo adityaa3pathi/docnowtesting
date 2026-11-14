@@ -24,7 +24,8 @@ if (!JWT_SECRET) {
     throw new Error('JWT_SECRET is not defined in environment variables');
 }
 const MAX_OTP_ATTEMPTS = 5;
-const RESEND_COOLDOWN_SECONDS = 60;
+// Matches the 10s resend in the sign-in box; authRateLimiter still caps sends at 5 per 15 min.
+const RESEND_COOLDOWN_SECONDS = 10;
 
 import { rateLimiter } from '../middleware/rateLimiter';
 // 5 requests per 15 minutes for OTP endpoints
