@@ -12,6 +12,8 @@
  * Sources: healthians_webhook_doc.md, healthians_api_doc.md (B2B API)
  */
 import { Prisma } from '@prisma/client';
+import { isFullyCollected, PAY_ON_COLLECTION } from './payOnCollection';
+import { logAlert, logBusinessEvent } from '../utils/logger';
 import { resolveHealthiansStatus } from '../utils/healthiansStatusMap';
 
 // Types matching Healthians webhook doc payloads
@@ -78,9 +80,12 @@ type PrismaTransactionClient = Prisma.TransactionClient;
  */
 export async function handleStatusUpdate(
     tx: PrismaTransactionClient,
-    booking: { id: string; items: Array<{ id: string; testCode: string }> },
+    booking: {
+        id: string; items: Array<{ id: string; testCode: string }>;
+        paymentMethod?: string; collectedAt?: Date | null; finalAmount?: number;
+    },
     data: StatusUpdateData
-): Promise<void> {
+): Promise<{ collectedNow: boolean }> {
     const statusInfo = resolveHealthiansStatus(data.booking_status);
 
     console.log(
@@ -155,6 +160,8 @@ export async function handleStatusUpdate(
         });
     }
 
+    const collectedNow = await recordCollection(tx, booking, data);
+
     // Update per-item delivery_status from nested product_details
     const productDetails =
         data.booking_sample_status?.bookingDetail?.customer?.product_details;
@@ -162,6 +169,30 @@ export async function handleStatusUpdate(
     if (productDetails?.length && booking.items.length) {
         await updateBookingItemStatuses(tx, booking.items, productDetails);
     }
+    return { collectedNow };
+}
+
+/**
+ * Pay on collection: Healthians reports payment_status once their collector has the money.
+ * Recorded once; a short payment is kept as unpaid and raised for the team to chase.
+ */
+async function recordCollection(
+    tx: PrismaTransactionClient,
+    booking: { id: string; paymentMethod?: string; collectedAt?: Date | null; finalAmount?: number },
+    data: StatusUpdateData,
+): Promise<boolean> {
+    if (booking.paymentMethod !== PAY_ON_COLLECTION || booking.collectedAt || data.payment_status !== true) return false;
+    const due = booking.finalAmount ?? 0;
+    if (!isFullyCollected(data.paid_amount, due)) {
+        logAlert('pay_on_collection_short_payment', { bookingId: booking.id, due, paidAmount: data.paid_amount });
+        return false;
+    }
+    const res = await tx.booking.updateMany({
+        where: { id: booking.id, collectedAt: null },
+        data: { collectedAt: new Date(), collectedAmount: Number(data.paid_amount), paidAt: new Date() },
+    });
+    if (res.count === 1) logBusinessEvent('pay_on_collection_collected', { bookingId: booking.id, amount: Number(data.paid_amount) });
+    return res.count === 1;
 }
 
 /**

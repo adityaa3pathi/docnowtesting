@@ -11,13 +11,15 @@ import { resolveOrCreateSelfPatient } from '../../utils/patientValidation';
 import { finalizeBooking } from '../../services/bookingFinalization';
 import { logAlert, logBusinessEvent, logger } from '../../utils/logger';
 import { getCollectionFee } from '../../utils/collectionFee';
+import { collectAmount, COD_PAYMENT_PREFIX, PAY_ON_COLLECTION, payOnCollectionEnabled } from '../../services/payOnCollection';
 
 /**
  * POST /api/payments/initiate
  * Creates Booking + Locks Promo + Deducts Wallet + Creates Razorpay Order
  */
 export const initiatePayment = async (req: AuthRequest, res: Response) => {
-    const { slot_id, slotLabel, slotDate: clientSlotDate, addressId, promoCode: rawPromoCode, useWallet, billingPatientId } = req.body;
+    const { slot_id, slotLabel, slotDate: clientSlotDate, addressId, promoCode: rawPromoCode, useWallet, billingPatientId, paymentMethod: rawMethod } = req.body;
+    const payOnCollection = rawMethod === PAY_ON_COLLECTION;
     const idempotencyKey = (req.headers['x-idempotency-key'] as string) || req.body.idempotencyKey;
     const userId = req.userId!;
 
@@ -27,6 +29,12 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
     if (!slot_id || !addressId) {
         return res.status(400).json({ error: 'Missing slot_id or addressId' });
     }
+    if (rawMethod !== undefined && rawMethod !== 'ONLINE' && !payOnCollection) {
+        return res.status(400).json({ error: 'Choose a payment method' });
+    }
+    if (payOnCollection && !payOnCollectionEnabled()) {
+        return res.status(400).json({ error: 'Pay on collection is not available right now. Please pay online.', code: 'PAY_ON_COLLECTION_OFF' });
+    }
 
     try {
         // 0. Idempotency: Return existing booking if key matches
@@ -34,11 +42,21 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
             const existing = await prisma.booking.findUnique({
                 where: { idempotencyKey }
             });
-            if (existing && ['INITIATED', 'AUTHORIZED', 'CONFIRMED', 'PAID'].includes(existing.paymentStatus)) {
+            if (existing && ['INITIATED', 'AUTHORIZED', 'CONFIRMED', 'PAID', 'PROCESSING'].includes(existing.paymentStatus)) {
                 logBusinessEvent('payment_initiate_idempotent_hit', {
                     bookingId: existing.id,
                     paymentStatus: existing.paymentStatus,
                 }, 'debug');
+                // A retried pay-on-collection checkout must not open Razorpay for an order with no Razorpay order.
+                if (existing.paymentMethod === PAY_ON_COLLECTION) {
+                    return res.json({
+                        bookingId: existing.id,
+                        paymentMethod: PAY_ON_COLLECTION,
+                        status: existing.paymentStatus === 'CONFIRMED' ? 'confirmed' : 'payment_received_booking_pending',
+                        amount: existing.finalAmount,
+                        idempotent: true,
+                    });
+                }
                 return res.json({
                     bookingId: existing.id,
                     razorpayOrderId: existing.razorpayOrderId,
@@ -68,7 +86,7 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
         }
 
         // 2. Core Calculation & Transaction (NO network calls inside tx)
-        const { booking, finalAmount } = await prisma.$transaction(async (tx) => {
+        const { booking, finalAmount, collectAtHome } = await prisma.$transaction(async (tx) => {
             // A. Read cart inside tx — prevents TOCTOU
             const cart = await tx.cart.findUnique({
                 where: { userId },
@@ -176,7 +194,14 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
             }
 
             // F. Create Booking
-            const finalAmount = Math.max(0, totalAmount - discountAmount - walletAmount);
+            let finalAmount = Math.max(0, totalAmount - discountAmount - walletAmount);
+            // Fully covered by wallet/promo: nothing to collect, so it stays a normal zero-amount order.
+            const collectAtHome = payOnCollection && finalAmount > 0;
+            if (collectAtHome) {
+                const { collect, extraDiscount } = collectAmount(finalAmount);
+                finalAmount = collect;
+                discountAmount += extraDiscount;
+            }
 
             const newBooking = await tx.booking.create({
                 data: {
@@ -199,6 +224,7 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
                     walletAmount,
                     finalAmount,
                     promoCodeId,
+                    paymentMethod: collectAtHome ? PAY_ON_COLLECTION : 'ONLINE',
                     idempotencyKey: idempotencyKey || undefined,
                     items: {
                         create: cart.items.map(item => ({
@@ -247,11 +273,32 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
                 });
             }
 
-            return { booking: newBooking, finalAmount, currency: 'INR' };
+            // Pay on collection goes straight to the partner booking, like a zero-amount order, but unpaid.
+            if (collectAtHome) {
+                await tx.booking.update({
+                    where: { id: newBooking.id },
+                    data: { paymentStatus: 'PAID', razorpayPaymentId: `${COD_PAYMENT_PREFIX}${newBooking.id}` },
+                });
+            }
+
+            return { booking: newBooking, finalAmount, currency: 'INR', collectAtHome };
         }, {
             maxWait: 5000,
             timeout: 10000
         });
+
+        if (collectAtHome) {
+            logBusinessEvent('pay_on_collection_booking_created', { bookingId: booking.id, amount: finalAmount });
+            const result = await finalizeBooking(booking.id);
+            await prisma.cartItem.deleteMany({ where: { cart: { userId } } });
+            // The first-order referral bonus waits until the collector reports the money taken.
+            return res.json({
+                bookingId: booking.id,
+                paymentMethod: PAY_ON_COLLECTION,
+                status: result.status === 'success' ? 'confirmed' : 'payment_received_booking_pending',
+                amount: finalAmount,
+            });
+        }
 
         // OUTSIDE TRANSACTION: Razorpay order creation
         if (finalAmount > 0) {

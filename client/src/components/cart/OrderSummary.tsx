@@ -1,4 +1,5 @@
 import { MapPin, Calendar, FileText, Loader2 } from 'lucide-react';
+import { PaymentMethodPicker, type CheckoutPaymentMethod } from './PaymentMethodPicker';
 import { Address, Patient } from '@/types/cart';
 
 interface OrderSummaryProps {
@@ -19,6 +20,9 @@ interface OrderSummaryProps {
     isSlotLocked: boolean;
     freezingSlot: boolean;
     creatingOrder: boolean;
+    payOnCollectionOffered: boolean;
+    paymentMethod: CheckoutPaymentMethod;
+    setPaymentMethod: (m: CheckoutPaymentMethod) => void;
 }
 
 export function OrderSummary({
@@ -38,8 +42,12 @@ export function OrderSummary({
     selectedAddressId,
     isSlotLocked,
     freezingSlot,
-    creatingOrder
+    creatingOrder,
+    payOnCollectionOffered,
+    paymentMethod,
+    setPaymentMethod,
 }: OrderSummaryProps) {
+    const payAtCollection = payOnCollectionOffered && paymentMethod === 'PAY_ON_COLLECTION' && finalPayable > 0;
     return (
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 md:sticky md:top-24">
             <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4">Order Summary</h3>
@@ -122,10 +130,12 @@ export function OrderSummary({
                 </select>
             </div>
 
+            {payOnCollectionOffered && finalPayable > 0 && <PaymentMethodPicker value={paymentMethod} onChange={setPaymentMethod} />}
+
             <div className="border-t border-gray-100 pt-4 mb-6">
                 <div className="flex justify-between text-lg font-bold">
-                    <span>Total</span>
-                    <span>₹{finalPayable}</span>
+                    <span>{payAtCollection ? 'Pay at collection' : 'Total'}</span>
+                    <span>₹{payAtCollection ? Math.floor(finalPayable) : finalPayable}</span>
                 </div>
             </div>
 
@@ -139,6 +149,8 @@ export function OrderSummary({
                         <Loader2 className="w-5 h-5 animate-spin" />
                         Placing Order...
                     </>
+                ) : payAtCollection ? (
+                    "Place order"
                 ) : (
                     "Proceed to Checkout"
                 )}

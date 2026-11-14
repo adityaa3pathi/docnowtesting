@@ -53,8 +53,16 @@ const HERO: Record<Outcome, { title: string; text: string; icon: typeof CheckCir
     },
 };
 
+// Pay at collection: nothing was paid yet, so "payment received" and "refunded" read differently.
+const PAY_AT_COLLECTION_TEXT: Partial<Record<Outcome, string>> = {
+    pending: 'Your order is placed. We are confirming the slot with the lab; this page updates by itself.',
+    refunded: 'The lab could not take this booking. Nothing was charged, and any wallet money you used is back in your wallet.',
+};
+
 interface BookingStatusData {
     outcome?: Outcome;
+    paymentMethod?: string;
+    amountDue?: number;
     bookingStatus?: string;
     slotDate?: string;
     slotTime?: string;
@@ -110,7 +118,8 @@ export function ThankYouClient() {
 
     // Without a booking to read (logged out, old link), stay neutral rather than claim success.
     const view: Outcome = outcome ?? (bookingId && isAuthenticated ? 'pending' : queryStatus === 'pending' ? 'pending' : 'confirmed');
-    const hero = HERO[view];
+    const payAtCollection = bookingDetails?.paymentMethod === 'PAY_ON_COLLECTION';
+    const hero = { ...HERO[view], text: (payAtCollection && PAY_AT_COLLECTION_TEXT[view]) || HERO[view].text };
     const HeroIcon = hero.icon;
     const showNextSteps = view === 'confirmed' || view === 'pending';
 
@@ -145,6 +154,11 @@ export function ThankYouClient() {
                         <p className="text-base md:text-lg text-gray-600 font-medium max-w-xl mx-auto">
                             {view === 'confirmed' ? `Thank you${user?.name ? `, ${user.name}` : ''}! ${hero.text}` : hero.text}
                         </p>
+                        {payAtCollection && (view === 'confirmed' || view === 'pending') && (bookingDetails?.amountDue ?? 0) > 0 && (
+                            <p className="mt-4 inline-block rounded-xl bg-primary/5 px-4 py-3 text-base font-semibold text-gray-900">
+                                Please pay ₹{bookingDetails!.amountDue} to the sample collector at your visit (cash or UPI).
+                            </p>
+                        )}
                         {view === 'pending' && slow && (
                             <p className="mt-3 text-sm font-semibold text-amber-800 max-w-xl mx-auto">
                                 This is taking longer than usual. We will message you on WhatsApp once it is confirmed, or refund you if it cannot be booked.

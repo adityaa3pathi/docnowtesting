@@ -22,6 +22,7 @@ import {
     handlePhleboEvent,
 } from '../../services/healthiansWebhook';
 import { ingestReport } from '../../services/reportIngestion';
+import { tryAwardFirstOrderBonus } from '../../utils/referralService';
 import { sendPhleboAssignedViaWhatsApp } from '../../services/phleboNotifications';
 import { logAlert, logBusinessEvent, logger } from '../../utils/logger';
 import { addObservabilityBreadcrumb } from '../../utils/sentry';
@@ -115,6 +116,7 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
 
     // 4. Process inside single transaction (dedup + business logic + mark processed)
     let reportIdToIngest: string | null = null;
+    let collectedFor: { bookingId: string; userId: string } | null = null;
     let phleboNotification: { mobile: string; customerName: string; phleboName: string; phleboPhone: string; expectedArrival: string } | null = null;
 
     try {
@@ -201,7 +203,9 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
                         bookingId: booking.id,
                         partnerBookingId: payload.booking_id,
                     });
-                    await handleStatusUpdate(tx, booking, payload.data);
+                    if ((await handleStatusUpdate(tx, booking, payload.data)).collectedNow) {
+                        collectedFor = { bookingId: booking.id, userId: booking.userId };
+                    }
                     logBusinessEvent('healthians_status_webhook_processed', {
                         bookingId: booking.id,
                         partnerBookingId: payload.booking_id,
@@ -278,6 +282,13 @@ export const healthiansWebhookHandler = async (req: Request, res: Response) => {
 
         // Step E: Trigger background report ingestion AFTER transaction commits
         // This runs outside the transaction so download failures don't roll back persistence
+        // Pay on collection earns the first-order bonus only once the money is actually taken.
+        if (collectedFor) {
+            const { bookingId, userId } = collectedFor;
+            tryAwardFirstOrderBonus(userId, bookingId).catch((err) =>
+                logger.warn({ error: err, bookingId }, 'first_order_referral_bonus_failed'));
+        }
+
         if (reportIdToIngest) {
             addObservabilityBreadcrumb('healthians_report_ingestion_triggered', {
                 source: 'healthians',

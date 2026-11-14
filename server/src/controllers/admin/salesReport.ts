@@ -177,7 +177,9 @@ export async function buildSalesReportRows(query: AuthRequest['query']): Promise
             row.testsBounced += testCount;
         }
 
-        if (COLLECTED_PAYMENT_STATUSES.has(booking.paymentStatus)) {
+        // Pay-on-collection orders count as revenue only once Healthians reports the money taken.
+        const awaitingCollection = booking.paymentMethod === 'PAY_ON_COLLECTION' && !booking.collectedAt;
+        if (COLLECTED_PAYMENT_STATUSES.has(booking.paymentStatus) && !awaitingCollection) {
             row.revenueCollected += booking.finalAmount || booking.totalAmount || 0;
             row.revenueBookingCount += 1;
         }

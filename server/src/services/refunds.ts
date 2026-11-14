@@ -5,10 +5,11 @@
 import { getRazorpay } from './razorpay';
 import { rollbackInitiatedBooking } from './rollback';
 import { logAlert, logBusinessEvent } from '../utils/logger';
+import { COD_PAYMENT_PREFIX } from './payOnCollection';
 
-/** Fully wallet- or promo-paid bookings carry a ZERO_ placeholder, not a Razorpay payment. */
+/** Wallet/promo-paid (ZERO_) and pay-on-collection (COD_) bookings carry placeholders, not Razorpay payments. */
 export function isRealOnlinePayment(paymentId?: string | null): paymentId is string {
-    return Boolean(paymentId && !paymentId.startsWith('ZERO_'));
+    return Boolean(paymentId && !paymentId.startsWith('ZERO_') && !paymentId.startsWith(COD_PAYMENT_PREFIX));
 }
 
 interface RefundableBooking {

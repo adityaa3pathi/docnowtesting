@@ -1,4 +1,5 @@
 import { prisma } from '../db';
+import { PAY_ON_COLLECTION } from './payOnCollection';
 import { HealthiansAdapter } from '../adapters/healthians';
 import { normalizeGender } from '../utils/helpers';
 import { logBusinessEvent } from '../utils/logger';
@@ -117,8 +118,9 @@ export async function createHealthiansBooking(booking: any, userId: string, slot
         address: address.line1,
         zipcode: address.pincode,
         landmark: '',
-        payment_option: 'prepaid',
-        discounted_price: booking.totalAmount,
+        // Pay on collection: the collector takes exactly what the customer owes (whole rupees).
+        payment_option: booking.paymentMethod === PAY_ON_COLLECTION ? 'cod' : 'prepaid',
+        discounted_price: booking.paymentMethod === PAY_ON_COLLECTION ? Math.floor(booking.finalAmount) : booking.totalAmount,
         zone_id: zoneId,
         client_id: '',
         is_ppmc_booking: 0,
