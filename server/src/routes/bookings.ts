@@ -6,7 +6,8 @@ import {
     cancelBooking,
     rescheduleBooking,
     getReschedulableSlots,
-    getPhleboContact
+    getPhleboContact,
+    getPaymentStatus
 } from '../controllers/bookings';
 
 const router = Router();
@@ -18,6 +19,9 @@ router.get('/', authMiddleware, listBookings);
 
 // GET /api/bookings/:id/status - Track Status
 router.get('/:id/status', authMiddleware, getStatus);
+
+// GET /api/bookings/:id/payment-status - What to tell the customer right after checkout
+router.get('/:id/payment-status', authMiddleware, getPaymentStatus);
 
 // POST /api/bookings/:id/cancel - Cancel Booking
 router.post('/:id/cancel', authMiddleware, cancelBooking);

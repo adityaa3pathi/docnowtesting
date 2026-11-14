@@ -5,3 +5,4 @@ export { cancelBooking } from './cancel';
 export { rescheduleBooking } from './reschedule';
 export { getReschedulableSlots } from './slots';
 export { getPhleboContact } from './phlebo';
+export { getPaymentStatus } from './paymentStatus';

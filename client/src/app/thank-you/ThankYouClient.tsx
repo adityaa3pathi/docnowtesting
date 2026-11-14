@@ -17,15 +17,44 @@ import {
     Award,
     Lock,
     Truck,
-    FlaskConical
+    FlaskConical,
+    AlertCircle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button, Card } from '@/components/ui';
 import { Footer } from '@/components/Footer';
 import api from '@/lib/api';
 
+type Outcome = 'confirmed' | 'pending' | 'refunded' | 'not_paid';
+
+const POLL_EVERY_MS = 5_000;
+const POLL_FOR_MS = 3 * 60_000;
+
+const HERO: Record<Outcome, { title: string; text: string; icon: typeof CheckCircle2; ring: string; fill: string }> = {
+    confirmed: {
+        title: 'Booking Successful!',
+        text: 'Your health test booking has been placed.',
+        icon: CheckCircle2, ring: 'from-emerald-500 to-teal-400 shadow-emerald-500/20', fill: 'bg-emerald-500',
+    },
+    pending: {
+        title: 'Confirming your booking…',
+        text: 'Your payment is received. We are confirming the slot with the lab; this page updates by itself.',
+        icon: Clock, ring: 'from-amber-500 to-orange-400 shadow-amber-500/20', fill: 'bg-amber-500',
+    },
+    refunded: {
+        title: 'We could not book this test',
+        text: 'The lab could not take this booking, so we have refunded you. Card refunds reach your account in 5-7 working days; wallet money is back now.',
+        icon: AlertCircle, ring: 'from-red-500 to-rose-400 shadow-red-500/20', fill: 'bg-red-500',
+    },
+    not_paid: {
+        title: 'Payment not completed',
+        text: 'No booking was made. If money left your account, your bank returns it automatically. Your cart is still saved.',
+        icon: AlertCircle, ring: 'from-gray-500 to-gray-400 shadow-gray-500/20', fill: 'bg-gray-500',
+    },
+};
+
 interface BookingStatusData {
-    status?: string;
+    outcome?: Outcome;
     bookingStatus?: string;
     slotDate?: string;
     slotTime?: string;
@@ -50,70 +79,83 @@ export function ThankYouClient() {
     const queryStatus = searchParams.get('status') || '';
 
     const [bookingDetails, setBookingDetails] = useState<BookingStatusData | null>(null);
-    const [loadingDetails, setLoadingDetails] = useState(false);
+    const [outcome, setOutcome] = useState<Outcome | null>(null);
+    const [slow, setSlow] = useState(false);
 
-    // Fetch booking summary if bookingId is present and user is authenticated
+    // Polls the real payment outcome; "success" is only shown once the lab booking exists.
     useEffect(() => {
-        if (!bookingId) return;
-
-        let isMounted = true;
-        const fetchStatus = async () => {
+        if (!bookingId || !isAuthenticated) return;
+        let stopped = false;
+        let timer: ReturnType<typeof setTimeout>;
+        const startedAt = Date.now();
+        const poll = async () => {
             try {
-                setLoadingDetails(true);
-                const res = await api.get(`/bookings/${bookingId}/status`);
-                if (isMounted && res.data) {
-                    setBookingDetails(res.data);
-                }
-            } catch (err) {
-                // If status API is not available or non-critical error, silently proceed with URL params
-                console.log('[ThankYou] Could not fetch detailed booking info:', err);
-            } finally {
-                if (isMounted) {
-                    setLoadingDetails(false);
-                }
+                const res = await api.get(`/bookings/${encodeURIComponent(bookingId)}/payment-status`);
+                if (stopped) return;
+                setBookingDetails(res.data);
+                setOutcome(res.data.outcome);
+                if (res.data.outcome !== 'pending') return;
+            } catch {
+                if (stopped) return;
             }
+            if (Date.now() - startedAt > POLL_FOR_MS) return setSlow(true);
+            timer = setTimeout(poll, POLL_EVERY_MS);
         };
-
-        if (isAuthenticated) {
-            fetchStatus();
-        }
-
+        void poll();
         return () => {
-            isMounted = false;
+            stopped = true;
+            clearTimeout(timer);
         };
     }, [bookingId, isAuthenticated]);
 
-    const isPending = queryStatus === 'pending' || bookingDetails?.status === 'payment_received_booking_pending';
+    // Without a booking to read (logged out, old link), stay neutral rather than claim success.
+    const view: Outcome = outcome ?? (bookingId && isAuthenticated ? 'pending' : queryStatus === 'pending' ? 'pending' : 'confirmed');
+    const hero = HERO[view];
+    const HeroIcon = hero.icon;
+    const showNextSteps = view === 'confirmed' || view === 'pending';
 
     return (
         <main
             className="min-h-screen bg-gradient-to-b from-purple-50/40 via-white to-gray-50/50 flex flex-col justify-between"
             data-page-type="thank-you"
             data-booking-id={bookingId}
-            data-order-status={isPending ? 'PENDING' : 'CONFIRMED'}
+            data-order-status={view.toUpperCase()}
         >
             <div className="container mx-auto px-4 py-8 md:py-14 max-w-4xl flex-grow">
                 {/* ═══════════ HERO BANNER ═══════════ */}
                 <div className="text-center mb-8 md:mb-12">
-                    {/* Animated Checkmark / Success Icon */}
+                    {/* Status icon */}
                     <div className="inline-flex items-center justify-center relative mb-5">
-                        <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-xl shadow-emerald-500/20 flex items-center justify-center animate-in zoom-in-75 duration-300">
-                            <div className="w-full h-full bg-emerald-500 rounded-full flex items-center justify-center text-white">
-                                <CheckCircle2 className="w-10 h-10 md:w-12 md:h-12 stroke-[2.5]" />
+                        <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-tr ${hero.ring} p-0.5 shadow-xl flex items-center justify-center animate-in zoom-in-75 duration-300`}>
+                            <div className={`w-full h-full ${hero.fill} rounded-full flex items-center justify-center text-white`}>
+                                <HeroIcon className="w-10 h-10 md:w-12 md:h-12 stroke-[2.5]" aria-hidden />
                             </div>
                         </div>
-                        <div className="absolute -top-1 -right-1 bg-purple-600 text-white rounded-full p-1.5 shadow-md">
-                            <Sparkles className="w-4 h-4" />
-                        </div>
+                        {view === 'confirmed' && (
+                            <div className="absolute -top-1 -right-1 bg-purple-600 text-white rounded-full p-1.5 shadow-md">
+                                <Sparkles className="w-4 h-4" aria-hidden />
+                            </div>
+                        )}
                     </div>
 
-                    <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight mb-3">
-                        Booking Successful!
-                    </h1>
-
-                    <p className="text-base md:text-lg text-gray-600 font-medium max-w-xl mx-auto">
-                        {`Thank you${user?.name ? `, ${user.name}` : ''}! Your health test booking has been successfully placed.`}
-                    </p>
+                    <div role="status" aria-live="polite">
+                        <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight mb-3">
+                            {hero.title}
+                        </h1>
+                        <p className="text-base md:text-lg text-gray-600 font-medium max-w-xl mx-auto">
+                            {view === 'confirmed' ? `Thank you${user?.name ? `, ${user.name}` : ''}! ${hero.text}` : hero.text}
+                        </p>
+                        {view === 'pending' && slow && (
+                            <p className="mt-3 text-sm font-semibold text-amber-800 max-w-xl mx-auto">
+                                This is taking longer than usual. We will message you on WhatsApp once it is confirmed, or refund you if it cannot be booked.
+                            </p>
+                        )}
+                        {view === 'not_paid' && (
+                            <Link href="/cart" className="mt-5 inline-block">
+                                <Button>Back to cart</Button>
+                            </Link>
+                        )}
+                    </div>
                 </div>
 
                 {/* ═══════════ MAIN CONTENT GRID ═══════════ */}
@@ -121,7 +163,7 @@ export function ThankYouClient() {
                     {/* Left & Middle Column (Span 2) */}
                     <div className="md:col-span-2 space-y-6">
                         {/* What Happens Next Card */}
-                        <Card className="p-6 md:p-8 bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        {showNextSteps && <Card className="p-6 md:p-8 bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                             <div className="flex items-center gap-2.5 mb-6">
                                 <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-primary">
                                     <Truck className="w-4 h-4" />
@@ -171,7 +213,7 @@ export function ThankYouClient() {
                                     </div>
                                 </div>
                             </div>
-                        </Card>
+                        </Card>}
 
                         {/* Order Details Preview (if available) */}
                         {bookingDetails && (

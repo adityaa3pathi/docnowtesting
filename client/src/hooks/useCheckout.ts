@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
@@ -44,8 +44,15 @@ export function useCheckout({
     const [profileDialogOpen, setProfileDialogOpen] = useState(false);
     const [missingProfileFields, setMissingProfileFields] = useState({});
     const [availabilityErrors, setAvailabilityErrors] = useState<Array<{ testCode: string; testName: string }>>([]);
+    // True from the click until Razorpay closes: a second tap must not start a second order.
+    const busy = useRef(false);
+    const done = () => {
+        busy.current = false;
+        setCreatingOrder(false);
+    };
 
     const handleCheckout = async () => {
+        if (busy.current) return;
         if (!selectedAddressId) {
             toast.error('Please select a collection address before checkout');
             return;
@@ -75,7 +82,9 @@ export function useCheckout({
             return;
         }
 
+        let modalOpen = false;
         try {
+            busy.current = true;
             setCreatingOrder(true);
 
             // ── Pre-checkout: validate test availability at location ────────
@@ -145,37 +154,32 @@ export function useCheckout({
                             razorpay_signature: response.razorpay_signature
                         });
 
-                        if (verifyRes.data.status === 'confirmed' || verifyRes.data.status === 'already_confirmed') {
+                        const verified = verifyRes.data.status;
+                        if (verified === 'confirmed' || verified === 'already_confirmed') {
                             toast.success('Order placed successfully!');
                             await refreshCart();
                             router.push(`/thank-you?bookingId=${bookingId}`);
-                        } else if (verifyRes.data.status === 'payment_received_booking_pending') {
-                            toast.success('Payment received! Your booking is being confirmed. You will receive an update shortly.');
+                        } else if (verified === 'refunded_due_to_partner_error') {
+                            toast.error('We could not book this test with the lab, so your payment is being refunded.', { duration: 8000 });
+                            await refreshCart();
+                            router.push(`/thank-you?bookingId=${bookingId}`);
+                        } else {
+                            // Payment received but the booking is still being confirmed.
                             await refreshCart();
                             router.push(`/thank-you?bookingId=${bookingId}&status=pending`);
-                        } else if (verifyRes.data.status === 'refunded_due_to_partner_error') {
-                            toast.error('Booking Failed: Partner issue. Payment auto-refund initiated.', {
-                                duration: 8000,
-                                icon: '❌'
-                            });
-                            await refreshCart();
-                            router.push('/profile?tab=bookings');
-                        } else {
-                            toast.error('Payment verification failed. Please contact support.');
                         }
                     } catch (verifyError: any) {
+                        // A failed verify says nothing about the payment; the next page reads the real outcome.
                         console.error('Payment verification error:', verifyError);
-                        toast.error('Payment verification failed. If amount was deducted, it will be refunded within 5-7 days.');
+                        router.push(`/thank-you?bookingId=${bookingId}&status=pending`);
                     } finally {
-                        setCreatingOrder(false);
+                        done();
                     }
                 },
                 prefill: { contact: '' },
                 theme: { color: '#4b2192' },
                 modal: {
-                    ondismiss: () => {
-                        setCreatingOrder(false);
-                    }
+                    ondismiss: done
                 }
             };
 
@@ -184,7 +188,13 @@ export function useCheckout({
             }
 
             const rzp = new (window as any).Razorpay(options);
+            // Without this a declined card looks exactly like closing the popup. Razorpay keeps
+            // the popup open so the customer can retry with another method.
+            rzp.on('payment.failed', (resp: any) => {
+                toast.error(`Payment failed: ${resp?.error?.description || 'please try another method'}.`, { duration: 6000 });
+            });
             rzp.open();
+            modalOpen = true;
 
         } catch (error: any) {
             console.error('Checkout Error:', error);
@@ -195,7 +205,7 @@ export function useCheckout({
             }
             toast.error(error.response?.data?.error || 'Failed to initiate payment. Please try again.');
         } finally {
-            setCreatingOrder(false);
+            if (!modalOpen) done();
         }
     };
 
