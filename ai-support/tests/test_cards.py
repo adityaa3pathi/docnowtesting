@@ -74,3 +74,25 @@ async def test_verified_catalog_reply_carries_cards(mock_db, settings, agent_con
 async def test_rejected_reply_carries_no_cards(mock_db, settings, agent_context):
     response = await _turn("UNGROUNDED", mock_db, settings, agent_context)
     assert response.was_abstained and response.cards == []
+
+
+@pytest.mark.asyncio
+async def test_reply_from_catalog_notes_gets_live_cards(mock_db, settings, agent_context):
+    notes = [
+        RetrievedChunk(id="n1", source="catalog", title="Anemia Workup Profile Peripheral Smear Reflex", content="...", similarity=0.8, metadata={"partnerCode": "profile_9", "displayPrice": 100}),
+        RetrievedChunk(id="n3", source="catalog", title="Lipid Profile", content="...", similarity=0.75, metadata={"partnerCode": "profile_110"}),
+        RetrievedChunk(id="n2", source="faq", title="About DocNow", content="...", similarity=0.7),
+    ]
+    faq = Intent(intent="FAQ", confidence=0.9)
+    live = ActionResult(tool="get_product_details", output=_row("profile_9", price=2160))
+    with (
+        patch("app.agents.orchestrator.retrieve", new_callable=AsyncMock, return_value=RetrievalResult(chunks=notes, max_similarity=0.8)),
+        patch("app.agents.orchestrator.classify_intent", new_callable=AsyncMock, return_value=faq),
+        patch("app.agents.orchestrator.generate_draft", new_callable=AsyncMock, return_value="We offer an Anemia Workup Profile."),
+        patch("app.agents.orchestrator.verify", new_callable=AsyncMock, return_value=VerificationResult(verdict="GROUNDED", cleaned_response="We offer an Anemia Workup Profile.")),
+        patch("app.agents.action.execute_action", new_callable=AsyncMock, return_value=live) as act,
+    ):
+        response = await handle_message("anemia test", agent_context, mock_db, settings)
+    assert [(c.code, c.price) for c in response.cards] == [("profile_9", 2160)]  # live price, not the stored 100
+    assert act.await_count == 1  # Lipid Profile is not named in the reply, so no card for it
+    assert act.await_args.args[0].parameters == {"code": "profile_9"}

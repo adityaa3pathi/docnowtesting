@@ -2,7 +2,8 @@
  "_meta": {
   "approved": "13-11-2026, DocNow's reviewing doctor, from DocNow-symptom-tests-draft-for-doctor-13-11-2026.xlsx",
   "sources": "MedlinePlus Medical Tests (public domain); NHS website (OGL v3)",
-  "change_rule": "Clinical content: change only with a doctor's written OK."
+  "change_rule": "Clinical content: change only with a doctor's written OK.",
+  "catalog_link": "Each test is pinned to one catalog item (checked on api.docnow.in, 14-11-2026); code null = not sold yet."
  },
  "topics": {
   "tiredness": {
@@ -10,33 +11,39 @@
    "tests": [
     {
      "name": "TSH (thyroid stimulating hormone)",
-     "search": "TSH",
-     "source": "https://medlineplus.gov/lab-tests/tsh-thyroid-stimulating-hormone-test/"
+     "source": "https://medlineplus.gov/lab-tests/tsh-thyroid-stimulating-hormone-test/",
+     "code": "parameter_2192",
+     "catalog_name": "TSH Ultra - Sensitive"
     },
     {
      "name": "Hemoglobin test",
-     "search": "Hemoglobin",
-     "source": "https://medlineplus.gov/lab-tests/hemoglobin-test/"
+     "source": "https://medlineplus.gov/lab-tests/hemoglobin-test/",
+     "code": "parameter_1041",
+     "catalog_name": "Hemoglobin Hb"
     },
     {
      "name": "Ferritin blood test",
-     "search": "Ferritin",
-     "source": "https://medlineplus.gov/lab-tests/ferritin-blood-test/"
+     "source": "https://medlineplus.gov/lab-tests/ferritin-blood-test/",
+     "code": "parameter_885",
+     "catalog_name": "Ferritin"
     },
     {
      "name": "Iron tests",
-     "search": "Iron",
-     "source": "https://medlineplus.gov/lab-tests/iron-tests/"
+     "source": "https://medlineplus.gov/lab-tests/iron-tests/",
+     "code": "profile_5",
+     "catalog_name": "Iron Studies"
     },
     {
      "name": "Vitamin B test (includes vitamin B12)",
-     "search": "Vitamin B12",
-     "source": "https://medlineplus.gov/lab-tests/vitamin-b-test/"
+     "source": "https://medlineplus.gov/lab-tests/vitamin-b-test/",
+     "code": "parameter_2221",
+     "catalog_name": "Vitamin B12 Cyanocobalamin"
     },
     {
      "name": "Comprehensive metabolic panel (CMP)",
-     "search": "Comprehensive Metabolic Panel",
-     "source": "https://medlineplus.gov/lab-tests/comprehensive-metabolic-panel-cmp/"
+     "source": "https://medlineplus.gov/lab-tests/comprehensive-metabolic-panel-cmp/",
+     "code": null,
+     "catalog_name": null
     }
    ]
   },
@@ -45,28 +52,33 @@
    "tests": [
     {
      "name": "TSH (thyroid stimulating hormone)",
-     "search": "TSH",
-     "source": "https://medlineplus.gov/lab-tests/tsh-thyroid-stimulating-hormone-test/"
+     "source": "https://medlineplus.gov/lab-tests/tsh-thyroid-stimulating-hormone-test/",
+     "code": "parameter_2192",
+     "catalog_name": "TSH Ultra - Sensitive"
     },
     {
      "name": "Thyroxine (T4) test",
-     "search": "T4",
-     "source": "https://medlineplus.gov/lab-tests/thyroxine-t4-test/"
+     "source": "https://medlineplus.gov/lab-tests/thyroxine-t4-test/",
+     "code": "parameter_2098",
+     "catalog_name": "T4, Free Free Thyroxine"
     },
     {
      "name": "Thyroid antibody tests",
-     "search": "Anti TPO",
-     "source": "https://medlineplus.gov/lab-tests/thyroid-antibody-tests/"
+     "source": "https://medlineplus.gov/lab-tests/thyroid-antibody-tests/",
+     "code": "parameter_2158",
+     "catalog_name": "TPO (Thyroid Peroxidase) Antibody Microsomal Antibody, Serum"
     },
     {
      "name": "Vitamin B test (includes vitamin B12)",
-     "search": "Vitamin B12",
-     "source": "https://medlineplus.gov/lab-tests/vitamin-b-test/"
+     "source": "https://medlineplus.gov/lab-tests/vitamin-b-test/",
+     "code": "parameter_2221",
+     "catalog_name": "Vitamin B12 Cyanocobalamin"
     },
     {
      "name": "Testosterone levels test",
-     "search": "Testosterone",
-     "source": "https://medlineplus.gov/lab-tests/testosterone-levels-test/"
+     "source": "https://medlineplus.gov/lab-tests/testosterone-levels-test/",
+     "code": "parameter_2109",
+     "catalog_name": "Testosterone Total"
     }
    ]
   },
@@ -75,33 +87,39 @@
    "tests": [
     {
      "name": "TSH (thyroid stimulating hormone)",
-     "search": "TSH",
-     "source": "https://medlineplus.gov/lab-tests/tsh-thyroid-stimulating-hormone-test/"
+     "source": "https://medlineplus.gov/lab-tests/tsh-thyroid-stimulating-hormone-test/",
+     "code": "parameter_2192",
+     "catalog_name": "TSH Ultra - Sensitive"
     },
     {
      "name": "Thyroxine (T4) test",
-     "search": "T4",
-     "source": "https://medlineplus.gov/lab-tests/thyroxine-t4-test/"
+     "source": "https://medlineplus.gov/lab-tests/thyroxine-t4-test/",
+     "code": "parameter_2098",
+     "catalog_name": "T4, Free Free Thyroxine"
     },
     {
      "name": "Thyroid antibody tests",
-     "search": "Anti TPO",
-     "source": "https://medlineplus.gov/lab-tests/thyroid-antibody-tests/"
+     "source": "https://medlineplus.gov/lab-tests/thyroid-antibody-tests/",
+     "code": "parameter_2158",
+     "catalog_name": "TPO (Thyroid Peroxidase) Antibody Microsomal Antibody, Serum"
     },
     {
      "name": "Cortisol test",
-     "search": "Cortisol",
-     "source": "https://medlineplus.gov/lab-tests/cortisol-test/"
+     "source": "https://medlineplus.gov/lab-tests/cortisol-test/",
+     "code": "parameter_681",
+     "catalog_name": "Cortisol, Serum"
     },
     {
      "name": "Hemoglobin A1C (HbA1c) test",
-     "search": "HbA1c",
-     "source": "https://medlineplus.gov/lab-tests/hemoglobin-a1c-hba1c-test/"
+     "source": "https://medlineplus.gov/lab-tests/hemoglobin-a1c-hba1c-test/",
+     "code": "profile_9",
+     "catalog_name": "HbA1c"
     },
     {
      "name": "Cholesterol levels (lipid panel)",
-     "search": "Lipid Profile",
-     "source": "https://medlineplus.gov/lab-tests/cholesterol-levels/"
+     "source": "https://medlineplus.gov/lab-tests/cholesterol-levels/",
+     "code": "profile_110",
+     "catalog_name": "Lipid Profile"
     }
    ]
   },
@@ -110,33 +128,39 @@
    "tests": [
     {
      "name": "Blood glucose test",
-     "search": "Glucose Fasting",
-     "source": "https://medlineplus.gov/lab-tests/blood-glucose-test/"
+     "source": "https://medlineplus.gov/lab-tests/blood-glucose-test/",
+     "code": "parameter_977",
+     "catalog_name": "Blood Glucose Fasting"
     },
     {
      "name": "Hemoglobin A1C (HbA1c) test",
-     "search": "HbA1c",
-     "source": "https://medlineplus.gov/lab-tests/hemoglobin-a1c-hba1c-test/"
+     "source": "https://medlineplus.gov/lab-tests/hemoglobin-a1c-hba1c-test/",
+     "code": "profile_9",
+     "catalog_name": "HbA1c"
     },
     {
      "name": "Glucose in urine test (part of urinalysis)",
-     "search": "Urine Routine",
-     "source": "https://medlineplus.gov/lab-tests/glucose-in-urine-test/"
+     "source": "https://medlineplus.gov/lab-tests/glucose-in-urine-test/",
+     "code": "profile_29",
+     "catalog_name": "Urine Routine & Microscopy Extended"
     },
     {
      "name": "Urinalysis (cited via nitrites in urine)",
-     "search": "Urine Routine",
-     "source": "https://medlineplus.gov/lab-tests/nitrites-in-urine/"
+     "source": "https://medlineplus.gov/lab-tests/nitrites-in-urine/",
+     "code": "profile_29",
+     "catalog_name": "Urine Routine & Microscopy Extended"
     },
     {
      "name": "Calcium blood test",
-     "search": "Calcium",
-     "source": "https://medlineplus.gov/lab-tests/calcium-blood-test/"
+     "source": "https://medlineplus.gov/lab-tests/calcium-blood-test/",
+     "code": "parameter_548",
+     "catalog_name": "Calcium Total, Serum"
     },
     {
      "name": "Creatinine test (kidney function)",
-     "search": "Creatinine",
-     "source": "https://medlineplus.gov/lab-tests/creatinine-test/"
+     "source": "https://medlineplus.gov/lab-tests/creatinine-test/",
+     "code": "parameter_696",
+     "catalog_name": "Creatinine, Serum"
     }
    ]
   },
@@ -145,33 +169,39 @@
    "tests": [
     {
      "name": "Rheumatoid factor (RF) test",
-     "search": "Rheumatoid Factor",
-     "source": "https://medlineplus.gov/lab-tests/rheumatoid-factor-rf-test/"
+     "source": "https://medlineplus.gov/lab-tests/rheumatoid-factor-rf-test/",
+     "code": "parameter_279",
+     "catalog_name": "RA Test Rheumatoid Arthritis Factor, Quantitative"
     },
     {
      "name": "CCP antibody test (anti-CCP)",
-     "search": "Anti CCP",
-     "source": "https://medlineplus.gov/lab-tests/ccp-antibody-test/"
+     "source": "https://medlineplus.gov/lab-tests/ccp-antibody-test/",
+     "code": "parameter_575",
+     "catalog_name": "CCP (Antibody Cyclic Citrullinated Peptide)"
     },
     {
      "name": "ANA (antinuclear antibody) test",
-     "search": "ANA",
-     "source": "https://medlineplus.gov/lab-tests/ana-antinuclear-antibody-test/"
+     "source": "https://medlineplus.gov/lab-tests/ana-antinuclear-antibody-test/",
+     "code": "parameter_426",
+     "catalog_name": "ANA By ELISA (Anti Nuclear Antibody) Screening, Serum"
     },
     {
      "name": "ESR (erythrocyte sedimentation rate)",
-     "search": "ESR",
-     "source": "https://medlineplus.gov/lab-tests/erythrocyte-sedimentation-rate-esr/"
+     "source": "https://medlineplus.gov/lab-tests/erythrocyte-sedimentation-rate-esr/",
+     "code": "parameter_864",
+     "catalog_name": "ESR Automated"
     },
     {
      "name": "Uric acid test",
-     "search": "Uric Acid",
-     "source": "https://medlineplus.gov/lab-tests/uric-acid-test/"
+     "source": "https://medlineplus.gov/lab-tests/uric-acid-test/",
+     "code": "parameter_2208",
+     "catalog_name": "Uric Acid, Serum"
     },
     {
      "name": "TSH (thyroid stimulating hormone)",
-     "search": "TSH",
-     "source": "https://medlineplus.gov/lab-tests/tsh-thyroid-stimulating-hormone-test/"
+     "source": "https://medlineplus.gov/lab-tests/tsh-thyroid-stimulating-hormone-test/",
+     "code": "parameter_2192",
+     "catalog_name": "TSH Ultra - Sensitive"
     }
    ]
   },
@@ -180,33 +210,39 @@
    "tests": [
     {
      "name": "White blood count (WBC)",
-     "search": "CBC",
-     "source": "https://medlineplus.gov/lab-tests/white-blood-count-wbc/"
+     "source": "https://medlineplus.gov/lab-tests/white-blood-count-wbc/",
+     "code": "profile_30",
+     "catalog_name": "COMPLETE BLOOD COUNT"
     },
     {
      "name": "C-reactive protein (CRP) test",
-     "search": "CRP",
-     "source": "https://medlineplus.gov/lab-tests/c-reactive-protein-crp-test/"
+     "source": "https://medlineplus.gov/lab-tests/c-reactive-protein-crp-test/",
+     "code": "parameter_697",
+     "catalog_name": "CRP (C Reactive Protein) Quantitative, Serum"
     },
     {
      "name": "ESR (erythrocyte sedimentation rate)",
-     "search": "ESR",
-     "source": "https://medlineplus.gov/lab-tests/erythrocyte-sedimentation-rate-esr/"
+     "source": "https://medlineplus.gov/lab-tests/erythrocyte-sedimentation-rate-esr/",
+     "code": "parameter_864",
+     "catalog_name": "ESR Automated"
     },
     {
      "name": "Blood culture (cited via bacteria culture test)",
-     "search": "Blood Culture",
-     "source": "https://medlineplus.gov/lab-tests/bacteria-culture-test/"
+     "source": "https://medlineplus.gov/lab-tests/bacteria-culture-test/",
+     "code": "parameter_716",
+     "catalog_name": "Culture & Sensitivity, Blood"
     },
     {
      "name": "Malaria tests (blood smear / rapid test)",
-     "search": "Malaria",
-     "source": "https://medlineplus.gov/lab-tests/malaria-tests/"
+     "source": "https://medlineplus.gov/lab-tests/malaria-tests/",
+     "code": "parameter_1719",
+     "catalog_name": "Malarial Antigen, Vivax & Falciparum"
     },
     {
      "name": "Dengue fever test",
-     "search": "Dengue",
-     "source": "https://medlineplus.gov/lab-tests/dengue-fever-test/"
+     "source": "https://medlineplus.gov/lab-tests/dengue-fever-test/",
+     "code": "parameter_2309",
+     "catalog_name": "Dengue NS1 Antigen Detection - RAPID Card"
     }
    ],
    "note": "If the fever is high, or you feel very unwell, please see a doctor today."
@@ -216,13 +252,15 @@
    "tests": [
     {
      "name": "H. pylori tests",
-     "search": "H. Pylori",
-     "source": "https://medlineplus.gov/lab-tests/helicobacter-pylori-h-pylori-tests/"
+     "source": "https://medlineplus.gov/lab-tests/helicobacter-pylori-h-pylori-tests/",
+     "code": null,
+     "catalog_name": null
     },
     {
      "name": "Magnesium blood test",
-     "search": "Magnesium",
-     "source": "https://medlineplus.gov/lab-tests/magnesium-blood-test/"
+     "source": "https://medlineplus.gov/lab-tests/magnesium-blood-test/",
+     "code": "parameter_1712",
+     "catalog_name": "Magnesium, Serum"
     }
    ]
   },
@@ -231,38 +269,45 @@
    "tests": [
     {
      "name": "Prolactin levels",
-     "search": "Prolactin",
-     "source": "https://medlineplus.gov/lab-tests/prolactin-levels/"
+     "source": "https://medlineplus.gov/lab-tests/prolactin-levels/",
+     "code": "parameter_1931",
+     "catalog_name": "Prolactin"
     },
     {
      "name": "FSH (follicle stimulating hormone) levels test",
-     "search": "FSH",
-     "source": "https://medlineplus.gov/lab-tests/follicle-stimulating-hormone-fsh-levels-test/"
+     "source": "https://medlineplus.gov/lab-tests/follicle-stimulating-hormone-fsh-levels-test/",
+     "code": "parameter_915",
+     "catalog_name": "FSH-Follicle Stimulating Hormone"
     },
     {
      "name": "LH (luteinizing hormone) levels test",
-     "search": "LH",
-     "source": "https://medlineplus.gov/lab-tests/luteinizing-hormone-lh-levels-test/"
+     "source": "https://medlineplus.gov/lab-tests/luteinizing-hormone-lh-levels-test/",
+     "code": "parameter_1696",
+     "catalog_name": "LH-Luteinizing Hormone"
     },
     {
      "name": "TSH (thyroid stimulating hormone)",
-     "search": "TSH",
-     "source": "https://medlineplus.gov/lab-tests/tsh-thyroid-stimulating-hormone-test/"
+     "source": "https://medlineplus.gov/lab-tests/tsh-thyroid-stimulating-hormone-test/",
+     "code": "parameter_2192",
+     "catalog_name": "TSH Ultra - Sensitive"
     },
     {
      "name": "Testosterone levels test",
-     "search": "Testosterone",
-     "source": "https://medlineplus.gov/lab-tests/testosterone-levels-test/"
+     "source": "https://medlineplus.gov/lab-tests/testosterone-levels-test/",
+     "code": "parameter_2109",
+     "catalog_name": "Testosterone Total"
     },
     {
      "name": "Estrogen levels test (estradiol)",
-     "search": "Estradiol",
-     "source": "https://medlineplus.gov/lab-tests/estrogen-levels-test/"
+     "source": "https://medlineplus.gov/lab-tests/estrogen-levels-test/",
+     "code": "parameter_834",
+     "catalog_name": "E2 - Female Reproductive Hormone Test"
     },
     {
      "name": "Pregnancy test (hCG)",
-     "search": "Beta HCG",
-     "source": "https://medlineplus.gov/lab-tests/pregnancy-test/"
+     "source": "https://medlineplus.gov/lab-tests/pregnancy-test/",
+     "code": "parameter_1029",
+     "catalog_name": "HCG Beta Subunit Urine Spot"
     }
    ]
   },
@@ -271,33 +316,39 @@
    "tests": [
     {
      "name": "Vitamin B test (includes vitamin B12)",
-     "search": "Vitamin B12",
-     "source": "https://medlineplus.gov/lab-tests/vitamin-b-test/"
+     "source": "https://medlineplus.gov/lab-tests/vitamin-b-test/",
+     "code": "parameter_2221",
+     "catalog_name": "Vitamin B12 Cyanocobalamin"
     },
     {
      "name": "Vitamin D test",
-     "search": "Vitamin D",
-     "source": "https://medlineplus.gov/lab-tests/vitamin-d-test/"
+     "source": "https://medlineplus.gov/lab-tests/vitamin-d-test/",
+     "code": "parameter_2226",
+     "catalog_name": "Vitamin D Total-25 Hydroxy"
     },
     {
      "name": "Homocysteine test",
-     "search": "Homocysteine",
-     "source": "https://medlineplus.gov/lab-tests/homocysteine-test/"
+     "source": "https://medlineplus.gov/lab-tests/homocysteine-test/",
+     "code": "parameter_1266",
+     "catalog_name": "Homocysteine"
     },
     {
      "name": "Methylmalonic acid (MMA) test",
-     "search": "Methylmalonic Acid",
-     "source": "https://medlineplus.gov/lab-tests/methylmalonic-acid-mma-test/"
+     "source": "https://medlineplus.gov/lab-tests/methylmalonic-acid-mma-test/",
+     "code": null,
+     "catalog_name": null
     },
     {
      "name": "Calcium blood test",
-     "search": "Calcium",
-     "source": "https://medlineplus.gov/lab-tests/calcium-blood-test/"
+     "source": "https://medlineplus.gov/lab-tests/calcium-blood-test/",
+     "code": "parameter_548",
+     "catalog_name": "Calcium Total, Serum"
     },
     {
      "name": "Parathyroid hormone (PTH) test",
-     "search": "PTH",
-     "source": "https://medlineplus.gov/lab-tests/parathyroid-hormone-pth-test/"
+     "source": "https://medlineplus.gov/lab-tests/parathyroid-hormone-pth-test/",
+     "code": "parameter_1957",
+     "catalog_name": "PTH-Intact Molecule Parathyroid Hormone"
     }
    ]
   },
@@ -306,43 +357,51 @@
    "tests": [
     {
      "name": "Complete blood count (CBC)",
-     "search": "CBC",
-     "source": "https://medlineplus.gov/lab-tests/complete-blood-count-cbc/"
+     "source": "https://medlineplus.gov/lab-tests/complete-blood-count-cbc/",
+     "code": "profile_30",
+     "catalog_name": "COMPLETE BLOOD COUNT"
     },
     {
      "name": "Comprehensive metabolic panel (CMP)",
-     "search": "Comprehensive Metabolic Panel",
-     "source": "https://medlineplus.gov/lab-tests/comprehensive-metabolic-panel-cmp/"
+     "source": "https://medlineplus.gov/lab-tests/comprehensive-metabolic-panel-cmp/",
+     "code": null,
+     "catalog_name": null
     },
     {
      "name": "Basic metabolic panel (BMP)",
-     "search": "Kidney Function Test",
-     "source": "https://medlineplus.gov/lab-tests/basic-metabolic-panel-bmp/"
+     "source": "https://medlineplus.gov/lab-tests/basic-metabolic-panel-bmp/",
+     "code": "profile_120",
+     "catalog_name": "Kidney Function Test"
     },
     {
      "name": "Cholesterol levels (lipid panel)",
-     "search": "Lipid Profile",
-     "source": "https://medlineplus.gov/lab-tests/cholesterol-levels/"
+     "source": "https://medlineplus.gov/lab-tests/cholesterol-levels/",
+     "code": "profile_110",
+     "catalog_name": "Lipid Profile"
     },
     {
      "name": "Blood glucose test",
-     "search": "Glucose Fasting",
-     "source": "https://medlineplus.gov/lab-tests/blood-glucose-test/"
+     "source": "https://medlineplus.gov/lab-tests/blood-glucose-test/",
+     "code": "parameter_977",
+     "catalog_name": "Blood Glucose Fasting"
     },
     {
      "name": "Hemoglobin A1C (HbA1c) test",
-     "search": "HbA1c",
-     "source": "https://medlineplus.gov/lab-tests/hemoglobin-a1c-hba1c-test/"
+     "source": "https://medlineplus.gov/lab-tests/hemoglobin-a1c-hba1c-test/",
+     "code": "profile_9",
+     "catalog_name": "HbA1c"
     },
     {
      "name": "Urinalysis (cited via nitrites in urine)",
-     "search": "Urine Routine",
-     "source": "https://medlineplus.gov/lab-tests/nitrites-in-urine/"
+     "source": "https://medlineplus.gov/lab-tests/nitrites-in-urine/",
+     "code": "profile_29",
+     "catalog_name": "Urine Routine & Microscopy Extended"
     },
     {
      "name": "Triglycerides test (part of lipid profile)",
-     "search": "Lipid Profile",
-     "source": "https://medlineplus.gov/lab-tests/triglycerides-test/"
+     "source": "https://medlineplus.gov/lab-tests/triglycerides-test/",
+     "code": "profile_110",
+     "catalog_name": "Lipid Profile"
     }
    ]
   }
