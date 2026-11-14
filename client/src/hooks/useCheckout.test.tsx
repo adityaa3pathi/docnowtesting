@@ -136,7 +136,7 @@ describe('useCheckout: online', () => {
 
         expect(initiateBody()).toMatchObject({ paymentMethod: 'ONLINE' });
         expect(Razorpay).toHaveBeenCalledTimes(1);
-        expect(Razorpay.mock.calls[0][0]).toMatchObject({ order_id: 'order_9', key: 'rzp_test', amount: 1299 });
+        expect((Razorpay.mock.calls as unknown as unknown[][])[0][0]).toMatchObject({ order_id: 'order_9', key: 'rzp_test', amount: 1299 });
         expect(rzpOpen).toHaveBeenCalledTimes(1);
         expect(m.push).not.toHaveBeenCalled();
         act(() => root.unmount());
