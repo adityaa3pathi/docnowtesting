@@ -1,12 +1,27 @@
 import { Request, Response } from 'express';
 import Razorpay from 'razorpay';
+import { PaymentStatus } from '@prisma/client';
 import { prisma } from '../../db';
+import { getRazorpay } from '../../services/razorpay';
 import { finalizeBooking } from '../../services/bookingFinalization';
 import { rollbackInitiatedBooking } from '../../services/rollback';
 import { assertTransition } from '../../utils/paymentStateMachine';
 import { tryAwardFirstOrderBonus } from '../../utils/referralService';
 import { logAlert, logBusinessEvent, logger } from '../../utils/logger';
 import { addObservabilityBreadcrumb } from '../../utils/sentry';
+
+// The booking already ended (checkout expired, failed or was cancelled) when the capture landed.
+const LATE_CAPTURE_STATUSES = new Set<PaymentStatus>(['EXPIRED', 'FAILED', 'CANCELLED']);
+
+/** Money arrived for a booking that no longer exists in a payable state: send it straight back. */
+async function refundLateCapture(booking: { id: string; paymentStatus: PaymentStatus }, paymentId: string, eventId: string) {
+    try {
+        await getRazorpay().payments.refund(paymentId, { notes: { reason: 'Payment received after the booking ended', bookingId: booking.id } });
+        logBusinessEvent('late_capture_refunded', { bookingId: booking.id, paymentStatus: booking.paymentStatus, razorpayPaymentId: paymentId, eventId }, 'warn');
+    } catch (error) {
+        logAlert('late_capture_refund_failed_manual_required', { error, bookingId: booking.id, razorpayPaymentId: paymentId, eventId });
+    }
+}
 
 /**
  * POST /api/payments/webhook
@@ -63,14 +78,34 @@ export const webhookHandler = async (req: Request, res: Response) => {
         throw e;
     }
 
-    // 3. Process event
-    const payment = payload.payload.payment.entity;
-    const orderId = payment.order_id;
+    // 3. Process event. The dedupe row is already saved, so a failure must remove it again:
+    // otherwise Razorpay's retry is answered "duplicate" and the payment is never handled.
+    try {
+        await processEvent(event, eventId, payload);
+    } catch (error) {
+        await prisma.webhookEvent.delete({ where: { eventId } }).catch(() => {});
+        logAlert('razorpay_webhook_processing_failed', { error, eventId, event });
+        return res.status(500).json({ error: 'processing_failed' });
+    }
 
-    if (event === 'payment.captured') {
+    addObservabilityBreadcrumb('razorpay_webhook_processed', { eventId, event, source: 'razorpay' });
+    res.status(200).json({ status: 'ok' });
+};
+
+async function processEvent(event: string, eventId: string, payload: any) {
+    const payment = payload.payload?.payment?.entity;
+    const orderId = payment?.order_id;
+
+    if (event === 'payment.captured' && orderId) {
         const booking = await prisma.booking.findFirst({
             where: { razorpayOrderId: orderId }
         });
+
+        // Skip the booking's own recorded payment: its cancellation flow already owns that refund.
+        if (booking && LATE_CAPTURE_STATUSES.has(booking.paymentStatus) && booking.razorpayPaymentId !== payment.id) {
+            await refundLateCapture(booking, payment.id, eventId);
+            return;
+        }
 
         if (booking && booking.paymentStatus === 'INITIATED') {
             addObservabilityBreadcrumb('razorpay_payment_captured_processing', {
@@ -124,7 +159,7 @@ export const webhookHandler = async (req: Request, res: Response) => {
                 }
             }, 60_000);
         }
-    } else if (event === 'payment.failed') {
+    } else if (event === 'payment.failed' && orderId) {
         const booking = await prisma.booking.findFirst({
             where: { razorpayOrderId: orderId }
         });
@@ -167,14 +202,20 @@ export const webhookHandler = async (req: Request, res: Response) => {
                 data: { status: 'PAYMENT_RECEIVED' }
             });
 
-            await prisma.booking.update({
-                where: { id: bookingId },
-                data: { 
+            // Links can be paid after the booking expired, so EXPIRED may revive; nothing later may,
+            // and a second payment must not overwrite the first one's id.
+            const authorized = await prisma.booking.updateMany({
+                where: { id: bookingId, paymentStatus: { in: ['INITIATED', 'EXPIRED'] }, razorpayPaymentId: null },
+                data: {
                     razorpayPaymentId: razorpayPaymentId,
                     paymentStatus: 'AUTHORIZED',
                     paidAt: new Date()
                 }
             });
+            if (authorized.count === 0) {
+                logAlert('payment_link_paid_unexpected_state', { bookingId, managerOrderId, razorpayPaymentId, eventId });
+                return;
+            }
 
             logBusinessEvent('manager_payment_link_paid', {
                 bookingId,
@@ -229,6 +270,4 @@ export const webhookHandler = async (req: Request, res: Response) => {
         }
     }
 
-    addObservabilityBreadcrumb('razorpay_webhook_processed', { eventId, event, source: 'razorpay' });
-    res.status(200).json({ status: 'ok' });
-};
+}

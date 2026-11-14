@@ -9,6 +9,8 @@ import { getCancelDenialMessage } from '../utils/healthiansStatusMap';
 import { sendBookingCancelledViaWhatsApp } from './bookingCancellationNotifications';
 
 import { getBookingStrategy } from './bookingStrategyRegistry';
+import { isRealOnlinePayment } from './refunds';
+import { logAlert } from '../utils/logger';
 
 const healthians = HealthiansAdapter.getInstance();
 export const PARTNER_CANCELABLE_STATUSES = new Set(['BS002', 'BS005']);
@@ -75,9 +77,6 @@ function isAlreadyCancelled(
     );
 }
 
-function isRealOnlinePayment(paymentId?: string | null) {
-    return Boolean(paymentId && !paymentId.startsWith('ZERO_'));
-}
 
 function getCancellationMessage(
     partnerCancellation: 'not_required' | 'cancelled',
@@ -153,6 +152,11 @@ async function cancelWithPartner(partnerBookingId: string, actorUserId: string, 
                 remarks,
             }));
 
+            // Healthians refuses with HTTP 200 + status:false; that is not a cancellation.
+            if (!cancelRes?.status) {
+                failures.push({ customerId: customer.vendor_customer_id, error: cancelRes?.message || 'Partner refused the cancellation' });
+                continue;
+            }
             results.push({
                 customerId: customer.vendor_customer_id,
                 status: cancelRes.status,
@@ -167,9 +171,14 @@ async function cancelWithPartner(partnerBookingId: string, actorUserId: string, 
         }
     }
 
-    if (results.length === 0) {
-        const err = new Error('Failed to cancel any customers on the partner platform');
-        (err as any).details = failures;
+    // All or nothing: a refund for a half-cancelled booking pays for samples the lab still collects.
+    // A retry only sees the patients still active, so it finishes the job safely.
+    if (failures.length > 0) {
+        const err = new Error(results.length === 0
+            ? 'The lab did not cancel this booking. Nothing was refunded. Please try again or contact support.'
+            : `The lab cancelled ${results.length} of ${cancellableCustomers.length} patients. Nothing was refunded yet. Please try again to finish the cancellation.`);
+        (err as any).details = [...results, ...failures];
+        logAlert('partner_cancellation_incomplete', { partnerBookingId, cancelled: results.length, failed: failures.length });
         throw err;
     }
 

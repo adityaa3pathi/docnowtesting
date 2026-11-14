@@ -1,8 +1,9 @@
 import { prisma } from '../db';
+import { logAlert } from '../utils/logger';
 
 /**
- * Rolls back an INITIATED booking by restoring promo usage and wallet balance.
- * Called when payment fails or Razorpay order creation fails.
+ * Restores promo usage and wallet balance for a booking that will not go ahead
+ * (payment failed, checkout abandoned, or the partner booking failed and was refunded).
  */
 export async function rollbackInitiatedBooking(booking: any) {
     if (!booking) return;
@@ -67,6 +68,7 @@ export async function rollbackInitiatedBooking(booking: any) {
             }
         });
     } catch (error) {
-        console.error('[Payments] Rollback failed:', error);
+        // The user is owed this money; a console line nobody reads is not enough.
+        logAlert('wallet_promo_rollback_failed', { error, bookingId: booking.id });
     }
 }
