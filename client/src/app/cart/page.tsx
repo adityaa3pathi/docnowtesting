@@ -22,6 +22,7 @@ import { MobileCheckoutBar } from '@/components/cart/MobileCheckoutBar';
 import { useSlots } from '@/hooks/useSlots';
 import { usePromo } from '@/hooks/usePromo';
 import { useCheckout } from '@/hooks/useCheckout';
+import { type CheckoutPaymentMethod } from '@/components/cart/PaymentMethodPicker';
 import { Patient, Address } from '@/types/cart';
 
 export default function CartPage() {
@@ -62,6 +63,14 @@ export default function CartPage() {
     } = useSlots(selectedAddress, selectedDate);
 
     const promo = usePromo(total);
+    // Pay on collection appears only when the server has it switched on.
+    const [payOnCollectionOffered, setPayOnCollectionOffered] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>('ONLINE');
+    useEffect(() => {
+        api.get('/payments/options')
+            .then((res) => setPayOnCollectionOffered(res.data?.payOnCollection === true))
+            .catch(() => setPayOnCollectionOffered(false));
+    }, []);
 
     const {
         creatingOrder,
@@ -82,7 +91,8 @@ export default function CartPage() {
         billingPatientId,
         isSlotLocked,
         cartItems: cart?.items || [],
-        refreshCart
+        refreshCart,
+        paymentMethod: payOnCollectionOffered ? paymentMethod : 'ONLINE'
     });
 
     useEffect(() => {
@@ -256,6 +266,9 @@ export default function CartPage() {
                                 isSlotLocked={isSlotLocked}
                                 freezingSlot={freezingSlot}
                                 creatingOrder={creatingOrder}
+                                payOnCollectionOffered={payOnCollectionOffered}
+                                paymentMethod={paymentMethod}
+                                setPaymentMethod={setPaymentMethod}
                             />
                         </div>
                     </div>
@@ -287,6 +300,7 @@ export default function CartPage() {
             {cart && cart.items.length > 0 && (
                 <MobileCheckoutBar
                     finalPayable={finalPayable}
+                    payAtCollection={payOnCollectionOffered && paymentMethod === 'PAY_ON_COLLECTION' && finalPayable > 0}
                     handleCheckout={handleCheckout}
                     selectedAddressId={selectedAddressId}
                     selectedDate={selectedDate}

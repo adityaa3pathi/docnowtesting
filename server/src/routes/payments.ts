@@ -3,6 +3,7 @@ import { authMiddleware } from '../middleware/auth';
 import { rateLimiter } from '../middleware/rateLimiter';
 import { initiatePayment, verifyPayment } from '../controllers/payments';
 import { prisma } from '../db';
+import { payOnCollectionEnabled } from '../services/payOnCollection';
 import { HealthiansAdapter } from '../adapters/healthians';
 import { BookingService } from '../services/booking.service';
 
@@ -10,6 +11,11 @@ const router = Router();
 const healthians = HealthiansAdapter.getInstance();
 
 // POST /api/payments/initiate - Create Booking + Razorpay Order
+// Which payment choices checkout may show; pay on collection is behind PAY_ON_COLLECTION_ENABLED.
+router.get('/options', (_req, res) => {
+    res.json({ payOnCollection: payOnCollectionEnabled() });
+});
+
 router.post('/initiate', authMiddleware, rateLimiter(1, 10, 'initiate'), initiatePayment);
 
 // POST /api/payments/verify - Verify payment + create partner booking

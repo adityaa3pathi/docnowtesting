@@ -149,6 +149,8 @@ export async function buildSettlementRows(query: AuthRequest['query']): Promise<
         let paymentMode: string;
         if (booking.finalAmount === 0 && (booking.walletAmount || 0) > 0) {
             paymentMode = 'Wallet';
+        } else if (booking.paymentMethod === 'PAY_ON_COLLECTION') {
+            paymentMode = booking.collectedAt ? 'Pay on collection (collected)' : 'Pay on collection (not yet collected)';
         } else if (booking.managerOrder) {
             const mode = booking.managerOrder.collectionMode;
             if (mode === 'OFFLINE_CASH') {

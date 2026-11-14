@@ -24,7 +24,7 @@ export const getPaymentStatus = async (req: AuthRequest, res: Response) => {
 
     const booking = await prisma.booking.findFirst({
         where: { id: id.data, userId: req.userId },
-        select: { paymentStatus: true, slotDate: true, slotTime: true, addressLine: true, addressCity: true, addressPincode: true },
+        select: { paymentStatus: true, slotDate: true, slotTime: true, addressLine: true, addressCity: true, addressPincode: true, paymentMethod: true, finalAmount: true, collectedAt: true },
     });
     if (!booking) return res.status(404).json({ error: 'We could not find this booking.' });
 
@@ -33,5 +33,8 @@ export const getPaymentStatus = async (req: AuthRequest, res: Response) => {
         slotDate: booking.slotDate,
         slotTime: booking.slotTime,
         address: booking.addressLine ? { line1: booking.addressLine, city: booking.addressCity, pincode: booking.addressPincode } : undefined,
+        paymentMethod: booking.paymentMethod,
+        // Pay on collection: what the collector will take, until Healthians reports it paid.
+        amountDue: booking.paymentMethod === 'PAY_ON_COLLECTION' && !booking.collectedAt ? booking.finalAmount : 0,
     });
 };

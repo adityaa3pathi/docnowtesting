@@ -195,6 +195,10 @@ model Booking {
   razorpayOrderId   String?       @unique
   razorpayPaymentId String?       @unique
   paidAt            DateTime?
+  // ONLINE, or PAY_ON_COLLECTION: the Healthians collector takes finalAmount at the home visit.
+  paymentMethod     String        @default("ONLINE")
+  collectedAt       DateTime?     // pay on collection: when Healthians reported the money taken
+  collectedAmount   Float?
   partnerError      String?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
