@@ -135,7 +135,8 @@ describeDb('consultation read routes (real Postgres)', () => {
     });
 
     describe('doctor resubmit', () => {
-        const base = { displayName: 'Dr Fixed', qualification: 'MBBS, MD', registrationCouncil: 'Fix Council', experienceYears: 5, languages: ['English'] };
+        // Resubmit reuses the register schema, so gender is required here too.
+        const base = { displayName: 'Dr Fixed', qualification: 'MBBS, MD', registrationCouncil: 'Fix Council', experienceYears: 5, languages: ['English'], gender: 'Female' };
         // Doctor rows persist between tests, so each use gets its own registration number.
         const fresh = () => ({ ...base, registrationNumber: `FIX-${Math.random().toString(36).slice(2, 10)}` });
         async function applicant(status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED') {

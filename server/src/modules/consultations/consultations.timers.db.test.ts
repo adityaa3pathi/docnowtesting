@@ -143,7 +143,8 @@ describeDb('consultation timers: no-shows and messages (real Postgres)', () => {
             await runNotices(new Date());
             const notice = sent.find((s) => s.template === 'n_tpl')!;
             expect(notice.mobile).toBe(b.user.mobile);
-            expect(notice.components[0].parameters.map((p: any) => p.text)).toEqual(['Test Patient', 'Dr. Dr Test', 'Rs. 550.00']);
+            // The fixture doctor is already saved as "Dr Test", and doctorTitle never adds a second "Dr.".
+            expect(notice.components[0].parameters.map((p: any) => p.text)).toEqual(['Test Patient', 'Dr Test', 'Rs. 550.00']);
         });
 
         it('offers the same doctor again after a patient no-show', async () => {
