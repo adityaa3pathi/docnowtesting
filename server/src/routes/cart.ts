@@ -1,6 +1,7 @@
 import express, { Response } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { prisma } from '../db';
+import { claimOnce, type Claim } from '../utils/idempotency';
 const router = express.Router();
 
 // GET /api/cart - Get user's cart with all items + availability status
@@ -62,6 +63,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 // POST /api/cart/items - Add item to cart
 // Security: validates against internal catalog, enforces server-side price
 router.post('/items', authMiddleware, async (req: AuthRequest, res: Response) => {
+    let claim: Claim = { status: 'unchecked' };
     try {
         const { testCode, patientId } = req.body;
 
@@ -88,6 +90,13 @@ router.post('/items', authMiddleware, async (req: AuthRequest, res: Response) =>
         // 2. Use server-side price (ignore client-sent price)
         const serverPrice = catalogItem.discountedPrice ?? catalogItem.displayPrice;
         const serverMrp = catalogItem.discountedPrice ? catalogItem.displayPrice : null;
+
+        // A double tap or a network retry from the chat card must not add a second line.
+        claim = await claimOnce('cart-add', req.userId!, req.get('Idempotency-Key'));
+        if (claim.status === 'repeat') {
+            res.status(200).json({ message: 'Item already added', duplicate: true });
+            return;
+        }
 
         // 3. Get or create cart
         let cart = await prisma.cart.findUnique({ where: { userId: req.userId } });
@@ -125,6 +134,7 @@ router.post('/items', authMiddleware, async (req: AuthRequest, res: Response) =>
             item: cartItem
         });
     } catch (error) {
+        if (claim.status === 'first') await claim.release();
         console.error('Add to Cart Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }

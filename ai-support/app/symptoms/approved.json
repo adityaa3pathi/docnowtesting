@@ -1,0 +1,764 @@
+{
+ "_meta": {
+  "approved": "13-11-2026, DocNow's reviewing doctor, from DocNow-symptom-tests-draft-for-doctor-13-11-2026.xlsx",
+  "sources": "MedlinePlus Medical Tests (public domain); NHS website (OGL v3)",
+  "change_rule": "Clinical content: change only with a doctor's written OK.",
+  "catalog_link": "Each test is pinned to one catalog item (checked on api.docnow.in, 14-11-2026); code null = not sold yet."
+ },
+ "topics": {
+  "tiredness": {
+   "label": "tiredness or low energy",
+   "tests": [
+    {
+     "name": "TSH (thyroid stimulating hormone)",
+     "source": "https://medlineplus.gov/lab-tests/tsh-thyroid-stimulating-hormone-test/",
+     "code": "parameter_2192",
+     "catalog_name": "TSH Ultra - Sensitive"
+    },
+    {
+     "name": "Hemoglobin test",
+     "source": "https://medlineplus.gov/lab-tests/hemoglobin-test/",
+     "code": "parameter_1041",
+     "catalog_name": "Hemoglobin Hb"
+    },
+    {
+     "name": "Ferritin blood test",
+     "source": "https://medlineplus.gov/lab-tests/ferritin-blood-test/",
+     "code": "parameter_885",
+     "catalog_name": "Ferritin"
+    },
+    {
+     "name": "Iron tests",
+     "source": "https://medlineplus.gov/lab-tests/iron-tests/",
+     "code": "profile_5",
+     "catalog_name": "Iron Studies"
+    },
+    {
+     "name": "Vitamin B test (includes vitamin B12)",
+     "source": "https://medlineplus.gov/lab-tests/vitamin-b-test/",
+     "code": "parameter_2221",
+     "catalog_name": "Vitamin B12 Cyanocobalamin"
+    },
+    {
+     "name": "Comprehensive metabolic panel (CMP)",
+     "source": "https://medlineplus.gov/lab-tests/comprehensive-metabolic-panel-cmp/",
+     "code": null,
+     "catalog_name": null
+    }
+   ]
+  },
+  "hair_fall": {
+   "label": "hair fall",
+   "tests": [
+    {
+     "name": "TSH (thyroid stimulating hormone)",
+     "source": "https://medlineplus.gov/lab-tests/tsh-thyroid-stimulating-hormone-test/",
+     "code": "parameter_2192",
+     "catalog_name": "TSH Ultra - Sensitive"
+    },
+    {
+     "name": "Thyroxine (T4) test",
+     "source": "https://medlineplus.gov/lab-tests/thyroxine-t4-test/",
+     "code": "parameter_2098",
+     "catalog_name": "T4, Free Free Thyroxine"
+    },
+    {
+     "name": "Thyroid antibody tests",
+     "source": "https://medlineplus.gov/lab-tests/thyroid-antibody-tests/",
+     "code": "parameter_2158",
+     "catalog_name": "TPO (Thyroid Peroxidase) Antibody Microsomal Antibody, Serum"
+    },
+    {
+     "name": "Vitamin B test (includes vitamin B12)",
+     "source": "https://medlineplus.gov/lab-tests/vitamin-b-test/",
+     "code": "parameter_2221",
+     "catalog_name": "Vitamin B12 Cyanocobalamin"
+    },
+    {
+     "name": "Testosterone levels test",
+     "source": "https://medlineplus.gov/lab-tests/testosterone-levels-test/",
+     "code": "parameter_2109",
+     "catalog_name": "Testosterone Total"
+    }
+   ]
+  },
+  "weight_gain": {
+   "label": "weight gain",
+   "tests": [
+    {
+     "name": "TSH (thyroid stimulating hormone)",
+     "source": "https://medlineplus.gov/lab-tests/tsh-thyroid-stimulating-hormone-test/",
+     "code": "parameter_2192",
+     "catalog_name": "TSH Ultra - Sensitive"
+    },
+    {
+     "name": "Thyroxine (T4) test",
+     "source": "https://medlineplus.gov/lab-tests/thyroxine-t4-test/",
+     "code": "parameter_2098",
+     "catalog_name": "T4, Free Free Thyroxine"
+    },
+    {
+     "name": "Thyroid antibody tests",
+     "source": "https://medlineplus.gov/lab-tests/thyroid-antibody-tests/",
+     "code": "parameter_2158",
+     "catalog_name": "TPO (Thyroid Peroxidase) Antibody Microsomal Antibody, Serum"
+    },
+    {
+     "name": "Cortisol test",
+     "source": "https://medlineplus.gov/lab-tests/cortisol-test/",
+     "code": "parameter_681",
+     "catalog_name": "Cortisol, Serum"
+    },
+    {
+     "name": "Hemoglobin A1C (HbA1c) test",
+     "source": "https://medlineplus.gov/lab-tests/hemoglobin-a1c-hba1c-test/",
+     "code": "profile_9",
+     "catalog_name": "HbA1c"
+    },
+    {
+     "name": "Cholesterol levels (lipid panel)",
+     "source": "https://medlineplus.gov/lab-tests/cholesterol-levels/",
+     "code": "profile_110",
+     "catalog_name": "Lipid Profile"
+    }
+   ]
+  },
+  "urination_thirst": {
+   "label": "frequent urination or a lot of thirst",
+   "tests": [
+    {
+     "name": "Blood glucose test",
+     "source": "https://medlineplus.gov/lab-tests/blood-glucose-test/",
+     "code": "parameter_977",
+     "catalog_name": "Blood Glucose Fasting"
+    },
+    {
+     "name": "Hemoglobin A1C (HbA1c) test",
+     "source": "https://medlineplus.gov/lab-tests/hemoglobin-a1c-hba1c-test/",
+     "code": "profile_9",
+     "catalog_name": "HbA1c"
+    },
+    {
+     "name": "Glucose in urine test (part of urinalysis)",
+     "source": "https://medlineplus.gov/lab-tests/glucose-in-urine-test/",
+     "code": "profile_29",
+     "catalog_name": "Urine Routine & Microscopy Extended"
+    },
+    {
+     "name": "Urinalysis (cited via nitrites in urine)",
+     "source": "https://medlineplus.gov/lab-tests/nitrites-in-urine/",
+     "code": "profile_29",
+     "catalog_name": "Urine Routine & Microscopy Extended"
+    },
+    {
+     "name": "Calcium blood test",
+     "source": "https://medlineplus.gov/lab-tests/calcium-blood-test/",
+     "code": "parameter_548",
+     "catalog_name": "Calcium Total, Serum"
+    },
+    {
+     "name": "Creatinine test (kidney function)",
+     "source": "https://medlineplus.gov/lab-tests/creatinine-test/",
+     "code": "parameter_696",
+     "catalog_name": "Creatinine, Serum"
+    }
+   ]
+  },
+  "joint_pain": {
+   "label": "joint pain",
+   "tests": [
+    {
+     "name": "Rheumatoid factor (RF) test",
+     "source": "https://medlineplus.gov/lab-tests/rheumatoid-factor-rf-test/",
+     "code": "parameter_279",
+     "catalog_name": "RA Test Rheumatoid Arthritis Factor, Quantitative"
+    },
+    {
+     "name": "CCP antibody test (anti-CCP)",
+     "source": "https://medlineplus.gov/lab-tests/ccp-antibody-test/",
+     "code": "parameter_575",
+     "catalog_name": "CCP (Antibody Cyclic Citrullinated Peptide)"
+    },
+    {
+     "name": "ANA (antinuclear antibody) test",
+     "source": "https://medlineplus.gov/lab-tests/ana-antinuclear-antibody-test/",
+     "code": "parameter_426",
+     "catalog_name": "ANA By ELISA (Anti Nuclear Antibody) Screening, Serum"
+    },
+    {
+     "name": "ESR (erythrocyte sedimentation rate)",
+     "source": "https://medlineplus.gov/lab-tests/erythrocyte-sedimentation-rate-esr/",
+     "code": "parameter_864",
+     "catalog_name": "ESR Automated"
+    },
+    {
+     "name": "Uric acid test",
+     "source": "https://medlineplus.gov/lab-tests/uric-acid-test/",
+     "code": "parameter_2208",
+     "catalog_name": "Uric Acid, Serum"
+    },
+    {
+     "name": "TSH (thyroid stimulating hormone)",
+     "source": "https://medlineplus.gov/lab-tests/tsh-thyroid-stimulating-hormone-test/",
+     "code": "parameter_2192",
+     "catalog_name": "TSH Ultra - Sensitive"
+    }
+   ]
+  },
+  "fever_3_days": {
+   "label": "a fever lasting 3 days or more",
+   "tests": [
+    {
+     "name": "White blood count (WBC)",
+     "source": "https://medlineplus.gov/lab-tests/white-blood-count-wbc/",
+     "code": "profile_30",
+     "catalog_name": "COMPLETE BLOOD COUNT"
+    },
+    {
+     "name": "C-reactive protein (CRP) test",
+     "source": "https://medlineplus.gov/lab-tests/c-reactive-protein-crp-test/",
+     "code": "parameter_697",
+     "catalog_name": "CRP (C Reactive Protein) Quantitative, Serum"
+    },
+    {
+     "name": "ESR (erythrocyte sedimentation rate)",
+     "source": "https://medlineplus.gov/lab-tests/erythrocyte-sedimentation-rate-esr/",
+     "code": "parameter_864",
+     "catalog_name": "ESR Automated"
+    },
+    {
+     "name": "Blood culture (cited via bacteria culture test)",
+     "source": "https://medlineplus.gov/lab-tests/bacteria-culture-test/",
+     "code": "parameter_716",
+     "catalog_name": "Culture & Sensitivity, Blood"
+    },
+    {
+     "name": "Malaria tests (blood smear / rapid test)",
+     "source": "https://medlineplus.gov/lab-tests/malaria-tests/",
+     "code": "parameter_1719",
+     "catalog_name": "Malarial Antigen, Vivax & Falciparum"
+    },
+    {
+     "name": "Dengue fever test",
+     "source": "https://medlineplus.gov/lab-tests/dengue-fever-test/",
+     "code": "parameter_2309",
+     "catalog_name": "Dengue NS1 Antigen Detection - RAPID Card"
+    }
+   ],
+   "note": "If the fever is high, or you feel very unwell, please see a doctor today."
+  },
+  "acidity": {
+   "label": "acidity or heartburn",
+   "tests": [
+    {
+     "name": "H. pylori tests",
+     "source": "https://medlineplus.gov/lab-tests/helicobacter-pylori-h-pylori-tests/",
+     "code": null,
+     "catalog_name": null
+    },
+    {
+     "name": "Magnesium blood test",
+     "source": "https://medlineplus.gov/lab-tests/magnesium-blood-test/",
+     "code": "parameter_1712",
+     "catalog_name": "Magnesium, Serum"
+    }
+   ]
+  },
+  "irregular_periods": {
+   "label": "irregular periods",
+   "tests": [
+    {
+     "name": "Prolactin levels",
+     "source": "https://medlineplus.gov/lab-tests/prolactin-levels/",
+     "code": "parameter_1931",
+     "catalog_name": "Prolactin"
+    },
+    {
+     "name": "FSH (follicle stimulating hormone) levels test",
+     "source": "https://medlineplus.gov/lab-tests/follicle-stimulating-hormone-fsh-levels-test/",
+     "code": "parameter_915",
+     "catalog_name": "FSH-Follicle Stimulating Hormone"
+    },
+    {
+     "name": "LH (luteinizing hormone) levels test",
+     "source": "https://medlineplus.gov/lab-tests/luteinizing-hormone-lh-levels-test/",
+     "code": "parameter_1696",
+     "catalog_name": "LH-Luteinizing Hormone"
+    },
+    {
+     "name": "TSH (thyroid stimulating hormone)",
+     "source": "https://medlineplus.gov/lab-tests/tsh-thyroid-stimulating-hormone-test/",
+     "code": "parameter_2192",
+     "catalog_name": "TSH Ultra - Sensitive"
+    },
+    {
+     "name": "Testosterone levels test",
+     "source": "https://medlineplus.gov/lab-tests/testosterone-levels-test/",
+     "code": "parameter_2109",
+     "catalog_name": "Testosterone Total"
+    },
+    {
+     "name": "Estrogen levels test (estradiol)",
+     "source": "https://medlineplus.gov/lab-tests/estrogen-levels-test/",
+     "code": "parameter_834",
+     "catalog_name": "E2 - Female Reproductive Hormone Test"
+    },
+    {
+     "name": "Pregnancy test (hCG)",
+     "source": "https://medlineplus.gov/lab-tests/pregnancy-test/",
+     "code": "parameter_1029",
+     "catalog_name": "HCG Beta Subunit Urine Spot"
+    }
+   ]
+  },
+  "low_vitamin": {
+   "label": "tingling, weakness or bone pain",
+   "tests": [
+    {
+     "name": "Vitamin B test (includes vitamin B12)",
+     "source": "https://medlineplus.gov/lab-tests/vitamin-b-test/",
+     "code": "parameter_2221",
+     "catalog_name": "Vitamin B12 Cyanocobalamin"
+    },
+    {
+     "name": "Vitamin D test",
+     "source": "https://medlineplus.gov/lab-tests/vitamin-d-test/",
+     "code": "parameter_2226",
+     "catalog_name": "Vitamin D Total-25 Hydroxy"
+    },
+    {
+     "name": "Homocysteine test",
+     "source": "https://medlineplus.gov/lab-tests/homocysteine-test/",
+     "code": "parameter_1266",
+     "catalog_name": "Homocysteine"
+    },
+    {
+     "name": "Methylmalonic acid (MMA) test",
+     "source": "https://medlineplus.gov/lab-tests/methylmalonic-acid-mma-test/",
+     "code": null,
+     "catalog_name": null
+    },
+    {
+     "name": "Calcium blood test",
+     "source": "https://medlineplus.gov/lab-tests/calcium-blood-test/",
+     "code": "parameter_548",
+     "catalog_name": "Calcium Total, Serum"
+    },
+    {
+     "name": "Parathyroid hormone (PTH) test",
+     "source": "https://medlineplus.gov/lab-tests/parathyroid-hormone-pth-test/",
+     "code": "parameter_1957",
+     "catalog_name": "PTH-Intact Molecule Parathyroid Hormone"
+    }
+   ]
+  },
+  "routine_checkup": {
+   "label": "a routine yearly check-up",
+   "tests": [
+    {
+     "name": "Complete blood count (CBC)",
+     "source": "https://medlineplus.gov/lab-tests/complete-blood-count-cbc/",
+     "code": "profile_30",
+     "catalog_name": "COMPLETE BLOOD COUNT"
+    },
+    {
+     "name": "Comprehensive metabolic panel (CMP)",
+     "source": "https://medlineplus.gov/lab-tests/comprehensive-metabolic-panel-cmp/",
+     "code": null,
+     "catalog_name": null
+    },
+    {
+     "name": "Basic metabolic panel (BMP)",
+     "source": "https://medlineplus.gov/lab-tests/basic-metabolic-panel-bmp/",
+     "code": "profile_120",
+     "catalog_name": "Kidney Function Test"
+    },
+    {
+     "name": "Cholesterol levels (lipid panel)",
+     "source": "https://medlineplus.gov/lab-tests/cholesterol-levels/",
+     "code": "profile_110",
+     "catalog_name": "Lipid Profile"
+    },
+    {
+     "name": "Blood glucose test",
+     "source": "https://medlineplus.gov/lab-tests/blood-glucose-test/",
+     "code": "parameter_977",
+     "catalog_name": "Blood Glucose Fasting"
+    },
+    {
+     "name": "Hemoglobin A1C (HbA1c) test",
+     "source": "https://medlineplus.gov/lab-tests/hemoglobin-a1c-hba1c-test/",
+     "code": "profile_9",
+     "catalog_name": "HbA1c"
+    },
+    {
+     "name": "Urinalysis (cited via nitrites in urine)",
+     "source": "https://medlineplus.gov/lab-tests/nitrites-in-urine/",
+     "code": "profile_29",
+     "catalog_name": "Urine Routine & Microscopy Extended"
+    },
+    {
+     "name": "Triglycerides test (part of lipid profile)",
+     "source": "https://medlineplus.gov/lab-tests/triglycerides-test/",
+     "code": "profile_110",
+     "catalog_name": "Lipid Profile"
+    }
+   ]
+  }
+ },
+ "emergency_signs": [
+  {
+   "sign": "Sudden chest pain that does not go away, or spreads to the arm, jaw or back",
+   "source": "https://www.nhs.uk/symptoms/chest-pain/",
+   "phrases": [
+    "chest pain",
+    "pain in my chest",
+    "pain in chest",
+    "chest tightness",
+    "chest is tight",
+    "chest feels tight",
+    "सीने में दर्द",
+    "सीने में भारीपन और पसीना",
+    "छाती में दर्द हाथ तक जा रहा है",
+    "seene mein dard",
+    "chaati mein dard ho raha hai",
+    "seene mein bhaaripan aur paseena",
+    "chest pain haath tak ja raha hai"
+   ]
+  },
+  {
+   "sign": "Tight or squeezing chest pain, or someone has collapsed and is not responding",
+   "source": "https://www.nhs.uk/conditions/heart-attack/",
+   "phrases": [
+    "heart attack",
+    "collapsed",
+    "not responding",
+    "unresponsive",
+    "हार्ट अटैक",
+    "दिल का दौरा",
+    "सीना दबा हुआ लग रहा है",
+    "heart attack lag raha hai",
+    "dil ka daura",
+    "seena daba hua lag raha hai",
+    "chest jakad rahi hai"
+   ]
+  },
+  {
+   "sign": "Face droops, arm is weak, or speech is slurred (FAST signs of stroke)",
+   "source": "https://www.nhs.uk/conditions/stroke/symptoms/",
+   "phrases": [
+    "face drooping",
+    "face is drooping",
+    "slurred speech",
+    "speech is slurred",
+    "stroke",
+    "arm is weak",
+    "one side weak",
+    "can't lift my arm",
+    "मुँह टेढ़ा हो गया",
+    "बोलने में दिक्कत हो रही है",
+    "लकवा मार गया",
+    "अचानक हाथ में ताकत नहीं",
+    "munh tedha ho gaya",
+    "bolne mein dikkat ho rahi hai",
+    "lakwa mar gaya",
+    "ek haath mein taqat nahi hai",
+    "zubaan lad rahi hai"
+   ]
+  },
+  {
+   "sign": "Severe difficulty breathing, gasping, or lips and skin turning blue or grey",
+   "source": "https://www.nhs.uk/symptoms/shortness-of-breath/",
+   "phrases": [
+    "can't breathe",
+    "cannot breathe",
+    "cant breathe",
+    "difficulty breathing",
+    "trouble breathing",
+    "struggling to breathe",
+    "gasping",
+    "lips turning blue",
+    "lips are blue",
+    "सांस नहीं आ रही",
+    "दम घुट रहा है",
+    "सांस बहुत फूल रही है",
+    "होंठ नीले पड़ रहे हैं",
+    "saans nahi aa rahi",
+    "dum ghut raha hai",
+    "saans phool rahi hai",
+    "honth neele pad rahe hain"
+   ]
+  },
+  {
+   "sign": "Confusion or slurred speech with infection, or a rash that does not fade when pressed (sepsis)",
+   "source": "https://www.nhs.uk/conditions/sepsis/",
+   "phrases": [
+    "rash that does not fade",
+    "rash does not fade",
+    "confused with fever",
+    "fever and confused",
+    "तेज बुखार और बहकी बहकी बातें",
+    "शरीर नीला पड़ रहा है",
+    "दाने दबाने पर हल्के नहीं होते",
+    "tez bukhar aur bahki bahki baatein",
+    "sharir neela pad raha hai",
+    "daane dabane par halke nahi hote",
+    "infection se behoshi jaisa"
+   ]
+  },
+  {
+   "sign": "Sudden swelling of lips, mouth, throat or tongue, or struggling to breathe or swallow after an allergen",
+   "source": "https://www.nhs.uk/conditions/anaphylaxis/",
+   "phrases": [
+    "lips swelling",
+    "swollen lips",
+    "tongue swelling",
+    "swollen tongue",
+    "throat swelling",
+    "throat is closing",
+    "anaphylaxis",
+    "can't swallow",
+    "होंठ और जीभ सूज गए",
+    "गला बंद हो रहा है",
+    "दवा से एलर्जी और सांस रुक रही है",
+    "honth aur jeebh sooj gaye",
+    "gala band ho raha hai",
+    "dawa se allergy aur saans ruk rahi hai",
+    "nigalne mein dikkat"
+   ]
+  },
+  {
+   "sign": "Bleeding you cannot stop, or blood spurting out bright red",
+   "source": "https://www.nhs.uk/conditions/cuts-and-grazes/",
+   "phrases": [
+    "bleeding won't stop",
+    "bleeding wont stop",
+    "can't stop the bleeding",
+    "cannot stop bleeding",
+    "heavy bleeding",
+    "blood spurting",
+    "खून बंद नहीं हो रहा",
+    "बहुत खून बह रहा है",
+    "घाव से खून फव्वारे की तरह निकल रहा है",
+    "khoon band nahi ho raha",
+    "bahut khoon beh raha hai",
+    "ghaav se khoon ruk nahi raha"
+   ]
+  },
+  {
+   "sign": "Someone has fainted and cannot be woken within a minute, or is not breathing",
+   "source": "https://www.nhs.uk/symptoms/fainting/",
+   "phrases": [
+    "fainted",
+    "unconscious",
+    "passed out",
+    "not breathing",
+    "won't wake up",
+    "बेहोश हो गया",
+    "होश नहीं आ रहा",
+    "चक्कर खाकर गिर गया और उठ नहीं रहा",
+    "behosh ho gaya",
+    "hosh nahi aa raha",
+    "chakkar khakar gir gaya",
+    "uth nahi raha hai"
+   ]
+  },
+  {
+   "sign": "A first-ever seizure, one lasting over 5 minutes, or three or more in a day",
+   "source": "https://www.nhs.uk/conditions/epilepsy/",
+   "phrases": [
+    "seizure",
+    "convulsion",
+    "having a fit",
+    "मिर्गी का दौरा",
+    "झटके आ रहे हैं",
+    "पहली बार दौरा पड़ा है",
+    "mirgi ka daura",
+    "jhatke aa rahe hain",
+    "pehli baar daura pada hai",
+    "fit aa gaya"
+   ]
+  },
+  {
+   "sign": "Thoughts of suicide, or feeling about to harm yourself",
+   "source": "https://www.nhs.uk/mental-health/feelings-symptoms-behaviours/behaviours/help-for-suicidal-thoughts/",
+   "phrases": [
+    "suicide",
+    "suicidal",
+    "kill myself",
+    "end my life",
+    "harm myself",
+    "want to hurt myself",
+    "want to die",
+    "मरने का मन कर रहा है",
+    "खुद को नुकसान पहुँचाना चाहता हूँ",
+    "जीने की इछ्डा नहीं है",
+    "marne ka mann kar raha hai",
+    "khud ko nuksaan pahuchana chahta hu",
+    "jeene ki ichha nahi hai",
+    "zindagi khatam karne ka mann"
+   ]
+  },
+  {
+   "sign": "Fever with a stiff neck, confusion, or a rash that does not fade when pressed (meningitis)",
+   "source": "https://www.nhs.uk/conditions/meningitis/",
+   "phrases": [
+    "fever and stiff neck",
+    "stiff neck and fever",
+    "stiff neck with fever",
+    "fever with a stiff neck",
+    "बुखार के साथ गर्दन अकड़ गई",
+    "तेज बुखार और रोशनी से तकलीफ",
+    "दाने दबाने पर नहीं जाते",
+    "bukhar ke saath gardan akad gayi",
+    "tez bukhar aur roshni se taklif",
+    "daane dabane par nahi jaate",
+    "gardan jam ho gayi"
+   ]
+  },
+  {
+   "sign": "A headache that started suddenly and is extremely painful",
+   "source": "https://www.nhs.uk/symptoms/headaches/",
+   "phrases": [
+    "worst headache",
+    "sudden severe headache",
+    "thunderclap headache",
+    "अचानक बहुत तेज सिरदर्द",
+    "सिर फटने जैसा दर्द",
+    "ज़िंदगी का सबसे तेज सिरदर्द",
+    "achanak bahut tez sirdard",
+    "sir phatne jaisa dard",
+    "aaj tak ka sabse tez sirdard"
+   ]
+  },
+  {
+   "sign": "Stomach pain that started suddenly and is severe",
+   "source": "https://www.nhs.uk/symptoms/stomach-ache/",
+   "phrases": [
+    "sudden severe stomach pain",
+    "severe stomach pain",
+    "severe abdominal pain",
+    "unbearable stomach pain",
+    "पेट में अचानक तेज दर्द",
+    "पेट में असहनीय दर्द",
+    "पेट पत्थर जैसा सख्त हो गया",
+    "pet mein achanak tez dard",
+    "pet mein bardasht se bahar dard",
+    "pet patthar jaisa sakht ho gaya"
+   ]
+  },
+  {
+   "sign": "Coughing up more than a few spots or streaks of blood",
+   "source": "https://www.nhs.uk/symptoms/coughing-up-blood/",
+   "phrases": [
+    "coughing blood",
+    "coughing up blood",
+    "blood in cough",
+    "blood in sputum",
+    "खांसी में खून आ रहा है",
+    "बलगम में खून",
+    "खांसते समय खून निकला",
+    "khansi mein khoon aa raha hai",
+    "balgam mein khoon",
+    "khaaste waqt khoon nikla"
+   ]
+  },
+  {
+   "sign": "Vomiting blood, or vomit that looks like coffee grounds",
+   "source": "https://www.nhs.uk/symptoms/vomiting-blood/",
+   "phrases": [
+    "vomiting blood",
+    "blood in vomit",
+    "vomit looks like coffee",
+    "उल्टी में खून",
+    "खून की उल्टी हो रही है",
+    "काली उल्टी हुई",
+    "ulti mein khoon",
+    "khoon ki ulti ho rahi hai",
+    "kaali ulti hui",
+    "coffee jaisi ulti"
+   ]
+  },
+  {
+   "sign": "Bleeding in pregnancy that is heavy, or with severe tummy pain",
+   "source": "https://www.nhs.uk/pregnancy/common-symptoms/vaginal-bleeding/",
+   "phrases": [
+    "bleeding in pregnancy",
+    "pregnant and bleeding",
+    "pregnancy bleeding",
+    "प्रेगनेंसी में खून आ रहा है",
+    "गर्भ में ब्लीडिंग और पेट दर्द",
+    "पेट दर्द और बहुत खून",
+    "pregnancy mein khoon aa raha hai",
+    "garbh mein bleeding aur pet dard",
+    "pet dard aur bahut khoon"
+   ]
+  },
+  {
+   "sign": "Sharp sudden tummy pain with dizziness or fainting in early pregnancy (possible ectopic)",
+   "source": "https://www.nhs.uk/conditions/ectopic-pregnancy/",
+   "phrases": [
+    "ectopic pregnancy",
+    "pregnant with severe pain",
+    "pregnant and severe stomach pain",
+    "पेट में अचानक तेज दर्द और चक्कर",
+    "ट्यूब में प्रेगनेंसी",
+    "कंधे में दर्द और पेट दर्द",
+    "pet mein tez dard aur chakkar",
+    "tube mein pregnancy",
+    "kandhe mein dard aur pet dard"
+   ]
+  },
+  {
+   "sign": "A child with fever who is drowsy, hard to wake, or has a rash that does not fade",
+   "source": "https://www.nhs.uk/symptoms/fever-in-children/",
+   "phrases": [
+    "baby has fever",
+    "child is drowsy",
+    "baby is drowsy",
+    "child won't wake",
+    "baby won't wake",
+    "बच्चे को तेज बुखार",
+    "बच्चा सुस्त है और उठ नहीं रहा",
+    "बच्चे को झटके आए",
+    "bacche ko tez bukhar",
+    "baccha sust hai uth nahi raha",
+    "bacche ko jhatke aaye",
+    "newborn ko bukhar"
+   ]
+  },
+  {
+   "sign": "Someone with diabetes whose blood sugar is very low and who is not responding normally",
+   "source": "https://www.nhs.uk/conditions/low-blood-sugar-hypoglycaemia/",
+   "phrases": [
+    "sugar is very low",
+    "blood sugar very low",
+    "having a hypo",
+    "low sugar and confused",
+    "शुगर बहुत कम हो गई",
+    "शुगर गिर गई और बेहोश हो गया",
+    "डायबिटीज में चक्कर और पसीना",
+    "sugar bahut kam ho gayi",
+    "sugar gir gayi behosh ho gaya",
+    "diabetes mein chakkar aur paseena",
+    "hypo ho gaya"
+   ]
+  },
+  {
+   "sign": "Dehydration with pale, blue or grey skin, fast breathing, confusion, or very hard to wake",
+   "source": "https://www.nhs.uk/conditions/dehydration/",
+   "phrases": [
+    "severe dehydration",
+    "not peeing",
+    "no urine",
+    "शरीर में पानी की कमी",
+    "उल्टी दस्त से बहुत कमजोरी",
+    "पेशाब नहीं आ रहा और सुस्ती",
+    "sharir mein pani ki kami",
+    "ulti dast se bahut kamzori",
+    "peshab nahi aa raha aur susti",
+    "dehydration ho gaya"
+   ]
+  }
+ ]
+}

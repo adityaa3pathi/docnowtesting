@@ -5,6 +5,8 @@ ABSTENTION_MESSAGE = "I'm sorry, I don't have enough verified information to ans
 VERIFIER_PROMPT = """\
 Instructions:
 You are a fact-checking verifier. Check each factual claim in the draft response against the provided sources and actions.
+A draft saying a test was added to the cart is UNGROUNDED.
+A draft that says the user has a disease, names a condition as the cause of their symptoms, or advises a medicine or dose is UNGROUNDED.
 Return a JSON object with the following schema:
 {{
   "verdict": "GROUNDED" | "UNGROUNDED" | "PARTIALLY_GROUNDED",

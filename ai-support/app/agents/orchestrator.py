@@ -21,8 +21,11 @@ from typing import Any
 from langfuse import observe
 
 from app.agents import usage
+from app.agents.cards import cards_from_actions, live_cards_for_chunks
+from app.agents.symptoms import symptom_reply
 from app.agents.llm import AIBusyError, call_gemini
 from app.agents.retrieval import retrieve
+from app.agents.tool_output import compact_tool_output
 from app.agents.verifier import verify
 from app.models import (
     ActionResult,
@@ -33,7 +36,9 @@ from app.models import (
     SupportResponse,
 )
 from app.observability import annotate, current_trace_id
-from app.prompts.intent import INTENT_CLASSIFICATION_PROMPT, intent_schema
+from app.symptoms.keywords import keyword_topic
+from app.symptoms.safety import EMERGENCY_RESPONSE, MEDICAL_ADVICE_RESPONSE, emergency_sign
+from app.prompts.intent import INTENT_CLASSIFICATION_PROMPT, SYMPTOM_TOPIC_IDS, intent_schema
 from app.prompts.system import DRAFT_GENERATION_PROMPT, ORCHESTRATOR_SYSTEM_PROMPT
 from app.prompts.verifier import ABSTENTION_MESSAGE
 from app.tools.registry import TOOL_REGISTRY, render_tool_list
@@ -67,9 +72,6 @@ ERROR_RESPONSE = (
     "Please try again or contact our support team at +91 9649089089."
 )
 
-TOOL_OUTPUT_CHARS = 800
-MAX_BOOKINGS_IN_PROMPT = 5
-
 ACTION_FAILED_RESPONSE = (
     "I couldn't complete that just now. Please check the booking details and try again, "
     "or contact our support team at +91 9649089089."
@@ -91,6 +93,9 @@ _GREETING = re.compile(
     r"thanks|thank you|thank u|thanks a lot|ty)\s*(there|docnow)?[.!\s]*$",
     re.IGNORECASE,
 )
+
+# Intents a symptom word may turn into SYMPTOM_CHECK; booking and medical-advice turns keep theirs.
+_SYMPTOM_OVERRIDABLE = {"CATALOG_SEARCH", "PRODUCT_DETAILS", "FAQ", "OFF_TOPIC", "UNKNOWN", "SYMPTOM_CHECK"}
 
 # Only a short, plain "yes" confirms a pending write; anything else drops it.
 _CONFIRM = re.compile(
@@ -123,6 +128,7 @@ async def classify_intent(
         is_authenticated=str(ctx.is_authenticated),
         conversation_history=_history_text(ctx) or "(new conversation)",
         tools=render_tool_list(),
+        symptom_topics=", ".join(SYMPTOM_TOPIC_IDS),
     )
 
     try:
@@ -149,21 +155,6 @@ async def classify_intent(
     except Exception:
         logger.exception("Intent classification failed")
         return Intent(intent="UNKNOWN", requires_action=False, confidence=0.0)
-
-
-def _booking_line(b: dict) -> str:
-    tests = b.get("items") or b.get("tests") or []
-    when = b.get("slot") or " ".join(str(v) for v in (b.get("slotDate"), b.get("slotTime")) if v)
-    return f"id={b.get('id')} | tests={', '.join(map(str, tests))} | when={when} | status={b.get('status')}"
-
-
-def compact_tool_output(tool: str, output: Any) -> str:
-    """Tool output as short lines for the prompt; bookings keep only id, tests, time and status."""
-    if tool == "list_bookings":
-        rows = output.get("bookings", []) if isinstance(output, dict) else output
-        if isinstance(rows, list):
-            return "\n".join(_booking_line(b) for b in rows[:MAX_BOOKINGS_IN_PROMPT] if isinstance(b, dict))
-    return json.dumps(output, default=str)[:TOOL_OUTPUT_CHARS]
 
 
 @observe(name="draft-generation", capture_input=False, capture_output=False)
@@ -251,6 +242,11 @@ async def _run_pipeline(
         if _GREETING.match(message):
             return SupportResponse(content=GREETING_RESPONSE, latency_ms=_elapsed(start_time))
 
+        # Emergency signs get the fixed 112 reply before any model call, and never a test.
+        if settings.symptom_suggestions and emergency_sign(message):
+            annotate(symptom_flow="emergency")
+            return SupportResponse(content=EMERGENCY_RESPONSE, verifier_verdict="FIXED_TEXT", latency_ms=_elapsed(start_time))
+
         # A "yes" to the write action asked about last turn runs it; no search needed.
         confirmed = ctx.pending_action is not None and bool(_CONFIRM.match(message))
         retrieval = RetrievalResult()
@@ -268,6 +264,26 @@ async def _run_pipeline(
             "Intent: %s (tool=%s, action=%s, conf=%.2f)",
             intent.intent, intent.tool_name, intent.requires_action, intent.confidence,
         )
+
+        # The classifier often files "I feel tired" as a test search; symptom words win over that.
+        if settings.symptom_suggestions and intent.intent in _SYMPTOM_OVERRIDABLE:
+            topic = keyword_topic(message)
+            if topic and (intent.intent != "SYMPTOM_CHECK" or intent.parameters.get("symptom_topic") in (None, "other")):
+                intent = Intent(intent="SYMPTOM_CHECK", parameters={"symptom_topic": topic}, confidence=intent.confidence)
+
+        # Symptom and medical-advice turns get fixed, doctor-approved wording, never a model draft.
+        if intent.intent in ("SYMPTOM_CHECK", "MEDICAL_ADVICE"):
+            if not settings.symptom_suggestions:
+                intent = intent.model_copy(update={"intent": "FAQ", "tool_name": None, "requires_action": False})
+            elif intent.intent == "MEDICAL_ADVICE":
+                annotate(symptom_flow="medical_advice")
+                return SupportResponse(content=MEDICAL_ADVICE_RESPONSE, verifier_verdict="FIXED_TEXT", latency_ms=_elapsed(start_time))
+            else:
+                content, actions, cards = await symptom_reply(intent, ctx, settings)
+                return SupportResponse(
+                    content=content, actions_taken=actions, cards=cards,
+                    verifier_verdict="FIXED_TEXT", latency_ms=_elapsed(start_time),
+                )
 
         # 3. Greeting — return immediately without verification
         if intent.intent == "GREETING":
@@ -384,7 +400,7 @@ async def _run_pipeline(
                 latency_ms=_elapsed(start_time),
             )
 
-        # 8. Return verified response
+        # 8. Return verified response; cards come only from catalog rows, after the reply passed the verifier.
         return SupportResponse(
             content=verification.cleaned_response,
             sources=retrieval.chunks,
@@ -392,6 +408,7 @@ async def _run_pipeline(
             verifier_verdict=verification.verdict,
             was_abstained=False,
             latency_ms=_elapsed(start_time),
+            cards=cards_from_actions(actions) or await live_cards_for_chunks(retrieval.chunks, verification.cleaned_response, ctx, settings),
         )
 
     except AIBusyError:

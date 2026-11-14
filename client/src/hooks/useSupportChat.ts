@@ -8,12 +8,39 @@ export interface ChatSource {
     type?: string;
 }
 
+/** A catalog test the bot found; built by the server from catalog rows, never from the reply text. */
+export interface ChatProductCard {
+    code: string;
+    name: string;
+    type: string;
+    price: number;
+    mrp?: number | null;
+    sampleType?: string | null;
+    reportTime?: string | null;
+}
+
+export function toProductCards(raw: unknown): ChatProductCard[] {
+    if (!Array.isArray(raw)) return [];
+    return (raw as Record<string, unknown>[])
+        .filter((c) => c && typeof c.code === 'string' && typeof c.name === 'string' && typeof c.price === 'number')
+        .map((c) => ({
+            code: c.code as string,
+            name: c.name as string,
+            type: typeof c.type === 'string' ? c.type : 'TEST',
+            price: c.price as number,
+            mrp: typeof c.mrp === 'number' ? c.mrp : null,
+            sampleType: typeof c.sample_type === 'string' ? c.sample_type : null,
+            reportTime: typeof c.report_time === 'string' ? c.report_time : null,
+        }));
+}
+
 export interface ChatMessage {
     id: string;
     role: 'user' | 'assistant';
     content: string;
     sources?: ChatSource[];
     actions?: string[];
+    cards?: ChatProductCard[];
     verified?: boolean;
     wasAbstained?: boolean;
     feedbackScore?: number;
@@ -27,12 +54,22 @@ const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
     createdAt: new Date().toISOString(),
 };
 
+/** FastAPI sends `detail`, Express sends `error`; showing it beats a generic failure line. */
+function serverErrorMessage(err: any): string | null {
+    const data = err?.response?.data;
+    const message = data?.detail ?? data?.error ?? data?.message;
+    return typeof message === 'string' && message.trim() ? message : null;
+}
+
 export function useSupportChat() {
     const { isAuthenticated, isInitialized } = useAuth();
     const [messages, setMessages] = useState<ChatMessage[]>([DEFAULT_WELCOME_MESSAGE]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [conversationId, setConversationId] = useState<string | null>(null);
+
+    // Set once the customer sends; the slow login check finishing later must not wipe their chat.
+    const startedRef = useRef(false);
 
     // Auto-scroll trigger
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -48,6 +85,7 @@ export function useSupportChat() {
     }, [messages, scrollToBottom]);
 
     const resetChat = useCallback(() => {
+        startedRef.current = false;
         localStorage.removeItem('docnow_support_conversation_id');
         setConversationId(null);
         setError(null);
@@ -71,6 +109,7 @@ export function useSupportChat() {
                         type: s.source_type || s.type,
                     })) || [],
                     actions: m.actions || [],
+                    cards: toProductCards(m.cards),
                     verified: m.verified ?? false,
                     wasAbstained: m.was_abstained ?? m.wasAbstained ?? false,
                     feedbackScore: m.feedback_score ?? m.feedbackScore,
@@ -104,6 +143,7 @@ export function useSupportChat() {
         if (!isInitialized) return;
 
         if (!isAuthenticated) {
+            startedRef.current = false;
             localStorage.removeItem('docnow_support_conversation_id');
             setConversationId(null);
             setMessages([DEFAULT_WELCOME_MESSAGE]);
@@ -111,6 +151,7 @@ export function useSupportChat() {
             return;
         }
 
+        if (startedRef.current) return;
         const storedId = localStorage.getItem('docnow_support_conversation_id');
         if (storedId && storedId !== 'ephemeral') {
             setConversationId(storedId);
@@ -130,6 +171,7 @@ export function useSupportChat() {
             createdAt: new Date().toISOString(),
         };
 
+        startedRef.current = true;
         setMessages((prev) => [...prev, newMessage]);
         setIsLoading(true);
         setError(null);
@@ -162,6 +204,7 @@ export function useSupportChat() {
                     type: s.source_type || s.type,
                 })) || data.message?.sources || [],
                 actions: data.actions_taken?.map((a: any) => a.summary) || data.message?.actions || [],
+                cards: toProductCards(data.cards),
                 verified: data.verified ?? data.message?.verified ?? false,
                 wasAbstained: data.was_abstained ?? data.message?.wasAbstained ?? false,
                 createdAt: new Date().toISOString(),
@@ -170,12 +213,13 @@ export function useSupportChat() {
             setMessages((prev) => [...prev, assistantMessage]);
         } catch (err: any) {
             console.error('Failed to send message:', err);
-            if (err?.response?.status === 404) {
-                // If conversation was not found on backend, clear invalid ID so next attempt creates new conversation
+            const status = err?.response?.status;
+            // 404 = conversation gone; 400 = turn cap reached, so this id can never accept another message.
+            if (status === 404 || status === 400) {
                 localStorage.removeItem('docnow_support_conversation_id');
                 setConversationId(null);
             }
-            setError('Failed to send message.');
+            setError(serverErrorMessage(err) || 'Failed to send message.');
         } finally {
             setIsLoading(false);
         }

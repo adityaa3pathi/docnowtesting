@@ -10,12 +10,17 @@ import httpx
 from langfuse import observe
 
 from app.models import ActionResult, AgentContext, Intent
-from app.tools.registry import TOOL_REGISTRY
+from app.tools.registry import TOOL_REGISTRY, required_parameters
 
 logger = logging.getLogger(__name__)
 
 # Path values come from the model, so they must look like an ID, never like a path.
 _SAFE_PATH_VALUE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+
+
+def _is_blank(value: Any) -> bool:
+    """The model sometimes emits an empty string or null instead of leaving a parameter out."""
+    return value is None or (isinstance(value, str) and not value.strip())
 
 
 @observe(name="action-agent", capture_input=False, capture_output=False)
@@ -52,17 +57,34 @@ async def execute_action(
             error="Authentication required. Please log in to access booking features.",
         )
 
-    # Build headers — forward access token for auth-required tools
     headers: dict[str, str] = {
         "Content-Type": "application/json",
         "User-Agent": "DocNow-AISupport/1.0",
     }
+    # Express reads Bearer as a fallback; with no auth cookie it also skips the CSRF check.
     if tool_def.requires_auth and ctx.access_token:
-        headers["Cookie"] = f"accessToken={ctx.access_token}"
+        headers["Authorization"] = f"Bearer {ctx.access_token}"
 
     # Build URL with path parameters; drop anything the tool does not declare
     url = f"{settings.express_api_url}{tool_def.endpoint_template}"
     params = {k: v for k, v in intent.parameters.items() if k in tool_def.parameters}
+    undeclared = sorted(set(intent.parameters) - set(tool_def.parameters))
+    if undeclared:
+        logger.warning("Action %s: dropping undeclared parameters %s", tool_name, undeclared)
+
+    # Without this, search_catalog with no `search` returned the catalog's first page as a real answer.
+    missing = [k for k in required_parameters(tool_def) if _is_blank(params.get(k))]
+    if missing:
+        return ActionResult(
+            tool=tool_name,
+            input=intent.parameters,
+            success=False,
+            error=f"Missing required parameter(s) for {tool_name}: {', '.join(missing)}",
+        )
+
+    for key, spec in tool_def.parameters.items():
+        if key not in params and "default" in spec:
+            params[key] = spec["default"]
 
     for key, value in list(params.items()):
         placeholder = f"{{{key}}}"

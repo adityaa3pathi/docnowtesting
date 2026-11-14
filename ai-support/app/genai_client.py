@@ -16,7 +16,10 @@ def get_genai_client(settings: Any) -> genai.Client:
         # One short retry rides out a brief 429/503; long waits hung the chat past
         # the backend's timeout when the daily quota ran out (13-10-2026).
         retry = types.HttpRetryOptions(attempts=2, initial_delay=2, max_delay=4, http_status_codes=[429, 503])
+        # HttpOptions.timeout is milliseconds; without it the SDK waits forever and the chat hangs.
+        timeout_ms = int(getattr(settings, "genai_timeout_seconds", 30.0) * 1000)
         _client = genai.Client(
-            api_key=settings.gemini_api_key, http_options=types.HttpOptions(retry_options=retry)
+            api_key=settings.gemini_api_key,
+            http_options=types.HttpOptions(retry_options=retry, timeout=timeout_ms),
         )
     return _client

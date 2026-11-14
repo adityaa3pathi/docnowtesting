@@ -41,6 +41,9 @@ class FakeExpress:
         if method == "GET" and (m := re.fullmatch(r"/catalog/products/([^/]+)", path)):
             item = next((i for i in CATALOG if i["partnerCode"] == m[1]), None)
             return (200, item) if item else (404, {"error": "Product not found"})
+        # Same rule as Express authMiddleware, so a wrong auth header fails the eval too.
+        if path.startswith("/bookings") and not request.headers.get("Authorization", "").startswith("Bearer "):
+            return 401, {"error": "Authorization token missing"}
         if method == "GET" and path == "/bookings":
             return 200, {"bookings": BOOKINGS}
         if m := re.fullmatch(r"/bookings/([^/]+)/(status|reschedulable-slots|cancel|reschedule)", path):

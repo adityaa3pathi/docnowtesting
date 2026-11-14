@@ -12,6 +12,7 @@ from typing import Any
 from langfuse import observe
 
 from app.agents.llm import AIBusyError, call_gemini
+from app.agents.tool_output import compact_tool_output
 from app.models import ActionResult, RetrievalResult, VerificationResult
 from app.observability import annotate
 from app.prompts.verifier import VERIFIER_PROMPT, VERIFIER_SCHEMA
@@ -41,8 +42,9 @@ async def verify(
         for i, c in enumerate(retrieval.chunks)
     ) or "(no retrieved sources)"
 
+    # Same serialization and cap as the draft prompt: the verifier must see what the draft saw.
     actions_text = "\n".join(
-        f"[ACTION {i + 1}] {a.tool}: {json.dumps(a.output, default=str)[:500]}"
+        f"[ACTION {i + 1}] {a.tool}: {compact_tool_output(a.tool, a.output)}"
         for i, a in enumerate(actions)
         if a.success
     ) or "(no actions taken)"

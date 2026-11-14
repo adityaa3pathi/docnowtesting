@@ -22,7 +22,7 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         method="GET",
         endpoint_template="/catalog/products",
         parameters={
-            "search": {"type": "string", "description": "Query to search for"},
+            "search": {"type": "string", "description": "Query to search for", "required": True},
             "limit": {"type": "integer", "default": 5}
         }
     ),
@@ -33,7 +33,7 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         method="GET",
         endpoint_template="/catalog/products/{code}",
         parameters={
-            "code": {"type": "string", "description": "Product code"}
+            "code": {"type": "string", "description": "Product code", "required": True}
         }
     ),
     "list_bookings": ToolDefinition(
@@ -50,7 +50,7 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         method="GET",
         endpoint_template="/bookings/{booking_id}/status",
         parameters={
-            "booking_id": {"type": "string"}
+            "booking_id": {"type": "string", "required": True}
         }
     ),
     "get_reschedule_slots": ToolDefinition(
@@ -60,7 +60,7 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         method="GET",
         endpoint_template="/bookings/{booking_id}/reschedulable-slots",
         parameters={
-            "booking_id": {"type": "string"}
+            "booking_id": {"type": "string", "required": True}
         }
     ),
     "cancel_booking": ToolDefinition(
@@ -71,7 +71,7 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         endpoint_template="/bookings/{booking_id}/cancel",
         is_write=True,
         parameters={
-            "booking_id": {"type": "string"},
+            "booking_id": {"type": "string", "required": True},
             "remarks": {"type": "string"}
         }
     ),
@@ -83,20 +83,26 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         endpoint_template="/bookings/{booking_id}/reschedule",
         is_write=True,
         parameters={
-            "booking_id": {"type": "string"},
-            "slot_id": {"type": "string"},
-            "slotDate": {"type": "string"},
-            "slotTime": {"type": "string"},
-            "reschedule_reason": {"type": "string"}
+            # Express validates all four with Zod and rejects the call if any is absent.
+            "booking_id": {"type": "string", "required": True},
+            "slot_id": {"type": "string", "required": True},
+            "slotDate": {"type": "string", "required": True},
+            "slotTime": {"type": "string", "required": True},
+            "reschedule_reason": {"type": "string", "required": True}
         }
     )
 }
+
+
+def required_parameters(tool: ToolDefinition) -> list[str]:
+    return [name for name, spec in tool.parameters.items() if spec.get("required")]
 
 
 def render_tool_list() -> str:
     """One line per tool for the intent prompt, so the model picks real names and parameters."""
     lines = []
     for tool in TOOL_REGISTRY.values():
-        params = ", ".join(tool.parameters) or "none"
+        required = set(required_parameters(tool))
+        params = ", ".join(f"{p} (required)" if p in required else p for p in tool.parameters) or "none"
         lines.append(f"- {tool.name}: {tool.description} (parameters: {params})")
     return "\n".join(lines)
