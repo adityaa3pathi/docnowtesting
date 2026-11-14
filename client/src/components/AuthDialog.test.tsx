@@ -90,6 +90,9 @@ describe('AuthDialog resend OTP', () => {
         await type('WhatsApp mobile number', '9876543210');
         await type('Password', 'secret1');
         await type('Confirm password', 'secret1');
+        // Sign-up now needs the telemedicine consent tick before an OTP is sent.
+        const consent = document.querySelector<HTMLInputElement>('input[type="checkbox"]');
+        if (consent) await click(consent);
         await click(button('Send OTP'));
 
         expect(m.post).toHaveBeenCalledWith('/auth/signup/send-otp', { mobile: '9876543210', email: undefined });
