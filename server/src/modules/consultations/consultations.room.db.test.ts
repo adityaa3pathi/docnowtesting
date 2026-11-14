@@ -259,7 +259,8 @@ describeDb('video consultations: join, notes, prescription (real Postgres)', () 
             expect(denied.status).toBe(404);
 
             const cartUrl = `${patientApp.url}/consult/bookings/${b.c.id}/recommended-tests/cart`;
-            expect(await (await post(cartUrl, tokenFor(b.user as any))).json()).toEqual({ added: ['RXT-2'], skipped: [] });
+            // The reply also carries a suggested collection address, which this test does not exercise.
+            expect(await (await post(cartUrl, tokenFor(b.user as any))).json()).toMatchObject({ added: ['RXT-2'], skipped: [] });
             expect((await (await post(cartUrl, tokenFor(b.user as any))).json()).added).toEqual([]);
             const items = await testDb.cartItem.findMany({ where: { testCode: 'RXT-2', cart: { userId: b.user.id } } });
             expect(items).toHaveLength(1);
