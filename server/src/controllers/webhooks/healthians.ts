@@ -56,6 +56,7 @@ function isValidWebhookSecret(providedSecret: string | undefined) {
 const HEALTHIANS_ALLOWED_IPS = new Set([
     '161.118.179.139',  // Production
     '161.118.163.82',   // Non-production
+    '13.233.25.21',     // Live webhooks arrive from here (seen in Nginx logs, Nov 2026)
     // Behind Nginx every request arrives from loopback, so loopback is only trusted in development.
     ...(process.env.NODE_ENV === 'production' ? [] : ['127.0.0.1', '::1']),
 ]);
