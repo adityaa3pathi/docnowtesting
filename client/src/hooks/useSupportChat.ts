@@ -68,6 +68,9 @@ export function useSupportChat() {
     const [error, setError] = useState<string | null>(null);
     const [conversationId, setConversationId] = useState<string | null>(null);
 
+    // Set once the customer sends; the slow login check finishing later must not wipe their chat.
+    const startedRef = useRef(false);
+
     // Auto-scroll trigger
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -82,6 +85,7 @@ export function useSupportChat() {
     }, [messages, scrollToBottom]);
 
     const resetChat = useCallback(() => {
+        startedRef.current = false;
         localStorage.removeItem('docnow_support_conversation_id');
         setConversationId(null);
         setError(null);
@@ -139,6 +143,7 @@ export function useSupportChat() {
         if (!isInitialized) return;
 
         if (!isAuthenticated) {
+            startedRef.current = false;
             localStorage.removeItem('docnow_support_conversation_id');
             setConversationId(null);
             setMessages([DEFAULT_WELCOME_MESSAGE]);
@@ -146,6 +151,7 @@ export function useSupportChat() {
             return;
         }
 
+        if (startedRef.current) return;
         const storedId = localStorage.getItem('docnow_support_conversation_id');
         if (storedId && storedId !== 'ephemeral') {
             setConversationId(storedId);
@@ -165,6 +171,7 @@ export function useSupportChat() {
             createdAt: new Date().toISOString(),
         };
 
+        startedRef.current = true;
         setMessages((prev) => [...prev, newMessage]);
         setIsLoading(true);
         setError(null);

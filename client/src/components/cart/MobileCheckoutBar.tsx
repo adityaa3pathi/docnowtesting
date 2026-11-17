@@ -3,6 +3,7 @@ import { StickyBottomBar } from '@/components/layout/StickyBottomBar';
 
 interface MobileCheckoutBarProps {
     finalPayable: number;
+    payAtCollection?: boolean;
     handleCheckout: () => void;
     selectedAddressId: string;
     selectedDate: string;
@@ -14,6 +15,7 @@ interface MobileCheckoutBarProps {
 
 export function MobileCheckoutBar({
     finalPayable,
+    payAtCollection = false,
     handleCheckout,
     selectedAddressId,
     selectedDate,
@@ -43,8 +45,8 @@ export function MobileCheckoutBar({
             )}
             <div className="flex items-center justify-between gap-4 px-4 py-3">
                 <div className="min-w-0">
-                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Total Payable</p>
-                    <p className="text-2xl font-black text-gray-900">₹{finalPayable}</p>
+                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{payAtCollection ? 'Pay at collection' : 'Total Payable'}</p>
+                    <p className="text-2xl font-black text-gray-900">₹{payAtCollection ? Math.floor(finalPayable) : finalPayable}</p>
                 </div>
                 <button
                     onClick={handleCheckout}
@@ -59,7 +61,7 @@ export function MobileCheckoutBar({
                     ) : (
                         <>
                             <ShieldCheck className="w-4 h-4" />
-                            Pay ₹{finalPayable}
+                            {payAtCollection ? 'Place order' : `Pay ₹${finalPayable}`}
                         </>
                     )}
                 </button>

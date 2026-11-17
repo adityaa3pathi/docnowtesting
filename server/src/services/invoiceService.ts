@@ -53,6 +53,10 @@ function loadLogoPath() {
 }
 
 function derivePaymentMode(booking: any) {
+    if (booking.paymentMethod === 'PAY_ON_COLLECTION') {
+        return booking.collectedAt ? 'Paid at sample collection' : 'To be paid at sample collection';
+    }
+    if (booking.razorpayPaymentId?.startsWith('ZERO_')) return 'Wallet / promo';
     const collectionMode = booking.managerOrder?.collectionMode;
     if (collectionMode === 'OFFLINE_CASH') return 'Cash';
     if (collectionMode === 'OFFLINE_UPI') return 'UPI';

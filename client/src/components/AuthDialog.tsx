@@ -81,6 +81,9 @@ interface AuthDialogProps {
 type AuthView = 'LOGIN' | 'SIGNUP' | 'FORGOT_PASSWORD';
 type LoginMethod = 'PASSWORD' | 'OTP';
 
+/** Owner asked for a 10s resend; the server still caps sends at 5 per 15 minutes. */
+const RESEND_SECONDS = 10;
+
 export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps) {
     const { login } = useAuth();
 
@@ -197,7 +200,7 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
             if (loginStep === 'INPUT') {
                 await api.post('/auth/login/send-otp', { mobile: data.mobile });
                 setLoginStep('OTP');
-                setResendTimer(60);
+                setResendTimer(RESEND_SECONDS);
                 setLoading(false);
                 return;
             }
@@ -230,7 +233,7 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
                 email: data.email || undefined
             });
             setSignupStep('OTP');
-            setResendTimer(60);
+            setResendTimer(RESEND_SECONDS);
             setLoading(false);
         } catch (err) {
             handleError(err);
@@ -261,7 +264,7 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
         try {
             await api.post('/auth/forgot-password/send-otp', { mobile: data.mobile });
             setForgotStep('RESET');
-            setResendTimer(60);
+            setResendTimer(RESEND_SECONDS);
             setLoading(false);
         } catch (err: any) {
             handleError(err);
@@ -285,13 +288,29 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
         }
     };
 
+    const resendOtp = async (send: () => Promise<unknown>) => {
+        if (resendTimer > 0) return;
+        setError(null);
+        try {
+            await send();
+            setResendTimer(RESEND_SECONDS);
+        } catch (err) {
+            handleError(err);
+        }
+    };
+    const handleResendLoginOtp = () => resendOtp(() => api.post('/auth/login/send-otp', { mobile: loginOtpForm.getValues('mobile') }));
+    const handleResendSignupOtp = () => resendOtp(() => api.post('/auth/signup/send-otp', {
+        mobile: signupForm.getValues('mobile'),
+        email: signupForm.getValues('email') || undefined,
+    }));
+
     const handleResendForgotOtp = async () => {
         if (resendTimer > 0) return;
         setError(null);
         try {
             const forgotMobile = forgotMobileForm.getValues('mobile');
             await api.post('/auth/forgot-password/send-otp', { mobile: forgotMobile });
-            setResendTimer(60);
+            setResendTimer(RESEND_SECONDS);
         } catch (err: any) {
             handleError(err);
         }
@@ -334,7 +353,9 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
                         <div className="relative">
                             <Smartphone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                             <Input
-                                placeholder="Mobile Number"
+                                placeholder="Enter your WhatsApp number"
+                                aria-label="Enter your WhatsApp number"
+                                inputMode="numeric"
                                 {...register('mobile')}
                                 className="pl-10"
                             />
@@ -427,7 +448,9 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
                             <div className="relative">
                                 <Smartphone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                                 <Input
-                                    placeholder="Mobile Number"
+                                    placeholder="Enter your WhatsApp number"
+                                aria-label="Enter your WhatsApp number"
+                                inputMode="numeric"
                                     {...register('mobile')}
                                     className="pl-10"
                                 />
@@ -442,7 +465,7 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
                 {loginStep === 'OTP' && (
                     <div className="space-y-2">
                         <p className="text-sm text-center text-muted-foreground mb-4">
-                            Enter code sent to <b>{loginOtpForm.getValues('mobile')}</b>
+                            OTP sent on WhatsApp to <b>{loginOtpForm.getValues('mobile')}</b>
                         </p>
                         <Input
                             placeholder="Enter 6-digit OTP"
@@ -453,6 +476,7 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
                         {errors.otp && (
                             <p className="text-xs text-red-500 mt-1">{errors.otp.message}</p>
                         )}
+                        <ResendOtp seconds={resendTimer} onResend={handleResendLoginOtp} />
                     </div>
                 )}
 
@@ -545,7 +569,9 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
                         <div className="relative">
                             <Smartphone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                             <Input
-                                placeholder="Mobile Number"
+                                placeholder="WhatsApp mobile number"
+                                aria-label="WhatsApp mobile number"
+                                inputMode="numeric"
                                 {...register('mobile')}
                                 className="pl-10"
                                 maxLength={10}
@@ -592,7 +618,8 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
                                 <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                                 <Input
                                     type={showPassword ? "text" : "password"}
-                                    placeholder="Confirm"
+                                    placeholder="Confirm password"
+                                    aria-label="Confirm password"
                                     {...register('confirmPassword')}
                                     className="pl-10 pr-10"
                                 />
@@ -652,7 +679,7 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
             <form onSubmit={handleSubmit(handleSignupOtpSubmit)} className="space-y-4">
                 <div className="space-y-4">
                     <p className="text-sm text-center text-muted-foreground mb-4">
-                        We sent a code to <b>{signupForm.getValues('mobile')}</b>
+                        OTP sent on WhatsApp to <b>{signupForm.getValues('mobile')}</b>
                     </p>
                     <Input
                         placeholder="Enter 6-digit OTP"
@@ -663,6 +690,7 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
                     {errors.otp && (
                         <p className="text-xs text-red-500 mt-1">{errors.otp.message}</p>
                     )}
+                    <ResendOtp seconds={resendTimer} onResend={handleResendSignupOtp} />
                 </div>
 
                 <Button type="submit" className="w-full" disabled={loading}>
@@ -729,7 +757,9 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
                         <div className="relative">
                             <Smartphone className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                             <Input
-                                placeholder="Mobile Number"
+                                placeholder="Enter your WhatsApp number"
+                                aria-label="Enter your WhatsApp number"
+                                inputMode="numeric"
                                 {...register('mobile')}
                                 className="pl-10"
                                 maxLength={10}
@@ -764,7 +794,7 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
             <form onSubmit={handleSubmit(handleForgotResetSubmit)} className="space-y-4">
                 <>
                     <p className="text-sm text-center text-muted-foreground mb-2">
-                        Enter the 6-digit code sent to <b>{forgotMobileForm.getValues('mobile')}</b>
+                        Enter the 6-digit OTP sent on WhatsApp to <b>{forgotMobileForm.getValues('mobile')}</b>
                     </p>
 
                     {/* OTP Input */}
@@ -781,23 +811,7 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
                         )}
                     </div>
 
-                    {/* Resend OTP */}
-                    <div className="flex justify-center">
-                        <button
-                            type="button"
-                            onClick={handleResendForgotOtp}
-                            disabled={resendTimer > 0}
-                            className={cn(
-                                "flex items-center gap-1.5 text-xs font-semibold transition-colors",
-                                resendTimer > 0
-                                    ? "text-muted-foreground cursor-not-allowed"
-                                    : "text-primary hover:underline"
-                            )}
-                        >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                            {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend Code'}
-                        </button>
-                    </div>
+                    <ResendOtp seconds={resendTimer} onResend={handleResendForgotOtp} />
 
                     {/* New Password */}
                     <div className="relative">
@@ -872,8 +886,8 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mb-3">
                         <ShieldCheck className="w-6 h-6" />
                     </div>
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-black text-center">
+                    <DialogHeader className="items-center px-0 sm:text-center">
+                        <DialogTitle className="text-xl font-bold text-center">
                             {view === 'LOGIN' && 'Welcome Back'}
                             {view === 'SIGNUP' && 'Create Account'}
                             {view === 'FORGOT_PASSWORD' && 'Reset Password'}
@@ -899,5 +913,20 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
                 </div>
             </DialogContent>
         </Dialog>
+    );
+}
+
+function ResendOtp({ seconds, onResend }: { seconds: number; onResend: () => void }) {
+    return (
+        <p className="pt-1 text-center text-sm text-muted-foreground" aria-live="polite">
+            Didn&apos;t receive the OTP?{' '}
+            {seconds > 0 ? (
+                <span>Resend in {seconds}s</span>
+            ) : (
+                <button type="button" onClick={onResend} className="inline-flex items-center gap-1 font-semibold text-primary hover:underline">
+                    <RefreshCw className="h-3.5 w-3.5" aria-hidden /> Resend OTP
+                </button>
+            )}
+        </p>
     );
 }

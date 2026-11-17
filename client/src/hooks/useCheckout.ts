@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import type { CheckoutPaymentMethod } from '@/components/cart/PaymentMethodPicker';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
@@ -23,6 +24,7 @@ interface CheckoutDeps {
     isSlotLocked: boolean;
     cartItems: CartItemBase[];
     refreshCart: () => Promise<void>;
+    paymentMethod: CheckoutPaymentMethod;
 }
 
 export function useCheckout({
@@ -37,7 +39,8 @@ export function useCheckout({
     billingPatientId,
     isSlotLocked,
     cartItems,
-    refreshCart
+    refreshCart,
+    paymentMethod
 }: CheckoutDeps) {
     const router = useRouter();
     const [creatingOrder, setCreatingOrder] = useState(false);
@@ -125,10 +128,19 @@ export function useCheckout({
                 addressId: selectedAddressId,
                 promoCode: appliedPromo?.code,
                 useWallet,
-                billingPatientId: billingPatientId !== 'self' ? billingPatientId : undefined
+                billingPatientId: billingPatientId !== 'self' ? billingPatientId : undefined,
+                paymentMethod
             });
 
             const { bookingId, razorpayOrderId, amount, keyId, status } = initRes.data;
+
+            // Pay at sample collection: no payment screen, the order is placed now.
+            if (initRes.data.paymentMethod === 'PAY_ON_COLLECTION') {
+                toast.success(`Order placed. Pay ₹${amount} to the sample collector at your visit.`, { duration: 6000 });
+                await refreshCart();
+                router.push(`/thank-you?bookingId=${bookingId}`);
+                return;
+            }
 
             if (status === 'confirmed' || amount === 0) {
                 toast.success('Order placed successfully!');

@@ -108,6 +108,12 @@ export async function listBookings(req: AuthRequest, res: Response) {
             slotDate: b.slotDate,
             slotTime: b.slotTime,
             totalAmount: b.totalAmount,
+            // Money breakdown and how it is paid, so web and app show the same lines.
+            discountAmount: b.discountAmount,
+            walletAmount: b.walletAmount,
+            finalAmount: b.finalAmount,
+            paymentMethod: b.paymentMethod,
+            collectedAt: b.collectedAt,
             createdAt: b.createdAt,
             invoiceAvailable: b.paymentStatus === 'CONFIRMED',
             rescheduledToId: b.rescheduledToId,

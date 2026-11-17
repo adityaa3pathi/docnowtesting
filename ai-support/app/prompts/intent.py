@@ -16,6 +16,7 @@ Classify the customer's intent into one of the following categories:
 - RESCHEDULE_SLOTS: wants to see available slots
 - FAQ: asking about policies, processes
 - SYMPTOM_CHECK: describes a health symptom or asks which test to take for one. Set parameters.symptom_topic to the closest of: {symptom_topics}, or "other"
+  Choose SYMPTOM_CHECK over CATALOG_SEARCH whenever the customer describes how they feel, even if they also ask for a test.
 - MEDICAL_ADVICE: asks what disease they have, what a report result means, or which medicine or dose to take
 - GREETING: hello/hi/thanks
 - OFF_TOPIC: not related to DocNow services

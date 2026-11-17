@@ -21,7 +21,7 @@ from typing import Any
 from langfuse import observe
 
 from app.agents import usage
-from app.agents.cards import cards_from_actions
+from app.agents.cards import cards_from_actions, live_cards_for_chunks
 from app.agents.symptoms import symptom_reply
 from app.agents.llm import AIBusyError, call_gemini
 from app.agents.retrieval import retrieve
@@ -36,6 +36,7 @@ from app.models import (
     SupportResponse,
 )
 from app.observability import annotate, current_trace_id
+from app.symptoms.keywords import keyword_topic
 from app.symptoms.safety import EMERGENCY_RESPONSE, MEDICAL_ADVICE_RESPONSE, emergency_sign
 from app.prompts.intent import INTENT_CLASSIFICATION_PROMPT, SYMPTOM_TOPIC_IDS, intent_schema
 from app.prompts.system import DRAFT_GENERATION_PROMPT, ORCHESTRATOR_SYSTEM_PROMPT
@@ -92,6 +93,9 @@ _GREETING = re.compile(
     r"thanks|thank you|thank u|thanks a lot|ty)\s*(there|docnow)?[.!\s]*$",
     re.IGNORECASE,
 )
+
+# Intents a symptom word may turn into SYMPTOM_CHECK; booking and medical-advice turns keep theirs.
+_SYMPTOM_OVERRIDABLE = {"CATALOG_SEARCH", "PRODUCT_DETAILS", "FAQ", "OFF_TOPIC", "UNKNOWN", "SYMPTOM_CHECK"}
 
 # Only a short, plain "yes" confirms a pending write; anything else drops it.
 _CONFIRM = re.compile(
@@ -261,6 +265,12 @@ async def _run_pipeline(
             intent.intent, intent.tool_name, intent.requires_action, intent.confidence,
         )
 
+        # The classifier often files "I feel tired" as a test search; symptom words win over that.
+        if settings.symptom_suggestions and intent.intent in _SYMPTOM_OVERRIDABLE:
+            topic = keyword_topic(message)
+            if topic and (intent.intent != "SYMPTOM_CHECK" or intent.parameters.get("symptom_topic") in (None, "other")):
+                intent = Intent(intent="SYMPTOM_CHECK", parameters={"symptom_topic": topic}, confidence=intent.confidence)
+
         # Symptom and medical-advice turns get fixed, doctor-approved wording, never a model draft.
         if intent.intent in ("SYMPTOM_CHECK", "MEDICAL_ADVICE"):
             if not settings.symptom_suggestions:
@@ -398,7 +408,7 @@ async def _run_pipeline(
             verifier_verdict=verification.verdict,
             was_abstained=False,
             latency_ms=_elapsed(start_time),
-            cards=cards_from_actions(actions),
+            cards=cards_from_actions(actions) or await live_cards_for_chunks(retrieval.chunks, verification.cleaned_response, ctx, settings),
         )
 
     except AIBusyError:
