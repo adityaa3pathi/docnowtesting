@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 
 import { LocationProvider } from "@/contexts/LocationContext";
@@ -15,6 +16,14 @@ import { LegacyCookieCleanup } from "@/components/LegacyCookieCleanup";
 const inter = localFont({
   src: "./fonts/InterVariable.woff2",
   variable: "--font-inter",
+  display: "swap",
+});
+
+// Hindi text (family room, consent) needs a face that matches Inter's weight and height.
+const devanagari = Noto_Sans_Devanagari({
+  subsets: ["devanagari"],
+  weight: ["400", "500", "600"],
+  variable: "--font-devanagari",
   display: "swap",
 });
 
@@ -55,7 +64,7 @@ export default function RootLayout({
           gtag('config', 'G-81VWJM4ZDN');
         `}</Script>
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${devanagari.variable}`}>
         {/* Google Tag Manager (noscript) */}
         <noscript>
           <iframe

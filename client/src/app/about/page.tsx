@@ -109,15 +109,14 @@ export default function AboutPage() {
                         About DocNow Healthcare
                     </p>
                     <h1 className="text-4xl md:text-6xl font-black leading-tight mb-6">
-                        Redefining Diagnostic{" "}
-                        <span className="text-white/80 italic">Excellence</span>
+                        Your Complete Healthcare{" "}
+                        <span className="text-white/80 italic">Partner</span>
                     </h1>
                     <p className="text-lg md:text-xl text-white/85 font-medium max-w-2xl mx-auto leading-relaxed">
-                        At DocNow Healthcare, we are committed to elevating the standards of
-                        diagnostic care through precision, technology, and uncompromising
-                        quality. We believe that accurate diagnostics form the foundation of
-                        effective healthcare, and every report we deliver carries our promise
-                        of reliability and integrity.
+                        At DocNow Healthcare, we bring together verified doctors and certified labs
+                        to deliver comprehensive care. From video consultations with expert physicians
+                        to at-home diagnostic testing, we make quality healthcare accessible,
+                        convenient, and reliable.
                     </p>
                 </div>
             </section>
@@ -133,17 +132,109 @@ export default function AboutPage() {
                     </div>
                     <div className="max-w-3xl mx-auto space-y-6 text-center">
                         <p className="text-lg text-muted-foreground font-medium leading-relaxed">
-                            DocNow Healthcare is a next-generation diagnostic services platform
-                            designed to deliver world-class laboratory testing with unmatched
-                            convenience. By integrating certified laboratory networks, advanced
-                            diagnostic technologies, and a streamlined digital interface, we
-                            provide a comprehensive and dependable healthcare experience.
+                            DocNow Healthcare is a comprehensive digital health platform that connects
+                            you with verified doctors for video consultations and certified laboratories
+                            for at-home diagnostic testing. By integrating medical expertise with
+                            advanced technology, we provide a seamless, end-to-end healthcare experience
+                            from the comfort of your home.
                         </p>
                         <p className="text-lg text-muted-foreground font-medium leading-relaxed">
-                            Our approach combines medical expertise with operational excellence
-                            to ensure every test meets the highest standards of accuracy and
-                            quality control.
+                            Whether you need to consult a specialist, get a prescription, or book lab
+                            tests, our platform combines convenience with clinical excellence to ensure
+                            you receive the care you deserve.
                         </p>
+                    </div>
+                </div>
+            </section>
+
+            {/* ── Our Services ─────────────────────────────────────────── */}
+            <section className="py-16 md:py-24 bg-accent/30">
+                <div className="container mx-auto px-4 max-w-6xl">
+                    <div className="text-center mb-14">
+                        <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+                            Our Services
+                        </h2>
+                        <p className="text-lg text-muted-foreground font-medium">
+                            Two pillars of comprehensive healthcare, one platform
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                        {/* Video Consultations */}
+                        <Card className="overflow-hidden border-0 shadow-2xl">
+                            <div
+                                className="p-8 text-white"
+                                style={{ background: 'linear-gradient(135deg, #4b2192 0%, #6d3fcf 100%)' }}
+                            >
+                                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
+                                    <Stethoscope className="h-7 w-7 text-white" />
+                                </div>
+                                <h3 className="text-2xl font-black mb-3">Video Consultations</h3>
+                                <p className="text-white/90 font-medium leading-relaxed">
+                                    Consult verified doctors from the comfort of your home. Get expert
+                                    medical advice, digital prescriptions, and follow-up care through
+                                    secure video calls.
+                                </p>
+                            </div>
+                            <div className="p-6 bg-white space-y-3">
+                                <div className="flex items-start gap-3">
+                                    <div className="mt-1 h-5 w-5 shrink-0 rounded-full bg-purple-100 flex items-center justify-center">
+                                        <div className="h-2 w-2 rounded-full bg-primary" />
+                                    </div>
+                                    <p className="text-sm font-medium text-muted-foreground">Verified medical registrations</p>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <div className="mt-1 h-5 w-5 shrink-0 rounded-full bg-purple-100 flex items-center justify-center">
+                                        <div className="h-2 w-2 rounded-full bg-primary" />
+                                    </div>
+                                    <p className="text-sm font-medium text-muted-foreground">Instant booking and scheduling</p>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <div className="mt-1 h-5 w-5 shrink-0 rounded-full bg-purple-100 flex items-center justify-center">
+                                        <div className="h-2 w-2 rounded-full bg-primary" />
+                                    </div>
+                                    <p className="text-sm font-medium text-muted-foreground">Digital prescriptions and records</p>
+                                </div>
+                            </div>
+                        </Card>
+
+                        {/* Lab Tests */}
+                        <Card className="overflow-hidden border-0 shadow-2xl">
+                            <div
+                                className="p-8 text-white"
+                                style={{ background: 'linear-gradient(135deg, #0d9488 0%, #10b981 100%)' }}
+                            >
+                                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
+                                    <Beaker className="h-7 w-7 text-white" />
+                                </div>
+                                <h3 className="text-2xl font-black mb-3">At-Home Lab Tests</h3>
+                                <p className="text-white/90 font-medium leading-relaxed">
+                                    Book diagnostic tests and packages with doorstep sample collection.
+                                    Get accurate results from certified labs delivered digitally within
+                                    24-48 hours.
+                                </p>
+                            </div>
+                            <div className="p-6 bg-white space-y-3">
+                                <div className="flex items-start gap-3">
+                                    <div className="mt-1 h-5 w-5 shrink-0 rounded-full bg-emerald-100 flex items-center justify-center">
+                                        <div className="h-2 w-2 rounded-full bg-emerald-600" />
+                                    </div>
+                                    <p className="text-sm font-medium text-muted-foreground">NABL & CAP certified laboratories</p>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <div className="mt-1 h-5 w-5 shrink-0 rounded-full bg-emerald-100 flex items-center justify-center">
+                                        <div className="h-2 w-2 rounded-full bg-emerald-600" />
+                                    </div>
+                                    <p className="text-sm font-medium text-muted-foreground">Convenient home sample collection</p>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <div className="mt-1 h-5 w-5 shrink-0 rounded-full bg-emerald-100 flex items-center justify-center">
+                                        <div className="h-2 w-2 rounded-full bg-emerald-600" />
+                                    </div>
+                                    <p className="text-sm font-medium text-muted-foreground">Fast, secure digital reports</p>
+                                </div>
+                            </div>
+                        </Card>
                     </div>
                 </div>
             </section>

@@ -10,6 +10,7 @@ import {
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
+import { StickyBottomBar } from '@/components/layout/StickyBottomBar';
 
 interface CampDetail {
     id: string;
@@ -763,7 +764,7 @@ export default function CampRegistrationPage() {
             </div>
 
             {/* ═══ Mobile Sticky CTA ═══ */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-3 md:hidden z-50 shadow-2xl shadow-black/10">
+            <StickyBottomBar className="bg-white border-t border-gray-100 px-4 py-3 md:hidden z-50 shadow-2xl shadow-black/10">
                 <div className="flex items-center justify-between gap-4 max-w-4xl mx-auto">
                     <div>
                         <div className="text-xs text-gray-400 font-medium">Total</div>
@@ -788,7 +789,7 @@ export default function CampRegistrationPage() {
                         )}
                     </button>
                 </div>
-            </div>
+            </StickyBottomBar>
         </div>
     );
 }
@@ -803,7 +804,7 @@ function CampDetailSkeleton() {
                     <div className="h-4 w-12 bg-white/10 rounded mb-5 animate-pulse" />
                     <div className="h-5 w-20 bg-white/10 rounded-full mb-4 animate-pulse" />
                     <div className="h-9 w-72 bg-white/15 rounded-lg mb-2 animate-pulse" />
-                    <div className="h-5 w-96 bg-white/10 rounded-lg mb-5 animate-pulse" />
+                    <div className="h-5 w-full max-w-96 bg-white/10 rounded-lg mb-5 animate-pulse" />
                     <div className="flex gap-2">
                         <div className="h-8 w-32 bg-white/10 rounded-lg animate-pulse" />
                         <div className="h-8 w-40 bg-white/10 rounded-lg animate-pulse" />

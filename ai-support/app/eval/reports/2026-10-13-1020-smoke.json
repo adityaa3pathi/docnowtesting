@@ -1,0 +1,39 @@
+{
+  "label": "smoke",
+  "run_at_ist": "13-10-2026 10:20 IST",
+  "llm_model": "gemini-3.8-flash",
+  "embedding_model": "gemini-embedding-001",
+  "judge_model": "gemini-3.8-flash",
+  "relevance_threshold": 0.7,
+  "keyword_search": true,
+  "scores": {
+    "abstention_accuracy": 0.0,
+    "false_abstention_rate": 1.0,
+    "missed_abstention_rate": null,
+    "groundedness_score": 0.0,
+    "source_hit_rate": 0.0,
+    "tool_choice_accuracy": 0.0,
+    "error_rate": 1.0,
+    "p50_latency_ms": 12328,
+    "p95_latency_ms": 12328
+  },
+  "results": [
+    {
+      "query_id": "cat-01",
+      "category": "catalog",
+      "query": "I want to test for diabetes, what do you have?",
+      "response": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "We have tests for diabetes including Fasting Blood Sugar, Post Prandial Blood Sugar, and HbA1c.",
+      "should_abstain": false,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [],
+      "latency_ms": 12328,
+      "error": "Error calling Gemini API: ServerError(\"503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}\"); Intent classification failed: ServerError(\"503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}\"); Error calling Gemini API: ServerError(\"503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}\"); Draft generation failed: ServerError(\"503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}\")"
+    }
+  ]
+}

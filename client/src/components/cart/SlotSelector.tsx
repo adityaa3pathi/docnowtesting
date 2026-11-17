@@ -74,6 +74,9 @@ export function SlotSelector({
                         return (
                             <button
                                 key={dateStr}
+                                type="button"
+                                aria-pressed={selectedDate === dateStr}
+                                aria-label={`${dayName} ${dayNum} ${monthName}`}
                                 onClick={() => onDateSelect(dateStr)}
                                 className={cn(
                                     "flex-shrink-0 flex flex-col items-center justify-center w-[60px] h-[76px] sm:w-20 sm:h-24 rounded-2xl border transition-all active:scale-95",
@@ -114,6 +117,8 @@ export function SlotSelector({
                                         return (
                                             <button
                                                 key={slot.stm_id || slot.slot_time}
+                                                type="button"
+                                                aria-pressed={isSelected}
                                                 onClick={() => onTimeSelect(slot.slot_time)}
                                                 disabled={isSlotLocked}
                                                 className={cn(
@@ -127,7 +132,7 @@ export function SlotSelector({
                                             >
                                                 {slot.slot_time}
                                                 {isSelected && (
-                                                    <CheckCircle2 className="absolute top-0.5 right-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
+                                                    <CheckCircle2 className="absolute top-0.5 right-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" aria-hidden />
                                                 )}
                                             </button>
                                         );
@@ -170,6 +175,13 @@ export function SlotSelector({
                                                 </span>
                                             </div>
                                         )}
+
+                                        {/* Changes only when the urgency level does, so a screen reader hears it once, not every second. */}
+                                        <p className="sr-only" role="status" aria-live="polite">
+                                            {timerLevel === 'urgent' ? 'Less than 2 minutes left to pay before this slot is released.'
+                                                : timerLevel === 'warning' ? 'Less than 5 minutes left to complete your booking.'
+                                                : timerLevel === 'normal' ? 'Slot held. Complete payment before the timer runs out.' : ''}
+                                        </p>
 
                                         {/* Lock/Locked Button */}
                                         <button

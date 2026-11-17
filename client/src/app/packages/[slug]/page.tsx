@@ -28,6 +28,7 @@ import {
 import { parseSlug, mapHealthiansResponseToViewModel } from '@/lib/mapProductDetails';
 import { ProductDetailsViewModel } from '@/types/productDetails';
 import { ProductPurpose } from '@/components/catalog/ProductPurpose';
+import { StickyBottomBar } from '@/components/layout/StickyBottomBar';
 
 export default function PackageDetailsPage(props: { params: Promise<{ slug: string }> }) {
   const params = use(props.params);
@@ -145,7 +146,7 @@ export default function PackageDetailsPage(props: { params: Promise<{ slug: stri
         </section>
 
         {/* Sticky Bottom Bar Skeleton */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50">
+        <StickyBottomBar className="bg-white border-t border-gray-200 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50">
           <div className="container mx-auto max-w-4xl flex items-center justify-between">
             <div className="space-y-2">
               <div className="h-3 w-16 bg-gray-200 rounded animate-pulse" />
@@ -153,7 +154,7 @@ export default function PackageDetailsPage(props: { params: Promise<{ slug: stri
             </div>
             <div className="h-11 w-36 bg-gray-200 rounded-lg animate-pulse" />
           </div>
-        </div>
+        </StickyBottomBar>
       </main>
     );
   }
@@ -341,7 +342,7 @@ export default function PackageDetailsPage(props: { params: Promise<{ slug: stri
       </section>
 
       {/* Sticky Bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50">
+      <StickyBottomBar className="bg-white border-t border-gray-200 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50">
         <div className="container mx-auto max-w-4xl flex items-center justify-between">
           <div>
             <div className="text-sm text-gray-500 font-medium mb-1">Total Price</div>
@@ -376,7 +377,7 @@ export default function PackageDetailsPage(props: { params: Promise<{ slug: stri
             </Button>
           </div>
         </div>
-      </div>
+      </StickyBottomBar>
     </main>
   );
 }

@@ -1,19 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MessageCircle, X, Minus, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 import { useSupportChat } from '@/hooks/useSupportChat';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 
+// Staff consoles and live calls: the customer assistant would only cover their controls.
+const HIDDEN_ON = ['/doctor', '/manager', '/super-admin', '/checkout', '/call/'];
+
 export function SupportChat() {
     const pathname = usePathname();
-    const { isAuthenticated } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
-    const [hasUnread, setHasUnread] = useState(false);
+    const [seenReplyId, setSeenReplyId] = useState<string | null>(null);
     
     const {
         messages,
@@ -25,29 +26,24 @@ export function SupportChat() {
         messagesEndRef
     } = useSupportChat();
 
-    // Mark as read when opened
-    useEffect(() => {
-        if (isOpen) {
-            setHasUnread(false);
-        }
-    }, [isOpen]);
+    // Unread: the newest assistant reply arrived while the panel was closed.
+    const last = messages[messages.length - 1];
+    const lastReplyId = last?.role === 'assistant' && last.id !== 'welcome' ? last.id : null;
+    const hasUnread = !isOpen && lastReplyId !== null && lastReplyId !== seenReplyId;
+    const setOpen = (open: boolean) => {
+        setIsOpen(open);
+        setSeenReplyId(lastReplyId);
+    };
 
-    // Simple unread badge logic: if a new assistant message arrives while closed
-    useEffect(() => {
-        if (!isOpen && messages.length > 0) {
-            const lastMessage = messages[messages.length - 1];
-            if (lastMessage.role === 'assistant' && lastMessage.id !== 'welcome') {
-                setHasUnread(true);
-            }
-        }
-    }, [messages, isOpen]);
+    if (HIDDEN_ON.some((p) => pathname.startsWith(p))) return null;
 
-    // Adjust bottom position on cart page to avoid checkout bar
-    const isCartPage = pathname === '/cart';
-    const bottomClass = isCartPage ? 'bottom-20' : 'bottom-6';
-
+    // --sticky-bottom is the height of the page's bottom bar (StickyBottomBar), so we sit above it.
     return (
-        <div className={`fixed ${bottomClass} right-6 z-50 flex flex-col items-end`}>
+        <div
+            data-support-launcher
+            className="fixed right-4 z-50 flex flex-col items-end transition-[bottom] duration-200 sm:right-6"
+            style={{ bottom: 'calc(var(--sticky-bottom, 0px) + env(safe-area-inset-bottom, 0px) + 1rem)' }}
+        >
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -55,7 +51,8 @@ export function SupportChat() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
-                        className="mb-4 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden flex flex-col w-[calc(100vw-3rem)] sm:w-[400px] h-[500px] max-h-[calc(100vh-8rem)]"
+                        className="mb-4 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden flex flex-col w-[calc(100vw-2rem)] sm:w-[400px] h-[500px]"
+                        style={{ maxHeight: 'calc(100dvh - var(--sticky-bottom, 0px) - 7rem)' }}
                     >
                         {/* Header */}
                         <div className="text-white px-4 py-3 flex items-center justify-between shadow-sm" style={{ background: 'linear-gradient(135deg, #4b2192 0%, #6d3fcf 100%)' }}>
@@ -77,7 +74,7 @@ export function SupportChat() {
                                     <RotateCcw className="w-4 h-4" />
                                 </button>
                                 <button 
-                                    onClick={() => setIsOpen(false)}
+                                    onClick={() => setOpen(false)}
                                     className="p-1.5 hover:bg-white/20 rounded-md transition-colors"
                                 >
                                     <Minus className="w-4 h-4" />
@@ -129,8 +126,10 @@ export function SupportChat() {
             <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setIsOpen(!isOpen)}
-                className="w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors relative focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                onClick={() => setOpen(!isOpen)}
+                aria-label={isOpen ? 'Close support chat' : 'Open support chat'}
+                aria-expanded={isOpen}
+                className="w-12 h-12 sm:w-14 sm:h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors relative focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
             >
                 {isOpen ? (
                     <X className="w-6 h-6" />

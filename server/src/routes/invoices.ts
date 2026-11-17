@@ -3,7 +3,7 @@ import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { prisma } from '../db';
 import { generateInvoicePdfForBooking } from '../services/invoiceService';
 import { generateCampInvoicePdf } from '../services/campInvoiceService';
-import { verifyInvoiceAccessToken } from '../services/invoiceAccess';
+import { createInvoiceAccessToken, getInvoiceLinkExpiryHours, verifyInvoiceAccessToken } from '../services/invoiceAccess';
 
 const router = Router();
 
@@ -48,6 +48,30 @@ router.get('/public/:token', async (req: AuthRequest, res: Response) => {
 });
 
 router.use(authMiddleware);
+
+/**
+ * GET /api/invoices/booking/:bookingId/link
+ * A signed link token for the app. The download route needs the Authorization header, which an
+ * in-app browser does not send, so the app opens /api/invoices/public/:token instead.
+ */
+router.get('/booking/:bookingId/link', async (req: AuthRequest, res: Response) => {
+    try {
+        const booking = await prisma.booking.findFirst({
+            where: { id: req.params.bookingId as string, userId: req.userId! },
+            select: { id: true, paymentStatus: true },
+        });
+        if (!booking) {
+            return res.status(404).json({ error: 'We could not find this booking.' });
+        }
+        if (booking.paymentStatus !== 'CONFIRMED') {
+            return res.status(400).json({ error: 'Invoice is available only after the booking is confirmed.' });
+        }
+        return res.json({ token: createInvoiceAccessToken(booking.id), expiresInHours: getInvoiceLinkExpiryHours() });
+    } catch (error) {
+        console.error('[Invoices] Error creating invoice link:', error);
+        return res.status(500).json({ error: 'We could not prepare your invoice right now. Please try again shortly.' });
+    }
+});
 
 router.get('/booking/:bookingId/download', async (req: AuthRequest, res: Response) => {
     try {

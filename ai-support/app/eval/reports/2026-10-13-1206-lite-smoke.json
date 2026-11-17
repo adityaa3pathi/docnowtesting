@@ -1,0 +1,119 @@
+{
+  "label": "lite-smoke",
+  "run_at_ist": "13-10-2026 12:06 IST",
+  "llm_model": "gemini-3.5-flash-lite",
+  "embedding_model": "gemini-embedding-001",
+  "judge_model": "groq/openai/gpt-oss-120b",
+  "relevance_threshold": 0.7,
+  "keyword_search": true,
+  "scores": {
+    "abstention_accuracy": 1.0,
+    "false_abstention_rate": 0.0,
+    "missed_abstention_rate": null,
+    "groundedness_score": 1.0,
+    "source_hit_rate": 1.0,
+    "tool_choice_accuracy": 0.3333333333333333,
+    "error_rate": 0.0,
+    "p50_latency_ms": 3656,
+    "p95_latency_ms": 4586,
+    "faithfulness": 0.8095238095238096,
+    "answer_relevancy": 0.8216206695834325,
+    "context_precision": 0.2472222222098611,
+    "context_recall": 0.5
+  },
+  "results": [
+    {
+      "query_id": "cat-01",
+      "category": "catalog",
+      "query": "I want to test for diabetes, what do you have?",
+      "response": "To screen for and monitor diabetes, we offer the following tests:\n\n*   **Fasting Blood Sugar (FBS)**\n    *   **Price:** ₹99 (MRP: ₹150)\n    *   **Description:** Measures blood glucose after 8–10 hours of fasting. Used to screen for and monitor diabetes.\n    *   **Report Time:** 6 hours\n    *   **Sample Type:** Blood\n\n*   **Post Prandial Blood Sugar (PPBS)**\n    *   **Price:** ₹99 (MRP: ₹150)\n    *   **Description:** Measures blood glucose 2 hours after a meal. Used with FBS to check for diabetes.\n    *   **Report Time:** 6 hours\n    *   **Sample Type:** Blood\n\nWould you like to book one or both of these tests for your doorstep collection?",
+      "retrieved_contexts": [
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Urine Routine and Microscopy\nType: TEST\nPrice: ₹149 (MRP: ₹250)\nDescription: Physical, chemical and microscopic examination of urine.\nParameters: 20 parameters\nSample Type: Urine\nReport Time: 12 hours",
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Test Name: Post Prandial Blood Sugar (PPBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose 2 hours after a meal. Used with FBS to check for diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: Sample taken 2 hours after a meal",
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "We have tests for diabetes including Fasting Blood Sugar, Post Prandial Blood Sugar, and HbA1c.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_tests"
+      ],
+      "latency_ms": 4586,
+      "error": null
+    },
+    {
+      "query_id": "cat-02",
+      "category": "catalog",
+      "query": "How much does a thyroid test cost?",
+      "response": "The TSH (Thyroid Stimulating Hormone) test costs **₹249** (MRP: ₹350). \n\nIf you are looking for a broader thyroid assessment, we also offer our **Basic Full Body Checkup** for **₹1299** (MRP: ₹1999), which includes a Thyroid Profile along with 61 other parameters. \n\nWould you like to book one of these for a doorstep sample collection?",
+      "retrieved_contexts": [
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Antenatal Profile\nType: PACKAGE\nPrice: ₹1799 (MRP: ₹2499)\nDescription: Recommended tests during pregnancy.\nParameters: Includes 35 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nIncluded Tests: Complete Blood Count, Blood Group and Rh, Thyroid Profile, VDRL, HIV, HBsAg, Blood Sugar, Urine Routine",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Kidney Function Test (KFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks kidney health: urea, creatinine, uric acid, BUN and electrolytes.\nParameters: 9 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: hs-CRP (High Sensitivity C-Reactive Protein)\nType: TEST\nPrice: ₹499 (MRP: ₹700)\nDescription: Marker of inflammation and heart risk.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "The thyroid profile test costs are listed in our catalog. A standard Thyroid Profile (T3, T4, TSH) is available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "catalog_search"
+      ],
+      "latency_ms": 3656,
+      "error": null
+    },
+    {
+      "query_id": "cat-03",
+      "category": "catalog",
+      "query": "Do you have a Complete Blood Count (CBC) test?",
+      "response": "Based on our current catalog, we do not have a standalone Complete Blood Count (CBC) test listed. However, CBC is included as part of our health packages, such as the **Basic Full Body Checkup** and the **Antenatal Profile**. \n\nLet me know if you would like more details about these packages!",
+      "retrieved_contexts": [
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required",
+        "Test Name: Kidney Function Test (KFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks kidney health: urea, creatinine, uric acid, BUN and electrolytes.\nParameters: 9 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Antenatal Profile\nType: PACKAGE\nPrice: ₹1799 (MRP: ₹2499)\nDescription: Recommended tests during pregnancy.\nParameters: Includes 35 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nIncluded Tests: Complete Blood Count, Blood Group and Rh, Thyroid Profile, VDRL, HIV, HBsAg, Blood Sugar, Urine Routine",
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "Yes, we offer the Complete Blood Count (CBC) test.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3444,
+      "error": null
+    }
+  ]
+}

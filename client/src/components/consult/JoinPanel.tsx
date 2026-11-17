@@ -1,0 +1,109 @@
+'use client';
+import { useState } from 'react';
+import { Video } from 'lucide-react';
+import { Button } from '@/components/ui';
+import { useServerNow } from '@/hooks/useServerNow';
+import { errorMessage } from '@/lib/consult/api';
+import { joinWindow } from '@/lib/consult/room';
+import { CONSENT_REQUIRED_HINT, consentText } from '@/lib/consult/consent';
+import { formatIstDateTime } from '@/lib/consult/time';
+import type { ConsultationStatus, ConsultationType, JoinResponse } from '@/lib/consult/types';
+import { ConsultCallRoom } from './ConsultCallRoom';
+import { TelemedicineConsent } from './TelemedicineConsent';
+import { DeviceCheckScreen, type ChosenDevices } from './DeviceCheckScreen';
+
+interface Props {
+    status: ConsultationStatus;
+    type: ConsultationType;
+    startsAt: string;
+    endsAt: string;
+    otherParty: 'doctor' | 'patient';
+    join: () => Promise<JoinResponse>;
+    /** Called after a successful join and after leaving, so the page can reload the status. */
+    onChange?: () => void;
+    /** Tells the page when this person enters or leaves the call. */
+    onCallChange?: (inCall: boolean) => void;
+    /** Patient side: the NMC teleconsultation consent must be ticked before Join works. */
+    consentDoctorName?: string;
+}
+
+/** Shows when the call opens, the Join button inside the window, then the call itself. */
+export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, onChange, onCallChange, consentDoctorName }: Props) {
+    const now = useServerNow();
+    const [call, setCall] = useState<JoinResponse | null>(null);
+    const [showDeviceCheck, setShowDeviceCheck] = useState(false);
+    const [devices, setDevices] = useState<ChosenDevices>({});
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [consented, setConsented] = useState(false);
+    const needsConsent = consentDoctorName !== undefined && !consented;
+
+    if (call) {
+        return (
+            <ConsultCallRoom
+                url={call.url}
+                token={call.token}
+                role={call.role}
+                otherParty={otherParty}
+                audioDeviceId={devices.audioDeviceId}
+                videoDeviceId={devices.videoDeviceId}
+                onLeave={() => {
+                    setCall(null);
+                    setShowDeviceCheck(false);
+                    onCallChange?.(false);
+                    onChange?.();
+                }}
+            />
+        );
+    }
+
+    if (showDeviceCheck) {
+        return (
+            <DeviceCheckScreen
+                videoAllowed={type !== 'AUDIO'}
+                joining={busy}
+                onJoin={async (chosen) => {
+                    setBusy(true);
+                    setError(null);
+                    try {
+                        setDevices(chosen);
+                        setCall(await join());
+                        onCallChange?.(true);
+                        onChange?.();
+                    } catch (e) {
+                        setError(errorMessage(e));
+                        setShowDeviceCheck(false);
+                    } finally {
+                        setBusy(false);
+                    }
+                }}
+                onCancel={() => setShowDeviceCheck(false)}
+            />
+        );
+    }
+
+    if (type === 'CHAT') return <p className="rounded-xl bg-surface-muted px-4 py-3 text-sm text-ink">Chat consultations are not available yet.</p>;
+
+    const win = joinWindow({ status, startsAt, endsAt }, now);
+    if (win.kind === 'not_joinable') return null;
+
+    return (
+        <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
+            <p className="font-semibold text-ink">{type === 'AUDIO' ? 'Audio call' : 'Video call'}</p>
+            {win.kind === 'early' && (
+                <p className="text-sm text-ink-muted">Join from {formatIstDateTime(win.opensAt)} (Indian time).</p>
+            )}
+            {win.kind === 'ended' && <p className="text-sm text-ink-muted">The time to join this call has passed.</p>}
+            {win.kind !== 'ended' && consentDoctorName !== undefined && (
+                <TelemedicineConsent checked={consented} onChange={setConsented} label={consentText(consentDoctorName)} />
+            )}
+            {win.kind === 'open' && (
+                <Button size="lg" className="w-full" disabled={needsConsent} onClick={() => setShowDeviceCheck(true)}>
+                    <Video className="mr-2 h-5 w-5" aria-hidden /> Join call
+                </Button>
+            )}
+            {win.kind === 'open' && needsConsent && <p className="text-center text-xs text-ink-muted">{CONSENT_REQUIRED_HINT}</p>}
+            {error && <p role="alert" className="rounded-lg bg-danger-soft px-4 py-3 text-sm font-medium text-danger-ink">{error}</p>}
+        </div>
+    );
+}

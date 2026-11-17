@@ -5,7 +5,7 @@ import { prisma } from '../db';
 
 const router = express.Router();
 
-import { patientSchema, resolveOrCreateSelfPatient } from '../utils/patientValidation';
+import { patientHealthSchema, patientSchema, relinkFields, resolveOrCreateSelfPatient } from '../utils/patientValidation';
 
 // POST /api/profile/patients/ensure-self — Auto-create Self patient if missing
 // Called by camp checkout page on mount to guarantee the user appears in the patient list
@@ -89,7 +89,7 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
 
         const updatedPatient = await prisma.patient.update({
             where: { id },
-            data: updateData
+            data: { ...updateData, ...relinkFields(patient, updateData) }
         });
 
         res.status(200).json({
@@ -102,6 +102,35 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
             return;
         }
         console.error('Update Patient Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// PATCH /api/profile/patients/:id - Save the family intake (phone, language, health snapshot)
+router.patch('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        const id = req.params.id as string;
+        const patient = await prisma.patient.findUnique({ where: { id } });
+        if (!patient || patient.userId !== req.userId) {
+            res.status(404).json({ error: 'Family member not found' });
+            return;
+        }
+        const data = patientHealthSchema.parse(req.body);
+        if (patient.relation === 'Self' && data.phone) {
+            res.status(400).json({ error: 'Your own number is the one you sign in with' });
+            return;
+        }
+        const updatedPatient = await prisma.patient.update({
+            where: { id },
+            data: { ...data, ...relinkFields(patient, data) },
+        });
+        res.status(200).json({ message: 'Family member updated successfully', patient: updatedPatient });
+    } catch (error: any) {
+        if (error instanceof z.ZodError) {
+            res.status(400).json({ error: error.issues[0].message });
+            return;
+        }
+        console.error('Patch Patient Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });

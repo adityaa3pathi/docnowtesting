@@ -77,6 +77,7 @@ export function AddressSelector({
             ) : (
                 <div className="space-y-3">
                     <select
+                        aria-label="Sample collection address"
                         value={selectedAddressId}
                         onChange={(e) => onSelect(e.target.value)}
                         className="w-full p-3 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors"
@@ -88,10 +89,11 @@ export function AddressSelector({
                         ))}
                     </select>
                     <button
+                        type="button"
                         onClick={() => setAddressDialogOpen(true)}
                         className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-[13px] font-semibold border-2 border-dashed border-gray-200 text-slate-700 bg-gray-50 hover:bg-white hover:border-primary/40 active:scale-[0.97] transition-all duration-200"
                     >
-                        <Plus className="w-4 h-4" /> Add New Address
+                        <Plus className="w-4 h-4" aria-hidden /> Add New Address
                     </button>
                 </div>
             )}

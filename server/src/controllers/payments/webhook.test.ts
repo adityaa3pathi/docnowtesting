@@ -8,7 +8,8 @@ const m = vi.hoisted(() => ({
     findFirst: vi.fn(),
 }));
 
-vi.mock('razorpay', () => ({ default: { validateWebhookSignature: () => true } }));
+vi.mock('../../utils/razorpaySignature', () => ({ verifyWebhookSignature: () => true }));
+vi.mock('../../modules/consultations/consultations.webhook', () => ({ tryHandleConsultEvent: async () => ({ handled: false }) }));
 vi.mock('../../db', () => ({
     prisma: {
         webhookEvent: { create: m.created, delete: m.deleted },

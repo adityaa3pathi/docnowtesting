@@ -16,6 +16,7 @@ import { prisma } from '../db';
 import { originalReportStorageKey, reportStorage, reportStorageKey } from './reportStorage';
 import { HealthiansAdapter } from '../adapters/healthians';
 import { sendSpecificReportViaWhatsApp } from './reportNotifications';
+import { sendReportReadyPush } from './reportPush';
 import { brandReportPdf } from './reportBrandingService';
 import { logAlert, logBusinessEvent, logger } from '../utils/logger';
 
@@ -174,6 +175,12 @@ export async function ingestReport(reportId: string, options: IngestReportOption
             bookingId: report.bookingId,
             fileSize: customerPdfBuffer.length,
         });
+
+        // App push, independent of WhatsApp: it needs a registered phone, not a mobile number.
+        if (shouldNotifyCustomer && report.booking?.userId) {
+            const push = await sendReportReadyPush(reportId, report.booking.userId);
+            logBusinessEvent('report_push_result', { reportId, bookingId: report.bookingId, result: push });
+        }
 
         if (shouldNotifyCustomer && report.booking?.user?.mobile) {
             // Collect unique patient names

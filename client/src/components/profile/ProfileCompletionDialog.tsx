@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button, Input } from '@/components/ui';
 import { Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -48,11 +48,11 @@ export function ProfileCompletionDialog({ isOpen, onClose, onSuccess, missingFie
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Complete Your Profile</DialogTitle>
+                    <DialogDescription className="text-sm text-gray-500">
+                        Please update your profile to proceed with the booking. These details are required for billing and reporting.
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="py-4">
-                    <p className="text-sm text-gray-500 mb-4">
-                        Please update your profile to proceed with the booking. These details are required for billing and reporting.
-                    </p>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid gap-2">
                             <label className="text-sm font-medium">Full Name</label>

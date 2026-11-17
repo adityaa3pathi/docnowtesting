@@ -1,0 +1,84 @@
+{
+  "label": "smoke",
+  "run_at_ist": "13-10-2026 10:35 IST",
+  "llm_model": "gemini-3.7-flash",
+  "embedding_model": "gemini-embedding-001",
+  "judge_model": "gemini-3.7-flash",
+  "relevance_threshold": 0.7,
+  "keyword_search": true,
+  "scores": {
+    "abstention_accuracy": 1.0,
+    "false_abstention_rate": 0.0,
+    "missed_abstention_rate": null,
+    "groundedness_score": 1.0,
+    "source_hit_rate": 1.0,
+    "tool_choice_accuracy": 0.5,
+    "error_rate": 0.0,
+    "p50_latency_ms": 53866,
+    "p95_latency_ms": 53866
+  },
+  "results": [
+    {
+      "query_id": "cat-01",
+      "category": "catalog",
+      "query": "I want to test for diabetes, what do you have?",
+      "response": "We offer the following tests to screen for and monitor diabetes:\n\n1. **Fasting Blood Sugar (FBS)**\n   * **Price:** ₹99 (MRP: ₹150)\n   * **Description:** Measures blood glucose after fasting.\n   * **Requirement:** 8–10 hours of fasting required.\n   * **Sample Type:** Blood\n   * **Report Time:** 6 hours\n\n2. **Post Prandial Blood Sugar (PPBS)**\n   * **Price:** ₹99 (MRP: ₹150)\n   * **Description:** Measures blood glucose 2 hours after a meal (often paired with FBS).\n   * **Requirement:** Sample taken 2 hours after a meal.\n   * **Sample Type:** Blood\n   * **Report Time:** 6 hours\n\nPlease let me know if you would like assistance booking either of these tests!",
+      "retrieved_contexts": [
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Urine Routine and Microscopy\nType: TEST\nPrice: ₹149 (MRP: ₹250)\nDescription: Physical, chemical and microscopic examination of urine.\nParameters: 20 parameters\nSample Type: Urine\nReport Time: 12 hours",
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Test Name: Post Prandial Blood Sugar (PPBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose 2 hours after a meal. Used with FBS to check for diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: Sample taken 2 hours after a meal",
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "We have tests for diabetes including Fasting Blood Sugar, Post Prandial Blood Sugar, and HbA1c.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 53866,
+      "error": null
+    },
+    {
+      "query_id": "cat-02",
+      "category": "catalog",
+      "query": "How much does a thyroid test cost?",
+      "response": "The **TSH (Thyroid Stimulating Hormone)** test costs **₹249** (MRP: ₹350). \n\nIf you are looking for a more comprehensive package, a Thyroid Profile is also included in our:\n* **Basic Full Body Checkup**: ₹1,299 (MRP: ₹1,999)\n* **Antenatal Profile**: ₹1,799 (MRP: ₹2,499)\n\nPlease let me know if you would like to book any of these tests!",
+      "retrieved_contexts": [
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Antenatal Profile\nType: PACKAGE\nPrice: ₹1799 (MRP: ₹2499)\nDescription: Recommended tests during pregnancy.\nParameters: Includes 35 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nIncluded Tests: Complete Blood Count, Blood Group and Rh, Thyroid Profile, VDRL, HIV, HBsAg, Blood Sugar, Urine Routine",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Kidney Function Test (KFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks kidney health: urea, creatinine, uric acid, BUN and electrolytes.\nParameters: 9 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: hs-CRP (High Sensitivity C-Reactive Protein)\nType: TEST\nPrice: ₹499 (MRP: ₹700)\nDescription: Marker of inflammation and heart risk.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog"
+      ],
+      "ground_truth": "The thyroid profile test costs are listed in our catalog. A standard Thyroid Profile (T3, T4, TSH) is available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "get_test_details"
+      ],
+      "latency_ms": 25324,
+      "error": null
+    }
+  ]
+}
