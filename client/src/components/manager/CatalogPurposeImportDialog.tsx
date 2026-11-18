@@ -74,6 +74,9 @@ const HEADER_MAP: Record<string, string> = {
     'description': 'purpose',
     'purpose': 'purpose',
     "what it's for": 'purpose',
+    // Reference only: lets people tell rows apart; the import still matches on Product ID.
+    'product name': 'name',
+    'name': 'name',
 };
 
 function mapHeaders(rawHeaders: string[]): Record<string, string> {
@@ -107,7 +110,7 @@ export function CatalogPurposeImportDialog({
     const [executing, setExecuting] = useState(false);
     const [validateResult, setValidateResult] = useState<ValidateResponse | null>(null);
     const [executeResult, setExecuteResult] = useState<ExecuteResponse | null>(null);
-    const [, setParsedRows] = useState<Array<{ id: string; purpose: string }>>([]);
+    const [parsedRows, setParsedRows] = useState<Array<{ id: string; name: string; purpose: string }>>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // ── Reset ───────────────────────────────────────────────────────────
@@ -169,6 +172,7 @@ export function CatalogPurposeImportDialog({
                         }
                         return {
                             id: mapped.id || '',
+                            name: mapped.name || '',
                             purpose: mapped.purpose !== undefined ? mapped.purpose : '',
                         };
                     })
@@ -186,7 +190,9 @@ export function CatalogPurposeImportDialog({
                 // Validate with backend
                 setValidating(true);
                 try {
-                    const res = await api.post('/manager/catalog/import-purpose/validate', { rows });
+                    const res = await api.post('/manager/catalog/import-purpose/validate', {
+                        rows: rows.map(({ id, purpose }) => ({ id, purpose })),
+                    });
                     setValidateResult(res.data);
                     setStep('preview');
                 } catch (error: any) {
@@ -256,18 +262,26 @@ export function CatalogPurposeImportDialog({
         }
     };
 
+    // Product name for an ID: from the uploaded sheet, else from the server's preview.
+    const nameFor = (id: string): string =>
+        parsedRows.find((r) => r.id === id)?.name
+        || validateResult?.preview.find((p) => p.id === id)?.name
+        || '';
+
     // ── Download error report ───────────────────────────────────────────
     const downloadErrorReport = () => {
         if (!validateResult?.errors.length) return;
 
-        const headers = ['Row', 'Product ID', 'Field', 'Error'];
+        const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+        const headers = ['Row', 'Product ID', 'Product Name', 'Field', 'Error'];
         const rows = validateResult.errors.map((e) => [
             e.row,
             e.id,
+            nameFor(e.id),
             e.field,
-            `"${(e.message || '').replace(/"/g, '""')}"`,
-        ]);
-        const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+            e.message,
+        ].map(cell));
+        const csvContent = '\uFEFF' + [headers.map(cell).join(','), ...rows.map((r) => r.join(','))].join('\r\n');
 
         const blob = new Blob([csvContent], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
@@ -349,14 +363,15 @@ export function CatalogPurposeImportDialog({
                         <div className="mt-4 rounded-lg bg-gray-50 p-4">
                             <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Expected Columns</p>
                             <div className="mt-2 flex flex-wrap gap-2">
-                                {['Product ID', 'Description'].map((col) => (
+                                {['Product ID', 'Product Name', 'Product Type', 'Description'].map((col) => (
                                     <span key={col} className="rounded-full bg-white px-3 py-1 text-xs text-gray-600 border border-gray-200">
                                         {col}
                                     </span>
                                 ))}
                             </div>
                             <p className="mt-2 text-xs text-gray-500">
-                                Tip: Export your catalog, edit descriptions in Excel or Google Sheets, then re-upload.
+                                Product ID and Description are required. Product Name and Type are only there so you can find each row; changing them does nothing.
+                                Tip: use Export CSV on this page, edit the Description column in Excel or Google Sheets, then upload it here.
                             </p>
                         </div>
                     </div>
@@ -401,7 +416,7 @@ export function CatalogPurposeImportDialog({
                                 <div className="mt-2 max-h-24 overflow-y-auto space-y-1">
                                     {validateResult.errors.slice(0, 10).map((err, i) => (
                                         <p key={i} className="text-xs text-red-700">
-                                            Row {err.row}: <span className="font-medium">{err.field}</span> — {err.message}
+                                            Row {err.row}{nameFor(err.id) ? ` (${nameFor(err.id)})` : ''}: <span className="font-medium">{err.field}</span> — {err.message}
                                         </p>
                                     ))}
                                     {validateResult.errors.length > 10 && (
@@ -515,7 +530,7 @@ export function CatalogPurposeImportDialog({
                                 <div className="mt-1 max-h-24 overflow-y-auto space-y-0.5">
                                     {executeResult.errors.map((err, i) => (
                                         <p key={i} className="text-xs text-amber-700">
-                                            {err.id}: {err.message}
+                                            {nameFor(err.id) || err.id}: {err.message}
                                         </p>
                                     ))}
                                 </div>

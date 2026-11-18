@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Search, ChevronLeft, ChevronRight, Check, Info, Upload } from 'lucide-react';
+import { Loader2, Search, ChevronLeft, ChevronRight, Check, Info, Upload, Download } from 'lucide-react';
+import { useExport } from '@/hooks/useExport';
 import api from '@/lib/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import { CatalogPurposeImportDialog } from '@/components/manager/CatalogPurposeImportDialog';
@@ -46,6 +47,7 @@ export default function CatalogPurposePage() {
     const [retryNonce, setRetryNonce] = useState(0);
     const [result, setResult] = useState<ListResult | null>(null);
     const [importOpen, setImportOpen] = useState(false);
+    const { exporting, exportCsv } = useExport();
 
     // Drafts and statuses are keyed by item id so edits survive paging.
     const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -124,14 +126,24 @@ export default function CatalogPurposePage() {
                         Write what each product is for. This text replaces the test list on product cards.
                     </p>
                 </div>
-                <button
-                    onClick={() => setImportOpen(true)}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-medium w-full sm:w-auto hover:opacity-90 transition-opacity"
-                    style={{ backgroundColor: '#4b2192' }}
-                >
-                    <Upload className="h-4 w-4" />
-                    Import CSV
-                </button>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <button
+                        onClick={() => exportCsv('catalog-descriptions', { search, type: typeFilter }, '/api/manager')}
+                        disabled={exporting}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 w-full sm:w-auto hover:bg-gray-50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                        Export CSV
+                    </button>
+                    <button
+                        onClick={() => setImportOpen(true)}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-medium w-full sm:w-auto hover:opacity-90 transition-opacity"
+                        style={{ backgroundColor: '#4b2192' }}
+                    >
+                        <Upload className="h-4 w-4" />
+                        Import CSV
+                    </button>
+                </div>
             </div>
 
             <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
