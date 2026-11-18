@@ -32,7 +32,7 @@ export function useExport() {
             window.URL.revokeObjectURL(downloadUrl);
             document.body.removeChild(a);
             
-            toast.success(`${entity} exported successfully!`);
+            toast.success('CSV downloaded');
         } catch (error: any) {
             console.error('Export error:', error);
             toast.error(error.message || 'Failed to export CSV');

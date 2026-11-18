@@ -84,7 +84,7 @@ const HEADER_MAP: Record<string, string> = {
 function mapHeaders(rawHeaders: string[]): Record<string, string> {
     const mapping: Record<string, string> = {};
     for (const h of rawHeaders) {
-        const normalized = h.trim().toLowerCase();
+        const normalized = h.replace(/^\uFEFF/, '').trim().toLowerCase();
         if (HEADER_MAP[normalized]) {
             mapping[h] = HEADER_MAP[normalized];
         }

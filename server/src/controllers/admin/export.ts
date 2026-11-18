@@ -5,15 +5,65 @@ import { buildCatalogSearchWhere } from '../../utils/searchUtils';
 import { buildSalesReportRows, salesReportRowsToCsv } from './salesReport';
 import { buildSettlementRows, settlementRowsToCsv } from './settlementReport';
 
+const EXPORT_ENTITIES = ['users', 'orders', 'callbacks', 'corporate-inquiries', 'wallets', 'failed-orders', 'catalog', 'catalog-descriptions', 'sales-report', 'settlement-report'];
+
+const CATALOG_TYPE_LABEL: Record<string, string> = { TEST: 'Test', PACKAGE: 'Package', PROFILE: 'Profile' };
+
+/** One CSV cell: always quoted, inner quotes doubled, so commas and line breaks in text stay in their cell. */
+function csvCell(value: unknown): string {
+    return `"${String(value ?? '').replace(/"/g, '""')}"`;
+}
+
+/**
+ * Product descriptions sheet: the round-trip file for the manager's description import.
+ * Product ID is the key the import matches on; name, type and Healthians ID are there so people
+ * can tell the rows apart. No prices, so it is safe to give managers.
+ */
+export async function buildCatalogDescriptionsCsv(query: Record<string, unknown>, limit: number): Promise<string> {
+    const type = typeof query.type === 'string' ? query.type : '';
+    const search = typeof query.search === 'string' ? query.search : '';
+
+    const where: any = {};
+    if (type && type !== 'all' && CATALOG_TYPE_LABEL[type]) where.type = type;
+    if (search) where.OR = buildCatalogSearchWhere(search).OR;
+
+    const items = await prisma.catalogItem.findMany({
+        where,
+        take: limit,
+        orderBy: [{ type: 'asc' }, { name: 'asc' }],
+        select: { id: true, name: true, type: true, partnerCode: true, isEnabled: true, purpose: true },
+    });
+
+    const headers = ['Product ID', 'Product Name', 'Product Type', 'Healthians Deal ID', 'Status', 'Description'];
+    const rows = items.map((item) => [
+        item.id,
+        item.name,
+        CATALOG_TYPE_LABEL[item.type] || item.type,
+        item.partnerCode,
+        item.isEnabled ? 'Enabled' : 'Disabled',
+        item.purpose || '',
+    ].map(csvCell).join(','));
+
+    // BOM so Excel opens names in Hindi or with special characters correctly.
+    return '﻿' + [headers.map(csvCell).join(','), ...rows].join('\r\n');
+}
+
 export async function exportAdminData(req: AuthRequest, res: Response) {
     try {
         const entity = req.query.entity as string;
-        if (!entity || !['users', 'orders', 'callbacks', 'corporate-inquiries', 'wallets', 'failed-orders', 'catalog', 'sales-report', 'settlement-report'].includes(entity)) {
-            return res.status(400).json({ error: 'Invalid or missing entity for export. Must be "users", "orders", "callbacks", "corporate-inquiries", "wallets", "failed-orders", "catalog", "sales-report", or "settlement-report".' });
+        if (!entity || !EXPORT_ENTITIES.includes(entity)) {
+            return res.status(400).json({ error: `Invalid or missing entity for export. Must be one of: ${EXPORT_ENTITIES.join(', ')}.` });
         }
 
         const search = (req.query.search as string) || '';
         const limitToExport = 10000; // Hard limit for safety
+
+        if (entity === 'catalog-descriptions') {
+            const csvContent = await buildCatalogDescriptionsCsv(req.query as Record<string, unknown>, limitToExport);
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', 'attachment; filename="product-descriptions.csv"');
+            return res.status(200).send(csvContent);
+        }
 
         if (entity === 'sales-report') {
             const rows = await buildSalesReportRows(req.query);
@@ -424,11 +474,12 @@ export async function exportAdminData(req: AuthRequest, res: Response) {
                     discountedPrice: true,
                     isEnabled: true,
                     isFeatured: true,
+                    purpose: true,
                     updatedAt: true,
                 },
             });
 
-            const headers = ['Product ID', 'Product Name', 'Product Type', 'Healthians Deal ID', 'Base Price', 'Display Price', 'Discounted Price', 'Status', 'Featured', 'Last Updated'];
+            const headers = ['Product ID', 'Product Name', 'Product Type', 'Healthians Deal ID', 'Base Price', 'Display Price', 'Discounted Price', 'Status', 'Featured', 'Last Updated', 'Description'];
             const rows = items.map(item => [
                 item.id,
                 `"${(item.name || '').replace(/"/g, '""')}"`,
@@ -440,6 +491,7 @@ export async function exportAdminData(req: AuthRequest, res: Response) {
                 item.isEnabled ? 'Enabled' : 'Disabled',
                 item.isFeatured ? 'Yes' : 'No',
                 item.updatedAt.toISOString(),
+                csvCell(item.purpose || ''),
             ]);
 
             const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
