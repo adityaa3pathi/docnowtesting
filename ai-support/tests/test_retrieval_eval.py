@@ -103,9 +103,10 @@ def test_coverage_counts_facts_stored_but_not_indexed():
                         "constituents": [{"name": f"T{n}"} for n in range(20)]},
     }
     c = coverage([item])
-    assert c["report_time"] == {"stored": 1, "indexed": 0}
-    assert c["all_constituents"] == {"stored": 1, "indexed": 0}
-    assert c["constituents_lost"] == 5
+    assert c["report_time"] == {"stored": 1, "indexed": 1}
+    assert c["fasting_hours"] == {"stored": 1, "indexed": 1}
+    assert c["all_constituents"] == {"stored": 1, "indexed": 1}
+    assert c["constituents_lost"] == 0
 
 
 def test_fake_express_serves_the_catalog_it_is_given():
@@ -115,3 +116,18 @@ def test_fake_express_serves_the_catalog_it_is_given():
     express = FakeExpress(catalog=[{"name": "Real Lipid Profile", "partnerCode": "P1"}])
     resp = express(httpx.Request("GET", "http://x/api/catalog/products?search=lipid"))
     assert [p["name"] for p in resp.json()["products"]] == ["Real Lipid Profile"]
+
+
+def test_fake_express_search_sends_a_preview_like_the_real_api():
+    import httpx
+    from app.eval.fake_express import FakeExpress
+
+    item = {"name": "Big Package", "partnerCode": "P1", "detailsData": {
+        "constituents": [{"name": f"T{n}"} for n in range(20)], "reportingTime": "26 hrs"}}
+    express = FakeExpress(catalog=[item])
+    listed = express(httpx.Request("GET", "http://x/api/catalog/products?search=big")).json()["products"][0]
+    assert "detailsData" not in listed
+    assert listed["detailsSummary"]["constituentsPreview"] == [f"T{n}" for n in range(6)]
+    assert listed["detailsSummary"]["remainingConstituents"] == 14
+    detail = express(httpx.Request("GET", "http://x/api/catalog/products/P1")).json()
+    assert len(detail["detailsData"]["constituents"]) == 20

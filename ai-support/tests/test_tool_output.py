@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 
-from app.agents.tool_output import TOOL_OUTPUT_CHARS, compact_tool_output
+from app.agents.tool_output import CATALOG_OUTPUT_CHARS, compact_tool_output
 
 
 def _catalog_page(n: int) -> dict:
@@ -15,11 +15,31 @@ def _catalog_page(n: int) -> dict:
     }
 
 
-def test_total_count_survives_truncation():
-    text = compact_tool_output("search_catalog", _catalog_page(30))
-    assert len(text) == TOOL_OUTPUT_CHARS
-    assert text.index('"totalCount"') < text.index('"products"')
-    assert "137" in text
+def test_catalog_counts_come_first_and_survive_the_cap():
+    text = compact_tool_output("search_catalog", _catalog_page(300))
+    assert len(text) <= CATALOG_OUTPUT_CHARS
+    assert text.splitlines()[0].startswith("totalCount=137")
+
+
+def test_search_result_preview_says_more_tests_exist():
+    """Express search sends a 6-test preview; the model must not read it as the whole package."""
+    page = {"products": [{
+        "name": "Complete Package", "type": "PACKAGE", "partnerCode": "package_1", "price": 2100, "mrp": 7800,
+        "detailsSummary": {"testCount": 87, "constituentsPreview": ["Albumin", "ALP"], "remainingConstituents": 85,
+                           "fastingLabel": "Required 12 hour(s)", "reportingTime": "26 hrs"},
+    }], "totalCount": 1}
+    line = compact_tool_output("search_catalog", page).splitlines()[1]
+    assert "price=₹2100 (MRP ₹7800)" in line
+    assert "fasting=Required 12 hour(s)" in line and "report_time=26 hrs" in line
+    assert "plus 85 more not shown here" in line and "does not mean not included" in line
+
+
+def test_product_details_keep_every_test():
+    tests = [{"name": f"Test {i}"} for i in range(87)] + [{"name": "Glycated Hemoglobin (HbA1c)"}]
+    detail = {"name": "Complete Package", "type": "PACKAGE", "partnerCode": "p1", "discountedPrice": 2100,
+              "displayPrice": 7800, "detailsData": {"constituents": tests, "reportingTime": "26 hrs"}}
+    text = compact_tool_output("get_product_details", detail)
+    assert "tests (88, full list)=" in text and "Glycated Hemoglobin (HbA1c)" in text
 
 
 def test_draft_and_verifier_see_the_same_text():
