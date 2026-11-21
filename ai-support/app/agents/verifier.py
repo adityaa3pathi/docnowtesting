@@ -19,6 +19,9 @@ from app.prompts.verifier import VERIFIER_PROMPT, VERIFIER_SCHEMA
 
 logger = logging.getLogger(__name__)
 
+# Reasoning on the fail-closed verdict when the verifier call itself fails.
+VERIFY_ERROR = "Verification error — blocking response for safety"
+
 
 @observe(name="verifier-agent", capture_input=False, capture_output=False)
 async def verify(
@@ -87,5 +90,5 @@ async def verify(
         return VerificationResult(
             verdict="UNGROUNDED",
             cleaned_response="I'm sorry, I couldn't verify this information.",
-            reasoning="Verification error — blocking response for safety",
+            reasoning=VERIFY_ERROR,
         )

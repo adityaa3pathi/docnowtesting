@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from app.agents.llm import AIBusyError
-from app.agents.verifier import verify
+from app.agents.verifier import VERIFY_ERROR, verify
 from app.config import Settings
 from app.eval.corpus import build_chunks
 from app.eval.runner import IST, REPORTS_DIR
@@ -60,7 +60,12 @@ async def run_case(case: dict[str, Any], settings: Settings, repeat: int) -> dic
             for c in case["chunks"]
         ]
     )
+    # A failed call fails closed as UNGROUNDED; that is an API error, not the verifier's judgment.
+    retries = 0
     result = await verify(case["draft"], retrieval, [], settings)
+    while result.reasoning == VERIFY_ERROR and retries < 2:
+        retries += 1
+        result = await verify(case["draft"], retrieval, [], settings)
     shown = ABSTENTION_MESSAGE if result.verdict == "UNGROUNDED" else result.cleaned_response
     return {
         "case_id": case["id"],
@@ -70,6 +75,8 @@ async def run_case(case: dict[str, Any], settings: Settings, repeat: int) -> dic
         "verdict": result.verdict,
         "shown": shown,
         "reasoning": result.reasoning,
+        "retries": retries,
+        "error": result.reasoning == VERIFY_ERROR,
         **score_case(case, result.verdict, shown),
     }
 
@@ -111,6 +118,10 @@ async def run(args: argparse.Namespace) -> int:
         print("Gemini quota hit; no valid result.")
         return 3
 
+    retried = sum(r["retries"] > 0 for r in rows)
+    errored = sum(r["error"] for r in rows)
+    if retried:
+        print(f"{retried} verifier calls errored and were retried; {errored} still errored.")
     runs = [run_metrics([r for r in rows if r["repeat"] == rep]) for rep in range(args.repeat)]
     aggregate = aggregate_runs(runs)
     print(f"\n{'Metric':<34} | {'Mean':>6} | {'Std':>6}")
@@ -142,6 +153,9 @@ async def run(args: argparse.Namespace) -> int:
         indent=2, ensure_ascii=False,
     ))
     print(f"\nReport saved to {path}")
+    if errored:
+        print(f"{errored}/{len(rows)} verdicts are API errors (scored as blocks); not a valid result.")
+        return 1
     return 0
 
 
