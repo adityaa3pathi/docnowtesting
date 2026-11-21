@@ -46,6 +46,10 @@ jobs:
     defaults:
       run:
         working-directory: server
+    # prisma validate only checks that the variable exists; nothing here connects to it.
+    # Job-level, so the validate step sees it too (the .env below is written after it).
+    env:
+      DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
     steps:
       - name: Checkout
         uses: actions/checkout@v4
