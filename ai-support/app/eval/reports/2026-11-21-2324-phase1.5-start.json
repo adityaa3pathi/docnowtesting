@@ -1,0 +1,3212 @@
+{
+  "label": "phase1.5-start",
+  "run_at_ist": "21-11-2026 23:24 IST",
+  "llm_model": "gemini-3.5-flash-lite",
+  "embedding_model": "gemini-embedding-001",
+  "judge_model": "gemini-3.5-flash-lite",
+  "relevance_threshold": 0.58,
+  "keyword_search": true,
+  "rerank": null,
+  "rerank_min_score": null,
+  "corpus": "fixture",
+  "scores": {
+    "abstention_accuracy": 0.98,
+    "false_abstention_rate": 0.0,
+    "missed_abstention_rate": 0.1,
+    "groundedness_score": 0.625,
+    "source_hit_rate": 1.0,
+    "tool_choice_accuracy": 1.0,
+    "probe_pass_rate": null,
+    "omission_error_rate": 0.0,
+    "error_rate": 0.0,
+    "p50_latency_ms": 2440,
+    "p95_latency_ms": 4350,
+    "tokens_per_turn_mean": 2412,
+    "tokens_per_turn_p95": 4345,
+    "cap_hit_rate": 0.0,
+    "intent_output_p99": 69,
+    "draft_output_p99": 338,
+    "verifier_output_p99": 442
+  },
+  "results": [
+    {
+      "query_id": "cat-01",
+      "category": "catalog",
+      "query": "I want to test for diabetes, what do you have?",
+      "response": "We have several options available for diabetes testing and screening:\n\n1. **Diabetes Screening Package**\n   - **Price:** ₹699 (MRP: ₹999)\n   - **Description:** Includes Fasting Blood Sugar, HbA1c, Urine Sugar, and Average Blood Glucose (4 tests total).\n   - **Sample Type:** Blood, Urine\n   - **Report Time:** 24 hours\n   - **Fasting Required:** 10-12 hours\n\n2. **HbA1c (Glycosylated Haemoglobin)**\n   - **Price:** ₹399 (MRP: ₹550)\n   - **Description:** Shows your average blood sugar over the past 3 months.\n   - **Report Time:** 24 hours\n   - **Fasting Required:** No\n\n3. **Fasting Blood Sugar (FBS)**\n   - **Price:** ₹99 (MRP: ₹150)\n   - **Description:** Measures blood glucose after fasting.\n   - **Report Time:** 6 hours\n   - **Fasting Required:** 8-10 hours\n\n4. **Post Prandial Blood Sugar (PPBS)**\n   - **Price:** ₹99 (MRP: ₹150)\n   - **Description:** Measures blood glucose 2 hours after a meal.\n   - **Report Time:** 6 hours\n   - **Fasting Required:** Sample taken 2 hours after a meal\n\nLet me know if you would like more details on any of these options!",
+      "retrieved_contexts": [
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (4): Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose",
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Post Prandial Blood Sugar (PPBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose 2 hours after a meal. Used with FBS to check for diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: Sample taken 2 hours after a meal",
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "Packages and profiles that include HbA1c: 4 in total. This is the complete list.\n- Advanced Full Body Checkup (package, ₹2999)\n- Comprehensive Health Checkup (package, ₹4999)\n- Diabetes Screening Package (package, ₹699)\n- Men's Health Checkup (40+) (package, ₹2499)"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog_index"
+      ],
+      "ground_truth": "We have tests for diabetes including Fasting Blood Sugar, Post Prandial Blood Sugar, and HbA1c.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 4730,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 3273,
+        "output_tokens": 823,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 4096,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 990,
+            "output_tokens": 62,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1495,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 995,
+            "output_tokens": 325,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1338,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1288,
+            "output_tokens": 436,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1893,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "cat-02",
+      "category": "catalog",
+      "query": "How much does a thyroid test cost?",
+      "response": "We offer a few options for thyroid testing:\n\n* **TSH (Thyroid Stimulating Hormone):** ₹249 (MRP: ₹350) - A single test to screen thyroid function. Report time is 24 hours.\n* **Thyroid Profile (T3, T4, TSH):** ₹449 (MRP: ₹600) - Checks thyroid function with Total T3, Total T4, and TSH. No fasting is required, and the report time is 24 hours.\n\nThyroid tests are also included in several of our health packages, such as the Basic Full Body Checkup (₹1299) and the Men's Health Checkup 40+ (₹2499). Let me know if you have any other questions!",
+      "retrieved_contexts": [
+        "Test Name: TSH (Thyroid Stimulating Hormone)\nType: TEST\nPrice: ₹249 (MRP: ₹350)\nDescription: Single test to screen thyroid function.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "Test Name: Comprehensive Health Checkup\nType: PACKAGE\nPrice: ₹4999 (MRP: ₹8999)\nDescription: Our most complete checkup: blood count, diabetes, heart, liver, kidney, thyroid, vitamins, hormones and more.\nParameters: Includes 75 tests\nSample Type: Blood, Urine, Stool\nReport Time: 48-72 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (75): Haemoglobin, Total Leucocyte Count, Differential Leucocyte Count, Platelet Count, RBC Count, PCV, MCV, MCH, MCHC, RDW, ESR, Fasting Blood Sugar, HbA1c, Average Blood Glucose, Total Cholesterol, HDL Cholesterol, LDL Cholesterol, VLDL Cholesterol, Triglycerides, Non-HDL Cholesterol, Apolipoprotein A1, Apolipoprotein B, Lipoprotein (a), Homocysteine, SGOT (AST), SGPT (ALT), Alkaline Phosphatase, GGT (Gamma Glutamyl Transferase), Total Bilirubin, Direct Bilirubin, Indirect Bilirubin, Total Protein, Albumin, Globulin, A/G Ratio, Blood Urea, BUN, Serum Creatinine, Uric Acid, eGFR, Sodium, Potassium, Chloride, Serum Calcium, Phosphorus, Magnesium, Serum Amylase, Serum Lipase, Total T3, Total T4, TSH, Free T3, Free T4, Vitamin D (25-OH), Vitamin B12, Folate (Vitamin B9), Serum Iron, TIBC, Transferrin Saturation, Ferritin, hs-CRP, Rheumatoid Factor, Anti-CCP, ASO Titre, Testosterone, Cortisol, Fasting Insulin, HOMA-IR, Urine Microalbumin, Urine Routine, Urine Sugar, Urine Ketones, Urine Protein, Stool Occult Blood, Blood Group and Rh",
+        "Packages and profiles that include Thyroid Profile: 4 in total. This is the complete list.\n- Advanced Full Body Checkup (package, ₹2999)\n- Antenatal Profile (package, ₹1799)\n- Basic Full Body Checkup (package, ₹1299)\n- Men's Health Checkup (40+) (package, ₹2499)"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog_index"
+      ],
+      "ground_truth": "The thyroid profile test costs are listed in our catalog. A standard Thyroid Profile (T3, T4, TSH) is available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 4350,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 3600,
+        "output_tokens": 493,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 4093,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 986,
+            "output_tokens": 64,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1379,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1236,
+            "output_tokens": 170,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1338,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1378,
+            "output_tokens": 259,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1630,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "cat-03",
+      "category": "catalog",
+      "query": "Do you have a Complete Blood Count (CBC) test?",
+      "response": "Yes, we do have the Complete Blood Count (CBC) test available. \n\n**Complete Blood Count (CBC)**\n* **Price:** ₹299 (MRP: ₹400)\n* **Description:** Counts red cells, white cells, platelets, and haemoglobin. Screens for anaemia and infection.\n* **Parameters:** 24 parameters\n* **Sample Type:** Blood\n* **Report Time:** 12 hours\n* **Fasting Required:** No fasting required\n\nIt is also included in several of our packages, such as the Basic, Advanced, and Comprehensive Full Body Checkups, as well as the Antenatal Profile. Let me know if you would like to know more about any of these packages!",
+      "retrieved_contexts": [
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Comprehensive Health Checkup\nType: PACKAGE\nPrice: ₹4999 (MRP: ₹8999)\nDescription: Our most complete checkup: blood count, diabetes, heart, liver, kidney, thyroid, vitamins, hormones and more.\nParameters: Includes 75 tests\nSample Type: Blood, Urine, Stool\nReport Time: 48-72 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (75): Haemoglobin, Total Leucocyte Count, Differential Leucocyte Count, Platelet Count, RBC Count, PCV, MCV, MCH, MCHC, RDW, ESR, Fasting Blood Sugar, HbA1c, Average Blood Glucose, Total Cholesterol, HDL Cholesterol, LDL Cholesterol, VLDL Cholesterol, Triglycerides, Non-HDL Cholesterol, Apolipoprotein A1, Apolipoprotein B, Lipoprotein (a), Homocysteine, SGOT (AST), SGPT (ALT), Alkaline Phosphatase, GGT (Gamma Glutamyl Transferase), Total Bilirubin, Direct Bilirubin, Indirect Bilirubin, Total Protein, Albumin, Globulin, A/G Ratio, Blood Urea, BUN, Serum Creatinine, Uric Acid, eGFR, Sodium, Potassium, Chloride, Serum Calcium, Phosphorus, Magnesium, Serum Amylase, Serum Lipase, Total T3, Total T4, TSH, Free T3, Free T4, Vitamin D (25-OH), Vitamin B12, Folate (Vitamin B9), Serum Iron, TIBC, Transferrin Saturation, Ferritin, hs-CRP, Rheumatoid Factor, Anti-CCP, ASO Titre, Testosterone, Cortisol, Fasting Insulin, HOMA-IR, Urine Microalbumin, Urine Routine, Urine Sugar, Urine Ketones, Urine Protein, Stool Occult Blood, Blood Group and Rh",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (11): Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Antenatal Profile\nType: PACKAGE\nPrice: ₹1799 (MRP: ₹2499)\nDescription: Recommended tests during pregnancy.\nParameters: Includes 35 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nIncluded Tests (8): Complete Blood Count, Blood Group and Rh, Thyroid Profile, VDRL, HIV, HBsAg, Blood Sugar, Urine Routine",
+        "Packages and profiles that include Complete Blood Count: 4 in total. This is the complete list.\n- Advanced Full Body Checkup (package, ₹2999)\n- Antenatal Profile (package, ₹1799)\n- Basic Full Body Checkup (package, ₹1299)\n- Men's Health Checkup (40+) (package, ₹2499)"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog_index"
+      ],
+      "ground_truth": "Yes, we offer the Complete Blood Count (CBC) test.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 4041,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 3655,
+        "output_tokens": 485,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 4140,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 990,
+            "output_tokens": 64,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1085,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1273,
+            "output_tokens": 151,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1520,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1392,
+            "output_tokens": 270,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1432,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "cat-04",
+      "category": "catalog",
+      "query": "I need a liver function test, when can I get it done?",
+      "response": "Hello! You can get the **Liver Function Test (LFT)** done with DocNow. Here are the key details:\n\n* **Price:** ₹549 (MRP: ₹800)\n* **Report Time:** Within 24 hours\n* **Fasting Required:** 8-10 hours fasting is recommended\n* **Sample Type:** Blood\n\nIt is also included in some of our packages, such as the Basic Full Body Checkup, Advanced Full Body Checkup, and Men's Health Checkup (40+). \n\nLet me know if you would like help with anything else!",
+      "retrieved_contexts": [
+        "Test Name: Liver Function Test (LFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks liver health: bilirubin, SGOT, SGPT, ALP, albumin and total protein.\nParameters: 11 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 8-10 hours fasting recommended",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (11): Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "Test Name: Kidney Function Test (KFT)\nType: TEST\nPrice: ₹549 (MRP: ₹800)\nDescription: Checks kidney health: urea, creatinine, uric acid, BUN and electrolytes.\nParameters: 9 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "Packages and profiles that include Liver Function Test: 3 in total. This is the complete list.\n- Advanced Full Body Checkup (package, ₹2999)\n- Basic Full Body Checkup (package, ₹1299)\n- Men's Health Checkup (40+) (package, ₹2499)"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog_index"
+      ],
+      "ground_truth": "We offer the Liver Function Test (LFT). You can book a slot for home collection at your convenience.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3397,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 3117,
+        "output_tokens": 404,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 3521,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 992,
+            "output_tokens": 64,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 970,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1016,
+            "output_tokens": 127,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1215,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1109,
+            "output_tokens": 213,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1208,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "cat-05",
+      "category": "catalog",
+      "query": "Can you check my Vitamin D levels?",
+      "response": "Hello! Yes, we offer the **Vitamin D (25-OH)** test to check for deficiencies. \n\nHere are the details for the test:\n* **Price:** ₹899 (MRP: ₹1400)\n* **Sample Type:** Blood (collected right at your doorstep)\n* **Report Time:** Within 24 hours\n* **Fasting Required:** No fasting required\n\nIt is also included in our **Advanced Full Body Checkup** and **Comprehensive Health Checkup** packages if you're looking for a broader health assessment. \n\nPlease let me know if you have any questions or need help finding anything else!",
+      "retrieved_contexts": [
+        "Test Name: Vitamin D (25-OH)\nType: TEST\nPrice: ₹899 (MRP: ₹1400)\nDescription: Measures 25-hydroxy vitamin D to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Vitamin B12\nType: TEST\nPrice: ₹699 (MRP: ₹1100)\nDescription: Measures vitamin B12 levels to check for deficiency.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (11): Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Comprehensive Health Checkup\nType: PACKAGE\nPrice: ₹4999 (MRP: ₹8999)\nDescription: Our most complete checkup: blood count, diabetes, heart, liver, kidney, thyroid, vitamins, hormones and more.\nParameters: Includes 75 tests\nSample Type: Blood, Urine, Stool\nReport Time: 48-72 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (75): Haemoglobin, Total Leucocyte Count, Differential Leucocyte Count, Platelet Count, RBC Count, PCV, MCV, MCH, MCHC, RDW, ESR, Fasting Blood Sugar, HbA1c, Average Blood Glucose, Total Cholesterol, HDL Cholesterol, LDL Cholesterol, VLDL Cholesterol, Triglycerides, Non-HDL Cholesterol, Apolipoprotein A1, Apolipoprotein B, Lipoprotein (a), Homocysteine, SGOT (AST), SGPT (ALT), Alkaline Phosphatase, GGT (Gamma Glutamyl Transferase), Total Bilirubin, Direct Bilirubin, Indirect Bilirubin, Total Protein, Albumin, Globulin, A/G Ratio, Blood Urea, BUN, Serum Creatinine, Uric Acid, eGFR, Sodium, Potassium, Chloride, Serum Calcium, Phosphorus, Magnesium, Serum Amylase, Serum Lipase, Total T3, Total T4, TSH, Free T3, Free T4, Vitamin D (25-OH), Vitamin B12, Folate (Vitamin B9), Serum Iron, TIBC, Transferrin Saturation, Ferritin, hs-CRP, Rheumatoid Factor, Anti-CCP, ASO Titre, Testosterone, Cortisol, Fasting Insulin, HOMA-IR, Urine Microalbumin, Urine Routine, Urine Sugar, Urine Ketones, Urine Protein, Stool Occult Blood, Blood Group and Rh",
+        "Test Name: Iron Studies\nType: TEST\nPrice: ₹599 (MRP: ₹900)\nDescription: Serum iron, TIBC and transferrin saturation to check iron deficiency.\nParameters: 4 parameters\nSample Type: Blood\nReport Time: 24 hours",
+        "Packages and profiles that include Vitamin B12: 2 in total. This is the complete list.\n- Advanced Full Body Checkup (package, ₹2999)\n- Comprehensive Health Checkup (package, ₹4999)\nVitamin B12 is also available as a single test, ₹699."
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog_index"
+      ],
+      "ground_truth": "Yes, we offer Vitamin D (25-OH) tests to check your levels.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3512,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 3496,
+        "output_tokens": 293,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 3789,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 986,
+            "output_tokens": 63,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 951,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1201,
+            "output_tokens": 136,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1107,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1309,
+            "output_tokens": 94,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1452,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "cat-06",
+      "category": "catalog",
+      "query": "What's included in the full body checkup?",
+      "response": "We offer a few options for full body checkups:\n\n1. **Basic Full Body Checkup** (₹1299): \n   - Covers 62 parameters (blood count, sugar, lipids, liver, kidney, and thyroid).\n   - Includes 7 tests: Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, and Urine Routine.\n   - Requires 10-12 hours of fasting. Reports are delivered in 24-48 hours.\n\n2. **Advanced Full Body Checkup** (₹2999): \n   - Covers 91 parameters (includes everything in the basic checkup plus vitamins, HbA1c, iron studies, and cardiac risk markers).\n   - Includes 11 tests: Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, and Urine Routine.\n   - Requires 10-12 hours of fasting. Reports are delivered in 24-48 hours.\n\n3. **Comprehensive Health Checkup** (₹4999): \n   - Our most complete checkup covering 75 tests (blood count, diabetes, heart, liver, kidney, thyroid, vitamins, hormones, and more).\n   - Requires 10-12 hours of fasting. Sample types include blood, urine, and stool. Reports are delivered in 48-72 hours.\n\nWould you like help selecting one of these packages?",
+      "retrieved_contexts": [
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (11): Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Comprehensive Health Checkup\nType: PACKAGE\nPrice: ₹4999 (MRP: ₹8999)\nDescription: Our most complete checkup: blood count, diabetes, heart, liver, kidney, thyroid, vitamins, hormones and more.\nParameters: Includes 75 tests\nSample Type: Blood, Urine, Stool\nReport Time: 48-72 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (75): Haemoglobin, Total Leucocyte Count, Differential Leucocyte Count, Platelet Count, RBC Count, PCV, MCV, MCH, MCHC, RDW, ESR, Fasting Blood Sugar, HbA1c, Average Blood Glucose, Total Cholesterol, HDL Cholesterol, LDL Cholesterol, VLDL Cholesterol, Triglycerides, Non-HDL Cholesterol, Apolipoprotein A1, Apolipoprotein B, Lipoprotein (a), Homocysteine, SGOT (AST), SGPT (ALT), Alkaline Phosphatase, GGT (Gamma Glutamyl Transferase), Total Bilirubin, Direct Bilirubin, Indirect Bilirubin, Total Protein, Albumin, Globulin, A/G Ratio, Blood Urea, BUN, Serum Creatinine, Uric Acid, eGFR, Sodium, Potassium, Chloride, Serum Calcium, Phosphorus, Magnesium, Serum Amylase, Serum Lipase, Total T3, Total T4, TSH, Free T3, Free T4, Vitamin D (25-OH), Vitamin B12, Folate (Vitamin B9), Serum Iron, TIBC, Transferrin Saturation, Ferritin, hs-CRP, Rheumatoid Factor, Anti-CCP, ASO Titre, Testosterone, Cortisol, Fasting Insulin, HOMA-IR, Urine Microalbumin, Urine Routine, Urine Sugar, Urine Ketones, Urine Protein, Stool Occult Blood, Blood Group and Rh",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Packages and profiles that include Complete Blood Count: 4 in total. This is the complete list.\n- Advanced Full Body Checkup (package, ₹2999)\n- Antenatal Profile (package, ₹1799)\n- Basic Full Body Checkup (package, ₹1299)\n- Men's Health Checkup (40+) (package, ₹2499)"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "faq",
+        "catalog_index"
+      ],
+      "ground_truth": "A full body checkup typically includes CBC, Lipid Profile, Liver Function, Kidney Function, Thyroid, and blood sugar tests.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3895,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 4431,
+        "output_tokens": 845,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 5276,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 65,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 920,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1567,
+            "output_tokens": 338,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1371,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1875,
+            "output_tokens": 442,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1601,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "cat-07",
+      "category": "catalog",
+      "query": "Do I need to fast before a lipid profile test?",
+      "response": "Yes, 10-12 hours of fasting is required before taking a Lipid Profile test.",
+      "retrieved_contexts": [
+        "Test Name: Lipid Profile\nType: TEST\nPrice: ₹499 (MRP: ₹700)\nDescription: Measures total cholesterol, HDL, LDL, VLDL and triglycerides to assess heart risk.\nParameters: 8 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (11): Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "Test Name: Thyroid Profile (T3, T4, TSH)\nType: TEST\nPrice: ₹449 (MRP: ₹600)\nDescription: Checks thyroid function with Total T3, Total T4 and TSH.\nParameters: 3 parameters\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Packages and profiles that include Lipid Profile: 3 in total. This is the complete list.\n- Advanced Full Body Checkup (package, ₹2999)\n- Basic Full Body Checkup (package, ₹1299)\n- Men's Health Checkup (40+) (package, ₹2499)\nLipid Profile is also available as a single test, ₹499."
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog_index"
+      ],
+      "ground_truth": "Yes, a lipid profile test usually requires 10-12 hours of fasting.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [],
+      "latency_ms": 2559,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 2933,
+        "output_tokens": 164,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 3097,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 45,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 789,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 977,
+            "output_tokens": 20,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 746,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 967,
+            "output_tokens": 99,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1022,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "none"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "cat-08",
+      "category": "catalog",
+      "query": "How long does it take to get the report for a blood test?",
+      "response": "Diagnostic reports are typically delivered within 24-48 hours after sample collection, though the exact time varies by test type (for example, some specific tests like a Complete Blood Count may have a faster report time, such as 12 hours). \n\nOnce your report is ready, it will be delivered as a downloadable PDF in the Reports section of your DocNow account, and you will also receive a WhatsApp notification.",
+      "retrieved_contexts": [
+        "Diagnostic reports are typically delivered within 24-48 hours after sample collection, though the exact time varies by test type. Some specialized tests may take longer. Reports are delivered as downloadable PDF files in the Reports section of your DocNow account. You'll also receive a WhatsApp notification when your report is ready.",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Packages and profiles that include Complete Blood Count: 4 in total. This is the complete list.\n- Advanced Full Body Checkup (package, ₹2999)\n- Antenatal Profile (package, ₹1799)\n- Basic Full Body Checkup (package, ₹1299)\n- Men's Health Checkup (40+) (package, ₹2499)"
+      ],
+      "retrieved_sources": [
+        "faq",
+        "faq",
+        "booking_help",
+        "catalog",
+        "faq",
+        "catalog_index"
+      ],
+      "ground_truth": "Report times vary by test, but most routine blood test reports are delivered within 24 hours.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [],
+      "latency_ms": 3455,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 2840,
+        "output_tokens": 312,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 3152,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 992,
+            "output_tokens": 44,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1281,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 897,
+            "output_tokens": 86,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 812,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 951,
+            "output_tokens": 182,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1360,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "none"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "cat-09",
+      "category": "catalog",
+      "query": "What is the difference between the basic and advanced full body checkup?",
+      "response": "Hello! I'd be happy to help you compare the Basic and Advanced Full Body Checkups.\n\n**Basic Full Body Checkup (₹1299)**\n* **Parameters:** 62 parameters (7 included tests)\n* **Tests Included:** Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, and Urine Routine.\n* **Best for:** A routine check covering blood count, sugar, lipids, liver, kidneys, and thyroid.\n\n**Advanced Full Body Checkup (₹2999)**\n* **Parameters:** 91 parameters (11 included tests)\n* **Tests Included:** Everything in the basic checkup, plus Vitamin D, Vitamin B12, Iron Studies, hs-CRP (cardiac risk marker), and HbA1c.\n* **Best for:** A more thorough evaluation that adds vitamins, iron, diabetes tracking (HbA1c), and cardiac risk markers.\n\nBoth packages require 10–12 hours of fasting, require blood and urine samples, and have a report time of 24–48 hours. Let me know if you have any other questions!",
+      "retrieved_contexts": [
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (11): Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Basic Full Body Checkup\nType: PACKAGE\nPrice: ₹1299 (MRP: ₹1999)\nDescription: Routine full body checkup covering blood count, sugar, lipids, liver, kidney and thyroid.\nParameters: Includes 62 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Urine Routine",
+        "Test Name: Comprehensive Health Checkup\nType: PACKAGE\nPrice: ₹4999 (MRP: ₹8999)\nDescription: Our most complete checkup: blood count, diabetes, heart, liver, kidney, thyroid, vitamins, hormones and more.\nParameters: Includes 75 tests\nSample Type: Blood, Urine, Stool\nReport Time: 48-72 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (75): Haemoglobin, Total Leucocyte Count, Differential Leucocyte Count, Platelet Count, RBC Count, PCV, MCV, MCH, MCHC, RDW, ESR, Fasting Blood Sugar, HbA1c, Average Blood Glucose, Total Cholesterol, HDL Cholesterol, LDL Cholesterol, VLDL Cholesterol, Triglycerides, Non-HDL Cholesterol, Apolipoprotein A1, Apolipoprotein B, Lipoprotein (a), Homocysteine, SGOT (AST), SGPT (ALT), Alkaline Phosphatase, GGT (Gamma Glutamyl Transferase), Total Bilirubin, Direct Bilirubin, Indirect Bilirubin, Total Protein, Albumin, Globulin, A/G Ratio, Blood Urea, BUN, Serum Creatinine, Uric Acid, eGFR, Sodium, Potassium, Chloride, Serum Calcium, Phosphorus, Magnesium, Serum Amylase, Serum Lipase, Total T3, Total T4, TSH, Free T3, Free T4, Vitamin D (25-OH), Vitamin B12, Folate (Vitamin B9), Serum Iron, TIBC, Transferrin Saturation, Ferritin, hs-CRP, Rheumatoid Factor, Anti-CCP, ASO Titre, Testosterone, Cortisol, Fasting Insulin, HOMA-IR, Urine Microalbumin, Urine Routine, Urine Sugar, Urine Ketones, Urine Protein, Stool Occult Blood, Blood Group and Rh",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "DocNow offers lab tests, health packages and profiles, with home sample collection. We do not offer imaging or radiology: no X-ray, MRI, CT scan, PET scan, ultrasound (USG, sonography), mammography or DEXA scan. We do not offer heart tests that need a machine: no ECG (EKG), 2D Echo (echocardiography), TMT (treadmill test) or Holter monitoring. We do not offer vaccinations (for example flu, hepatitis or HPV vaccines). For these services, please visit a hospital or a diagnostic imaging centre. DocNow can help with blood, urine and other sample-based lab tests.",
+        "Packages and profiles that include Liver Function Test: 3 in total. This is the complete list.\n- Advanced Full Body Checkup (package, ₹2999)\n- Basic Full Body Checkup (package, ₹1299)\n- Men's Health Checkup (40+) (package, ₹2499)"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "faq",
+        "catalog_index"
+      ],
+      "ground_truth": "The advanced checkup includes additional parameters like Vitamin D, Vitamin B12, and advanced cardiac risk markers compared to the basic package.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 4605,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 3920,
+        "output_tokens": 667,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 4587,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 992,
+            "output_tokens": 68,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 882,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1357,
+            "output_tokens": 247,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1330,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1571,
+            "output_tokens": 352,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 2391,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "cat-10",
+      "category": "catalog",
+      "query": "What is the cheapest test you have for diabetes?",
+      "response": "Based on our catalog, the cheapest individual tests for diabetes are the **Fasting Blood Sugar (FBS)** and **Post Prandial Blood Sugar (PPBS)** tests, priced at **₹99** each (MRP: ₹150). \n\nIf you are looking for a complete screening package, we also offer the **Diabetes Screening Package** for **₹699** (MRP: ₹999), which includes 4 tests: Fasting Blood Sugar, HbA1c, Urine Sugar, and Average Blood Glucose.",
+      "retrieved_contexts": [
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (4): Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose",
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Fasting Blood Sugar (FBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose after 8-10 hours of fasting. Used to screen for and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: 8-10 hours fasting required",
+        "Test Name: Post Prandial Blood Sugar (PPBS)\nType: TEST\nPrice: ₹99 (MRP: ₹150)\nDescription: Measures blood glucose 2 hours after a meal. Used with FBS to check for diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 6 hours\nFasting Required: Sample taken 2 hours after a meal",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "Packages and profiles that include HbA1c: 4 in total. This is the complete list.\n- Advanced Full Body Checkup (package, ₹2999)\n- Comprehensive Health Checkup (package, ₹4999)\n- Diabetes Screening Package (package, ₹699)\n- Men's Health Checkup (40+) (package, ₹2499)"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog_index"
+      ],
+      "ground_truth": "Fasting Blood Sugar (FBS) is generally our most affordable test for diabetes screening.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3069,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 3054,
+        "output_tokens": 368,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 3422,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 62,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1017,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 993,
+            "output_tokens": 110,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 919,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1073,
+            "output_tokens": 196,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1129,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "cat-11",
+      "category": "catalog",
+      "query": "I am a 45 year old man, what tests should I take?",
+      "response": "Hello! Based on your age, we recommend the **Men's Health Checkup (40+)**. \n\nHere are the details for this package:\n* **Price:** ₹2499 (MRP: ₹3999)\n* **Description:** Designed specifically for men over 40, covering diabetes, heart, liver, kidney, thyroid, and PSA screening.\n* **Parameters:** 78 parameters (includes HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, and Complete Blood Count).\n* **Sample Type:** Blood and Urine (collected right at your doorstep by our trained phlebotomist).\n* **Fasting Required:** 10–12 hours of fasting is required.\n* **Report Time:** Within 48 hours.\n\nPlease let me know if you have any questions about this package or need help with anything else!",
+      "retrieved_contexts": [
+        "DocNow offers lab tests, health packages and profiles, with home sample collection. We do not offer imaging or radiology: no X-ray, MRI, CT scan, PET scan, ultrasound (USG, sonography), mammography or DEXA scan. We do not offer heart tests that need a machine: no ECG (EKG), 2D Echo (echocardiography), TMT (treadmill test) or Holter monitoring. We do not offer vaccinations (for example flu, hepatitis or HPV vaccines). For these services, please visit a hospital or a diagnostic imaging centre. DocNow can help with blood, urine and other sample-based lab tests.",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep. We partner with certified laboratories (including Healthians) to offer a wide range of diagnostic tests, health packages, and profiles. Our phlebotomists are trained professionals who collect samples safely at your home. For support, contact us at +91 9649089089 or docnowhealthcare@gmail.com. Visit docnow.in for more information.",
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (4): Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose",
+        "Test Name: Comprehensive Health Checkup\nType: PACKAGE\nPrice: ₹4999 (MRP: ₹8999)\nDescription: Our most complete checkup: blood count, diabetes, heart, liver, kidney, thyroid, vitamins, hormones and more.\nParameters: Includes 75 tests\nSample Type: Blood, Urine, Stool\nReport Time: 48-72 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (75): Haemoglobin, Total Leucocyte Count, Differential Leucocyte Count, Platelet Count, RBC Count, PCV, MCV, MCH, MCHC, RDW, ESR, Fasting Blood Sugar, HbA1c, Average Blood Glucose, Total Cholesterol, HDL Cholesterol, LDL Cholesterol, VLDL Cholesterol, Triglycerides, Non-HDL Cholesterol, Apolipoprotein A1, Apolipoprotein B, Lipoprotein (a), Homocysteine, SGOT (AST), SGPT (ALT), Alkaline Phosphatase, GGT (Gamma Glutamyl Transferase), Total Bilirubin, Direct Bilirubin, Indirect Bilirubin, Total Protein, Albumin, Globulin, A/G Ratio, Blood Urea, BUN, Serum Creatinine, Uric Acid, eGFR, Sodium, Potassium, Chloride, Serum Calcium, Phosphorus, Magnesium, Serum Amylase, Serum Lipase, Total T3, Total T4, TSH, Free T3, Free T4, Vitamin D (25-OH), Vitamin B12, Folate (Vitamin B9), Serum Iron, TIBC, Transferrin Saturation, Ferritin, hs-CRP, Rheumatoid Factor, Anti-CCP, ASO Titre, Testosterone, Cortisol, Fasting Insulin, HOMA-IR, Urine Microalbumin, Urine Routine, Urine Sugar, Urine Ketones, Urine Protein, Stool Occult Blood, Blood Group and Rh",
+        "Packages and profiles that include Liver Function Test: 3 in total. This is the complete list.\n- Advanced Full Body Checkup (package, ₹2999)\n- Basic Full Body Checkup (package, ₹1299)\n- Men's Health Checkup (40+) (package, ₹2499)"
+      ],
+      "retrieved_sources": [
+        "faq",
+        "catalog",
+        "faq",
+        "catalog",
+        "catalog",
+        "catalog_index"
+      ],
+      "ground_truth": "For a 45-year-old man, a comprehensive full body checkup including cardiac markers, diabetes screen, lipid profile, and prostate-specific antigen (PSA) is recommended.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [],
+      "latency_ms": 3318,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 3707,
+        "output_tokens": 529,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 4236,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 994,
+            "output_tokens": 67,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 921,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1278,
+            "output_tokens": 190,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1179,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1435,
+            "output_tokens": 272,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1217,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "none"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "cat-12",
+      "category": "catalog",
+      "query": "Are there any test recommendations for pregnant women?",
+      "response": "Yes, we offer the **Antenatal Profile**, which is specially recommended during pregnancy. \n\nHere are the details:\n* **Price:** ₹1799 (MRP: ₹2499)\n* **Description:** Recommended tests during pregnancy, covering 35 parameters.\n* **Sample Type:** Blood, Urine\n* **Report Time:** 48 hours\n* **Included Tests (8):** Complete Blood Count, Blood Group and Rh, Thyroid Profile, VDRL, HIV, HBsAg, Blood Sugar, and Urine Routine.\n\nOur trained phlebotomists can collect the samples safely from your doorstep. Let me know if you need help with anything else!",
+      "retrieved_contexts": [
+        "Test Name: Antenatal Profile\nType: PACKAGE\nPrice: ₹1799 (MRP: ₹2499)\nDescription: Recommended tests during pregnancy.\nParameters: Includes 35 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nIncluded Tests (8): Complete Blood Count, Blood Group and Rh, Thyroid Profile, VDRL, HIV, HBsAg, Blood Sugar, Urine Routine",
+        "DocNow offers lab tests, health packages and profiles, with home sample collection. We do not offer imaging or radiology: no X-ray, MRI, CT scan, PET scan, ultrasound (USG, sonography), mammography or DEXA scan. We do not offer heart tests that need a machine: no ECG (EKG), 2D Echo (echocardiography), TMT (treadmill test) or Holter monitoring. We do not offer vaccinations (for example flu, hepatitis or HPV vaccines). For these services, please visit a hospital or a diagnostic imaging centre. DocNow can help with blood, urine and other sample-based lab tests.",
+        "Test Name: Comprehensive Health Checkup\nType: PACKAGE\nPrice: ₹4999 (MRP: ₹8999)\nDescription: Our most complete checkup: blood count, diabetes, heart, liver, kidney, thyroid, vitamins, hormones and more.\nParameters: Includes 75 tests\nSample Type: Blood, Urine, Stool\nReport Time: 48-72 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (75): Haemoglobin, Total Leucocyte Count, Differential Leucocyte Count, Platelet Count, RBC Count, PCV, MCV, MCH, MCHC, RDW, ESR, Fasting Blood Sugar, HbA1c, Average Blood Glucose, Total Cholesterol, HDL Cholesterol, LDL Cholesterol, VLDL Cholesterol, Triglycerides, Non-HDL Cholesterol, Apolipoprotein A1, Apolipoprotein B, Lipoprotein (a), Homocysteine, SGOT (AST), SGPT (ALT), Alkaline Phosphatase, GGT (Gamma Glutamyl Transferase), Total Bilirubin, Direct Bilirubin, Indirect Bilirubin, Total Protein, Albumin, Globulin, A/G Ratio, Blood Urea, BUN, Serum Creatinine, Uric Acid, eGFR, Sodium, Potassium, Chloride, Serum Calcium, Phosphorus, Magnesium, Serum Amylase, Serum Lipase, Total T3, Total T4, TSH, Free T3, Free T4, Vitamin D (25-OH), Vitamin B12, Folate (Vitamin B9), Serum Iron, TIBC, Transferrin Saturation, Ferritin, hs-CRP, Rheumatoid Factor, Anti-CCP, ASO Titre, Testosterone, Cortisol, Fasting Insulin, HOMA-IR, Urine Microalbumin, Urine Routine, Urine Sugar, Urine Ketones, Urine Protein, Stool Occult Blood, Blood Group and Rh",
+        "DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep. We partner with certified laboratories (including Healthians) to offer a wide range of diagnostic tests, health packages, and profiles. Our phlebotomists are trained professionals who collect samples safely at your home. For support, contact us at +91 9649089089 or docnowhealthcare@gmail.com. Visit docnow.in for more information.",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (11): Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Packages and profiles that include Blood Group and Rh: 2 in total. This is the complete list.\n- Antenatal Profile (package, ₹1799)\n- Comprehensive Health Checkup (package, ₹4999)"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "faq",
+        "catalog",
+        "faq",
+        "catalog",
+        "catalog_index"
+      ],
+      "ground_truth": "We have antenatal profiles that include CBC, Blood Grouping, Thyroid, VDRL, HIV, and blood sugar tests suitable for pregnant women.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3144,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 3628,
+        "output_tokens": 447,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 4075,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 63,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 797,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1262,
+            "output_tokens": 144,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1117,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1379,
+            "output_tokens": 240,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1227,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "cat-13",
+      "category": "catalog",
+      "query": "Is there a discount on the advanced health package?",
+      "response": "Yes! The Advanced Full Body Checkup is currently available for ₹2999, which is discounted from its MRP of ₹4499.",
+      "retrieved_contexts": [
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (11): Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "Test Name: Comprehensive Health Checkup\nType: PACKAGE\nPrice: ₹4999 (MRP: ₹8999)\nDescription: Our most complete checkup: blood count, diabetes, heart, liver, kidney, thyroid, vitamins, hormones and more.\nParameters: Includes 75 tests\nSample Type: Blood, Urine, Stool\nReport Time: 48-72 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (75): Haemoglobin, Total Leucocyte Count, Differential Leucocyte Count, Platelet Count, RBC Count, PCV, MCV, MCH, MCHC, RDW, ESR, Fasting Blood Sugar, HbA1c, Average Blood Glucose, Total Cholesterol, HDL Cholesterol, LDL Cholesterol, VLDL Cholesterol, Triglycerides, Non-HDL Cholesterol, Apolipoprotein A1, Apolipoprotein B, Lipoprotein (a), Homocysteine, SGOT (AST), SGPT (ALT), Alkaline Phosphatase, GGT (Gamma Glutamyl Transferase), Total Bilirubin, Direct Bilirubin, Indirect Bilirubin, Total Protein, Albumin, Globulin, A/G Ratio, Blood Urea, BUN, Serum Creatinine, Uric Acid, eGFR, Sodium, Potassium, Chloride, Serum Calcium, Phosphorus, Magnesium, Serum Amylase, Serum Lipase, Total T3, Total T4, TSH, Free T3, Free T4, Vitamin D (25-OH), Vitamin B12, Folate (Vitamin B9), Serum Iron, TIBC, Transferrin Saturation, Ferritin, hs-CRP, Rheumatoid Factor, Anti-CCP, ASO Titre, Testosterone, Cortisol, Fasting Insulin, HOMA-IR, Urine Microalbumin, Urine Routine, Urine Sugar, Urine Ketones, Urine Protein, Stool Occult Blood, Blood Group and Rh",
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (4): Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose",
+        "Test Name: Antenatal Profile\nType: PACKAGE\nPrice: ₹1799 (MRP: ₹2499)\nDescription: Recommended tests during pregnancy.\nParameters: Includes 35 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nIncluded Tests (8): Complete Blood Count, Blood Group and Rh, Thyroid Profile, VDRL, HIV, HBsAg, Blood Sugar, Urine Routine",
+        "Packages and profiles that include hs-CRP: 2 in total. This is the complete list.\n- Advanced Full Body Checkup (package, ₹2999)\n- Comprehensive Health Checkup (package, ₹4999)"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog_index"
+      ],
+      "ground_truth": "You can view the discounted price for the advanced health package in our catalog.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 2487,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 3523,
+        "output_tokens": 209,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 3732,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 64,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 917,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1267,
+            "output_tokens": 31,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 611,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1268,
+            "output_tokens": 114,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 956,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "cat-14",
+      "category": "catalog",
+      "query": "What type of sample is needed for the CBC test?",
+      "response": "For the Complete Blood Count (CBC) test, a **blood** sample is required.",
+      "retrieved_contexts": [
+        "Test Name: Complete Blood Count (CBC)\nType: TEST\nPrice: ₹299 (MRP: ₹400)\nDescription: Counts red cells, white cells, platelets and haemoglobin. Screens for anaemia and infection.\nParameters: 24 parameters\nSample Type: Blood\nReport Time: 12 hours\nFasting Required: No fasting required",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep. We partner with certified laboratories (including Healthians) to offer a wide range of diagnostic tests, health packages, and profiles. Our phlebotomists are trained professionals who collect samples safely at your home. For support, contact us at +91 9649089089 or docnowhealthcare@gmail.com. Visit docnow.in for more information.",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Packages and profiles that include Complete Blood Count: 4 in total. This is the complete list.\n- Advanced Full Body Checkup (package, ₹2999)\n- Antenatal Profile (package, ₹1799)\n- Basic Full Body Checkup (package, ₹1299)\n- Men's Health Checkup (40+) (package, ₹2499)"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "faq",
+        "faq",
+        "booking_help",
+        "booking_help",
+        "catalog_index"
+      ],
+      "ground_truth": "The CBC test requires a blood sample.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "get_product_details"
+      ],
+      "latency_ms": 2440,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 2815,
+        "output_tokens": 176,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 2991,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 63,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 848,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 920,
+            "output_tokens": 18,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 685,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 906,
+            "output_tokens": 95,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 904,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "get_product_details"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "cat-15",
+      "category": "catalog",
+      "query": "Can you search for an HbA1c test for me?",
+      "response": "Yes, we do offer the **HbA1c (Glycosylated Haemoglobin)** test, as well as several packages that include it. \n\nHere are the details for the standalone test:\n* **Price:** ₹399 (MRP: ₹550)\n* **Description:** Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\n* **Sample Type:** Blood\n* **Report Time:** 24 hours\n* **Fasting Required:** No fasting required\n\nWe also offer 4 packages that include HbA1c:\n1. **Diabetes Screening Package** – ₹699\n2. **Men's Health Checkup (40+)** – ₹2499\n3. **Advanced Full Body Checkup** – ₹2999\n4. **Comprehensive Health Checkup** – ₹4999\n\nLet me know if you would like more details on any of these options!",
+      "retrieved_contexts": [
+        "Test Name: HbA1c (Glycosylated Haemoglobin)\nType: TEST\nPrice: ₹399 (MRP: ₹550)\nDescription: Shows your average blood sugar over the past 3 months. Used to diagnose and monitor diabetes.\nParameters: 1 parameter\nSample Type: Blood\nReport Time: 24 hours\nFasting Required: No fasting required",
+        "Test Name: Diabetes Screening Package\nType: PACKAGE\nPrice: ₹699 (MRP: ₹999)\nDescription: Fasting blood sugar, HbA1c and urine sugar in one package for diabetes screening.\nParameters: Includes 4 tests\nSample Type: Blood, Urine\nReport Time: 24 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (4): Fasting Blood Sugar, HbA1c, Urine Sugar, Average Blood Glucose",
+        "Test Name: Advanced Full Body Checkup\nType: PACKAGE\nPrice: ₹2999 (MRP: ₹4499)\nDescription: Everything in the basic checkup plus vitamins, HbA1c, iron studies and cardiac risk markers.\nParameters: Includes 91 parameters\nSample Type: Blood, Urine\nReport Time: 24-48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (11): Complete Blood Count, HbA1c, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, Vitamin D, Vitamin B12, Iron Studies, hs-CRP, Urine Routine",
+        "Test Name: Comprehensive Health Checkup\nType: PACKAGE\nPrice: ₹4999 (MRP: ₹8999)\nDescription: Our most complete checkup: blood count, diabetes, heart, liver, kidney, thyroid, vitamins, hormones and more.\nParameters: Includes 75 tests\nSample Type: Blood, Urine, Stool\nReport Time: 48-72 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (75): Haemoglobin, Total Leucocyte Count, Differential Leucocyte Count, Platelet Count, RBC Count, PCV, MCV, MCH, MCHC, RDW, ESR, Fasting Blood Sugar, HbA1c, Average Blood Glucose, Total Cholesterol, HDL Cholesterol, LDL Cholesterol, VLDL Cholesterol, Triglycerides, Non-HDL Cholesterol, Apolipoprotein A1, Apolipoprotein B, Lipoprotein (a), Homocysteine, SGOT (AST), SGPT (ALT), Alkaline Phosphatase, GGT (Gamma Glutamyl Transferase), Total Bilirubin, Direct Bilirubin, Indirect Bilirubin, Total Protein, Albumin, Globulin, A/G Ratio, Blood Urea, BUN, Serum Creatinine, Uric Acid, eGFR, Sodium, Potassium, Chloride, Serum Calcium, Phosphorus, Magnesium, Serum Amylase, Serum Lipase, Total T3, Total T4, TSH, Free T3, Free T4, Vitamin D (25-OH), Vitamin B12, Folate (Vitamin B9), Serum Iron, TIBC, Transferrin Saturation, Ferritin, hs-CRP, Rheumatoid Factor, Anti-CCP, ASO Titre, Testosterone, Cortisol, Fasting Insulin, HOMA-IR, Urine Microalbumin, Urine Routine, Urine Sugar, Urine Ketones, Urine Protein, Stool Occult Blood, Blood Group and Rh",
+        "Test Name: Men's Health Checkup (40+)\nType: PACKAGE\nPrice: ₹2499 (MRP: ₹3999)\nDescription: For men over 40: diabetes, heart, liver, kidney, thyroid and PSA screening.\nParameters: Includes 78 parameters\nSample Type: Blood, Urine\nReport Time: 48 hours\nFasting Required: 10-12 hours fasting required\nIncluded Tests (7): HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile, Complete Blood Count",
+        "Packages and profiles that include HbA1c: 4 in total. This is the complete list.\n- Advanced Full Body Checkup (package, ₹2999)\n- Comprehensive Health Checkup (package, ₹4999)\n- Diabetes Screening Package (package, ₹699)\n- Men's Health Checkup (40+) (package, ₹2499)"
+      ],
+      "retrieved_sources": [
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog",
+        "catalog_index"
+      ],
+      "ground_truth": "Yes, we offer the HbA1c test which measures your average blood sugar over the past 3 months.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "catalog",
+      "expected_tool": "search_catalog",
+      "tools_called": [
+        "search_catalog"
+      ],
+      "latency_ms": 3613,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 3765,
+        "output_tokens": 580,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 4345,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 991,
+            "output_tokens": 65,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 931,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1302,
+            "output_tokens": 203,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1323,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1472,
+            "output_tokens": 312,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1356,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "book-01",
+      "category": "booking",
+      "query": "Can you check the status of my booking #12345?",
+      "response": "I've checked the status of your booking (#12345) for the Complete Blood Count (CBC) test. \n\nHere are the current details:\n* **Status:** Sample Collector Assigned\n* **Phlebotomist:** Ravi K.\n* **Scheduled Slot:** Tomorrow, 09:00 AM - 10:00 AM\n* **Patient:** Self\n\nLet me know if you need help with anything else!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the current status (e.g., confirmed, pending, completed) of booking #12345.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "get_booking_status"
+      ],
+      "latency_ms": 1941,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1337,
+        "output_tokens": 162,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1499,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 993,
+            "output_tokens": 69,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 948,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 344,
+            "output_tokens": 93,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 991,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "book-02",
+      "category": "booking",
+      "query": "I want to cancel my booking for tomorrow.",
+      "response": "Please confirm: do you want me to cancel this booking (no details)? Reply YES to continue, or anything else to stop.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should assist the user in cancelling their upcoming booking.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "cancel_booking"
+      ],
+      "latency_ms": 1191,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 987,
+        "output_tokens": 51,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1038,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1190,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "book-03",
+      "category": "booking",
+      "query": "Can I reschedule my appointment to next Monday?",
+      "response": "Please confirm: do you want me to reschedule this booking (no details)? Reply YES to continue, or anything else to stop.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should guide the user to reschedule their appointment to next Monday.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "reschedule_booking"
+      ],
+      "latency_ms": 1024,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 987,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1041,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1024,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "book-04",
+      "category": "booking",
+      "query": "List all my upcoming bookings.",
+      "response": "Here are your upcoming bookings:\n\n* **Complete Blood Count (CBC)**\n  * **When:** Tomorrow 09:00-10:00\n  * **Status:** Sample Collector Assigned (ID: 12345)\n\n* **Lipid Profile**\n  * **When:** Saturday 08:00-09:00\n  * **Status:** Order Booked (ID: 98765)",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should display a list of all upcoming bookings for the user.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2004,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 148,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1521,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 50,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1141,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 98,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 861,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "book-05",
+      "category": "booking",
+      "query": "When will the phlebotomist arrive for my booking today?",
+      "response": "I checked your bookings, but I don't see any appointments scheduled for today. \n\nHere are your current bookings:\n- **Complete Blood Count (CBC):** Tomorrow, 09:00 - 10:00 (Sample Collector Assigned)\n- **Lipid Profile:** Saturday, 08:00 - 09:00 (Order Booked)\n- **Thyroid Profile (T3, T4, TSH):** Last Monday (Cancelled)\n\nIf you believe you have a booking scheduled for today that is not listed here, please let me know so I can look into it further!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the expected arrival time or status of the phlebotomist for today's booking.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1915,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1385,
+        "output_tokens": 184,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1569,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 990,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 943,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 395,
+            "output_tokens": 133,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 970,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "book-06",
+      "category": "booking",
+      "query": "Are there any slots available for tomorrow morning?",
+      "response": "Based on your current bookings, you already have an appointment scheduled for tomorrow from 09:00 to 10:00 for a Complete Blood Count (CBC), and a sample collector has been assigned. \n\nHowever, I don't have access to the real-time schedule to check for other available slots for tomorrow morning beyond what is already booked. You can check the app for additional open time slots if you are looking to book another test.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should list the available time slots for home collection tomorrow morning.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2068,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1379,
+        "output_tokens": 145,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1524,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1164,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 392,
+            "output_tokens": 94,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 902,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "book-07",
+      "category": "booking",
+      "query": "My booking status says pending, what does that mean?",
+      "response": "Based on your current bookings, here are the statuses of your tests:\n\n* **Complete Blood Count (CBC):** Sample Collector Assigned (Tomorrow 09:00-10:00)\n* **Lipid Profile:** Order Booked (Saturday 08:00-09:00)\n* **Thyroid Profile (T3, T4, TSH):** Cancelled (Last Monday 07:00-08:00)\n\nSince I don't have information in the context explaining what a \"pending\" status specifically means, I cannot provide a definition for it. However, your active orders are currently moving through the process with either an assigned collector or a confirmed booking! Let me know if you need help with anything else.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should explain that a pending status means the booking is awaiting confirmation or payment.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2276,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 214,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1597,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1253,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 163,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1021,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "none",
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "book-08",
+      "category": "booking",
+      "query": "I need to cancel booking number 98765.",
+      "response": "Please confirm: do you want me to cancel this booking (booking_id: 98765)? Reply YES to continue, or anything else to stop.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should confirm the cancellation process for booking #98765.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "cancel_booking"
+      ],
+      "latency_ms": 957,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 991,
+        "output_tokens": 67,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1058,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 991,
+            "output_tokens": 67,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 957,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "book-09",
+      "category": "booking",
+      "query": "What time is my appointment for the CBC test?",
+      "response": "Based on your bookings, your appointment for the Complete Blood Count (CBC) test is scheduled for tomorrow from 09:00 to 10:00. The current status is \"Sample Collector Assigned.\" Let me know if you need help with anything else!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should look up the user's bookings and provide the appointment time for their CBC test.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1555,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1381,
+        "output_tokens": 106,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1487,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 877,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 393,
+            "output_tokens": 55,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 676,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "book-10",
+      "category": "booking",
+      "query": "Can you change my booking time from 9 AM to 11 AM?",
+      "response": "Please confirm: do you want me to reschedule this booking (no details)? Reply YES to continue, or anything else to stop.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should process the rescheduling of the booking from 9 AM to 11 AM if slots are available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "reschedule_booking"
+      ],
+      "latency_ms": 805,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 994,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1048,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 994,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 805,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "book-11",
+      "category": "booking",
+      "query": "Has a phlebotomist been assigned to my booking?",
+      "response": "Yes! For your upcoming Complete Blood Count (CBC) booking (ID: 12345) scheduled for tomorrow from 09:00 to 10:00, a sample collector has already been assigned. \n\nFor your Lipid Profile booking (ID: 98765) on Saturday, the order is currently booked, and a phlebotomist will be assigned soon.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should indicate whether a phlebotomist has been assigned and provide their details if available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1612,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 135,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1518,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 802,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 84,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 808,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "book-12",
+      "category": "booking",
+      "query": "Show me my past bookings.",
+      "response": "Here are your past and current bookings based on our records:\n\n* **Complete Blood Count (CBC)**\n  * **When:** Tomorrow 09:00-10:00\n  * **Status:** Sample Collector Assigned (ID: 12345)\n\n* **Lipid Profile**\n  * **When:** Saturday 08:00-09:00\n  * **Status:** Order Booked (ID: 98765)\n\n* **Thyroid Profile (T3, T4, TSH)**\n  * **When:** Last Monday 07:00-08:00\n  * **Status:** Cancelled (ID: 55501)",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should display the user's booking history.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1945,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 208,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1581,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 50,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1029,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 158,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 915,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "book-13",
+      "category": "booking",
+      "query": "Is 8 AM available for home collection this Saturday?",
+      "response": "I don't have the information to check available time slots for new bookings. However, I can see you already have a Lipid Profile test booked for this Saturday from 08:00 to 09:00 (Booking ID: 98765). Let me know if you need help with your existing bookings!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should confirm if the 8 AM slot is available for this Saturday.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1616,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 120,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1503,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 857,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 69,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 757,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "book-14",
+      "category": "booking",
+      "query": "I missed my appointment, can I reschedule it?",
+      "response": "Please confirm: do you want me to reschedule this booking (no details)? Reply YES to continue, or anything else to stop.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should help the user reschedule their missed appointment to a new date and time.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "reschedule_booking"
+      ],
+      "latency_ms": 1087,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 988,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1042,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1086,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "book-15",
+      "category": "booking",
+      "query": "Why is my booking cancelled?",
+      "response": "I see that you have a booking (ID: 55501) for a Thyroid Profile (T3, T4, TSH) that is marked as cancelled. However, I do not have the specific reason for why this cancellation occurred in my system. \n\nIf you'd like to rebook or need further assistance with this, please let me know!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the reason for the booking's cancellation based on its status.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1949,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 128,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1501,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 936,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 77,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1010,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "faq-01",
+      "category": "policy",
+      "query": "What is your cancellation policy?",
+      "response": "Here is DocNow's cancellation policy:\n\n* **Free Cancellation:** You can cancel for free when your booking is in the 'Order Booked' or 'Sample Collector Assigned' status.\n* **When Cancellation is Not Possible:** You cannot cancel once the phlebotomist has reached your home or after the sample has been collected. Camp bookings also cannot be cancelled online.\n* **Refunds:** When you cancel, a full refund is issued automatically via Razorpay:\n  * **UPI and Wallets:** Instant refund.\n  * **Credit/Debit Cards and Netbanking:** 5-7 business days.\n* **Wallet Credits & Promo Codes:** Any DocNow wallet credits used are restored immediately, and promo codes are restored so they can be reused.",
+      "retrieved_contexts": [
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "If you cancel before sample collection, you receive a full automatic refund via Razorpay. If the partner lab fails to fulfill your booking, an automatic refund is also initiated. Refund timeline: 5-7 business days for credit/debit cards and netbanking payments, instant for UPI and digital wallets. DocNow wallet credits used in the order are restored immediately upon cancellation. Promo code usage is also restored so you can reuse the code.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "DocNow accepts UPI, credit/debit cards, netbanking, and digital wallets via Razorpay. You can also apply DocNow wallet credits or promo codes for discounts. If a promo code or wallet balance fully covers your order amount, no additional payment gateway transaction is needed. All prices shown on the platform include applicable taxes. DocNow may offer discounted prices on selected tests and packages."
+      ],
+      "retrieved_sources": [
+        "policy",
+        "policy",
+        "policy",
+        "booking_help",
+        "policy"
+      ],
+      "ground_truth": "You can cancel your booking up to a certain time before the scheduled slot for a full refund. Please refer to our detailed cancellation policy.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "policy",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 3122,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 2746,
+        "output_tokens": 449,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 3195,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 44,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 918,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 813,
+            "output_tokens": 157,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 969,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 949,
+            "output_tokens": 248,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1233,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "faq-02",
+      "category": "policy",
+      "query": "If I cancel my booking, how long does the refund take?",
+      "response": "If you cancel your booking before sample collection, you will receive a full automatic refund via Razorpay. \n\nThe refund timeline depends on your payment method:\n* **UPI and digital wallets:** Instant\n* **Credit/debit cards and netbanking:** 5-7 business days\n\nAdditionally, any DocNow wallet credits used will be restored immediately, and your promo code will be restored so you can reuse it.",
+      "retrieved_contexts": [
+        "If you cancel before sample collection, you receive a full automatic refund via Razorpay. If the partner lab fails to fulfill your booking, an automatic refund is also initiated. Refund timeline: 5-7 business days for credit/debit cards and netbanking payments, instant for UPI and digital wallets. DocNow wallet credits used in the order are restored immediately upon cancellation. Promo code usage is also restored so you can reuse the code.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet."
+      ],
+      "retrieved_sources": [
+        "policy",
+        "policy",
+        "policy",
+        "booking_help",
+        "faq"
+      ],
+      "ground_truth": "Refunds typically take 5-7 business days to process and reflect in your original payment method.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "policy",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 2722,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 2686,
+        "output_tokens": 305,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 2991,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 991,
+            "output_tokens": 44,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 878,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 819,
+            "output_tokens": 85,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 730,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 876,
+            "output_tokens": 176,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1112,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "faq-03",
+      "category": "policy",
+      "query": "How does the home sample collection process work?",
+      "response": "Here is how the home sample collection process works with DocNow:\n\n1. **Browse and Select:** Choose the tests or health packages you need on DocNow.\n2. **Schedule:** Select a convenient date and time slot for your appointment.\n3. **Complete Payment:** Pay securely via UPI, card, netbanking, or wallet.\n4. **Sample Collection:** A certified phlebotomist will arrive at your home or office at the scheduled time to safely collect your sample.\n5. **Lab Processing:** The sample is transported to our partner laboratory for testing.\n6. **Get Your Report:** Your diagnostic report will be delivered digitally as a downloadable PDF in your account within 24-48 hours (depending on the test type). \n\nYou will also receive WhatsApp notifications at key steps, including booking confirmation, phlebotomist assignment, and report availability.",
+      "retrieved_contexts": [
+        "DocNow provides doorstep diagnostic lab tests and home sample collection across 100+ cities in India. We operate in major metro areas including Bengaluru, Chennai, Delhi NCR (Delhi, Gurgaon, Noida, Faridabad, Greater Noida, and Ghaziabad), Hyderabad, Kolkata, Mumbai, and Pune. We also serve over 100 other cities across India, such as Agra, Ahmedabad, Amritsar, Bhopal, Bhubaneswar, Chandigarh, Dehradun, Guwahati, Gwalior, Indore, Jaipur, Jodhpur, Kanpur, Lucknow, Ludhiana, Meerut, Mysuru, Nagpur, Nashik, Patna, Raipur, Ranchi, Surat, Udaipur, Vadodara, Varanasi, Vijayawada, and Visakhapatnam. Certified phlebotomists arrive at your home or office to safely collect samples. You can verify whether home collection is available at your exact address by entering your 6-digit pincode in the location selector at the top of docnow.in or during checkout.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep. We partner with certified laboratories (including Healthians) to offer a wide range of diagnostic tests, health packages, and profiles. Our phlebotomists are trained professionals who collect samples safely at your home. For support, contact us at +91 9649089089 or docnowhealthcare@gmail.com. Visit docnow.in for more information.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Diagnostic reports are typically delivered within 24-48 hours after sample collection, though the exact time varies by test type. Some specialized tests may take longer. Reports are delivered as downloadable PDF files in the Reports section of your DocNow account. You'll also receive a WhatsApp notification when your report is ready."
+      ],
+      "retrieved_sources": [
+        "faq",
+        "faq",
+        "faq",
+        "booking_help",
+        "faq"
+      ],
+      "ground_truth": "A trained phlebotomist will arrive at your provided address at the scheduled time to collect your sample securely.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 3342,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 2998,
+        "output_tokens": 466,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 3464,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 33,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 789,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 928,
+            "output_tokens": 179,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1359,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1083,
+            "output_tokens": 254,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1192,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "faq-04",
+      "category": "policy",
+      "query": "What does it mean if my sample needs to be resampled?",
+      "response": "Sometimes the laboratory needs a fresh sample due to issues like hemolysis (blood sample breaking down), clotting, or other quality concerns. \n\nWhen this happens, your booking status will change to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample completely free of charge, and you do not need to make any additional payment.",
+      "retrieved_contexts": [
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "If you cancel before sample collection, you receive a full automatic refund via Razorpay. If the partner lab fails to fulfill your booking, an automatic refund is also initiated. Refund timeline: 5-7 business days for credit/debit cards and netbanking payments, instant for UPI and digital wallets. DocNow wallet credits used in the order are restored immediately upon cancellation. Promo code usage is also restored so you can reuse the code.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet."
+      ],
+      "retrieved_sources": [
+        "booking_help",
+        "policy",
+        "policy",
+        "booking_help",
+        "faq"
+      ],
+      "ground_truth": "Resampling means the initial sample provided was insufficient or compromised, and we need to collect a new sample to run the tests accurately.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "booking_help",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 2853,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 2593,
+        "output_tokens": 252,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 2845,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 991,
+            "output_tokens": 45,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 733,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 781,
+            "output_tokens": 71,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1212,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 821,
+            "output_tokens": 136,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 906,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "faq-05",
+      "category": "policy",
+      "query": "What payment methods do you accept?",
+      "response": "DocNow accepts the following payment methods:\n- UPI\n- Credit and debit cards\n- Netbanking\n- Digital wallets via Razorpay\n- DocNow wallet credits\n- Promo codes\n\nAll prices shown on the platform include applicable taxes. If your wallet credits or promo codes fully cover the order amount, no additional payment gateway transaction is needed.",
+      "retrieved_contexts": [
+        "DocNow accepts UPI, credit/debit cards, netbanking, and digital wallets via Razorpay. You can also apply DocNow wallet credits or promo codes for discounts. If a promo code or wallet balance fully covers your order amount, no additional payment gateway transaction is needed. All prices shown on the platform include applicable taxes. DocNow may offer discounted prices on selected tests and packages.",
+        "DocNow wallet credits can be earned through referrals and promotional campaigns. Credits are applied automatically during checkout to reduce your payable amount. Promo codes can be entered during checkout for additional discounts. Each promo code has usage limits (per-user and global). If your wallet balance and/or promo discount fully cover the order, no payment gateway transaction is needed.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required."
+      ],
+      "retrieved_sources": [
+        "policy",
+        "booking_help",
+        "faq",
+        "booking_help",
+        "policy"
+      ],
+      "ground_truth": "We accept credit/debit cards, UPI, net banking, and digital wallets.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "policy",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 2632,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 2556,
+        "output_tokens": 271,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 2827,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 985,
+            "output_tokens": 44,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 817,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 763,
+            "output_tokens": 70,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 743,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 808,
+            "output_tokens": 157,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1069,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "faq-06",
+      "category": "policy",
+      "query": "What are the rules for rescheduling an appointment?",
+      "response": "Here are the rules for rescheduling your DocNow appointment:\n\n* **Eligibility:** You can reschedule your appointment anytime before your sample is collected. \n* **Restrictions:** You **cannot** reschedule if your booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings also cannot be rescheduled online.\n* **Time Slots:** Available time slots are shown up to 7 days in advance, starting from 6:00 AM.\n* **Charges:** No additional payment is required for rescheduling.\n* **Booking Reference:** When you reschedule, a new booking reference is created, and your old booking will be marked as 'Rescheduled'.\n\nYou can easily change your appointment time from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+      "retrieved_contexts": [
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Sometimes the laboratory needs a fresh sample. This can happen due to hemolysis (blood sample breaking down), clotting, or other quality issues. When this happens, your booking status changes to 'Resample Required'. A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused."
+      ],
+      "retrieved_sources": [
+        "policy",
+        "faq",
+        "booking_help",
+        "booking_help",
+        "policy"
+      ],
+      "ground_truth": "You can reschedule your appointment at least 2 hours before the scheduled time slot subject to availability.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "policy",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 3060,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 2743,
+        "output_tokens": 499,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 3242,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 44,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 867,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 801,
+            "output_tokens": 181,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 958,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 955,
+            "output_tokens": 274,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1233,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "faq-07",
+      "category": "policy",
+      "query": "How are the reports delivered to me?",
+      "response": "Diagnostic reports are delivered digitally as downloadable PDF files in the Reports section of your DocNow account. Additionally, you will receive a WhatsApp notification when your report is ready. \n\nReports are typically delivered within 24-48 hours after sample collection, though some specialized tests may take longer.",
+      "retrieved_contexts": [
+        "Diagnostic reports are typically delivered within 24-48 hours after sample collection, though the exact time varies by test type. Some specialized tests may take longer. Reports are delivered as downloadable PDF files in the Reports section of your DocNow account. You'll also receive a WhatsApp notification when your report is ready.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "After a phlebotomist is assigned to your booking, you can track their status from the booking details page. You'll see the phlebotomist's name and a masked contact number for privacy. You'll receive a WhatsApp notification when the phlebotomist is assigned and when they're on their way.",
+        "DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep. We partner with certified laboratories (including Healthians) to offer a wide range of diagnostic tests, health packages, and profiles. Our phlebotomists are trained professionals who collect samples safely at your home. For support, contact us at +91 9649089089 or docnowhealthcare@gmail.com. Visit docnow.in for more information."
+      ],
+      "retrieved_sources": [
+        "faq",
+        "faq",
+        "booking_help",
+        "faq",
+        "faq"
+      ],
+      "ground_truth": "Reports are sent via email, SMS link, and can also be downloaded directly from your account on our platform.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 2417,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 2598,
+        "output_tokens": 243,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 2841,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 986,
+            "output_tokens": 44,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 800,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 788,
+            "output_tokens": 59,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 716,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 824,
+            "output_tokens": 140,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 900,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "faq-08",
+      "category": "policy",
+      "query": "How far in advance can I book a slot?",
+      "response": "You can book a time slot up to 7 days in advance. Morning slots start from 6:00 AM, and you can select your preferred collection time during checkout based on your location and selected tests.",
+      "retrieved_contexts": [
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF."
+      ],
+      "retrieved_sources": [
+        "faq",
+        "policy",
+        "faq",
+        "policy",
+        "booking_help"
+      ],
+      "ground_truth": "You can book a slot up to 7 days in advance.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "faq",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 2837,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 2724,
+        "output_tokens": 223,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 2947,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 44,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 986,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 859,
+            "output_tokens": 43,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 767,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 877,
+            "output_tokens": 136,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1081,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "faq-09",
+      "category": "policy",
+      "query": "Can I use wallet credits to pay for my test?",
+      "response": "Yes, you can use DocNow wallet credits to pay for your tests! \n\nWallet credits are applied automatically during checkout to reduce your payable amount. If your wallet balance (along with any promo codes) fully covers the total order amount, no additional payment gateway transaction is needed.",
+      "retrieved_contexts": [
+        "DocNow wallet credits can be earned through referrals and promotional campaigns. Credits are applied automatically during checkout to reduce your payable amount. Promo codes can be entered during checkout for additional discounts. Each promo code has usage limits (per-user and global). If your wallet balance and/or promo discount fully cover the order, no payment gateway transaction is needed.",
+        "DocNow accepts UPI, credit/debit cards, netbanking, and digital wallets via Razorpay. You can also apply DocNow wallet credits or promo codes for discounts. If a promo code or wallet balance fully covers your order amount, no additional payment gateway transaction is needed. All prices shown on the platform include applicable taxes. DocNow may offer discounted prices on selected tests and packages.",
+        "If you cancel before sample collection, you receive a full automatic refund via Razorpay. If the partner lab fails to fulfill your booking, an automatic refund is also initiated. Refund timeline: 5-7 business days for credit/debit cards and netbanking payments, instant for UPI and digital wallets. DocNow wallet credits used in the order are restored immediately upon cancellation. Promo code usage is also restored so you can reuse the code.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused."
+      ],
+      "retrieved_sources": [
+        "booking_help",
+        "policy",
+        "policy",
+        "faq",
+        "policy"
+      ],
+      "ground_truth": "Yes, if you have DocNow wallet credits, you can apply them at checkout to pay for your tests.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "booking_help",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 2690,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 2599,
+        "output_tokens": 252,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 2851,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 44,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 944,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 790,
+            "output_tokens": 56,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 821,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 820,
+            "output_tokens": 152,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 923,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "faq-10",
+      "category": "policy",
+      "query": "Can I cancel my test after the phlebotomist arrives at my location?",
+      "response": "No, cancellation is no longer possible once the phlebotomist has reached your home or the sample has been collected. Free cancellation is only available while your booking is in the 'Order Booked' or 'Sample Collector Assigned' status.",
+      "retrieved_contexts": [
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "Free cancellation is available when your booking is in 'Order Booked' or 'Sample Collector Assigned' status. Cancellation is NOT possible once the phlebotomist has reached your home or the sample has been collected. Camp bookings cannot be cancelled online. When you cancel, a full refund is issued automatically via Razorpay. Refund timeline: 5-7 business days for credit/debit cards and netbanking, instant for UPI and wallets. Any DocNow wallet credits used in the booking are restored immediately. Promo codes used are also restored and can be reused.",
+        "After a phlebotomist is assigned to your booking, you can track their status from the booking details page. You'll see the phlebotomist's name and a masked contact number for privacy. You'll receive a WhatsApp notification when the phlebotomist is assigned and when they're on their way.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "If you cancel before sample collection, you receive a full automatic refund via Razorpay. If the partner lab fails to fulfill your booking, an automatic refund is also initiated. Refund timeline: 5-7 business days for credit/debit cards and netbanking payments, instant for UPI and digital wallets. DocNow wallet credits used in the order are restored immediately upon cancellation. Promo code usage is also restored so you can reuse the code."
+      ],
+      "retrieved_sources": [
+        "booking_help",
+        "policy",
+        "faq",
+        "faq",
+        "policy"
+      ],
+      "ground_truth": "If you cancel after the phlebotomist arrives, a visiting charge may be deducted from your refund according to our policy.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": "policy",
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 2667,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 2682,
+        "output_tokens": 242,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 2924,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 993,
+            "output_tokens": 45,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1057,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 836,
+            "output_tokens": 47,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 681,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 853,
+            "output_tokens": 150,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 926,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "edge-01",
+      "category": "edge",
+      "query": "Can you help me book a flight to Mumbai?",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 829,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 988,
+        "output_tokens": 48,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1036,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 48,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 828,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "edge-02",
+      "category": "edge",
+      "query": "What is the weather like in Bangalore today?",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 772,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 987,
+        "output_tokens": 48,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1035,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 48,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 771,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "edge-03",
+      "category": "edge",
+      "query": "What is the current stock price of Apple?",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 785,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 987,
+        "output_tokens": 48,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1035,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 48,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 784,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "edge-04",
+      "category": "edge",
+      "query": "Can you write me a prescription for antibiotics?",
+      "response": "I'm sorry, but DocNow is a healthcare diagnostics platform that provides lab tests and health packages with home sample collection.",
+      "retrieved_contexts": [
+        "DocNow offers lab tests, health packages and profiles, with home sample collection. We do not offer imaging or radiology: no X-ray, MRI, CT scan, PET scan, ultrasound (USG, sonography), mammography or DEXA scan. We do not offer heart tests that need a machine: no ECG (EKG), 2D Echo (echocardiography), TMT (treadmill test) or Holter monitoring. We do not offer vaccinations (for example flu, hepatitis or HPV vaccines). For these services, please visit a hospital or a diagnostic imaging centre. DocNow can help with blood, urine and other sample-based lab tests."
+      ],
+      "retrieved_sources": [
+        "faq"
+      ],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": false,
+      "verifier_verdict": "PARTIALLY_GROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 2748,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 1831,
+        "output_tokens": 220,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 2051,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 48,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 827,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 409,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 796,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 435,
+            "output_tokens": 121,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1122,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "edge-05",
+      "category": "edge",
+      "query": "Write a poem about blood tests.",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 814,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 985,
+        "output_tokens": 48,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1033,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 985,
+            "output_tokens": 48,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 813,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "edge-06",
+      "category": "edge",
+      "query": "What are some good restaurants near me?",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 819,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 986,
+        "output_tokens": 48,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1034,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 986,
+            "output_tokens": 48,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 819,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "edge-07",
+      "category": "edge",
+      "query": "Can you help me solve this algebra homework problem?",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 786,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 988,
+        "output_tokens": 48,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1036,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 48,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 785,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "edge-08",
+      "category": "edge",
+      "query": "What do you think about the current political situation?",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 800,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 988,
+        "output_tokens": 48,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1036,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 48,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 799,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "edge-09",
+      "category": "edge",
+      "query": "Do you offer plumbing services as well?",
+      "response": "Sorry, I can only help with DocNow: lab tests and packages, your bookings, and our policies. What can I help you with there?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "UNGROUNDED",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 818,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 986,
+        "output_tokens": 48,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1034,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 986,
+            "output_tokens": 48,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 818,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    },
+    {
+      "query_id": "edge-10",
+      "category": "edge",
+      "query": "I'm feeling very sad today, what should I do?",
+      "response": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": null,
+      "should_abstain": true,
+      "was_abstained": true,
+      "verifier_verdict": "NO_CONTEXT",
+      "expected_source": null,
+      "expected_tool": null,
+      "tools_called": [],
+      "latency_ms": 1125,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 991,
+        "output_tokens": 48,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1039,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 991,
+            "output_tokens": 48,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1124,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": []
+    }
+  ]
+}

@@ -132,3 +132,41 @@ def test_tool_choice_accepts_listed_alternatives_and_kb_only_answers():
     kb_ok = dict(expected_tool="search_catalog", acceptable_tools=["none"])
     assert tool_choice_correct(_result(**kb_ok, tools_called=[]))
     assert not tool_choice_correct(_result(**kb_ok, tools_called=["list_bookings"]))
+
+
+def test_verifier_pass_rate_counts_only_drafts_the_verifier_checked():
+    results = [
+        _result(verifier_ran=True),
+        _result(verifier_ran=True, verifier_verdict="UNGROUNDED", was_abstained=True),
+        # Off-topic refusal: the orchestrator labels it UNGROUNDED but no verifier ran.
+        _result(verifier_verdict="UNGROUNDED", should_abstain=True, was_abstained=True),
+        _result(verifier_verdict=None, expected_tool="cancel_booking", tools_called=["cancel_booking"]),
+    ]
+    m = custom_metrics(results)
+    assert m["verifier_pass_rate"] == pytest.approx(1 / 2)
+    assert m["verifier_block_rate"] == pytest.approx(1 / 2)
+    assert m["groundedness_score"] == pytest.approx(1 / 4)  # legacy definition unchanged
+
+
+def test_aggregate_runs_reports_mean_and_sample_std():
+    from app.eval.scorer import aggregate_runs
+
+    agg = aggregate_runs([{"a": 0.6, "b": None}, {"a": 0.8, "b": None}, {"a": 0.7, "b": 3}])
+    assert agg["a"]["mean"] == pytest.approx(0.7)
+    assert agg["a"]["std"] == pytest.approx(0.1)
+    assert agg["b"] == {"mean": 3, "std": 0.0, "n": 1, "min": 3, "max": 3}
+
+
+def test_query_stability_flags_queries_whose_outcome_flips():
+    from app.eval.scorer import query_stability
+
+    steady = dict(query_id="s", expected_tool="list_bookings", tools_called=["list_bookings"])
+    flaky = dict(query_id="f", expect_any=["10 h"], verifier_ran=True)
+    rows = query_stability([
+        _result(**steady, repeat=0), _result(**steady, repeat=1),
+        _result(**flaky, response="ready in 10 h", repeat=0),
+        _result(**flaky, response="no idea", verifier_verdict="UNGROUNDED", tools_called=["list_bookings"], repeat=1),
+    ])
+    assert rows["s"]["flaky"] == []
+    assert rows["f"]["flaky"] == ["probe_ok", "tools", "verdicts"]
+    assert rows["f"]["probe_ok"] == {"True": 1, "False": 1}
