@@ -1,0 +1,1176 @@
+{
+  "label": "slotfill-after",
+  "llm_model": "gemini-3.5-flash-lite",
+  "repeat": 5,
+  "scores": {
+    "confirm_without_id": 0.0,
+    "write_without_id": 0.0,
+    "asked_which": 1.0,
+    "write_sent": 0.25,
+    "write_right_booking": 0.25,
+    "completed": 0.25,
+    "failed_after_yes": 0.0,
+    "handed_to_app": 0.75,
+    "cancel_completed": 1.0,
+    "turns_per_conversation": 2.25,
+    "tokens_per_conversation": 1166.05
+  },
+  "aggregate": {
+    "confirm_without_id": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "write_without_id": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "asked_which": {
+      "mean": 1.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "write_sent": {
+      "mean": 0.25,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.25,
+      "max": 0.25
+    },
+    "write_right_booking": {
+      "mean": 0.25,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.25,
+      "max": 0.25
+    },
+    "completed": {
+      "mean": 0.25,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.25,
+      "max": 0.25
+    },
+    "failed_after_yes": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "handed_to_app": {
+      "mean": 0.75,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.75,
+      "max": 0.75
+    },
+    "cancel_completed": {
+      "mean": 1.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "turns_per_conversation": {
+      "mean": 2.25,
+      "std": 0.0,
+      "n": 5,
+      "min": 2.25,
+      "max": 2.25
+    },
+    "tokens_per_conversation": {
+      "mean": 1166.05,
+      "std": 1.4295978455495797,
+      "n": 5,
+      "min": 1163.5,
+      "max": 1166.75
+    }
+  },
+  "runs": [
+    {
+      "confirm_without_id": 0.0,
+      "write_without_id": 0.0,
+      "asked_which": 1.0,
+      "write_sent": 0.25,
+      "write_right_booking": 0.25,
+      "completed": 0.25,
+      "failed_after_yes": 0.0,
+      "handed_to_app": 0.75,
+      "cancel_completed": 1.0,
+      "turns_per_conversation": 2.25,
+      "tokens_per_conversation": 1166.5
+    },
+    {
+      "confirm_without_id": 0.0,
+      "write_without_id": 0.0,
+      "asked_which": 1.0,
+      "write_sent": 0.25,
+      "write_right_booking": 0.25,
+      "completed": 0.25,
+      "failed_after_yes": 0.0,
+      "handed_to_app": 0.75,
+      "cancel_completed": 1.0,
+      "turns_per_conversation": 2.25,
+      "tokens_per_conversation": 1166.75
+    },
+    {
+      "confirm_without_id": 0.0,
+      "write_without_id": 0.0,
+      "asked_which": 1.0,
+      "write_sent": 0.25,
+      "write_right_booking": 0.25,
+      "completed": 0.25,
+      "failed_after_yes": 0.0,
+      "handed_to_app": 0.75,
+      "cancel_completed": 1.0,
+      "turns_per_conversation": 2.25,
+      "tokens_per_conversation": 1163.5
+    },
+    {
+      "confirm_without_id": 0.0,
+      "write_without_id": 0.0,
+      "asked_which": 1.0,
+      "write_sent": 0.25,
+      "write_right_booking": 0.25,
+      "completed": 0.25,
+      "failed_after_yes": 0.0,
+      "handed_to_app": 0.75,
+      "cancel_completed": 1.0,
+      "turns_per_conversation": 2.25,
+      "tokens_per_conversation": 1166.75
+    },
+    {
+      "confirm_without_id": 0.0,
+      "write_without_id": 0.0,
+      "asked_which": 1.0,
+      "write_sent": 0.25,
+      "write_right_booking": 0.25,
+      "completed": 0.25,
+      "failed_after_yes": 0.0,
+      "handed_to_app": 0.75,
+      "cancel_completed": 1.0,
+      "turns_per_conversation": 2.25,
+      "tokens_per_conversation": 1166.75
+    }
+  ],
+  "results": [
+    {
+      "query_id": "book-02",
+      "repeat": 0,
+      "busy": false,
+      "turns": [
+        {
+          "user": "I want to cancel my booking for tomorrow.",
+          "bot": "Which booking do you want to cancel?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_CANCEL",
+            "tool_name": "cancel_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 1.0
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "Please confirm: do you want me to cancel this booking (Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked))? Reply YES to continue, or anything else to stop.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_CANCEL",
+            "tool_name": "cancel_booking",
+            "parameters": {
+              "booking_id": "98765"
+            },
+            "requires_action": true,
+            "confidence": 1.0
+          }
+        },
+        {
+          "user": "yes",
+          "bot": "Your booking for the Lipid Profile (booking ID: 98765) has been successfully cancelled, and your refund has been initiated. Let me know if you need help with anything else!",
+          "verdict": "TOOL_ONLY",
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        },
+        {
+          "tool": "cancel_booking",
+          "params": {
+            "booking_id": "98765"
+          },
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 3,
+      "tokens": 1535,
+      "latency_ms": 1923,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": true,
+      "write_right_booking": true,
+      "completed": true,
+      "failed_after_yes": false,
+      "handed_to_app": false,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-03",
+      "repeat": 0,
+      "busy": false,
+      "turns": [
+        {
+          "user": "Can I reschedule my appointment to next Monday?",
+          "bot": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_RESCHEDULE",
+            "tool_name": "reschedule_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "I can't pick a new time slot from chat yet. To reschedule Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked), open My Bookings in your profile and choose Reschedule on that booking: it shows the free slots for its address.",
+          "verdict": null,
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 2,
+      "tokens": 1041,
+      "latency_ms": 1388,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": false,
+      "write_right_booking": false,
+      "completed": false,
+      "failed_after_yes": false,
+      "handed_to_app": true,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-10",
+      "repeat": 0,
+      "busy": false,
+      "turns": [
+        {
+          "user": "Can you change my booking time from 9 AM to 11 AM?",
+          "bot": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_RESCHEDULE",
+            "tool_name": "reschedule_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "I can't pick a new time slot from chat yet. To reschedule Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked), open My Bookings in your profile and choose Reschedule on that booking: it shows the free slots for its address.",
+          "verdict": null,
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 2,
+      "tokens": 1048,
+      "latency_ms": 1115,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": false,
+      "write_right_booking": false,
+      "completed": false,
+      "failed_after_yes": false,
+      "handed_to_app": true,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-14",
+      "repeat": 0,
+      "busy": false,
+      "turns": [
+        {
+          "user": "I missed my appointment, can I reschedule it?",
+          "bot": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_RESCHEDULE",
+            "tool_name": "reschedule_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "I can't pick a new time slot from chat yet. To reschedule Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked), open My Bookings in your profile and choose Reschedule on that booking: it shows the free slots for its address.",
+          "verdict": null,
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 2,
+      "tokens": 1042,
+      "latency_ms": 1114,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": false,
+      "write_right_booking": false,
+      "completed": false,
+      "failed_after_yes": false,
+      "handed_to_app": true,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-02",
+      "repeat": 1,
+      "busy": false,
+      "turns": [
+        {
+          "user": "I want to cancel my booking for tomorrow.",
+          "bot": "Which booking do you want to cancel?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_CANCEL",
+            "tool_name": "cancel_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "Please confirm: do you want me to cancel this booking (Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked))? Reply YES to continue, or anything else to stop.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_CANCEL",
+            "tool_name": "cancel_booking",
+            "parameters": {
+              "booking_id": "98765"
+            },
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "yes",
+          "bot": "Your booking for the Lipid Profile (booking ID: 98765) has been successfully cancelled, and your refund has been initiated. Let me know if you need help with anything else!",
+          "verdict": "TOOL_ONLY",
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        },
+        {
+          "tool": "cancel_booking",
+          "params": {
+            "booking_id": "98765"
+          },
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 3,
+      "tokens": 1536,
+      "latency_ms": 1810,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": true,
+      "write_right_booking": true,
+      "completed": true,
+      "failed_after_yes": false,
+      "handed_to_app": false,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-03",
+      "repeat": 1,
+      "busy": false,
+      "turns": [
+        {
+          "user": "Can I reschedule my appointment to next Monday?",
+          "bot": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_RESCHEDULE",
+            "tool_name": "reschedule_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "I can't pick a new time slot from chat yet. To reschedule Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked), open My Bookings in your profile and choose Reschedule on that booking: it shows the free slots for its address.",
+          "verdict": null,
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 2,
+      "tokens": 1041,
+      "latency_ms": 837,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": false,
+      "write_right_booking": false,
+      "completed": false,
+      "failed_after_yes": false,
+      "handed_to_app": true,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-10",
+      "repeat": 1,
+      "busy": false,
+      "turns": [
+        {
+          "user": "Can you change my booking time from 9 AM to 11 AM?",
+          "bot": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_RESCHEDULE",
+            "tool_name": "reschedule_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "I can't pick a new time slot from chat yet. To reschedule Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked), open My Bookings in your profile and choose Reschedule on that booking: it shows the free slots for its address.",
+          "verdict": null,
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 2,
+      "tokens": 1048,
+      "latency_ms": 803,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": false,
+      "write_right_booking": false,
+      "completed": false,
+      "failed_after_yes": false,
+      "handed_to_app": true,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-14",
+      "repeat": 1,
+      "busy": false,
+      "turns": [
+        {
+          "user": "I missed my appointment, can I reschedule it?",
+          "bot": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_RESCHEDULE",
+            "tool_name": "reschedule_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "I can't pick a new time slot from chat yet. To reschedule Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked), open My Bookings in your profile and choose Reschedule on that booking: it shows the free slots for its address.",
+          "verdict": null,
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 2,
+      "tokens": 1042,
+      "latency_ms": 1033,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": false,
+      "write_right_booking": false,
+      "completed": false,
+      "failed_after_yes": false,
+      "handed_to_app": true,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-02",
+      "repeat": 2,
+      "busy": false,
+      "turns": [
+        {
+          "user": "I want to cancel my booking for tomorrow.",
+          "bot": "Which booking do you want to cancel?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_CANCEL",
+            "tool_name": "cancel_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "Please confirm: do you want me to cancel this booking (Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked))? Reply YES to continue, or anything else to stop.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_CANCEL",
+            "tool_name": "cancel_booking",
+            "parameters": {
+              "booking_id": "98765"
+            },
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "yes",
+          "bot": "Your booking for the Lipid Profile (booking ID: 98765) has been successfully cancelled, and your refund has been initiated. Let me know if you need help with anything else!",
+          "verdict": "TOOL_ONLY",
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        },
+        {
+          "tool": "cancel_booking",
+          "params": {
+            "booking_id": "98765"
+          },
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 3,
+      "tokens": 1536,
+      "latency_ms": 1894,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": true,
+      "write_right_booking": true,
+      "completed": true,
+      "failed_after_yes": false,
+      "handed_to_app": false,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-03",
+      "repeat": 2,
+      "busy": false,
+      "turns": [
+        {
+          "user": "Can I reschedule my appointment to next Monday?",
+          "bot": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_RESCHEDULE",
+            "tool_name": "reschedule_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.9
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "I can't pick a new time slot from chat yet. To reschedule Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked), open My Bookings in your profile and choose Reschedule on that booking: it shows the free slots for its address.",
+          "verdict": null,
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 2,
+      "tokens": 1028,
+      "latency_ms": 826,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": false,
+      "write_right_booking": false,
+      "completed": false,
+      "failed_after_yes": false,
+      "handed_to_app": true,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-10",
+      "repeat": 2,
+      "busy": false,
+      "turns": [
+        {
+          "user": "Can you change my booking time from 9 AM to 11 AM?",
+          "bot": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_RESCHEDULE",
+            "tool_name": "reschedule_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "I can't pick a new time slot from chat yet. To reschedule Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked), open My Bookings in your profile and choose Reschedule on that booking: it shows the free slots for its address.",
+          "verdict": null,
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 2,
+      "tokens": 1048,
+      "latency_ms": 970,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": false,
+      "write_right_booking": false,
+      "completed": false,
+      "failed_after_yes": false,
+      "handed_to_app": true,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-14",
+      "repeat": 2,
+      "busy": false,
+      "turns": [
+        {
+          "user": "I missed my appointment, can I reschedule it?",
+          "bot": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_RESCHEDULE",
+            "tool_name": "reschedule_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "I can't pick a new time slot from chat yet. To reschedule Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked), open My Bookings in your profile and choose Reschedule on that booking: it shows the free slots for its address.",
+          "verdict": null,
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 2,
+      "tokens": 1042,
+      "latency_ms": 945,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": false,
+      "write_right_booking": false,
+      "completed": false,
+      "failed_after_yes": false,
+      "handed_to_app": true,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-02",
+      "repeat": 3,
+      "busy": false,
+      "turns": [
+        {
+          "user": "I want to cancel my booking for tomorrow.",
+          "bot": "Which booking do you want to cancel?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_CANCEL",
+            "tool_name": "cancel_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "Please confirm: do you want me to cancel this booking (Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked))? Reply YES to continue, or anything else to stop.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_CANCEL",
+            "tool_name": "cancel_booking",
+            "parameters": {
+              "booking_id": "98765"
+            },
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "yes",
+          "bot": "Your booking for the Lipid Profile (booking ID: 98765) has been successfully cancelled, and your refund has been initiated. Let me know if you need help with anything else!",
+          "verdict": "TOOL_ONLY",
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        },
+        {
+          "tool": "cancel_booking",
+          "params": {
+            "booking_id": "98765"
+          },
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 3,
+      "tokens": 1536,
+      "latency_ms": 1753,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": true,
+      "write_right_booking": true,
+      "completed": true,
+      "failed_after_yes": false,
+      "handed_to_app": false,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-03",
+      "repeat": 3,
+      "busy": false,
+      "turns": [
+        {
+          "user": "Can I reschedule my appointment to next Monday?",
+          "bot": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_RESCHEDULE",
+            "tool_name": "reschedule_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "I can't pick a new time slot from chat yet. To reschedule Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked), open My Bookings in your profile and choose Reschedule on that booking: it shows the free slots for its address.",
+          "verdict": null,
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 2,
+      "tokens": 1041,
+      "latency_ms": 959,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": false,
+      "write_right_booking": false,
+      "completed": false,
+      "failed_after_yes": false,
+      "handed_to_app": true,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-10",
+      "repeat": 3,
+      "busy": false,
+      "turns": [
+        {
+          "user": "Can you change my booking time from 9 AM to 11 AM?",
+          "bot": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_RESCHEDULE",
+            "tool_name": "reschedule_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "I can't pick a new time slot from chat yet. To reschedule Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked), open My Bookings in your profile and choose Reschedule on that booking: it shows the free slots for its address.",
+          "verdict": null,
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 2,
+      "tokens": 1048,
+      "latency_ms": 913,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": false,
+      "write_right_booking": false,
+      "completed": false,
+      "failed_after_yes": false,
+      "handed_to_app": true,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-14",
+      "repeat": 3,
+      "busy": false,
+      "turns": [
+        {
+          "user": "I missed my appointment, can I reschedule it?",
+          "bot": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_RESCHEDULE",
+            "tool_name": "reschedule_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "I can't pick a new time slot from chat yet. To reschedule Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked), open My Bookings in your profile and choose Reschedule on that booking: it shows the free slots for its address.",
+          "verdict": null,
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 2,
+      "tokens": 1042,
+      "latency_ms": 910,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": false,
+      "write_right_booking": false,
+      "completed": false,
+      "failed_after_yes": false,
+      "handed_to_app": true,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-02",
+      "repeat": 4,
+      "busy": false,
+      "turns": [
+        {
+          "user": "I want to cancel my booking for tomorrow.",
+          "bot": "Which booking do you want to cancel?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_CANCEL",
+            "tool_name": "cancel_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "Please confirm: do you want me to cancel this booking (Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked))? Reply YES to continue, or anything else to stop.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_CANCEL",
+            "tool_name": "cancel_booking",
+            "parameters": {
+              "booking_id": "98765"
+            },
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "yes",
+          "bot": "Your booking for the Lipid Profile (booking ID: 98765) has been successfully cancelled, and your refund has been initiated. Let me know if you need help with anything else!",
+          "verdict": "TOOL_ONLY",
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        },
+        {
+          "tool": "cancel_booking",
+          "params": {
+            "booking_id": "98765"
+          },
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 3,
+      "tokens": 1536,
+      "latency_ms": 1941,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": true,
+      "write_right_booking": true,
+      "completed": true,
+      "failed_after_yes": false,
+      "handed_to_app": false,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-03",
+      "repeat": 4,
+      "busy": false,
+      "turns": [
+        {
+          "user": "Can I reschedule my appointment to next Monday?",
+          "bot": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_RESCHEDULE",
+            "tool_name": "reschedule_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "I can't pick a new time slot from chat yet. To reschedule Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked), open My Bookings in your profile and choose Reschedule on that booking: it shows the free slots for its address.",
+          "verdict": null,
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 2,
+      "tokens": 1041,
+      "latency_ms": 993,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": false,
+      "write_right_booking": false,
+      "completed": false,
+      "failed_after_yes": false,
+      "handed_to_app": true,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-10",
+      "repeat": 4,
+      "busy": false,
+      "turns": [
+        {
+          "user": "Can you change my booking time from 9 AM to 11 AM?",
+          "bot": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_RESCHEDULE",
+            "tool_name": "reschedule_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "I can't pick a new time slot from chat yet. To reschedule Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked), open My Bookings in your profile and choose Reschedule on that booking: it shows the free slots for its address.",
+          "verdict": null,
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 2,
+      "tokens": 1048,
+      "latency_ms": 859,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": false,
+      "write_right_booking": false,
+      "completed": false,
+      "failed_after_yes": false,
+      "handed_to_app": true,
+      "write_errors": []
+    },
+    {
+      "query_id": "book-14",
+      "repeat": 4,
+      "busy": false,
+      "turns": [
+        {
+          "user": "I missed my appointment, can I reschedule it?",
+          "bot": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+          "verdict": null,
+          "pending": {
+            "intent": "BOOKING_RESCHEDULE",
+            "tool_name": "reschedule_booking",
+            "parameters": {},
+            "requires_action": true,
+            "confidence": 0.95
+          }
+        },
+        {
+          "user": "the lipid profile one",
+          "bot": "I can't pick a new time slot from chat yet. To reschedule Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked), open My Bookings in your profile and choose Reschedule on that booking: it shows the free slots for its address.",
+          "verdict": null,
+          "pending": null
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "list_bookings",
+          "params": {},
+          "success": true,
+          "error": null
+        }
+      ],
+      "n_turns": 2,
+      "tokens": 1042,
+      "latency_ms": 783,
+      "confirm_without_id": false,
+      "asked_which": true,
+      "write_without_id": false,
+      "write_sent": false,
+      "write_right_booking": false,
+      "completed": false,
+      "failed_after_yes": false,
+      "handed_to_app": true,
+      "write_errors": []
+    }
+  ]
+}

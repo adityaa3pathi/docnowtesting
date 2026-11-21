@@ -17,19 +17,23 @@ import json
 import logging
 import re
 import time
+import uuid
 from dataclasses import dataclass
 from typing import Any, TypedDict
 
 from langfuse import observe
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
+from langgraph.types import Command, interrupt
 
 from app.agents import usage
 from app.agents.cards import cards_from_actions, live_cards_for_chunks
 from app.agents.symptoms import symptom_reply
 from app.agents.llm import AIBusyError, call_gemini
 from app.agents.retrieval import retrieve
-from app.agents.tool_output import compact_tool_output
+from app.agents.tool_output import MAX_BOOKINGS_IN_PROMPT, compact_tool_output
 from app.agents.verifier import verify
 from app.models import (
     ActionResult,
@@ -46,7 +50,7 @@ from app.symptoms.safety import EMERGENCY_RESPONSE, MEDICAL_ADVICE_RESPONSE, eme
 from app.prompts.intent import INTENT_CLASSIFICATION_PROMPT, SYMPTOM_TOPIC_IDS, intent_schema
 from app.prompts.system import DRAFT_GENERATION_PROMPT, ORCHESTRATOR_SYSTEM_PROMPT
 from app.prompts.verifier import ABSTENTION_MESSAGE
-from app.tools.registry import TOOL_REGISTRY, render_tool_list
+from app.tools.registry import TOOL_REGISTRY, render_tool_list, required_parameters
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +91,16 @@ CATALOG_FAILED_RESPONSE = (
     "Please browse tests directly on docnow.in or contact our support team at +91 9649089089."
 )
 
+NO_OPEN_BOOKINGS_RESPONSE = (
+    "I couldn't find an upcoming booking that can still be changed. "
+    "You can see all your bookings under My Bookings, or contact our support team at +91 9649089089."
+)
+
+RESCHEDULE_IN_APP_RESPONSE = (
+    "I can't pick a new time slot from chat yet. To reschedule {booking}, open My Bookings in your profile "
+    "and choose Reschedule on that booking: it shows the free slots for its address."
+)
+
 WRITE_DONE_RESPONSES = {
     "cancel_booking": "Done. Your booking has been cancelled.",
     "reschedule_booking": "Done. Your booking has been rescheduled.",
@@ -113,10 +127,81 @@ def _history_text(ctx: AgentContext) -> str:
     return "\n".join(f"{m['role'].upper()}: {m['content']}" for m in ctx.conversation_history[-HISTORY_MESSAGES:])
 
 
-def _confirmation_request(intent: Intent) -> str:
-    details = ", ".join(f"{k}: {v}" for k, v in intent.parameters.items()) or "no details"
+def _confirmation_request(intent: Intent, booking: dict | None = None) -> str:
+    params = {k: v for k, v in intent.parameters.items() if not (booking and k == "booking_id")}
+    details = ", ".join(f"{k}: {v}" for k, v in params.items()) or "no details"
+    if booking:
+        details = _booking_label(booking) + (f"; {details}" if params else "")
     action = "cancel this booking" if intent.tool_name == "cancel_booking" else "reschedule this booking"
     return f"Please confirm: do you want me to {action} ({details})? Reply YES to continue, or anything else to stop."
+
+
+# ── Slot-filling for cancel/reschedule without a booking ID ──
+
+# Express refuses changes in these states (server/src/controllers/bookings/reschedule.ts), so never offer them.
+_CLOSED_STATUSES = {
+    "Cancelled", "CANCELLED", "Sample Collected", "Sample Received at Lab", "Report Generated",
+    "Health Counselling Done", "Report Available", "Completed", "Rescheduled", "Refunded", "Superseded",
+    "BOOKING_FAILED",
+}
+_ORDINALS = {
+    "1": 0, "1st": 0, "first": 0, "one": 0, "2": 1, "2nd": 1, "second": 1, "two": 1,
+    "3": 2, "3rd": 2, "third": 2, "three": 2, "4": 3, "4th": 3, "fourth": 3, "5": 4, "5th": 4, "fifth": 4,
+}
+_ORDINAL_REPLY = re.compile(r"^\s*(?:the\s+|number\s+|no\.?\s*|#)?([a-z0-9]+)(?:\s+one)?(?:\s+booking)?\s*(?:please)?[.!\s]*$")
+# Words that say nothing about which booking is meant.
+_FILLER = {
+    "the", "one", "booking", "bookings", "cancel", "reschedule", "please", "that", "this", "for", "and", "my",
+    "test", "tests", "appointment", "want", "with", "yes", "booked", "order", "no", "is", "it", "of", "to", "on", "at",
+}
+
+
+def _is_blank(value: Any) -> bool:
+    return value is None or not str(value).strip()
+
+
+def _is_blank_id(intent: Intent) -> bool:
+    return _is_blank(intent.parameters.get("booking_id"))
+
+
+def _with_booking(intent: Intent, booking_id: Any) -> Intent:
+    return intent.model_copy(update={"parameters": {**intent.parameters, "booking_id": str(booking_id)}})
+
+
+def _booking_label(b: dict) -> str:
+    items = b.get("items") or b.get("tests") or []
+    tests = ", ".join(str(i.get("testName") or i.get("name") or "") if isinstance(i, dict) else str(i) for i in items)
+    when = b.get("slot") or " ".join(str(v) for v in (b.get("slotDate"), b.get("slotTime")) if v)
+    return f"{tests or 'booking'}, {when or 'time not set'} (booking {b.get('id')}, {b.get('status')})"
+
+
+def _open_bookings(output: Any) -> list[dict]:
+    rows = output.get("bookings", []) if isinstance(output, dict) else output
+    return [
+        b for b in rows or []
+        if isinstance(b, dict) and b.get("id") and b.get("status") not in _CLOSED_STATUSES and not b.get("superseded")
+    ]
+
+
+def _choice_question(intent: Intent, bookings: list[dict]) -> str:
+    verb = "cancel" if intent.tool_name == "cancel_booking" else "reschedule"
+    lines = "\n".join(f"{n}. {_booking_label(b)}" for n, b in enumerate(bookings, 1))
+    return f"Which booking do you want to {verb}?\n{lines}\nReply with its number or booking ID."
+
+
+def _pick_booking(answer: str, bookings: list[dict]) -> str | None:
+    """Which listed booking the reply names: its ID, its number, or words only it matches. None if unclear."""
+    text = answer.lower()
+    by_id = [b for b in bookings if re.search(rf"\b{re.escape(str(b['id']).lower())}\b", text)]
+    if len(by_id) == 1:
+        return str(by_id[0]["id"])
+    if (m := _ORDINAL_REPLY.match(text)) and _ORDINALS.get(m[1], len(bookings)) < len(bookings):
+        return str(bookings[_ORDINALS[m[1]]]["id"])
+    words = {w for w in re.findall(r"[a-z0-9]+", text) if len(w) >= 2 and w not in _FILLER}
+    scores = [(len(words & set(re.findall(r"[a-z0-9]+", _booking_label(b).lower()))), b) for b in bookings]
+    best = max((n for n, _ in scores), default=0)
+    winners = [b for n, b in scores if n == best]
+    return str(winners[0]["id"]) if best and len(winners) == 1 else None
 
 
 @observe(name="intent-classification", capture_input=False, capture_output=False)
@@ -241,9 +326,12 @@ def _elapsed(start: float) -> int:
 #     │               ├─► fixed_reply (greeting/off-topic/medical) ► END
 #     ▼               └─► retrieval ─┬─► abstain ───────────────► END
 #    END                             ├─► action ─┬─► booking_reply ► END
-#                                    │           ├─► END (login / confirm / failed)
-#                                    │           ▼
-#                                    └─────────► draft ─► verifier ─► response ─► END
+#                                    │     ▲     ├─► END (login / failed)
+#                                    │     │     ├─► fetch_bookings ─► choose_booking* ─► confirm*
+#                                    │     │     └─► confirm* ──────────────────────────────┐
+#                                    │     └────────────── yes ─────────────────────────────┘
+#                                    └─► draft ─► verifier ─► response ─► END
+#   (* interrupt(): the turn ends with a question and the next message resumes the graph there)
 #
 # Search starts as an asyncio task inside the intent node and the retrieval node joins or
 # cancels it. A LangGraph fan-out would wait for both branches, so booking and off-topic
@@ -274,6 +362,9 @@ class TurnState(TypedDict, total=False):
     draft: str
     verification: VerificationResult
     response: SupportResponse  # set by whichever node ends the turn
+    next: str | None  # where the action node sends a write that still needs a booking or a "yes"
+    bookings: list[dict]  # bookings the customer can pick from (slot-filling)
+    abandoned: bool  # the reply to a slot-filling question was not an answer; the message is handled afresh
 
 
 def _finished(state: TurnState) -> bool:
@@ -397,8 +488,12 @@ async def action_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
             was_abstained=False,
         )}
 
-    if tool_def and tool_def.is_write and not state["confirmed"]:
-        return {"response": SupportResponse(content=_confirmation_request(intent), pending_action=intent)}
+    if tool_def and tool_def.is_write:
+        # A write needs a booking the customer picked, then their explicit yes (both are interrupts).
+        if _is_blank_id(intent):
+            return {"next": "fetch_bookings"}
+        if not state["confirmed"]:
+            return {"next": "confirm"}
 
     from app.agents.action import execute_action
 
@@ -417,13 +512,82 @@ async def action_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
             return {"actions": actions, "response": SupportResponse(
                 content=CATALOG_FAILED_RESPONSE, actions_taken=actions, was_abstained=True,
             )}
-    return {"actions": actions}
+    return {"actions": state.get("actions", []) + actions, "next": None}
 
 
 def route_after_action(state: TurnState) -> str:
     if _finished(state):
         return END
+    if state.get("next"):
+        return state["next"]
     return "booking_reply" if state["booking_turn"] else "draft"
+
+
+async def fetch_bookings_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
+    """Cancel/reschedule without a booking ID: list the customer's open bookings to pick from.
+
+    Kept apart from the question node: a node that calls interrupt() reruns from its start on resume.
+    """
+    from app.agents.action import execute_action
+
+    deps, intent = runtime.context, state["intent"]
+    listed = await execute_action(
+        Intent(intent="BOOKING_LIST", tool_name="list_bookings", requires_action=True), deps.ctx, deps.settings
+    )
+    actions = [listed]
+    if not listed.success:
+        return {"actions": actions, "response": SupportResponse(
+            content=ACTION_FAILED_RESPONSE, actions_taken=actions, was_abstained=True,
+        )}
+    bookings = _open_bookings(listed.output)[:MAX_BOOKINGS_IN_PROMPT]
+    if not bookings:
+        return {"actions": actions, "response": SupportResponse(content=NO_OPEN_BOOKINGS_RESPONSE, actions_taken=actions)}
+    if len(bookings) == 1:
+        return {"actions": actions, "bookings": bookings, "intent": _with_booking(intent, bookings[0]["id"])}
+    return {"actions": actions, "bookings": bookings}
+
+
+def route_after_fetch(state: TurnState) -> str:
+    if _finished(state):
+        return END
+    return "choose_booking" if _is_blank_id(state["intent"]) else "confirm"
+
+
+async def choose_booking_node(state: TurnState) -> dict:
+    intent, bookings = state["intent"], state["bookings"]
+    answer = interrupt({"content": _choice_question(intent, bookings), "pending_action": intent.model_dump()})
+    picked = _pick_booking(answer, bookings)
+    if picked is None:
+        return {"abandoned": True}
+    return {"intent": _with_booking(intent, picked)}
+
+
+async def confirm_node(state: TurnState) -> dict:
+    """The last stop before a write: the customer must say yes to this exact booking."""
+    intent = state["intent"]
+    if _is_blank_id(intent):
+        raise ValueError(f"{intent.tool_name} reached confirmation without a booking_id")
+    booking_id = intent.parameters["booking_id"]
+    booking = next((b for b in state.get("bookings") or [] if str(b.get("id")) == str(booking_id)), None)
+    # Never ask for a yes to a write that cannot run: a reschedule needs a slot, which chat cannot pick yet.
+    missing = [k for k in required_parameters(TOOL_REGISTRY[intent.tool_name]) if _is_blank(intent.parameters.get(k))]
+    if missing:
+        label = _booking_label(booking) if booking else f"booking {booking_id}"
+        return {"response": SupportResponse(content=RESCHEDULE_IN_APP_RESPONSE.format(booking=label))}
+    answer = interrupt({"content": _confirmation_request(intent, booking), "pending_action": intent.model_dump()})
+    if not _CONFIRM.match(answer):
+        return {"abandoned": True}
+    # Only the write is reported on this turn; the booking list belonged to the earlier question.
+    return {"confirmed": True, "actions": []}
+
+
+def route_after_choice(state: TurnState) -> str:
+    # Always through confirm: a "yes" given before the booking was picked does not cover it.
+    return END if state.get("abandoned") else "confirm"
+
+
+def route_after_confirm(state: TurnState) -> str:
+    return END if state.get("abandoned") or _finished(state) else "action"
 
 
 async def booking_reply_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
@@ -468,7 +632,7 @@ async def response_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
     )}
 
 
-def build_graph():
+def build_graph(checkpointer: InMemorySaver | None = None):
     g = StateGraph(TurnState, context_schema=TurnDeps)
     g.add_node("safety", safety_node)
     g.add_node("intent", intent_node)
@@ -477,6 +641,9 @@ def build_graph():
     g.add_node("retrieval", retrieval_node)
     g.add_node("abstain", abstain_node)
     g.add_node("action", action_node)
+    g.add_node("fetch_bookings", fetch_bookings_node)
+    g.add_node("choose_booking", choose_booking_node)
+    g.add_node("confirm", confirm_node)
     g.add_node("booking_reply", booking_reply_node)
     g.add_node("draft", draft_node)
     g.add_node("verifier", verifier_node)
@@ -486,15 +653,54 @@ def build_graph():
     g.add_conditional_edges("safety", lambda s: END if _finished(s) else "intent", ["intent", END])
     g.add_conditional_edges("intent", route_after_intent, ["symptom", "fixed_reply", "retrieval"])
     g.add_conditional_edges("retrieval", route_after_retrieval, ["action", "abstain", "draft"])
-    g.add_conditional_edges("action", route_after_action, ["booking_reply", "draft", END])
+    g.add_conditional_edges("action", route_after_action, ["fetch_bookings", "confirm", "booking_reply", "draft", END])
+    g.add_conditional_edges("fetch_bookings", route_after_fetch, ["choose_booking", "confirm", END])
+    g.add_conditional_edges("choose_booking", route_after_choice, ["confirm", END])
+    g.add_conditional_edges("confirm", route_after_confirm, ["action", END])
     g.add_edge("draft", "verifier")
     g.add_edge("verifier", "response")
     for terminal in ("symptom", "fixed_reply", "abstain", "booking_reply", "response"):
         g.add_edge(terminal, END)
-    return g.compile(name="support-graph")
+    return g.compile(name="support-graph", checkpointer=checkpointer)
 
 
-SUPPORT_GRAPH = build_graph()
+# Paused slot-filling turns live in process memory (uvicorn runs one worker). After a restart the
+# pause is gone: a "yes" still confirms through the stored pending_action, and any other reply is
+# handled as a new message, so a lost pause can never write. Only paused threads are kept.
+# Only our own models may be rebuilt from a checkpoint (LangGraph will block unlisted types).
+_CHECKPOINT_TYPES = [
+    ("app.models", name)
+    for name in ("Intent", "RetrievalResult", "RetrievedChunk", "ActionResult", "VerificationResult",
+                 "SupportResponse", "ProductCard")
+]
+_CHECKPOINTER = InMemorySaver(serde=JsonPlusSerializer(allowed_msgpack_modules=_CHECKPOINT_TYPES))
+SUPPORT_GRAPH = build_graph(_CHECKPOINTER)
+PAUSE_TTL_SECONDS = 30 * 60
+_PAUSED: dict[str, float] = {}  # thread id -> when it paused
+
+
+def _thread_id(ctx: AgentContext) -> str:
+    if ctx.is_authenticated and ctx.conversation_id and ctx.conversation_id != "ephemeral":
+        return f"conversation:{ctx.conversation_id}"
+    return f"turn:{uuid.uuid4()}"
+
+
+async def _forget(thread: str) -> None:
+    _PAUSED.pop(thread, None)
+    await _CHECKPOINTER.adelete_thread(thread)
+
+
+async def _sweep_paused() -> None:
+    cutoff = time.monotonic() - PAUSE_TTL_SECONDS
+    for thread in [t for t, at in _PAUSED.items() if at < cutoff]:
+        await _forget(thread)
+
+
+async def _invoke(payload: Any, thread: str, deps: TurnDeps) -> dict:
+    # durability="exit": write the checkpoint only when the run stops (an interrupt or the end).
+    return await SUPPORT_GRAPH.ainvoke(
+        payload, {"configurable": {"thread_id": thread}}, context=deps, durability="exit"
+    )
 
 
 async def _run_pipeline(
@@ -505,13 +711,35 @@ async def _run_pipeline(
 ) -> SupportResponse:
     start_time = time.monotonic()
     deps = TurnDeps(ctx=ctx, db=db, settings=settings)
+    thread = _thread_id(ctx)
     try:
-        final = await SUPPORT_GRAPH.ainvoke({"message": message}, context=deps)
-        response = final["response"]
+        await _sweep_paused()
+        final = None
+        # The graph paused on a question last turn and the stored pending action agrees: this is the answer.
+        if thread in _PAUSED and ctx.pending_action is not None:
+            final = await _invoke(Command(resume=message), thread, deps)
+            if final.get("abandoned"):
+                final = None  # not an answer: drop the pending write and handle the message afresh
+        if final is None:
+            await _forget(thread)
+            final = await _invoke({"message": message}, thread, deps)
+        if interrupts := final.get("__interrupt__"):
+            question = interrupts[0].value
+            _PAUSED[thread] = time.monotonic()
+            response = SupportResponse(
+                content=question["content"],
+                pending_action=Intent.model_validate(question["pending_action"]),
+                actions_taken=final.get("actions", []),
+            )
+        else:
+            await _forget(thread)
+            response = final["response"]
     except AIBusyError:
+        await _forget(thread)
         response = SupportResponse(content=BUSY_RESPONSE, was_abstained=True)
     except Exception:
         logger.exception("Orchestrator error for conversation %s", ctx.conversation_id)
+        await _forget(thread)
         response = SupportResponse(content=ERROR_RESPONSE, was_abstained=True)
     finally:
         task = deps.retrieval_task

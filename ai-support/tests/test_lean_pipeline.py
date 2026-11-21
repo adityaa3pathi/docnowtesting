@@ -352,5 +352,6 @@ def test_graph_has_the_documented_nodes():
 
     assert set(SUPPORT_GRAPH.get_graph().nodes) == {
         "__start__", "__end__", "safety", "intent", "symptom", "fixed_reply", "retrieval",
-        "abstain", "action", "booking_reply", "draft", "verifier", "response",
+        "abstain", "action", "fetch_bookings", "choose_booking", "confirm", "booking_reply", "draft", "verifier",
+        "response",
     }
