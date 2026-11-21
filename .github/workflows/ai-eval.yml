@@ -1,0 +1,65 @@
+name: AI Pipeline Eval
+
+# Full golden-set eval on the real pipeline (Gemini answers + RAGAS judge). It spends API quota,
+# so it runs only on demand: the Actions tab, or adding the `run-eval` label to a PR.
+# Needs repo secret SUPPORT_GEMINI_API_KEY (optional: SUPPORT_GROQ_API_KEY for a Groq judge).
+on:
+  workflow_dispatch:
+    inputs:
+      ragas:
+        description: "Score with RAGAS (more judge calls)"
+        type: boolean
+        default: true
+  pull_request:
+    types: [labeled, synchronize]
+    paths:
+      - "ai-support/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-eval-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eval:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-eval')
+    name: Golden-set eval
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: ai-support
+    env:
+      SUPPORT_GEMINI_API_KEY: ${{ secrets.SUPPORT_GEMINI_API_KEY }}
+      SUPPORT_GROQ_API_KEY: ${{ secrets.SUPPORT_GROQ_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: ai-support/requirements*.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run eval with quality gate
+        run: |
+          ARGS="--label ci --gate --concurrency 2"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.ragas }}" = "false" ]; then
+            ARGS="$ARGS --no-ragas"
+          fi
+          python -m app.eval.runner $ARGS
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: ai-support/app/eval/reports/*-ci.json
+          if-no-files-found: ignore
