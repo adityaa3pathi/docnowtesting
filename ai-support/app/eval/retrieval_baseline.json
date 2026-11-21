@@ -1,27 +1,26 @@
 {
-  "label": "phase1-baseline",
-  "run_at_ist": "21-11-2026 18:18 IST",
+  "label": "catalog-facts-fix",
+  "run_at_ist": "21-11-2026 19:56 IST",
   "embedding_model": "gemini-embedding-001",
   "embedding_dimensions": 768,
   "relevance_threshold": 0.58,
+  "corpus": "fixture",
   "corpus_chunks": 35,
   "scores": {
     "n_answerable": 46,
     "n_off_topic": 4,
-    "recall@5": 0.8913043478260869,
-    "hit@1": 0.8478260869565217,
-    "mrr@5": 0.8586956521739131,
-    "ndcg@5": 0.8618389971091199,
+    "recall@5": 0.9347826086956522,
+    "hit@1": 0.9130434782608695,
+    "mrr@5": 0.9184782608695652,
+    "ndcg@5": 0.917693854542307,
     "dense_recall@20": 0.9782608695652174,
-    "bm25_recall@20": 0.9021739130434783,
+    "bm25_recall@20": 0.9456521739130435,
     "false_abstention_rate": 0.0,
     "abstention_accuracy": 1.0,
     "answerable_top_sim_min": 0.6267,
     "off_topic_top_sim_max": 0.5535,
     "misses": {
       "ordering": [
-        "r-constituent-02",
-        "r-constituent-03",
         "r-followup-01",
         "r-followup-02",
         "r-followup-04"
@@ -37,10 +36,10 @@
       },
       "constituent": {
         "n": 7,
-        "recall@5": 0.7142857142857143,
-        "hit@1": 0.42857142857142855,
-        "mrr@5": 0.5,
-        "ndcg@5": 0.5516218737352552
+        "recall@5": 1.0,
+        "hit@1": 0.8571428571428571,
+        "mrr@5": 0.8928571428571429,
+        "ndcg@5": 0.9186680797247704
       },
       "direct": {
         "n": 7,

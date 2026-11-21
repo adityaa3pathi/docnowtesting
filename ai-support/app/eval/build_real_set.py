@@ -80,7 +80,7 @@ def coverage(items: list[dict[str, Any]]) -> dict[str, Any]:
                                lambda i, t: str(details(i)["fastingTime"]) in t),
         "all_constituents": share(lambda i: constituents(i),
                                   lambda i, t: all(c in t for c in constituents(i))),
-        "constituents_lost": sum(max(0, len(constituents(i)) - CUT) for i in items),
+        "constituents_lost": sum(1 for i in items for c in constituents(i) if c not in format_catalog_text(i)),
     }
 
 
