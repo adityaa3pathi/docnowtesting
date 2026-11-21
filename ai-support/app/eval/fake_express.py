@@ -24,8 +24,9 @@ SLOTS = ["07:00-08:00", "08:00-09:00", "09:00-10:00", "11:00-12:00"]
 class FakeExpress:
     """Use as an httpx transport handler; `calls` keeps (method, path) for tool-accuracy checks."""
 
-    def __init__(self) -> None:
+    def __init__(self, catalog: list[dict] | None = None) -> None:
         self.calls: list[tuple[str, str]] = []
+        self.catalog = CATALOG if catalog is None else catalog
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         path = re.sub(r"^.*?/api", "", request.url.path)
@@ -36,10 +37,10 @@ class FakeExpress:
     def _route(self, method: str, path: str, request: httpx.Request) -> tuple[int, dict]:
         if method == "GET" and path == "/catalog/products":
             term = (request.url.params.get("search") or "").lower()
-            hits = [i for i in CATALOG if term and term in i["name"].lower()]
+            hits = [i for i in self.catalog if term and term in i["name"].lower()]
             return 200, {"products": hits[: int(request.url.params.get("limit", 5))]}
         if method == "GET" and (m := re.fullmatch(r"/catalog/products/([^/]+)", path)):
-            item = next((i for i in CATALOG if i["partnerCode"] == m[1]), None)
+            item = next((i for i in self.catalog if i["partnerCode"] == m[1]), None)
             return (200, item) if item else (404, {"error": "Product not found"})
         # Same rule as Express authMiddleware, so a wrong auth header fails the eval too.
         if path.startswith("/bookings") and not request.headers.get("Authorization", "").startswith("Bearer "):
