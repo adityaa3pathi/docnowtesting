@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.models import ActionResult, Intent, RetrievalResult
+from app.models import ActionResult, Intent, RetrievalResult, VerificationResult
 from app.symptoms.safety import (
     DISCLAIMER, EMERGENCY_RESPONSE, MEDICAL_ADVICE_RESPONSE, approved, emergency_sign, normalize, topics,
 )
@@ -74,7 +74,8 @@ def _patches(intent):
         patch("app.agents.orchestrator.retrieve", new_callable=AsyncMock, return_value=RetrievalResult()),
         patch("app.agents.orchestrator.classify_intent", new_callable=AsyncMock, return_value=intent),
         patch("app.agents.orchestrator.generate_draft", new_callable=AsyncMock, return_value="draft"),
-        patch("app.agents.orchestrator.verify", new_callable=AsyncMock),
+        patch("app.agents.orchestrator.verify", new_callable=AsyncMock,
+              return_value=VerificationResult(verdict="GROUNDED", cleaned_response="draft")),
         patch("app.agents.action.execute_action", new_callable=AsyncMock, side_effect=_catalog_by_term),
     )
 
