@@ -43,6 +43,7 @@ class RetrievalResult(BaseModel):
     query_embedding: list[float] = Field(default_factory=list)
     failed: bool = False  # search errored; never treat as "nothing relevant"
     rescued: bool = False  # dense gate abstained; chunks came from the rare-title BM25 rescue
+    rerank_top_score: float | None = None  # best reranker score; None when the reranker was off or failed
 
 
 class Intent(BaseModel):

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
 import json
 import logging
 import sys
@@ -27,6 +28,8 @@ from app.agents.retrieval import CANDIDATES, INDEX_SOURCE, TOP_K, retrieve
 from app.config import Settings
 from app.eval.corpus import REAL_DIR, EmbeddingCache, InMemoryKnowledgeBase, MissingEmbeddingsError
 from app.eval.ir_metrics import hit_at_k, mean, ndcg_at_k, recall_at_k, reciprocal_rank
+from app.eval.rerank_cache import PATHS as RERANK_PATHS
+from app.eval.rerank_cache import RerankCache
 
 EVAL_DIR = Path(__file__).parent
 SET_PATH = EVAL_DIR / "retrieval_set.json"
@@ -57,9 +60,13 @@ GATED = {
 TOLERANCE = 0.02
 
 
-async def run_queries(queries: list[dict], kb: InMemoryKnowledgeBase, cache: EmbeddingCache, settings: Settings) -> list[dict]:
+async def run_queries(
+    queries: list[dict], kb: InMemoryKnowledgeBase, cache: EmbeddingCache, settings: Settings,
+    rerank_cache: Optional[RerankCache] = None,
+) -> list[dict]:
     rows = []
-    with patch("app.agents.retrieval.generate_embedding", lambda text, _s, _task: cache.embed(text)):
+    rerank_patch = patch("app.agents.rerank.score_documents", rerank_cache.score) if rerank_cache else contextlib.nullcontext()
+    with patch("app.agents.retrieval.generate_embedding", lambda text, _s, _task: cache.embed(text)), rerank_patch:
         for q in queries:
             embedding = await cache.embed(q["query"])
             dense = await kb.vector_search(embedding, limit=CANDIDATES, exclude_source=INDEX_SOURCE)
@@ -77,6 +84,7 @@ async def run_queries(queries: list[dict], kb: InMemoryKnowledgeBase, cache: Emb
                     "final": [c.id for c in result.chunks],
                     "abstained": result.should_abstain,
                     "rescued": result.rescued,
+                    "rerank_top_score": result.rerank_top_score,
                     # What the abstention gate sees: the best of both lanes.
                     "top_dense_similarity": round(max(r["similarity"] for r in dense + index_top), 4) if dense else 0.0,
                     "dense_top20": [r["id"] for r in dense],
@@ -156,6 +164,31 @@ def score(rows: list[dict]) -> dict[str, Any]:
     }
 
 
+SWEEP = [0.005, 0.01, 0.02, 0.03, 0.05, 0.08, 0.1, 0.15, 0.2, 0.3]
+
+
+def gate_sweep(rows: list[dict]) -> list[dict]:
+    """What each reranker gate threshold would do, from one ungated run: pick rerank_min_score from this.
+
+    A row abstains at threshold t if the dense gate abstained, or its best reranker score is below t.
+    """
+    answerable = [r for r in rows if r["relevant"]]
+    off_topic = [r for r in rows if not r["relevant"]]
+
+    def abstains(r: dict, t: float) -> bool:
+        return r["abstained"] or (r.get("rerank_top_score") is not None and r["rerank_top_score"] < t)
+
+    return [
+        {
+            "threshold": t,
+            "false_abstention_rate": mean([1.0 if abstains(r, t) else 0.0 for r in answerable]),
+            "abstention_accuracy": mean([1.0 if abstains(r, t) else 0.0 for r in off_topic]),
+            "false_abstentions": [r["id"] for r in answerable if abstains(r, t) and not r["abstained"]],
+        }
+        for t in SWEEP
+    ]
+
+
 def regressions(scores: dict, baseline: dict) -> list[str]:
     failed = []
     for metric, direction in GATED.items():
@@ -184,6 +217,9 @@ def print_summary(scores: dict, baseline: Optional[dict]) -> None:
     print(f"\n{'Category':<16} | {'n':>3} | {'R@5':>5} | {'MRR':>5} | {'nDCG':>5} | {'ctxR':>5}")
     for cat, m in scores["by_category"].items():
         print(f"{cat:<16} | {m['n']:>3} | {m['recall@5']:.2f} | {m['mrr@5']:.2f} | {m['ndcg@5']:.2f} | {m['context_recall']:.2f}")
+    for row in scores.get("rerank_gate_sweep", []):
+        print(f"gate {row['threshold']:<5} false_abst {row['false_abstention_rate']:.3f}  "
+              f"abst_acc {row['abstention_accuracy']:.3f}  {', '.join(row['false_abstentions'][:4])}")
     for cat, acc in scores.get("abstention_by_category", {}).items():
         print(f"abstention/{cat}: {acc:.2f}")
     for kind, ids in scores.get("rescued", {}).items():
@@ -202,20 +238,43 @@ async def run(args: argparse.Namespace) -> int:
     paths = PATHS[args.corpus]
     queries = json.loads(paths["set"].read_text())["queries"]
     cache = EmbeddingCache(settings, path=paths["cache"], offline=args.offline)
+    rerank_cache = None
+    if args.rerank:
+        if not args.offline and not settings.cohere_api_key:
+            print("--rerank needs SUPPORT_COHERE_API_KEY, or --offline with a filled rerank cache.")
+            return 2
+        settings.rerank_enabled = True
+        settings.cohere_api_key = settings.cohere_api_key or "offline-cache"
+        settings.rerank_min_score = args.rerank_min_score
+        rerank_cache = RerankCache(settings, RERANK_PATHS[args.corpus], offline=args.offline, rpm=args.rerank_rpm)
     try:
         kb = await InMemoryKnowledgeBase.load(cache, args.corpus)
         bad = validate(queries, {c["id"] for c in kb.chunks})
         if bad:
             print("Unknown chunk ids in retrieval_set.json:\n  " + "\n  ".join(bad))
             return 2
-        rows = await run_queries(queries, kb, cache, settings)
+        rows = await run_queries(queries, kb, cache, settings, rerank_cache)
     except MissingEmbeddingsError as exc:
         print(f"MISSING_EMBEDDINGS: {exc}")
         return 2
     if not args.offline:
         cache.save(prune=True)
+    if rerank_cache:
+        if rerank_cache.failures:
+            print(f"RERANK_FAILED on {len(rerank_cache.failures)} queries (scores would silently be RRF):")
+            print("  " + "\n  ".join(rerank_cache.failures[:5]))
+            return 2
+        if not args.offline:
+            rerank_cache.save(prune=True)
+        print(f"Reranker: {settings.rerank_model}, {rerank_cache.calls} API calls, min score {settings.rerank_min_score}")
 
     scores = score(rows)
+    if rerank_cache:
+        scores["rerank_gate_sweep"] = gate_sweep(rows)
+        ans = [r["rerank_top_score"] for r in rows if r["relevant"] and r.get("rerank_top_score") is not None]
+        off = [r["rerank_top_score"] for r in rows if not r["relevant"] and r.get("rerank_top_score") is not None]
+        scores["answerable_rerank_min"] = min(ans) if ans else None
+        scores["off_topic_rerank_max"] = max(off) if off else None
     baseline = json.loads(paths["baseline"].read_text())["scores"] if paths["baseline"].exists() else None
     print(f"Corpus: {len(kb.chunks)} chunks, {len(queries)} queries, threshold {settings.relevance_threshold}")
     print_summary(scores, baseline)
@@ -229,6 +288,8 @@ async def run(args: argparse.Namespace) -> int:
         "relevance_threshold": settings.relevance_threshold,
         "corpus": args.corpus,
         "corpus_chunks": len(kb.chunks),
+        "rerank": settings.rerank_model if args.rerank else None,
+        "rerank_min_score": settings.rerank_min_score if args.rerank else None,
     }
     if not args.offline:
         paths["reports"].mkdir(parents=True, exist_ok=True)
@@ -260,6 +321,9 @@ def main() -> None:
                         help="real = local production catalog snapshot (gitignored, no CI)")
     parser.add_argument("--offline", action="store_true", help="use only cached embeddings; never call Gemini")
     parser.add_argument("--gate", action="store_true", help="exit 1 if a metric drops past tolerance vs baseline")
+    parser.add_argument("--rerank", action="store_true", help="rerank with Cohere (cached; see rerank_cache.py)")
+    parser.add_argument("--rerank-min-score", type=float, default=0.0, help="reranker gate; 0 = off")
+    parser.add_argument("--rerank-rpm", type=int, default=0, help="pace Cohere calls (trial key: 10)")
     parser.add_argument("--update-baseline", action="store_true", help="write these scores to retrieval_baseline.json")
     logging.basicConfig(level=logging.WARNING)
     # Langfuse is off in eval and warns once per traced call about the missing key.
