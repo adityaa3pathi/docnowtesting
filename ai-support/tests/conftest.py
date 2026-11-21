@@ -34,6 +34,7 @@ def mock_db() -> MagicMock:
     db.pool = MagicMock()
     db.vector_search = AsyncMock(return_value=[])
     db.keyword_search = AsyncMock(return_value=[])
+    db.rare_title_search = AsyncMock(return_value=[])
     db.insert_chunk = AsyncMock()
     db.get_conversation = AsyncMock(return_value={"id": "conv-1", "userId": "user-1"})
     db.create_conversation = AsyncMock(return_value="conv-1")

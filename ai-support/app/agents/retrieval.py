@@ -23,6 +23,17 @@ CANDIDATES = 20
 INDEX_SOURCE = "catalog_index"
 
 
+def _chunk(row: dict[str, Any], dense_sim: dict[str, float]) -> RetrievedChunk:
+    return RetrievedChunk(
+        id=row["id"],
+        source=row.get("source", "unknown"),
+        title=row.get("title", ""),
+        content=row.get("content", ""),
+        similarity=dense_sim.get(row["id"], 0.0),
+        metadata=row.get("metadata"),
+    )
+
+
 @observe(name="retrieval-agent", capture_input=False, capture_output=False)
 async def retrieve(query: str, db: Any, settings: Any) -> RetrievalResult:
     """Retrieve relevant knowledge chunks for a user query.
@@ -49,24 +60,25 @@ async def retrieve(query: str, db: Any, settings: Any) -> RetrievalResult:
         dense = [r for r in dense if r.get("source") != INDEX_SOURCE]
         relevant = [r for r in dense if r.get("similarity", 0.0) >= threshold]
         index = [r for r in index_hits if r.get("source") == INDEX_SOURCE and r.get("similarity", 0.0) >= threshold]
-        # Abstention stays a dense-similarity decision; BM25 only adds and reorders.
+        dense_sim = {r["id"]: r.get("similarity", 0.0) for r in dense + index}
+        # Abstention stays a dense-similarity decision. The one exception is the narrow rescue: a short query
+        # whose rare term is in a chunk title (a bare code like "qft" embeds weakly).
         if not relevant and not index:
-            return RetrievalResult(should_abstain=True, query_embedding=embedding)
+            rescued = await db.rare_title_search(query, limit=TOP_K) if settings.bm25_rescue_enabled else []
+            if not rescued:
+                return RetrievalResult(should_abstain=True, query_embedding=embedding)
+            annotate(bm25_rescue=True, chunk_ids=[r["id"] for r in rescued])
+            return RetrievalResult(
+                chunks=[_chunk(r, dense_sim) for r in rescued],
+                should_abstain=False,
+                max_similarity=max((r.get("similarity", 0.0) for r in dense), default=0.0),
+                query_embedding=embedding,
+                rescued=True,
+            )
 
         # BM25 only joins when the dense gate passed on the item lane; an index-only turn gets just the index.
         keyword = await db.keyword_search(query, limit=CANDIDATES) if relevant else []
-        dense_sim = {r["id"]: r.get("similarity", 0.0) for r in dense + index}
-        chunks = [
-            RetrievedChunk(
-                id=row["id"],
-                source=row.get("source", "unknown"),
-                title=row.get("title", ""),
-                content=row.get("content", ""),
-                similarity=dense_sim.get(row["id"], 0.0),
-                metadata=row.get("metadata"),
-            )
-            for row in rrf_fuse(relevant, keyword)[:TOP_K] + index[:1]
-        ]
+        chunks = [_chunk(row, dense_sim) for row in rrf_fuse(relevant, keyword)[:TOP_K] + index[:1]]
 
         top_similarity = max(r["similarity"] for r in relevant + index)
         annotate(chunk_ids=[c.id for c in chunks], top_similarity=top_similarity)

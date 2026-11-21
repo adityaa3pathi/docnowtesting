@@ -76,6 +76,7 @@ async def run_queries(queries: list[dict], kb: InMemoryKnowledgeBase, cache: Emb
                     "relevant": q["relevant"],
                     "final": [c.id for c in result.chunks],
                     "abstained": result.should_abstain,
+                    "rescued": result.rescued,
                     # What the abstention gate sees: the best of both lanes.
                     "top_dense_similarity": round(max(r["similarity"] for r in dense + index_top), 4) if dense else 0.0,
                     "dense_top20": [r["id"] for r in dense],
@@ -145,6 +146,11 @@ def score(rows: list[dict]) -> dict[str, Any]:
         "answerable_top_sim_min": min(answer_sims) if answer_sims else None,
         "off_topic_top_sim_max": max(off_sims) if off_sims else None,
         "abstention_by_category": abstention_by_category,
+        # Where the rare-title rescue fired: answerable ids it saved, off-topic ids it let through.
+        "rescued": {
+            "answerable": [r["id"] for r in answerable if r.get("rescued")],
+            "off_topic": [r["id"] for r in off_topic if r.get("rescued")],
+        },
         "misses": dict(misses),
         "by_category": by_category,
     }
@@ -180,6 +186,9 @@ def print_summary(scores: dict, baseline: Optional[dict]) -> None:
         print(f"{cat:<16} | {m['n']:>3} | {m['recall@5']:.2f} | {m['mrr@5']:.2f} | {m['ndcg@5']:.2f} | {m['context_recall']:.2f}")
     for cat, acc in scores.get("abstention_by_category", {}).items():
         print(f"abstention/{cat}: {acc:.2f}")
+    for kind, ids in scores.get("rescued", {}).items():
+        if ids:
+            print(f"rescued/{kind}: {', '.join(ids)}")
     for kind, ids in scores["misses"].items():
         print(f"miss/{kind}: {', '.join(ids)}")
 

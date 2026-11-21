@@ -34,6 +34,8 @@ class BM25Index:
         self.lengths = [sum(d.values()) for d in self.docs]
         self.avg_len = (sum(self.lengths) / len(self.docs)) if self.docs else 0.0
         df = Counter(term for doc in self.docs for term in doc)
+        self.df = df
+        self.titles = [set(tokenize(c.get("title", ""))) for c in chunks]
         n = len(self.docs)
         self.idf = {term: math.log(1 + (n - f + 0.5) / (f + 0.5)) for term, f in df.items()}
         if n >= MIN_DOCS_FOR_MAX_DF:
@@ -53,6 +55,30 @@ class BM25Index:
                 scored.append({**chunk, "bm25": score})
         scored.sort(key=lambda r: r["bm25"], reverse=True)
         return scored[:limit]
+
+
+RESCUE_MAX_DF = 3
+RESCUE_MAX_TERMS = 3
+
+
+def rare_title_matches(index: BM25Index, query: str, limit: int = 5) -> list[dict[str, Any]]:
+    """Catalog chunks whose title carries a rare query term: the narrow rescue for a bare code like "qft".
+
+    Only short queries qualify. A long question carries enough context for the embedding, and its
+    filler words would otherwise find rare-but-irrelevant titles. Only test and package titles count:
+    "Do you offer plumbing services?" matched the FAQ title "Services We Don't Offer".
+    """
+    terms = tokenize(query)
+    if not terms or len(terms) > RESCUE_MAX_TERMS:
+        return []
+    rare = {t for t in terms if 0 < index.df.get(t, 0) <= RESCUE_MAX_DF}
+    hits = [
+        (len(rare & title), chunk)
+        for chunk, title in zip(index.chunks, index.titles)
+        if chunk.get("source") == "catalog" and rare & title
+    ]
+    hits.sort(key=lambda h: h[0], reverse=True)
+    return [chunk for _, chunk in hits[:limit]]
 
 
 def rrf_fuse(*ranked_lists: list[dict[str, Any]], k: int = 60) -> list[dict[str, Any]]:

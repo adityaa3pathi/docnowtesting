@@ -8,7 +8,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-from app.agents.keyword import BM25Index
+from app.agents.keyword import BM25Index, rare_title_matches
 from app.ingestion.catalog_sync import INDEX_SOURCE, constituent_index_docs, format_catalog_text
 from app.ingestion.embeddings import DOCUMENT, QUERY, generate_embeddings_batch
 from app.ingestion.static_docs import STATIC_DOCUMENTS
@@ -153,3 +153,6 @@ class InMemoryKnowledgeBase:
 
     async def keyword_search(self, query: str, limit: int = 20) -> list[dict[str, Any]]:
         return self.bm25.search(query, limit)
+
+    async def rare_title_search(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
+        return rare_title_matches(self.bm25, query, limit)
