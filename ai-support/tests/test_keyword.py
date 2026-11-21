@@ -60,3 +60,17 @@ async def test_keyword_hits_do_not_override_abstention(mock_db, settings, low_si
         result = await retrieve("book me a flight", mock_db, settings)
 
     assert result.should_abstain and result.chunks == []
+
+
+def test_bm25_skips_terms_in_most_chunks():
+    # "test" is in every chunk: it must not produce hits that RRF would credit by rank alone.
+    chunks = [{"id": str(i), "title": f"Test {i}", "content": "test price"} for i in range(12)]
+    chunks.append({"id": "na", "title": "Sodium, Serum", "content": "test price"})
+    index = BM25Index(chunks)
+    assert index.search("sodm test price") == []
+    assert [r["id"] for r in index.search("sodium test")] == ["na"]
+
+
+def test_bm25_ignores_question_filler():
+    chunks = CHUNKS + [{"id": "d", "title": "Urea", "content": "Tells how much urea is in blood"}]
+    assert [r["id"] for r in BM25Index(chunks).search("how much does hba1c cost")] == ["a"]
