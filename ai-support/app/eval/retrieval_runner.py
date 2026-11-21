@@ -266,7 +266,8 @@ async def run(args: argparse.Namespace) -> int:
             return 2
         if not args.offline:
             rerank_cache.save(prune=True)
-        print(f"Reranker: {settings.rerank_model}, {rerank_cache.calls} API calls, min score {settings.rerank_min_score}")
+        print(f"Reranker: {settings.rerank_model}, {rerank_cache.calls} API calls ({rerank_cache.retried} retried), "
+              f"min score {settings.rerank_min_score}")
 
     scores = score(rows)
     if rerank_cache:

@@ -38,18 +38,24 @@ def _chunk(row: dict[str, Any], dense_sim: dict[str, float]) -> RetrievedChunk:
 async def _maybe_rerank(
     query: str, fused: list[dict[str, Any]], index_rows: list[dict[str, Any]], settings: Any
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], float | None]:
-    """Reorder the fused candidates by reranker score; the index chunk is scored but stays appended.
+    """Reorder catalog candidates by reranker score; policy and FAQ chunks keep their RRF slots.
 
-    Returns (item rows, index rows, best score). Off, or on any failure: the RRF order and None.
+    A cross-encoder scores "Services We Don't Offer" as barely relevant to "chest X-ray cost" (0.04-0.20),
+    because the doc says we don't do it; reranked freely, it fell out of the top 5 and the answer went
+    back to "no information". So only catalog rows move, into the slots catalog rows already held.
+    The index chunk is scored too, but stays appended. Returns (item rows, index rows, best score).
+    Off, or on any failure: the RRF order and None.
     """
     if not settings.rerank_enabled:
         return fused, index_rows, None
     candidates = fused[: settings.rerank_candidates]
-    ranked = await rerank(query, candidates + index_rows, settings)
+    catalog = [r for r in candidates if r.get("source") == "catalog"]
+    ranked = await rerank(query, catalog + index_rows, settings)
     if ranked is None:
         return fused, index_rows, None
     index_ids = {r["id"] for r in index_rows}
-    items = [row for row, _ in ranked if row["id"] not in index_ids]
+    reordered = iter([row for row, _ in ranked if row["id"] not in index_ids])
+    items = [next(reordered) if r.get("source") == "catalog" else r for r in candidates]
     return items, index_rows, ranked[0][1]
 
 
