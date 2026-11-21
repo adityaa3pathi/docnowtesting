@@ -8,8 +8,16 @@ from typing import Any
 
 _TOKEN = re.compile(r"[a-z0-9]+")
 _STOPWORDS = frozenset(
-    "a an and are be can do does for how i in is it me my of on or the this to what when where which with you your".split()
+    "a an and are be can do does for how i in is it me my of on or the this to what when where which with you your "
+    # Question filler: a rare filler word in one description ("much", "need") pulled unrelated chunks.
+    "about any cost costs get give have has much many need needed please should tell want will would "
+    # Hinglish filler
+    "hai hain ka ke ki kya kitna kitne kitni ko mein se aur bhi".split()
 )
+# Terms in over half the chunks ("test", "price", "report") score ~0 but still earned full RRF rank credit,
+# so a typo query got an arbitrary BM25 list fused in. Small corpora (unit tests) keep every term.
+MAX_DF = 0.5
+MIN_DOCS_FOR_MAX_DF = 10
 
 
 def tokenize(text: str) -> list[str]:
@@ -28,6 +36,8 @@ class BM25Index:
         df = Counter(term for doc in self.docs for term in doc)
         n = len(self.docs)
         self.idf = {term: math.log(1 + (n - f + 0.5) / (f + 0.5)) for term, f in df.items()}
+        if n >= MIN_DOCS_FOR_MAX_DF:
+            self.idf = {term: idf for term, idf in self.idf.items() if df[term] <= MAX_DF * n}
 
     def search(self, query: str, limit: int = 20) -> list[dict[str, Any]]:
         terms = [t for t in dict.fromkeys(tokenize(query)) if t in self.idf]
