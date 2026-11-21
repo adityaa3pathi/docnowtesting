@@ -9,12 +9,17 @@ import asyncio
 import hashlib
 import json
 import time
+
+import httpx
 from pathlib import Path
 from typing import Any
 
 from app.agents.rerank import cohere_rerank
 from app.eval.corpus import FIXTURES, REAL_DIR
 
+EVAL_TIMEOUT = 15.0
+RETRIES = 3
+BACKOFF_SECONDS = 20.0
 PATHS = {"fixture": FIXTURES / "rerank_scores.json", "real": REAL_DIR / "rerank_scores.json"}
 
 
@@ -34,6 +39,7 @@ class RerankCache:
         # rerank() swallows errors and falls back to RRF by design; in an eval that would silently score
         # "reranker off", so failures are counted here and the runner refuses to report the run.
         self.failures: list[str] = []
+        self.retried = 0
         self._last_call = 0.0
 
     def _key(self, query: str, doc: str) -> str:
@@ -58,13 +64,31 @@ class RerankCache:
             wait = self._last_call + self.min_interval - time.monotonic()
             if wait > 0:
                 await asyncio.sleep(wait)
-            self._last_call = time.monotonic()
-            self.calls += 1
-            for doc, value in zip(missing, await cohere_rerank(query, missing, settings)):
+            for doc, value in zip(missing, await self._call(query, missing, settings)):
                 self.data[self._key(query, doc)] = round(value, 6)
             self.save()
         self.used.update(keys)
         return [self.data[k] for k in keys]
+
+    async def _call(self, query: str, documents: list[str], settings: Any) -> list[float]:
+        """The eval measures ranking, not Cohere's uptime: a patient timeout and retries on 429 or timeout.
+
+        Production keeps rerank_timeout_seconds and falls back to RRF; the eval records how often that
+        would have happened (timeouts) without letting it change the scores.
+        """
+        patient = settings.model_copy(update={"rerank_timeout_seconds": EVAL_TIMEOUT})
+        for attempt in range(RETRIES + 1):
+            self._last_call = time.monotonic()
+            self.calls += 1
+            try:
+                return await cohere_rerank(query, documents, patient)
+            except (httpx.TimeoutException, httpx.HTTPStatusError) as exc:
+                status = getattr(getattr(exc, "response", None), "status_code", None)
+                if attempt == RETRIES or (status is not None and status != 429):
+                    raise
+                self.retried += 1
+                await asyncio.sleep(BACKOFF_SECONDS * (attempt + 1))
+        raise AssertionError("unreachable")
 
     def save(self, prune: bool = False) -> None:
         data = {k: v for k, v in self.data.items() if k in self.used} if prune else self.data
