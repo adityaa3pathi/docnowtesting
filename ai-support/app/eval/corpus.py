@@ -17,9 +17,19 @@ logger = logging.getLogger(__name__)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 CACHE_PATH = Path(__file__).parent / ".cache" / "embeddings.json"
+# "real" is a production CatalogItem snapshot with partner pricing: gitignored, local only.
+REAL_DIR = FIXTURES / "real"
+CORPORA = {"fixture": FIXTURES / "catalog.json", "real": REAL_DIR / "catalog.json"}
 
 
-def build_chunks(catalog_path: Path = FIXTURES / "catalog.json") -> list[dict[str, Any]]:
+def catalog_items(corpus: str = "fixture") -> list[dict[str, Any]]:
+    path = CORPORA[corpus]
+    if not path.exists():
+        raise FileNotFoundError(f"{path} missing; the real corpus is exported by hand (see AI_ROADMAP.md)")
+    return json.loads(path.read_text())["items"]
+
+
+def build_chunks(corpus: str = "fixture") -> list[dict[str, Any]]:
     """Chunks shaped like KnowledgeChunk rows, built the way the ingestion jobs build them."""
     chunks = [
         {
@@ -31,7 +41,7 @@ def build_chunks(catalog_path: Path = FIXTURES / "catalog.json") -> list[dict[st
         }
         for doc in STATIC_DOCUMENTS
     ]
-    for item in json.loads(catalog_path.read_text())["items"]:
+    for item in catalog_items(corpus):
         chunks.append(
             {
                 "id": f"catalog:{item['id']}",
@@ -114,8 +124,8 @@ class InMemoryKnowledgeBase:
         self.pool = None
 
     @classmethod
-    async def load(cls, cache: EmbeddingCache) -> InMemoryKnowledgeBase:
-        chunks = build_chunks()
+    async def load(cls, cache: EmbeddingCache, corpus: str = "fixture") -> InMemoryKnowledgeBase:
+        chunks = build_chunks(corpus)
         return cls(chunks, await cache.embed_many([c["content"] for c in chunks], DOCUMENT))
 
     async def vector_search(self, embedding: list[float], limit: int = 10) -> list[dict[str, Any]]:

@@ -25,7 +25,7 @@ from unittest.mock import patch
 
 from app.agents.retrieval import CANDIDATES, TOP_K, retrieve
 from app.config import Settings
-from app.eval.corpus import EmbeddingCache, InMemoryKnowledgeBase, MissingEmbeddingsError
+from app.eval.corpus import REAL_DIR, EmbeddingCache, InMemoryKnowledgeBase, MissingEmbeddingsError
 from app.eval.ir_metrics import hit_at_k, mean, ndcg_at_k, recall_at_k, reciprocal_rank
 
 EVAL_DIR = Path(__file__).parent
@@ -34,6 +34,16 @@ BASELINE_PATH = EVAL_DIR / "retrieval_baseline.json"
 # Committed, so CI scores retrieval with no API key. Query and chunk vectors both live here.
 CACHE_PATH = EVAL_DIR / "fixtures" / "retrieval_embeddings.json"
 REPORTS_DIR = EVAL_DIR / "reports" / "retrieval"
+# The real corpus keeps every artefact next to its gitignored snapshot (it names partner products and prices).
+PATHS = {
+    "fixture": {"set": SET_PATH, "baseline": BASELINE_PATH, "cache": CACHE_PATH, "reports": REPORTS_DIR},
+    "real": {
+        "set": REAL_DIR / "retrieval_set.json",
+        "baseline": REAL_DIR / "retrieval_baseline.json",
+        "cache": REAL_DIR / "embeddings.json",
+        "reports": REAL_DIR / "reports",
+    },
+}
 IST = timezone(timedelta(hours=5, minutes=30))
 
 # Gate on drops from the committed baseline, not absolute bars: the set is built to contain known misses.
@@ -160,10 +170,11 @@ async def run(args: argparse.Namespace) -> int:
         print("SUPPORT_GEMINI_API_KEY is not set; use --offline to score from the committed cache.")
         return 2
 
-    queries = json.loads(SET_PATH.read_text())["queries"]
-    cache = EmbeddingCache(settings, path=CACHE_PATH, offline=args.offline)
+    paths = PATHS[args.corpus]
+    queries = json.loads(paths["set"].read_text())["queries"]
+    cache = EmbeddingCache(settings, path=paths["cache"], offline=args.offline)
     try:
-        kb = await InMemoryKnowledgeBase.load(cache)
+        kb = await InMemoryKnowledgeBase.load(cache, args.corpus)
         bad = validate(queries, {c["id"] for c in kb.chunks})
         if bad:
             print("Unknown chunk ids in retrieval_set.json:\n  " + "\n  ".join(bad))
@@ -176,7 +187,7 @@ async def run(args: argparse.Namespace) -> int:
         cache.save(prune=True)
 
     scores = score(rows)
-    baseline = json.loads(BASELINE_PATH.read_text())["scores"] if BASELINE_PATH.exists() else None
+    baseline = json.loads(paths["baseline"].read_text())["scores"] if paths["baseline"].exists() else None
     print(f"Corpus: {len(kb.chunks)} chunks, {len(queries)} queries, threshold {settings.relevance_threshold}")
     print_summary(scores, baseline)
 
@@ -187,16 +198,17 @@ async def run(args: argparse.Namespace) -> int:
         "embedding_model": settings.embedding_model,
         "embedding_dimensions": settings.embedding_dimensions,
         "relevance_threshold": settings.relevance_threshold,
+        "corpus": args.corpus,
         "corpus_chunks": len(kb.chunks),
     }
     if not args.offline:
-        REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-        path = REPORTS_DIR / f"{now:%Y-%m-%d-%H%M}-{args.label}.json"
+        paths["reports"].mkdir(parents=True, exist_ok=True)
+        path = paths["reports"] / f"{now:%Y-%m-%d-%H%M}-{args.label}.json"
         path.write_text(json.dumps({**meta, "scores": scores, "rows": rows}, indent=2, ensure_ascii=False))
         print(f"\nReport saved to {path}")
     if args.update_baseline:
-        BASELINE_PATH.write_text(json.dumps({**meta, "scores": scores}, indent=2, ensure_ascii=False) + "\n")
-        print(f"Baseline updated: {BASELINE_PATH}")
+        paths["baseline"].write_text(json.dumps({**meta, "scores": scores}, indent=2, ensure_ascii=False) + "\n")
+        print(f"Baseline updated: {paths['baseline']}")
         return 0
 
     if args.gate:
@@ -215,6 +227,8 @@ async def run(args: argparse.Namespace) -> int:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Score retrieval alone on the retrieval set")
     parser.add_argument("--label", default="run")
+    parser.add_argument("--corpus", choices=["fixture", "real"], default="fixture",
+                        help="real = local production catalog snapshot (gitignored, no CI)")
     parser.add_argument("--offline", action="store_true", help="use only cached embeddings; never call Gemini")
     parser.add_argument("--gate", action="store_true", help="exit 1 if a metric drops past tolerance vs baseline")
     parser.add_argument("--update-baseline", action="store_true", help="write these scores to retrieval_baseline.json")
