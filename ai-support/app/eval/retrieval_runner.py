@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any, Optional
 from unittest.mock import patch
 
-from app.agents.retrieval import CANDIDATES, TOP_K, retrieve
+from app.agents.retrieval import CANDIDATES, INDEX_SOURCE, TOP_K, retrieve
 from app.config import Settings
 from app.eval.corpus import REAL_DIR, EmbeddingCache, InMemoryKnowledgeBase, MissingEmbeddingsError
 from app.eval.ir_metrics import hit_at_k, mean, ndcg_at_k, recall_at_k, reciprocal_rank
@@ -62,7 +62,8 @@ async def run_queries(queries: list[dict], kb: InMemoryKnowledgeBase, cache: Emb
     with patch("app.agents.retrieval.generate_embedding", lambda text, _s, _task: cache.embed(text)):
         for q in queries:
             embedding = await cache.embed(q["query"])
-            dense = await kb.vector_search(embedding, limit=CANDIDATES)
+            dense = await kb.vector_search(embedding, limit=CANDIDATES, exclude_source=INDEX_SOURCE)
+            index_top = await kb.vector_search(embedding, limit=1, source=INDEX_SOURCE)
             keyword = await kb.keyword_search(q["query"], limit=CANDIDATES)
             result = await retrieve(q["query"], kb, settings)
             if result.failed:
@@ -75,7 +76,8 @@ async def run_queries(queries: list[dict], kb: InMemoryKnowledgeBase, cache: Emb
                     "relevant": q["relevant"],
                     "final": [c.id for c in result.chunks],
                     "abstained": result.should_abstain,
-                    "top_dense_similarity": round(dense[0]["similarity"], 4) if dense else 0.0,
+                    # What the abstention gate sees: the best of both lanes.
+                    "top_dense_similarity": round(max(r["similarity"] for r in dense + index_top), 4) if dense else 0.0,
                     "dense_top20": [r["id"] for r in dense],
                     "bm25_top20": [r["id"] for r in keyword],
                 }
@@ -83,8 +85,14 @@ async def run_queries(queries: list[dict], kb: InMemoryKnowledgeBase, cache: Emb
     return rows
 
 
+def _index_only(r: dict) -> bool:
+    return all(cid.startswith(f"{INDEX_SOURCE}:") for cid in r["relevant"])
+
+
 def score(rows: list[dict]) -> dict[str, Any]:
     answerable = [r for r in rows if r["relevant"]]
+    # Index chunks sit after the item top 5 by design, so list queries are scored by context recall only.
+    item_lane = [r for r in answerable if not _index_only(r)]
     off_topic = [r for r in rows if not r["relevant"]]
 
     def ir(subset: list[dict]) -> dict[str, Optional[float]]:
@@ -93,10 +101,12 @@ def score(rows: list[dict]) -> dict[str, Any]:
             "hit@1": mean([hit_at_k(r["final"], r["relevant"], 1) for r in subset]),
             "mrr@5": mean([reciprocal_rank(r["final"], r["relevant"], TOP_K) for r in subset]),
             "ndcg@5": mean([ndcg_at_k(r["final"], r["relevant"], TOP_K) for r in subset]),
+            # Everything the draft sees: the item top 5 plus the appended index chunk.
+            "context_recall": mean([recall_at_k(r["final"], r["relevant"], len(r["final"])) for r in subset]),
         }
 
     def miss_kind(r: dict) -> Optional[str]:
-        if recall_at_k(r["final"], r["relevant"], TOP_K) == 1.0:
+        if recall_at_k(r["final"], r["relevant"], len(r["final"])) == 1.0:
             return None
         if r["abstained"]:
             return "abstained"
@@ -125,9 +135,10 @@ def score(rows: list[dict]) -> dict[str, Any]:
     return {
         "n_answerable": len(answerable),
         "n_off_topic": len(off_topic),
-        **ir(answerable),
-        "dense_recall@20": mean([recall_at_k(r["dense_top20"], r["relevant"], CANDIDATES) for r in answerable]),
-        "bm25_recall@20": mean([recall_at_k(r["bm25_top20"], r["relevant"], CANDIDATES) for r in answerable]),
+        **ir(item_lane),
+        "context_recall": mean([recall_at_k(r["final"], r["relevant"], len(r["final"])) for r in answerable]),
+        "dense_recall@20": mean([recall_at_k(r["dense_top20"], r["relevant"], CANDIDATES) for r in item_lane]),
+        "bm25_recall@20": mean([recall_at_k(r["bm25_top20"], r["relevant"], CANDIDATES) for r in item_lane]),
         "false_abstention_rate": mean([1.0 if r["abstained"] else 0.0 for r in answerable]),
         "abstention_accuracy": mean([1.0 if r["abstained"] else 0.0 for r in off_topic]),
         # The threshold sits safely only if every answerable query scores above every off-topic one.
@@ -164,9 +175,9 @@ def print_summary(scores: dict, baseline: Optional[dict]) -> None:
         old = (baseline or {}).get(metric)
         fmt = lambda v: "n/a" if v is None else (f"{v}" if isinstance(v, int) else f"{v:.3f}")
         print(f"{metric:<24} | {fmt(value):>7} | {fmt(old) if baseline else '':>8}")
-    print(f"\n{'Category':<12} | {'n':>2} | {'R@5':>5} | {'MRR':>5} | {'nDCG':>5}")
+    print(f"\n{'Category':<16} | {'n':>3} | {'R@5':>5} | {'MRR':>5} | {'nDCG':>5} | {'ctxR':>5}")
     for cat, m in scores["by_category"].items():
-        print(f"{cat:<12} | {m['n']:>2} | {m['recall@5']:.2f} | {m['mrr@5']:.2f} | {m['ndcg@5']:.2f}")
+        print(f"{cat:<16} | {m['n']:>3} | {m['recall@5']:.2f} | {m['mrr@5']:.2f} | {m['ndcg@5']:.2f} | {m['context_recall']:.2f}")
     for cat, acc in scores.get("abstention_by_category", {}).items():
         print(f"abstention/{cat}: {acc:.2f}")
     for kind, ids in scores["misses"].items():

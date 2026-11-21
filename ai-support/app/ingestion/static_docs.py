@@ -187,4 +187,20 @@ STATIC_DOCUMENTS: list[dict[str, str]] = [
             "entering your 6-digit pincode in the location selector at the top of docnow.in or during checkout."
         ),
     },
+    {
+        "source": "faq",
+        "title": "Services We Don't Offer",
+        # Owner-confirmed 21-11-2026. Without this, "ECG at home" retrieved EGFR (0.64) and "chest X-ray"
+        # retrieved CTx-1 (0.62): above the abstention threshold, so only the draft and verifier stood
+        # between the customer and a wrong test.
+        "content": (
+            "DocNow offers lab tests, health packages and profiles, with home sample collection. "
+            "We do not offer imaging or radiology: no X-ray, MRI, CT scan, PET scan, ultrasound "
+            "(USG, sonography), mammography or DEXA scan. We do not offer heart tests that need a "
+            "machine: no ECG (EKG), 2D Echo (echocardiography), TMT (treadmill test) or Holter "
+            "monitoring. We do not offer vaccinations (for example flu, hepatitis or HPV vaccines). "
+            "For these services, please visit a hospital or a diagnostic imaging centre. "
+            "DocNow can help with blood, urine and other sample-based lab tests."
+        ),
+    },
 ]

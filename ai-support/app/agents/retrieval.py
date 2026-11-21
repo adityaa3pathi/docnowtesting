@@ -1,6 +1,7 @@
 """Retrieval Agent — hybrid RAG: pgvector + BM25, merged by reciprocal rank fusion."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -17,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 TOP_K = 5
 CANDIDATES = 20
+# Shared-test index chunks ("packages that include B12") get their own lane: ranked with the items they
+# outranked single-test chunks (real-catalog search MRR 0.94 -> 0.84), so the best one is appended instead.
+INDEX_SOURCE = "catalog_index"
 
 
 @observe(name="retrieval-agent", capture_input=False, capture_output=False)
@@ -26,6 +30,7 @@ async def retrieve(query: str, db: Any, settings: Any) -> RetrievalResult:
     1. Dense search via pgvector, filtered by relevance threshold (abstention gate)
     2. BM25 keyword search over the same chunks
     3. Fuse both rankings with RRF and return top-K
+    4. Append the best shared-test index chunk ("packages that include X"), ranked in its own lane
 
     If NO chunk clears the relevance threshold, should_abstain=True.
     """
@@ -35,14 +40,22 @@ async def retrieve(query: str, db: Any, settings: Any) -> RetrievalResult:
         embedding = await generate_embedding(query, settings, QUERY)
         threshold = settings.relevance_threshold
 
-        dense = await db.vector_search(embedding, limit=CANDIDATES)
+        # Separate searches: in one ranking the index chunks filled up to 40 of 40 slots on constituent queries.
+        dense, index_hits = await asyncio.gather(
+            db.vector_search(embedding, limit=CANDIDATES, exclude_source=INDEX_SOURCE),
+            db.vector_search(embedding, limit=1, source=INDEX_SOURCE),
+        )
+        # Re-check the lane, so a backend that ignores the filter cannot mix the two.
+        dense = [r for r in dense if r.get("source") != INDEX_SOURCE]
         relevant = [r for r in dense if r.get("similarity", 0.0) >= threshold]
+        index = [r for r in index_hits if r.get("source") == INDEX_SOURCE and r.get("similarity", 0.0) >= threshold]
         # Abstention stays a dense-similarity decision; BM25 only adds and reorders.
-        if not relevant:
+        if not relevant and not index:
             return RetrievalResult(should_abstain=True, query_embedding=embedding)
 
-        keyword = await db.keyword_search(query, limit=CANDIDATES)
-        dense_sim = {r["id"]: r.get("similarity", 0.0) for r in dense}
+        # BM25 only joins when the dense gate passed on the item lane; an index-only turn gets just the index.
+        keyword = await db.keyword_search(query, limit=CANDIDATES) if relevant else []
+        dense_sim = {r["id"]: r.get("similarity", 0.0) for r in dense + index}
         chunks = [
             RetrievedChunk(
                 id=row["id"],
@@ -52,14 +65,15 @@ async def retrieve(query: str, db: Any, settings: Any) -> RetrievalResult:
                 similarity=dense_sim.get(row["id"], 0.0),
                 metadata=row.get("metadata"),
             )
-            for row in rrf_fuse(relevant, keyword)[:TOP_K]
+            for row in rrf_fuse(relevant, keyword)[:TOP_K] + index[:1]
         ]
 
-        annotate(chunk_ids=[c.id for c in chunks], top_similarity=max(r["similarity"] for r in relevant))
+        top_similarity = max(r["similarity"] for r in relevant + index)
+        annotate(chunk_ids=[c.id for c in chunks], top_similarity=top_similarity)
         return RetrievalResult(
             chunks=chunks,
             should_abstain=False,
-            max_similarity=max(r["similarity"] for r in relevant),
+            max_similarity=top_similarity,
             query_embedding=embedding,
         )
 
