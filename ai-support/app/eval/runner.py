@@ -93,6 +93,7 @@ async def run_query(q: dict, kb: InMemoryKnowledgeBase, settings: Settings) -> E
         verifier_verdict=resp.verifier_verdict if resp else None,
         expected_source=q.get("expected_source"),
         expected_tool=q.get("expected_tool"),
+        acceptable_tools=q.get("acceptable_tools", []),
         # A write tool waiting for the user's "yes" still counts as the right choice.
         tools_called=[a.tool for a in resp.actions_taken]
         + ([resp.pending_action.tool_name] if resp.pending_action else [])

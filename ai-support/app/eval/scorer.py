@@ -31,6 +31,19 @@ class EvalResult:
     latency_ms: int = 0
     error: Optional[str] = None
     usage: dict[str, Any] = field(default_factory=dict)
+    # Other correct choices besides expected_tool; "none" means a KB answer with no tool call is fine.
+    acceptable_tools: list[str] = field(default_factory=list)
+
+
+NO_TOOL = "none"
+
+
+def tool_choice_correct(r: EvalResult) -> bool:
+    if r.expected_tool in r.tools_called:
+        return True
+    if any(t in r.tools_called for t in r.acceptable_tools if t != NO_TOOL):
+        return True
+    return NO_TOOL in r.acceptable_tools and not r.tools_called
 
 
 def _rate(hits: int, total: int) -> Optional[float]:
@@ -78,7 +91,7 @@ def custom_metrics(results: list[EvalResult]) -> dict[str, Any]:
         # Tool-only answers carry no KB claims and skip the verifier, so they are not scored here.
         "groundedness_score": _rate(sum(r.verifier_verdict == "GROUNDED" for r in checked), len(checked)),
         "source_hit_rate": _rate(sum(r.expected_source in r.retrieved_sources for r in with_source), len(with_source)),
-        "tool_choice_accuracy": _rate(sum(r.expected_tool in r.tools_called for r in with_tool), len(with_tool)),
+        "tool_choice_accuracy": _rate(sum(tool_choice_correct(r) for r in with_tool), len(with_tool)),
         "error_rate": _rate(sum(r.error is not None for r in results), len(results)),
         "p50_latency_ms": latencies[len(latencies) // 2] if latencies else None,
         "p95_latency_ms": _percentile(latencies, 0.95),
