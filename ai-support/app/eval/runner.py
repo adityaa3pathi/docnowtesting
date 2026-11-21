@@ -31,6 +31,8 @@ from app.config import Settings
 from app.eval.corpus import REAL_DIR, EmbeddingCache, InMemoryKnowledgeBase, catalog_items
 from app.eval.fake_express import FakeExpress
 from app.eval.omission import OmissionChecker
+from app.eval.rerank_cache import PATHS as RERANK_PATHS
+from app.eval.rerank_cache import RerankCache
 from app.eval.scorer import EvalResult, custom_metrics, probe_passed, ragas_metrics
 from app.models import AgentContext
 from app.observability import init_langfuse, shutdown_langfuse
@@ -136,6 +138,14 @@ async def run(args: argparse.Namespace) -> int:
     omissions = OmissionChecker(catalog_items(args.corpus))
     if args.no_keyword:
         kb.keyword_search = partial(_no_hits)
+    rerank_cache = None
+    if args.rerank:
+        if not settings.cohere_api_key:
+            print("--rerank needs SUPPORT_COHERE_API_KEY.")
+            return 2
+        settings.rerank_enabled = True
+        settings.rerank_min_score = args.rerank_min_score
+        rerank_cache = RerankCache(settings, RERANK_PATHS[args.corpus], rpm=args.rerank_rpm)
     # --resume keeps finished answers on disk so a run can stop when keys run out and continue later.
     resume = Path(args.resume) if args.resume else None
     done: dict[str, EvalResult] = {}
@@ -185,6 +195,8 @@ async def run(args: argparse.Namespace) -> int:
         patch("app.agents.action.httpx", fake_httpx),
         patch("app.agents.retrieval.generate_embedding", lambda text, _s, _task: cache.embed(text)),
     ]
+    if rerank_cache:
+        patches.append(patch("app.agents.rerank.score_documents", rerank_cache.score))
     if args.groq_model:
         # Same pipeline, open model on Groq: compares old vs new code without Gemini quota.
         from app.eval.groq_llm import make_groq_call
@@ -200,6 +212,10 @@ async def run(args: argparse.Namespace) -> int:
         finished = sum(r is not None for r in results)
         print(f"ALL_KEYS_EXHAUSTED: {finished}/{len(queries)} queries done. Add a key and rerun with the same --resume.")
         return 3
+
+    if rerank_cache and rerank_cache.failures:
+        print(f"RERANK_FAILED on {len(rerank_cache.failures)} queries; these answers used RRF order, not a valid run.")
+        return 2
 
     scores: dict = custom_metrics(results)
     judge_model = args.judge_model or settings.llm_model
@@ -257,6 +273,8 @@ def save_report(args: argparse.Namespace, settings: Settings, judge_model: str, 
                 "judge_model": judge_model,
                 "relevance_threshold": settings.relevance_threshold,
                 "keyword_search": not args.no_keyword,
+                "rerank": settings.rerank_model if settings.rerank_enabled else None,
+                "rerank_min_score": settings.rerank_min_score if settings.rerank_enabled else None,
                 "corpus": args.corpus,
                 "scores": scores,
                 "results": [asdict(r) for r in results],
@@ -285,6 +303,9 @@ def main() -> None:
     parser.add_argument("--no-ragas", action="store_true")
     parser.add_argument("--no-keyword", action="store_true", help="dense-only baseline (BM25 off)")
     parser.add_argument("--gate", action="store_true", help="exit 1 if a metric is below threshold")
+    parser.add_argument("--rerank", action="store_true", help="rerank with Cohere (scores cached on disk)")
+    parser.add_argument("--rerank-min-score", type=float, default=0.0, help="reranker gate; 0 = off")
+    parser.add_argument("--rerank-rpm", type=int, default=0, help="pace Cohere calls (trial key: 10)")
     logging.basicConfig(level=logging.WARNING)
     sys.exit(asyncio.run(run(parser.parse_args())))
 

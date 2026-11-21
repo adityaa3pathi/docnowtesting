@@ -21,6 +21,16 @@ class Settings(BaseSettings):
     # The SDK has no default timeout, so a stalled call would hang the chat until the proxy gives up.
     genai_timeout_seconds: float = 30.0
 
+    # Cohere Rerank: reorders the fused candidates. Off by default: it sends the customer's question to
+    # Cohere (US), the same data-residency question that keeps Langfuse off. Errors fall back to RRF order.
+    cohere_api_key: str = ""
+    rerank_enabled: bool = False
+    rerank_model: str = "rerank-v3.5"
+    rerank_candidates: int = 20
+    rerank_timeout_seconds: float = 2.0
+    # Abstain when the best reranker score is below this; 0 disables the gate. Tune on both corpora.
+    rerank_min_score: float = 0.0
+
     # Groq: eval judge only, so grading does not eat the Gemini free quota
     groq_api_key: str = ""
 
