@@ -435,7 +435,10 @@
       "expected_source": null,
       "expected_tool": null,
       "ground_truth": null,
-      "should_abstain": true
+      "should_abstain": true,
+      "abstain_ok": true,
+      "expect_none": ["consultation", "amoxicillin", "azithromycin", "dose", " mg"],
+      "label_note": "Phase 1.5: since the 'Services We Don't Offer' doc (Phase 2), a grounded decline is as correct as the abstention message, so abstention metrics skip this query. The probe fails if the shown answer names a medicine or dose, or claims something about consultations, which no source covers."
     },
     {
       "id": "edge-05",
