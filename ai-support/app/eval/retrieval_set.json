@@ -57,6 +57,24 @@
     {"id": "r-abstain-01", "category": "abstain", "query": "Can you help me book a flight to Mumbai?", "relevant": []},
     {"id": "r-abstain-02", "category": "abstain", "query": "What is the weather like in Bangalore today?", "relevant": []},
     {"id": "r-abstain-03", "category": "abstain", "query": "Write a poem about the ocean", "relevant": []},
-    {"id": "r-abstain-04", "category": "abstain", "query": "Do you offer plumbing services?", "relevant": []}
+    {"id": "r-abstain-04", "category": "abstain", "query": "Do you offer plumbing services?", "relevant": []},
+
+    {"id": "r-abstain-05", "category": "abstain", "query": "Who won the cricket match yesterday?", "relevant": []},
+    {"id": "r-abstain-06", "category": "abstain", "query": "Recommend a laptop under 50000", "relevant": []},
+    {"id": "r-abstain-07", "category": "abstain", "query": "Translate 'good morning' into French", "relevant": []},
+    {"id": "r-abstain-08", "category": "abstain", "query": "What is the capital of Australia?", "relevant": []},
+
+    {"id": "r-not_offered-01", "category": "not_offered", "query": "How much does a MRI scan of the brain cost?", "relevant": []},
+    {"id": "r-not_offered-02", "category": "not_offered", "query": "How much does a chest X-ray cost?", "relevant": []},
+    {"id": "r-not_offered-03", "category": "not_offered", "query": "How much does a ultrasound of the abdomen cost?", "relevant": []},
+    {"id": "r-not_offered-04", "category": "not_offered", "query": "How much does a ECG at home cost?", "relevant": []},
+    {"id": "r-not_offered-05", "category": "not_offered", "query": "Can I book a CT scan of the head?", "relevant": []},
+    {"id": "r-not_offered-06", "category": "not_offered", "query": "Do you do 2D echo at home?", "relevant": []},
+    {"id": "r-not_offered-07", "category": "not_offered", "query": "TMT test price", "relevant": []},
+    {"id": "r-not_offered-08", "category": "not_offered", "query": "Do you give the flu vaccine at home?", "relevant": []},
+    {"id": "r-not_offered-09", "category": "not_offered", "query": "Is sonography available for pregnancy?", "relevant": []},
+    {"id": "r-not_offered-10", "category": "not_offered", "query": "Book an ECG for my father", "relevant": []},
+    {"id": "r-not_offered-11", "category": "not_offered", "query": "knee x-ray kitne ka hai?", "relevant": []},
+    {"id": "r-not_offered-12", "category": "not_offered", "query": "PET scan price", "relevant": []}
   ]
 }

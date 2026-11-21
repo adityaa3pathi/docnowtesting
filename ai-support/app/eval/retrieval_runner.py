@@ -114,6 +114,12 @@ def score(rows: list[dict]) -> dict[str, Any]:
         subset = [r for r in answerable if r["category"] == cat]
         by_category[cat] = {"n": len(subset), **ir(subset)}
 
+    # Off-topic must abstain; not_offered must abstain or (once the doc exists) retrieve it.
+    abstention_by_category = {
+        cat: mean([1.0 if r["abstained"] else 0.0 for r in off_topic if r["category"] == cat])
+        for cat in sorted({r["category"] for r in off_topic})
+    }
+
     answer_sims = [r["top_dense_similarity"] for r in answerable]
     off_sims = [r["top_dense_similarity"] for r in off_topic]
     return {
@@ -127,6 +133,7 @@ def score(rows: list[dict]) -> dict[str, Any]:
         # The threshold sits safely only if every answerable query scores above every off-topic one.
         "answerable_top_sim_min": min(answer_sims) if answer_sims else None,
         "off_topic_top_sim_max": max(off_sims) if off_sims else None,
+        "abstention_by_category": abstention_by_category,
         "misses": dict(misses),
         "by_category": by_category,
     }
@@ -160,6 +167,8 @@ def print_summary(scores: dict, baseline: Optional[dict]) -> None:
     print(f"\n{'Category':<12} | {'n':>2} | {'R@5':>5} | {'MRR':>5} | {'nDCG':>5}")
     for cat, m in scores["by_category"].items():
         print(f"{cat:<12} | {m['n']:>2} | {m['recall@5']:.2f} | {m['mrr@5']:.2f} | {m['ndcg@5']:.2f}")
+    for cat, acc in scores.get("abstention_by_category", {}).items():
+        print(f"abstention/{cat}: {acc:.2f}")
     for kind, ids in scores["misses"].items():
         print(f"miss/{kind}: {', '.join(ids)}")
 
