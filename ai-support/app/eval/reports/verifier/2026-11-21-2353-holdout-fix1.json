@@ -1,0 +1,807 @@
+{
+  "label": "holdout-fix1",
+  "llm_model": "gemini-3.5-flash-lite",
+  "repeat": 5,
+  "scores": {
+    "false_block_rate": 0.0,
+    "false_pass_rate": 0.0,
+    "unsupported_called_grounded": 0.0,
+    "supported_called_grounded": 1.0,
+    "false_pass/invented_negative": 0.0,
+    "false_pass/invented_policy": 0.0
+  },
+  "aggregate": {
+    "false_block_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "false_pass_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "unsupported_called_grounded": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "supported_called_grounded": {
+      "mean": 1.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "false_pass/invented_negative": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "false_pass/invented_policy": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "runs": [
+    {
+      "false_block_rate": 0.0,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": 1.0,
+      "false_pass/invented_negative": 0.0,
+      "false_pass/invented_policy": 0.0
+    },
+    {
+      "false_block_rate": 0.0,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": 1.0,
+      "false_pass/invented_negative": 0.0,
+      "false_pass/invented_policy": 0.0
+    },
+    {
+      "false_block_rate": 0.0,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": 1.0,
+      "false_pass/invented_negative": 0.0,
+      "false_pass/invented_policy": 0.0
+    },
+    {
+      "false_block_rate": 0.0,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": 1.0,
+      "false_pass/invented_negative": 0.0,
+      "false_pass/invented_policy": 0.0
+    },
+    {
+      "false_block_rate": 0.0,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": 1.0,
+      "false_pass/invented_negative": 0.0,
+      "false_pass/invented_policy": 0.0
+    }
+  ],
+  "per_case": {
+    "h01": {
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "h02": {
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "h03": {
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "h04": {
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "h05": {
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "UNGROUNDED": 5
+      }
+    },
+    "h06": {
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "h07": {
+      "expect": "supported",
+      "kind": "true_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "h08": {
+      "expect": "supported",
+      "kind": "true_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "h09": {
+      "expect": "supported",
+      "kind": "true_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "h10": {
+      "expect": "supported",
+      "kind": "true_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "h11": {
+      "expect": "supported",
+      "kind": "true_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    }
+  },
+  "results": [
+    {
+      "case_id": "h01",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Slots can be booked up to 7 days ahead.",
+      "reasoning": "The claim that slots can be booked up to 7 days ahead is grounded in Source 1. The claim that home collection is not offered on public holidays is ungrounded as no source mentions public holidays.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h02",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We accept UPI, cards, netbanking and wallets.",
+      "reasoning": "The claim that DocNow accepts UPI, cards, netbanking, and wallets is grounded in Source 1. The claim that DocNow does not accept cash payments is ungrounded because no source mentions cash payments, and the instructions explicitly state that claims about what DocNow does not offer or provide are ungrounded unless explicitly supported by sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h03",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "You can book tests for family members in one order.",
+      "reasoning": "The claim that you can book tests for family members in one order is grounded in Source 1. However, the claim that DocNow does not do tests for children under 5 is ungrounded because no source mentions an age restriction.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h04",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We do offer urine tests such as Urine Routine and Microscopy.",
+      "reasoning": "The claim that DocNow does not offer stool tests is ungrounded because the sources do not mention stool tests. The claim that DocNow offers urine tests such as Urine Routine and Microscopy is grounded in Source 1 and Source 2.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h05",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 0,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft claims that DocNow does not serve Jammu. Per the instructions, a claim that DocNow does not offer, provide, serve or allow something is a factual claim that must be explicitly stated in the sources. The sources list served cities and state DocNow operates in 100+ cities in India, but they do not explicitly state that Jammu is not served.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h06",
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Wallet credits are applied at checkout.",
+      "reasoning": "The claim that wallet credits are applied at checkout is supported by Source 1 and Source 2. However, the claim that promo codes cannot be combined with wallet credits is not supported by any source.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h07",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "Sorry, we don't offer ECG or 2D Echo. Please visit a hospital or a diagnostic imaging centre.",
+      "reasoning": "Source 1 explicitly states that DocNow does not offer heart tests that need a machine, specifically listing ECG (EKG) and 2D Echo (echocardiography), and advises to visit a hospital or a diagnostic imaging centre.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h08",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "No, camp bookings can't be cancelled online.",
+      "reasoning": "The draft response correctly states that camp bookings cannot be cancelled online, which is directly supported by Source 1 ('Camp bookings cannot be cancelled online.').",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h09",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "We don't offer vaccinations, such as flu or HPV vaccines.",
+      "reasoning": "The draft states that DocNow does not offer vaccinations, such as flu or HPV vaccines, which is directly supported by SOURCE 1 stating 'We do not offer vaccinations (for example flu, hepatitis or HPV vaccines).'",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h10",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "You can't reschedule once the sample has been collected.",
+      "reasoning": "The draft states that you cannot reschedule once the sample has been collected, which is directly supported by Source 1 stating 'You cannot reschedule if the booking status is: ... Sample Collected'.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h11",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "No, you don't need to pay anything extra when a fresh sample is needed.",
+      "reasoning": "The draft response correctly states that no extra payment is needed when a fresh sample is required, which is directly supported by SOURCE 1 stating 'You don't need to make any additional payment.'",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h01",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Slots can be booked up to 7 days ahead.",
+      "reasoning": "The claim that slots can be booked up to 7 days ahead is supported by Source 1. The claim that home collection is not offered on public holidays is not mentioned in any of the sources, making it ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h02",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We accept UPI, cards, netbanking and wallets.",
+      "reasoning": "The claim that DocNow accepts UPI, cards, netbanking, and wallets is supported by Source 1. However, the claim that DocNow does not accept cash payments is ungrounded because no source mentions cash payments, and rules state that claims about what DocNow does not offer/provide are ungrounded unless explicitly stated in the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h03",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "You can book tests for family members in one order.",
+      "reasoning": "The claim that you can book tests for family members in one order is grounded in Source 1. The claim that 'we don't do tests for children under 5' is ungrounded because no source mentions an age restriction for children.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h04",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We do offer urine tests such as Urine Routine and Microscopy.",
+      "reasoning": "The claim that DocNow offers Urine Routine and Microscopy is grounded in Source 2. However, the claim that DocNow does not offer stool tests is ungrounded because Source 1 does not explicitly state that stool tests are not offered (it only lists specific services like imaging, heart tests, and vaccinations).",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h05",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 1,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft claims that DocNow does not serve Jammu, but the sources do not explicitly state that Jammu is not served (even though it is not listed in the provided cities). According to the instructions, claims about what DocNow does not offer or serve are ungrounded if no source explicitly says so.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h06",
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Wallet credits are applied at checkout.",
+      "reasoning": "The claim that wallet credits are applied at checkout is grounded in Source 1. However, the claim that promo codes cannot be combined with wallet credits is not supported by the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h07",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "Sorry, we don't offer ECG or 2D Echo. Please visit a hospital or a diagnostic imaging centre.",
+      "reasoning": "Source 1 explicitly states that DocNow does not offer heart tests that need a machine, specifically listing ECG (EKG) and 2D Echo (echocardiography), and advises to visit a hospital or diagnostic imaging centre.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h08",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "No, camp bookings can't be cancelled online.",
+      "reasoning": "The draft states that camp bookings cannot be cancelled online, which is directly supported by Source 1 ('Camp bookings cannot be cancelled online.').",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h09",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "We don't offer vaccinations, such as flu or HPV vaccines.",
+      "reasoning": "The draft states that DocNow does not offer vaccinations, such as flu or HPV vaccines, which is directly supported by Source 1 stating 'We do not offer vaccinations (for example flu, hepatitis or HPV vaccines).'",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h10",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "You can't reschedule once the sample has been collected.",
+      "reasoning": "The draft states that you cannot reschedule once the sample has been collected. Source 1 explicitly states that you cannot reschedule if the booking status is Sample Collected, which fully supports the claim.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h11",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "No, you don't need to pay anything extra when a fresh sample is needed.",
+      "reasoning": "The draft response states that the user does not need to pay anything extra when a fresh sample is needed, which is directly supported by Source 1 ('You don't need to make any additional payment').",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h01",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Slots can be booked up to 7 days ahead.",
+      "reasoning": "The claim that slots can be booked up to 7 days ahead is supported by Source 1. The claim that home collection is not offered on public holidays is not mentioned in any source and is therefore ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h02",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We accept UPI, cards, netbanking and wallets.",
+      "reasoning": "The claim that DocNow accepts UPI, cards, netbanking, and wallets is grounded in SOURCE 1. However, the claim that DocNow does not accept cash payments is ungrounded because no source mentions cash payments.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h03",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "You can book tests for family members in one order.",
+      "reasoning": "The claim that you can book tests for family members in one order is grounded in Source 1. However, the claim that 'we don't do tests for children under 5' is not supported by any source, making it ungrounded according to the negative claim rule.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h04",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We do offer urine tests such as Urine Routine and Microscopy.",
+      "reasoning": "The claim that DocNow offers Urine Routine and Microscopy is grounded in Source 2. However, the claim that DocNow does not offer stool tests is ungrounded because the sources do not mention stool tests, and according to the instructions, claims about what DocNow does not offer must be explicitly supported by a source.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h05",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 2,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft claims that DocNow does not serve Jammu, but the sources do not state whether Jammu is served or not. According to the instructions, a claim that DocNow does not offer, provide, serve, or allow something is ungrounded if no source explicitly says so.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h06",
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Wallet credits are applied at checkout.",
+      "reasoning": "The claim that wallet credits are applied at checkout is grounded in the sources. However, the claim that promo codes cannot be combined with wallet credits is not supported by any source.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h07",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "Sorry, we don't offer ECG or 2D Echo. Please visit a hospital or a diagnostic imaging centre.",
+      "reasoning": "Source 1 explicitly states that DocNow does not offer ECG or 2D Echo and advises to visit a hospital or a diagnostic imaging centre for these services.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h08",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "No, camp bookings can't be cancelled online.",
+      "reasoning": "The draft states that camp bookings cannot be cancelled online, which is directly supported by Source 1 ('Camp bookings cannot be cancelled online.').",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h09",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "We don't offer vaccinations, such as flu or HPV vaccines.",
+      "reasoning": "The source explicitly states that DocNow does not offer vaccinations, specifically mentioning flu and HPV vaccines.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h10",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "You can't reschedule once the sample has been collected.",
+      "reasoning": "The draft states that you cannot reschedule once the sample has been collected. Source 1 explicitly states that you cannot reschedule if the booking status is Sample Collected.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h11",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "No, you don't need to pay anything extra when a fresh sample is needed.",
+      "reasoning": "The draft response correctly states that no additional payment is needed when a fresh sample is required, which is directly supported by Source 1 ('You don't need to make any additional payment').",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h01",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Slots can be booked up to 7 days ahead.",
+      "reasoning": "The claim that slots can be booked up to 7 days ahead is supported by Source 1. The claim that home collection is not offered on public holidays is not mentioned in any source and is therefore ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h02",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We accept UPI, cards, netbanking and wallets.",
+      "reasoning": "The claim that DocNow accepts UPI, cards, netbanking, and wallets is grounded in SOURCE 1. However, the claim that 'we do not accept cash payments' is ungrounded because no source mentions cash payments.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h03",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "You can book tests for family members in one order.",
+      "reasoning": "The claim that you can book tests for family members in one order is grounded in Source 1. The claim that we don't do tests for children under 5 is ungrounded because no source mentions this restriction.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h04",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We do offer urine tests such as Urine Routine and Microscopy.",
+      "reasoning": "The claim that DocNow does not offer stool tests is ungrounded because the sources do not explicitly state this (lack of source support for negative claims). The claim that DocNow offers urine tests such as Urine Routine and Microscopy is fully grounded in Source 1 and Source 2.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h05",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 3,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft claims that DocNow does not serve Jammu. According to the instructions, a claim that DocNow does not offer, provide, serve, or allow something is a factual claim that requires explicit support from the sources. The sources list cities served and cities where home collection is available, but they do not mention Jammu or state that Jammu is not served.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h06",
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Wallet credits are applied at checkout.",
+      "reasoning": "The claim that wallet credits are applied at checkout is grounded in the sources. However, the claim that promo codes cannot be combined with wallet credits is not supported by any source.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h07",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "Sorry, we don't offer ECG or 2D Echo. Please visit a hospital or a diagnostic imaging centre.",
+      "reasoning": "The draft states that DocNow does not offer ECG or 2D Echo and suggests visiting a hospital or diagnostic imaging centre, which is fully supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h08",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "No, camp bookings can't be cancelled online.",
+      "reasoning": "The draft states that camp bookings cannot be cancelled online, which is directly supported by Source 1 ('Camp bookings cannot be cancelled online.').",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h09",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "We don't offer vaccinations, such as flu or HPV vaccines.",
+      "reasoning": "The draft response correctly states that DocNow does not offer vaccinations such as flu or HPV vaccines, which is explicitly supported by SOURCE 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h10",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "You can't reschedule once the sample has been collected.",
+      "reasoning": "The draft states that you cannot reschedule once the sample has been collected, which is directly supported by Source 1 stating that you cannot reschedule if the booking status is Sample Collected.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h11",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "No, you don't need to pay anything extra when a fresh sample is needed.",
+      "reasoning": "The draft response correctly states that no additional payment is needed when a fresh sample is required, which is directly supported by Source 1 ('You don't need to make any additional payment').",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h01",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Slots can be booked up to 7 days ahead.",
+      "reasoning": "The claim that slots can be booked up to 7 days ahead is supported by Source 1. The claim that home collection is not offered on public holidays is not mentioned in any source, making it ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h02",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We accept UPI, cards, netbanking and wallets.",
+      "reasoning": "The claim that DocNow accepts UPI, cards, netbanking, and wallets is grounded in Source 1. The claim that DocNow does not accept cash payments is ungrounded because no source mentions cash payments, and under the instructions, a claim about what DocNow does not offer or accept is only grounded if a source explicitly states it.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h03",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "You can book tests for family members in one order.",
+      "reasoning": "The claim that you can book tests for family members in one order is grounded in Source 1. However, the claim that 'we don't do tests for children under 5' is ungrounded because no source mentions age restrictions for testing.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h04",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We do offer urine tests such as Urine Routine and Microscopy.",
+      "reasoning": "The claim that DocNow does not offer stool tests is ungrounded because the sources do not explicitly state this (lack of negative mention is not support per instructions). The claim that DocNow offers urine tests such as Urine Routine and Microscopy is fully grounded in Source 1 and Source 2.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h05",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 4,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that DocNow does not serve Jammu, but the provided sources do not mention Jammu or state that DocNow does not serve it. According to the instructions, claims about what DocNow does not offer, provide, serve, or allow require explicit support from the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h06",
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Wallet credits are applied at checkout.",
+      "reasoning": "The claim that wallet credits are applied at checkout is supported by the sources. However, the claim that promo codes cannot be combined with wallet credits is not supported by any source.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "h07",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "Sorry, we don't offer ECG or 2D Echo. Please visit a hospital or a diagnostic imaging centre.",
+      "reasoning": "Source 1 explicitly states that DocNow does not offer ECG or 2D Echo and advises visiting a hospital or a diagnostic imaging centre for these services.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h08",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "No, camp bookings can't be cancelled online.",
+      "reasoning": "The draft response correctly states that camp bookings cannot be cancelled online, which is directly supported by Source 1 ('Camp bookings cannot be cancelled online.').",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h09",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "We don't offer vaccinations, such as flu or HPV vaccines.",
+      "reasoning": "The source explicitly states: 'We do not offer vaccinations (for example flu, hepatitis or HPV vaccines).' The draft response accurately reflects this.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h10",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "You can't reschedule once the sample has been collected.",
+      "reasoning": "The draft states that you cannot reschedule once the sample has been collected, which is directly supported by Source 1 stating 'You cannot reschedule if the booking status is: ... Sample Collected'.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h11",
+      "expect": "supported",
+      "kind": "true_negative",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "No, you don't need to pay anything extra when a fresh sample is needed.",
+      "reasoning": "The draft claim that the user does not need to pay anything extra when a fresh sample is needed is directly supported by Source 1, which states: 'A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.'",
+      "ok": true,
+      "lost": []
+    }
+  ]
+}
