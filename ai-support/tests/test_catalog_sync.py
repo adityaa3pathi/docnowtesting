@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.ingestion.catalog_sync import (
+    format_catalog_text,
     chunk_is_current,
     prune_stale_catalog_chunks,
     run_periodic_catalog_sync,
@@ -150,3 +151,31 @@ async def test_periodic_sync_keeps_running_after_a_failure(settings):
         task.cancel()
 
     assert len(calls) >= 3
+
+
+def test_catalog_text_indexes_partner_details_the_top_level_columns_lack():
+    """Production rows keep report time, fasting hours and tests only in detailsData (21-11-2026)."""
+    item = {
+        "name": "Complete Package", "type": "PACKAGE", "displayPrice": 7800, "discountedPrice": 2100,
+        "description": None, "reportTime": None,
+        "detailsData": {
+            "description": "Complete Package", "reportingTime": "26 hrs", "fasting": "Required",
+            "fastingTime": "12 hour(s)", "gender": ["Male"],
+            "constituents": [{"name": f"Test {i}"} for i in range(86)] + [{"name": "Vitamin D Total-25 Hydroxy"}],
+        },
+    }
+    text = format_catalog_text(item)
+    assert "Report Time: 26 hrs" in text
+    assert "Fasting Required: Required (12 hour(s))" in text
+    assert "For: Male" in text
+    assert "Included Tests (87):" in text and "Vitamin D Total-25 Hydroxy" in text
+    assert "Description" not in text  # just the name again
+
+
+def test_catalog_description_drops_html_templates_and_placeholders():
+    base = {"name": "Lipid Profile", "type": "TEST", "displayPrice": 500}
+    text = format_catalog_text({**base, "description": "Checks cholesterol.<BR>Get tested in {City_Name} today."})
+    assert "Description: Checks cholesterol. Get tested today." in text
+    assert "Description" not in format_catalog_text({**base, "description": "na"})
+    long = format_catalog_text({**base, "description": "word " * 200})
+    assert len(long.split("Description: ")[1].split("\n")[0]) <= 404

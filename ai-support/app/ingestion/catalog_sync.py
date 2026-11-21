@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import logging
 import uuid
 from typing import Any
@@ -12,6 +13,23 @@ from app.database import Database
 from app.ingestion.embeddings import DOCUMENT, generate_embedding
 
 logger = logging.getLogger(__name__)
+
+
+DESCRIPTION_CHARS = 400
+_PLACEHOLDER_DESCRIPTIONS = {"na", "n/a", "none", "null", "-"}
+
+
+def _clean_description(text: Any, name: str) -> str | None:
+    """Partner descriptions carry HTML, unfilled {City_Name} templates, "na", or just the name again."""
+    if not isinstance(text, str):
+        return None
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\s*(?:in\s+)?\{[^}]*\}", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    if text.lower() in _PLACEHOLDER_DESCRIPTIONS or text.lower() == name.strip().lower() or len(text) < 4:
+        return None
+    # Long marketing copy drowns the test list in the embedding; the opening sentences carry the meaning.
+    return text if len(text) <= DESCRIPTION_CHARS else text[:DESCRIPTION_CHARS].rsplit(" ", 1)[0] + "..."
 
 
 def format_catalog_text(item: dict[str, Any]) -> str:
@@ -30,8 +48,12 @@ def format_catalog_text(item: dict[str, Any]) -> str:
     elif display_price:
         parts.append(f"Price: ₹{display_price}")
 
-    if item.get("description"):
-        parts.append(f"Description: {item['description']}")
+    # Healthians puts most facts in detailsData; the top-level columns are usually null (prod, 21-11-2026).
+    details = item.get("detailsData") if isinstance(item.get("detailsData"), dict) else {}
+
+    description = _clean_description(item.get("description") or details.get("description"), item["name"])
+    if description:
+        parts.append(f"Description: {description}")
 
     if item.get("parameters"):
         parts.append(f"Parameters: {item['parameters']}")
@@ -39,21 +61,28 @@ def format_catalog_text(item: dict[str, Any]) -> str:
     if item.get("sampleType"):
         parts.append(f"Sample Type: {item['sampleType']}")
 
-    if item.get("reportTime"):
-        parts.append(f"Report Time: {item['reportTime']}")
+    report_time = item.get("reportTime") or details.get("reportingTime")
+    if report_time:
+        parts.append(f"Report Time: {report_time}")
 
-    # Rich details from detailsData (cached Healthians product details)
-    details = item.get("detailsData")
-    if details and isinstance(details, dict):
-        if details.get("fasting"):
-            parts.append(f"Fasting Required: {details['fasting']}")
-        if details.get("constituents"):
-            constituents = details["constituents"]
-            if isinstance(constituents, list):
-                names = [c.get("name", "") for c in constituents[:15]]
-                parts.append(f"Included Tests: {', '.join(n for n in names if n)}")
-        if details.get("summary"):
-            parts.append(f"Summary: {details['summary']}")
+    if details.get("fasting"):
+        hours = details.get("fastingTime")
+        parts.append(f"Fasting Required: {details['fasting']}" + (f" ({hours})" if hours else ""))
+
+    gender = details.get("gender")
+    if isinstance(gender, list) and len(gender) == 1:
+        parts.append(f"For: {gender[0]}")
+
+    constituents = details.get("constituents")
+    if isinstance(constituents, list):
+        # Every test, not a preview: "does the package include HbA1c?" is answered from this list,
+        # and a cut list made both the answer and the verifier say "not included".
+        names = [c.get("name", "") for c in constituents if isinstance(c, dict) and c.get("name")]
+        if names:
+            parts.append(f"Included Tests ({len(names)}): {', '.join(names)}")
+
+    if details.get("summary"):
+        parts.append(f"Summary: {details['summary']}")
 
     return "\n".join(parts)
 
