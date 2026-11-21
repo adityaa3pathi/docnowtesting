@@ -256,33 +256,28 @@ def test_prompts_put_static_text_before_customer_data():
 async def test_tool_turn_cancels_the_unused_search(mock_db, settings, agent_context):
     import asyncio
 
-    finished = []
+    finished, cancelled = [], []
 
     async def slow_retrieve(*_a, **_k):
-        await asyncio.sleep(0.5)
+        try:
+            await asyncio.sleep(0.5)
+        except asyncio.CancelledError:
+            cancelled.append(True)
+            raise
         finished.append(True)
         return RetrievalResult()
 
     intent = Intent(intent="BOOKING_LIST", tool_name="list_bookings", requires_action=True, confidence=0.9)
     async def action_after_cancel(*_a, **_k):
         await asyncio.sleep(0)  # let the cancellation land
-        assert p.retrieve_task_cancelled(), "search should be cancelled before the tool runs"
+        assert cancelled, "search should be cancelled before the tool runs"
         return ActionResult(tool="list_bookings", success=True, output={"bookings": []})
 
+    # Watches the search coroutine itself: LangGraph makes its own tasks, so patching create_task no longer isolates it.
     with pipeline(intent=intent) as p:
-        tasks = []
-        real_create_task = asyncio.create_task
-
-        def track(coro):
-            task = real_create_task(coro)
-            tasks.append(task)
-            return task
-
-        p.retrieve_task_cancelled = lambda: bool(tasks) and tasks[0].cancelled()
         p.retrieve.side_effect = slow_retrieve
         p.action.side_effect = action_after_cancel
-        with patch("app.agents.orchestrator.asyncio.create_task", side_effect=track):
-            response = await handle_message("show my bookings", agent_context, mock_db, settings)
+        response = await handle_message("show my bookings", agent_context, mock_db, settings)
         await asyncio.sleep(0.6)
     assert finished == []
     assert response.verifier_verdict == "TOOL_ONLY"  # an assertion inside the tool would turn into an error reply
@@ -327,3 +322,35 @@ async def test_logged_out_visitor_is_asked_to_log_in_for_bookings(mock_db, setti
         response = await handle_message("show my bookings", unauthenticated_context, mock_db, settings)
     p.action.assert_not_called()
     assert "log in" in response.content.lower()
+
+
+@pytest.mark.asyncio
+async def test_intent_and_retrieval_run_in_parallel(mock_db, settings, agent_context):
+    """Intent waits until the search has started; run one after the other, this would time out."""
+    import asyncio
+
+    search_started = asyncio.Event()
+
+    async def retrieve(*_a, **_k):
+        search_started.set()
+        return RetrievalResult(chunks=[CHUNK], max_similarity=0.9)
+
+    async def classify(*_a, **_k):
+        await asyncio.wait_for(search_started.wait(), timeout=1)
+        return Intent(intent="FAQ", confidence=0.9)
+
+    with pipeline() as p:
+        p.retrieve.side_effect = retrieve
+        p.classify.side_effect = classify
+        response = await handle_message("what is your refund policy", agent_context, mock_db, settings)
+    assert response.verifier_verdict == "GROUNDED"
+    p.draft.assert_awaited_once()
+
+
+def test_graph_has_the_documented_nodes():
+    from app.agents.orchestrator import SUPPORT_GRAPH
+
+    assert set(SUPPORT_GRAPH.get_graph().nodes) == {
+        "__start__", "__end__", "safety", "intent", "symptom", "fixed_reply", "retrieval",
+        "abstain", "action", "booking_reply", "draft", "verifier", "response",
+    }

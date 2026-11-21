@@ -1,13 +1,14 @@
-"""Orchestrator — coordinates the three-agent pipeline with Langfuse tracing.
+"""Orchestrator: the support pipeline as a LangGraph StateGraph, traced in Langfuse.
 
-Flow:
+Flow (graph diagram above build_graph):
   User Message
-    → 1. Retrieval Agent (always runs — provides context)
-    → 2. Intent Classification (question vs. action vs. greeting vs. off-topic)
-    → 3. If action needed: Action Agent (tool execution)
-    → 4. Draft Response Generation (LLM with retrieval context + action results)
-    → 5. Verifier Agent (checks draft against sources — blocks ungrounded claims)
-    → 6. Final Response (verified) or Abstention
+    → 1. Safety: greeting / emergency fixed text, no model call
+    → 2. Intent classification, with retrieval running in parallel
+    → 3. Route: symptom / fixed text / abstain / tool / knowledge base
+    → 4. If action needed: Action Agent (tool execution)
+    → 5. Draft Response Generation (LLM with retrieval context + action results)
+    → 6. Verifier Agent (checks draft against sources — blocks ungrounded claims)
+    → 7. Final Response (verified) or Abstention
 """
 from __future__ import annotations
 
@@ -16,9 +17,12 @@ import json
 import logging
 import re
 import time
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, TypedDict
 
 from langfuse import observe
+from langgraph.graph import END, START, StateGraph
+from langgraph.runtime import Runtime
 
 from app.agents import usage
 from app.agents.cards import cards_from_actions, live_cards_for_chunks
@@ -34,6 +38,7 @@ from app.models import (
     RetrievalResult,
     RetrievedChunk,
     SupportResponse,
+    VerificationResult,
 )
 from app.observability import annotate, current_trace_id
 from app.symptoms.keywords import keyword_topic
@@ -229,6 +234,269 @@ def _elapsed(start: float) -> int:
     return int((time.monotonic() - start) * 1000)
 
 
+# ──────────────────────────────────────────────
+# The pipeline as a LangGraph StateGraph
+#
+#   safety ─► intent ─┬─► symptom ──────────────────────────────► END
+#     │               ├─► fixed_reply (greeting/off-topic/medical) ► END
+#     ▼               └─► retrieval ─┬─► abstain ───────────────► END
+#    END                             ├─► action ─┬─► booking_reply ► END
+#                                    │           ├─► END (login / confirm / failed)
+#                                    │           ▼
+#                                    └─────────► draft ─► verifier ─► response ─► END
+#
+# Search starts as an asyncio task inside the intent node and the retrieval node joins or
+# cancels it. A LangGraph fan-out would wait for both branches, so booking and off-topic
+# turns would pay for a search they never use. The task lives in the per-turn runtime
+# context, not in graph state. Nodes call retrieve/classify_intent/generate_draft/verify
+# through this module's globals, so patching app.agents.orchestrator.<name> still works.
+# ──────────────────────────────────────────────
+
+
+@dataclass
+class TurnDeps:
+    """Per-turn dependencies handed to every node as the LangGraph runtime context."""
+
+    ctx: AgentContext
+    db: Any
+    settings: Any
+    retrieval_task: asyncio.Task | None = None
+
+
+class TurnState(TypedDict, total=False):
+    message: str
+    intent: Intent
+    confirmed: bool  # a plain "yes" to the write action asked about last turn
+    retrieval: RetrievalResult
+    tool_turn: bool
+    booking_turn: bool  # booking tools answer from the customer's own records, not KB chunks
+    actions: list[ActionResult]
+    draft: str
+    verification: VerificationResult
+    response: SupportResponse  # set by whichever node ends the turn
+
+
+def _finished(state: TurnState) -> bool:
+    return state.get("response") is not None
+
+
+async def safety_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
+    message, settings = state["message"], runtime.context.settings
+    # Plain greetings and thanks get the canned reply with no model or search call.
+    if _GREETING.match(message):
+        return {"response": SupportResponse(content=GREETING_RESPONSE)}
+    # Emergency signs get the fixed 112 reply before any model call, and never a test.
+    if settings.symptom_suggestions and emergency_sign(message):
+        annotate(symptom_flow="emergency")
+        return {"response": SupportResponse(content=EMERGENCY_RESPONSE, verifier_verdict="FIXED_TEXT")}
+    return {}
+
+
+async def intent_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
+    deps = runtime.context
+    message, ctx, settings = state["message"], deps.ctx, deps.settings
+
+    # A "yes" to the write action asked about last turn runs it; no search needed.
+    confirmed = ctx.pending_action is not None and bool(_CONFIRM.match(message))
+    retrieval = RetrievalResult()
+    if confirmed:
+        intent = ctx.pending_action
+    elif settings.parallel_intent_retrieval:
+        # Search runs while intent is classified; tool and greeting turns cancel it unused.
+        deps.retrieval_task = asyncio.create_task(retrieve(message, deps.db, settings))
+        intent = await classify_intent(message, "", ctx, settings)
+    else:
+        retrieval = await retrieve(message, deps.db, settings)
+        summary = "; ".join(f"{c.title} ({c.source}, sim={c.similarity:.2f})" for c in retrieval.chunks)
+        intent = await classify_intent(message, summary or "none", ctx, settings)
+    logger.info(
+        "Intent: %s (tool=%s, action=%s, conf=%.2f)",
+        intent.intent, intent.tool_name, intent.requires_action, intent.confidence,
+    )
+
+    # The classifier often files "I feel tired" as a test search; symptom words win over that.
+    if settings.symptom_suggestions and intent.intent in _SYMPTOM_OVERRIDABLE:
+        topic = keyword_topic(message)
+        if topic and (intent.intent != "SYMPTOM_CHECK" or intent.parameters.get("symptom_topic") in (None, "other")):
+            intent = Intent(intent="SYMPTOM_CHECK", parameters={"symptom_topic": topic}, confidence=intent.confidence)
+
+    # With symptom suggestions off, symptom and medical-advice turns are answered like FAQs.
+    if intent.intent in ("SYMPTOM_CHECK", "MEDICAL_ADVICE") and not settings.symptom_suggestions:
+        intent = intent.model_copy(update={"intent": "FAQ", "tool_name": None, "requires_action": False})
+
+    return {"intent": intent, "confirmed": confirmed, "retrieval": retrieval}
+
+
+def route_after_intent(state: TurnState) -> str:
+    intent = state["intent"].intent
+    if intent == "SYMPTOM_CHECK":
+        return "symptom"
+    if intent in ("MEDICAL_ADVICE", "GREETING", "OFF_TOPIC"):
+        return "fixed_reply"
+    return "retrieval"
+
+
+async def symptom_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
+    # Symptom turns get fixed, doctor-approved wording, never a model draft.
+    content, actions, cards = await symptom_reply(state["intent"], runtime.context.ctx, runtime.context.settings)
+    return {"response": SupportResponse(content=content, actions_taken=actions, cards=cards, verifier_verdict="FIXED_TEXT")}
+
+
+async def fixed_reply_node(state: TurnState) -> dict:
+    intent = state["intent"].intent
+    if intent == "MEDICAL_ADVICE":
+        annotate(symptom_flow="medical_advice")
+        return {"response": SupportResponse(content=MEDICAL_ADVICE_RESPONSE, verifier_verdict="FIXED_TEXT")}
+    if intent == "GREETING":
+        return {"response": SupportResponse(content=GREETING_RESPONSE, was_abstained=False)}
+    # Off-topic questions score as close to the catalog as real ones (eval 13-10-2026),
+    # so similarity alone cannot gate this. The UNGROUNDED label is stored in prod; keep it.
+    return {"response": SupportResponse(content=OFF_TOPIC_RESPONSE, was_abstained=True, verifier_verdict="UNGROUNDED")}
+
+
+async def retrieval_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
+    """Join the search started beside intent classification, or cancel it on booking turns."""
+    deps, intent = runtime.context, state["intent"]
+    tool_turn = bool((intent.requires_action or state["confirmed"]) and intent.tool_name)
+    tool_def = TOOL_REGISTRY.get(intent.tool_name) if tool_turn else None
+    booking_turn = bool(tool_def and tool_def.requires_auth)
+    update: dict = {"tool_turn": tool_turn, "booking_turn": booking_turn}
+    if booking_turn and deps.retrieval_task:
+        deps.retrieval_task.cancel()
+    elif deps.retrieval_task:
+        update["retrieval"] = await deps.retrieval_task
+    return update
+
+
+def route_after_retrieval(state: TurnState) -> str:
+    if state["tool_turn"]:
+        return "action"
+    retrieval = state["retrieval"]
+    # Nothing relevant in the knowledge base: abstain before paying for draft and verifier.
+    if retrieval.failed or retrieval.should_abstain:
+        return "abstain"
+    return "draft"
+
+
+async def abstain_node(state: TurnState) -> dict:
+    if state["retrieval"].failed:
+        return {"response": SupportResponse(content=ERROR_RESPONSE, was_abstained=True)}
+    return {"response": SupportResponse(content=ABSTENTION_MESSAGE, verifier_verdict="NO_CONTEXT", was_abstained=True)}
+
+
+async def action_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
+    deps, intent = runtime.context, state["intent"]
+    tool_def = TOOL_REGISTRY.get(intent.tool_name)
+    if tool_def and tool_def.requires_auth and not deps.ctx.is_authenticated:
+        return {"response": SupportResponse(
+            content=(
+                "Please log in to access your bookings. You can log in from "
+                "the top-right corner of the page. Once logged in, I can help "
+                "you check booking status, reschedule, or cancel appointments."
+            ),
+            was_abstained=False,
+        )}
+
+    if tool_def and tool_def.is_write and not state["confirmed"]:
+        return {"response": SupportResponse(content=_confirmation_request(intent), pending_action=intent)}
+
+    from app.agents.action import execute_action
+
+    action_result = await execute_action(intent, deps.ctx, deps.settings)
+    actions = [action_result]
+
+    # A failed booking tool gets a fixed reply: an unverified draft could claim it worked.
+    if not action_result.success:
+        if state["booking_turn"]:
+            return {"actions": actions, "response": SupportResponse(
+                content=ACTION_FAILED_RESPONSE, actions_taken=actions, was_abstained=True,
+            )}
+        # Catalog tools fall back to KB chunks if there are any; otherwise a catalog-specific reply.
+        retrieval = state["retrieval"]
+        if retrieval.should_abstain or not retrieval.chunks:
+            return {"actions": actions, "response": SupportResponse(
+                content=CATALOG_FAILED_RESPONSE, actions_taken=actions, was_abstained=True,
+            )}
+    return {"actions": actions}
+
+
+def route_after_action(state: TurnState) -> str:
+    if _finished(state):
+        return END
+    return "booking_reply" if state["booking_turn"] else "draft"
+
+
+async def booking_reply_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
+    # No KB chunks reach this draft, so there is nothing for the verifier to check.
+    intent, actions = state["intent"], state["actions"]
+    draft = await generate_draft(state["message"], [], actions, runtime.context.ctx, runtime.context.settings)
+    if draft == ABSTENTION_MESSAGE and intent.tool_name in WRITE_DONE_RESPONSES:
+        # The change already happened; never tell the customer we could not help.
+        draft = WRITE_DONE_RESPONSES[intent.tool_name]
+    return {"response": SupportResponse(
+        content=draft, actions_taken=actions, verifier_verdict="TOOL_ONLY", was_abstained=draft == ABSTENTION_MESSAGE,
+    )}
+
+
+async def draft_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
+    draft = await generate_draft(
+        state["message"], state["retrieval"].chunks, state.get("actions", []), runtime.context.ctx, runtime.context.settings
+    )
+    return {"draft": draft}
+
+
+async def verifier_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
+    # The grounded-abstention gate: the draft is checked against the sources it was given.
+    verification = await verify(state["draft"], state["retrieval"], state.get("actions", []), runtime.context.settings)
+    return {"verification": verification}
+
+
+async def response_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
+    verification, retrieval, actions = state["verification"], state["retrieval"], state.get("actions", [])
+    if verification.verdict == "UNGROUNDED":
+        return {"response": SupportResponse(
+            content=ABSTENTION_MESSAGE, sources=[], actions_taken=actions,
+            verifier_verdict="UNGROUNDED", was_abstained=True,
+        )}
+    # Cards come only from catalog rows, after the reply passed the verifier.
+    cards = cards_from_actions(actions) or await live_cards_for_chunks(
+        retrieval.chunks, verification.cleaned_response, runtime.context.ctx, runtime.context.settings
+    )
+    return {"response": SupportResponse(
+        content=verification.cleaned_response, sources=retrieval.chunks, actions_taken=actions,
+        verifier_verdict=verification.verdict, was_abstained=False, cards=cards,
+    )}
+
+
+def build_graph():
+    g = StateGraph(TurnState, context_schema=TurnDeps)
+    g.add_node("safety", safety_node)
+    g.add_node("intent", intent_node)
+    g.add_node("symptom", symptom_node)
+    g.add_node("fixed_reply", fixed_reply_node)
+    g.add_node("retrieval", retrieval_node)
+    g.add_node("abstain", abstain_node)
+    g.add_node("action", action_node)
+    g.add_node("booking_reply", booking_reply_node)
+    g.add_node("draft", draft_node)
+    g.add_node("verifier", verifier_node)
+    g.add_node("response", response_node)
+
+    g.add_edge(START, "safety")
+    g.add_conditional_edges("safety", lambda s: END if _finished(s) else "intent", ["intent", END])
+    g.add_conditional_edges("intent", route_after_intent, ["symptom", "fixed_reply", "retrieval"])
+    g.add_conditional_edges("retrieval", route_after_retrieval, ["action", "abstain", "draft"])
+    g.add_conditional_edges("action", route_after_action, ["booking_reply", "draft", END])
+    g.add_edge("draft", "verifier")
+    g.add_edge("verifier", "response")
+    for terminal in ("symptom", "fixed_reply", "abstain", "booking_reply", "response"):
+        g.add_edge(terminal, END)
+    return g.compile(name="support-graph")
+
+
+SUPPORT_GRAPH = build_graph()
+
+
 async def _run_pipeline(
     message: str,
     ctx: AgentContext,
@@ -236,192 +504,20 @@ async def _run_pipeline(
     settings: Any,
 ) -> SupportResponse:
     start_time = time.monotonic()
-    retrieval_task: asyncio.Task | None = None
-
+    deps = TurnDeps(ctx=ctx, db=db, settings=settings)
     try:
-        if _GREETING.match(message):
-            return SupportResponse(content=GREETING_RESPONSE, latency_ms=_elapsed(start_time))
-
-        # Emergency signs get the fixed 112 reply before any model call, and never a test.
-        if settings.symptom_suggestions and emergency_sign(message):
-            annotate(symptom_flow="emergency")
-            return SupportResponse(content=EMERGENCY_RESPONSE, verifier_verdict="FIXED_TEXT", latency_ms=_elapsed(start_time))
-
-        # A "yes" to the write action asked about last turn runs it; no search needed.
-        confirmed = ctx.pending_action is not None and bool(_CONFIRM.match(message))
-        retrieval = RetrievalResult()
-        if confirmed:
-            intent = ctx.pending_action
-        elif settings.parallel_intent_retrieval:
-            # Search runs while intent is classified; tool and greeting turns cancel it unused.
-            retrieval_task = asyncio.create_task(retrieve(message, db, settings))
-            intent = await classify_intent(message, "", ctx, settings)
-        else:
-            retrieval = await retrieve(message, db, settings)
-            summary = "; ".join(f"{c.title} ({c.source}, sim={c.similarity:.2f})" for c in retrieval.chunks)
-            intent = await classify_intent(message, summary or "none", ctx, settings)
-        logger.info(
-            "Intent: %s (tool=%s, action=%s, conf=%.2f)",
-            intent.intent, intent.tool_name, intent.requires_action, intent.confidence,
-        )
-
-        # The classifier often files "I feel tired" as a test search; symptom words win over that.
-        if settings.symptom_suggestions and intent.intent in _SYMPTOM_OVERRIDABLE:
-            topic = keyword_topic(message)
-            if topic and (intent.intent != "SYMPTOM_CHECK" or intent.parameters.get("symptom_topic") in (None, "other")):
-                intent = Intent(intent="SYMPTOM_CHECK", parameters={"symptom_topic": topic}, confidence=intent.confidence)
-
-        # Symptom and medical-advice turns get fixed, doctor-approved wording, never a model draft.
-        if intent.intent in ("SYMPTOM_CHECK", "MEDICAL_ADVICE"):
-            if not settings.symptom_suggestions:
-                intent = intent.model_copy(update={"intent": "FAQ", "tool_name": None, "requires_action": False})
-            elif intent.intent == "MEDICAL_ADVICE":
-                annotate(symptom_flow="medical_advice")
-                return SupportResponse(content=MEDICAL_ADVICE_RESPONSE, verifier_verdict="FIXED_TEXT", latency_ms=_elapsed(start_time))
-            else:
-                content, actions, cards = await symptom_reply(intent, ctx, settings)
-                return SupportResponse(
-                    content=content, actions_taken=actions, cards=cards,
-                    verifier_verdict="FIXED_TEXT", latency_ms=_elapsed(start_time),
-                )
-
-        # 3. Greeting — return immediately without verification
-        if intent.intent == "GREETING":
-            return SupportResponse(
-                content=GREETING_RESPONSE,
-                was_abstained=False,
-                latency_ms=_elapsed(start_time),
-            )
-
-        # 4. Off-topic → abstain. Off-topic questions score as close to the catalog
-        # as real ones (eval 13-10-2026), so similarity alone cannot gate this.
-        if intent.intent == "OFF_TOPIC":
-            return SupportResponse(
-                content=OFF_TOPIC_RESPONSE,
-                was_abstained=True,
-                verifier_verdict="UNGROUNDED",
-                latency_ms=_elapsed(start_time),
-            )
-
-        tool_turn = bool((intent.requires_action or confirmed) and intent.tool_name)
-        tool_def = TOOL_REGISTRY.get(intent.tool_name) if tool_turn else None
-        # Booking tools answer from the customer's own records; catalog tools still use and verify KB chunks.
-        booking_turn = bool(tool_def and tool_def.requires_auth)
-        if booking_turn and retrieval_task:
-            retrieval_task.cancel()
-        elif retrieval_task:
-            retrieval = await retrieval_task
-
-        if not tool_turn:
-            if retrieval.failed:
-                return SupportResponse(content=ERROR_RESPONSE, was_abstained=True, latency_ms=_elapsed(start_time))
-            # Nothing relevant in the knowledge base: abstain before paying for draft and verifier.
-            if retrieval.should_abstain:
-                return SupportResponse(
-                    content=ABSTENTION_MESSAGE,
-                    verifier_verdict="NO_CONTEXT",
-                    was_abstained=True,
-                    latency_ms=_elapsed(start_time),
-                )
-
-        # 5. Execute action if needed
-        actions: list[ActionResult] = []
-        if tool_turn:
-            if tool_def and tool_def.requires_auth and not ctx.is_authenticated:
-                return SupportResponse(
-                    content=(
-                        "Please log in to access your bookings. You can log in from "
-                        "the top-right corner of the page. Once logged in, I can help "
-                        "you check booking status, reschedule, or cancel appointments."
-                    ),
-                    was_abstained=False,
-                    latency_ms=_elapsed(start_time),
-                )
-
-            if tool_def and tool_def.is_write and not confirmed:
-                return SupportResponse(
-                    content=_confirmation_request(intent),
-                    pending_action=intent,
-                    latency_ms=_elapsed(start_time),
-                )
-
-            from app.agents.action import execute_action
-
-            action_result = await execute_action(intent, ctx, settings)
-            actions.append(action_result)
-
-            # A failed booking tool gets a fixed reply: an unverified draft could claim it worked.
-            if not action_result.success:
-                if booking_turn:
-                    return SupportResponse(
-                        content=ACTION_FAILED_RESPONSE,
-                        actions_taken=actions,
-                        was_abstained=True,
-                        latency_ms=_elapsed(start_time),
-                    )
-                # For catalog tools: fall back to KB chunks if available; otherwise give catalog-specific fallback.
-                if retrieval.should_abstain or not retrieval.chunks:
-                    return SupportResponse(
-                        content=CATALOG_FAILED_RESPONSE,
-                        actions_taken=actions,
-                        was_abstained=True,
-                        latency_ms=_elapsed(start_time),
-                    )
-
-            if booking_turn:
-                # No KB chunks reach this draft, so there is nothing for the verifier to check.
-                draft = await generate_draft(message, [], actions, ctx, settings)
-                if draft == ABSTENTION_MESSAGE and intent.tool_name in WRITE_DONE_RESPONSES:
-                    # The change already happened; never tell the customer we could not help.
-                    draft = WRITE_DONE_RESPONSES[intent.tool_name]
-                return SupportResponse(
-                    content=draft,
-                    actions_taken=actions,
-                    verifier_verdict="TOOL_ONLY",
-                    was_abstained=draft == ABSTENTION_MESSAGE,
-                    latency_ms=_elapsed(start_time),
-                )
-
-        # 6. Generate draft response
-        draft = await generate_draft(
-            message, retrieval.chunks, actions, ctx, settings
-        )
-
-        # 7. Verify — the critical grounded abstention gate
-        verification = await verify(draft, retrieval, actions, settings)
-
-        if verification.verdict == "UNGROUNDED":
-            return SupportResponse(
-                content=ABSTENTION_MESSAGE,
-                sources=[],
-                actions_taken=actions,
-                verifier_verdict="UNGROUNDED",
-                was_abstained=True,
-                latency_ms=_elapsed(start_time),
-            )
-
-        # 8. Return verified response; cards come only from catalog rows, after the reply passed the verifier.
-        return SupportResponse(
-            content=verification.cleaned_response,
-            sources=retrieval.chunks,
-            actions_taken=actions,
-            verifier_verdict=verification.verdict,
-            was_abstained=False,
-            latency_ms=_elapsed(start_time),
-            cards=cards_from_actions(actions) or await live_cards_for_chunks(retrieval.chunks, verification.cleaned_response, ctx, settings),
-        )
-
+        final = await SUPPORT_GRAPH.ainvoke({"message": message}, context=deps)
+        response = final["response"]
     except AIBusyError:
-        return SupportResponse(
-            content=BUSY_RESPONSE,
-            was_abstained=True,
-            latency_ms=_elapsed(start_time),
-        )
+        response = SupportResponse(content=BUSY_RESPONSE, was_abstained=True)
     except Exception:
         logger.exception("Orchestrator error for conversation %s", ctx.conversation_id)
-        return SupportResponse(content=ERROR_RESPONSE, was_abstained=True, latency_ms=_elapsed(start_time))
+        response = SupportResponse(content=ERROR_RESPONSE, was_abstained=True)
     finally:
-        if retrieval_task and not retrieval_task.done():
-            retrieval_task.cancel()
-        elif retrieval_task and not retrieval_task.cancelled():
-            retrieval_task.exception()  # mark a finished-but-unused failure as seen
+        task = deps.retrieval_task
+        if task and not task.done():
+            task.cancel()
+        elif task and not task.cancelled():
+            task.exception()  # mark a finished-but-unused failure as seen
+    response.latency_ms = _elapsed(start_time)
+    return response
