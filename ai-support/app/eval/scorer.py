@@ -33,6 +33,12 @@ class EvalResult:
     usage: dict[str, Any] = field(default_factory=dict)
     # Other correct choices besides expected_tool; "none" means a KB answer with no tool call is fine.
     acceptable_tools: list[str] = field(default_factory=list)
+    # Probe checks on the answer text (case-insensitive): any one of, none of, all of.
+    expect_any: list[str] = field(default_factory=list)
+    expect_none: list[str] = field(default_factory=list)
+    expect_all: list[str] = field(default_factory=list)
+    # "X is not included in P" while the catalog lists X in P (see omission.py), as "P: X" strings.
+    omissions: list[str] = field(default_factory=list)
 
 
 NO_TOOL = "none"
@@ -44,6 +50,18 @@ def tool_choice_correct(r: EvalResult) -> bool:
     if any(t in r.tools_called for t in r.acceptable_tools if t != NO_TOOL):
         return True
     return NO_TOOL in r.acceptable_tools and not r.tools_called
+
+
+def probe_passed(r: EvalResult) -> Optional[bool]:
+    """None when the query carries no probe checks."""
+    if not (r.expect_any or r.expect_none or r.expect_all):
+        return None
+    text = r.response.lower()
+    return (
+        (not r.expect_any or any(e.lower() in text for e in r.expect_any))
+        and not any(e.lower() in text for e in r.expect_none)
+        and all(e.lower() in text for e in r.expect_all)
+    )
 
 
 def _rate(hits: int, total: int) -> Optional[float]:
@@ -80,6 +98,8 @@ def custom_metrics(results: list[EvalResult]) -> dict[str, Any]:
     with_tool = [r for r in results if r.expected_tool]
     latencies = sorted(r.latency_ms for r in results)
     checked = [r for r in results if r.verifier_verdict != "TOOL_ONLY"]
+    probed = [r for r in results if probe_passed(r) is not None]
+    answered = [r for r in results if not r.was_abstained]
 
     return {
         "abstention_accuracy": _rate(sum(r.should_abstain == r.was_abstained for r in results), len(results)),
@@ -92,6 +112,9 @@ def custom_metrics(results: list[EvalResult]) -> dict[str, Any]:
         "groundedness_score": _rate(sum(r.verifier_verdict == "GROUNDED" for r in checked), len(checked)),
         "source_hit_rate": _rate(sum(r.expected_source in r.retrieved_sources for r in with_source), len(with_source)),
         "tool_choice_accuracy": _rate(sum(tool_choice_correct(r) for r in with_tool), len(with_tool)),
+        "probe_pass_rate": _rate(sum(bool(probe_passed(r)) for r in probed), len(probed)),
+        # Share of answers that deny a test the catalog lists in the named package.
+        "omission_error_rate": _rate(sum(bool(r.omissions) for r in answered), len(answered)),
         "error_rate": _rate(sum(r.error is not None for r in results), len(results)),
         "p50_latency_ms": latencies[len(latencies) // 2] if latencies else None,
         "p95_latency_ms": _percentile(latencies, 0.95),

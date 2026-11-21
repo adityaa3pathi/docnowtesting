@@ -8,8 +8,16 @@ from typing import Any
 
 _TOKEN = re.compile(r"[a-z0-9]+")
 _STOPWORDS = frozenset(
-    "a an and are be can do does for how i in is it me my of on or the this to what when where which with you your".split()
+    "a an and are be can do does for how i in is it me my of on or the this to what when where which with you your "
+    # Question filler: a rare filler word in one description ("much", "need") pulled unrelated chunks.
+    "about any cost costs get give have has much many need needed please should tell want will would "
+    # Hinglish filler
+    "hai hain ka ke ki kya kitna kitne kitni ko mein se aur bhi".split()
 )
+# Terms in over half the chunks ("test", "price", "report") score ~0 but still earned full RRF rank credit,
+# so a typo query got an arbitrary BM25 list fused in. Small corpora (unit tests) keep every term.
+MAX_DF = 0.5
+MIN_DOCS_FOR_MAX_DF = 10
 
 
 def tokenize(text: str) -> list[str]:
@@ -26,8 +34,12 @@ class BM25Index:
         self.lengths = [sum(d.values()) for d in self.docs]
         self.avg_len = (sum(self.lengths) / len(self.docs)) if self.docs else 0.0
         df = Counter(term for doc in self.docs for term in doc)
+        self.df = df
+        self.titles = [set(tokenize(c.get("title", ""))) for c in chunks]
         n = len(self.docs)
         self.idf = {term: math.log(1 + (n - f + 0.5) / (f + 0.5)) for term, f in df.items()}
+        if n >= MIN_DOCS_FOR_MAX_DF:
+            self.idf = {term: idf for term, idf in self.idf.items() if df[term] <= MAX_DF * n}
 
     def search(self, query: str, limit: int = 20) -> list[dict[str, Any]]:
         terms = [t for t in dict.fromkeys(tokenize(query)) if t in self.idf]
@@ -43,6 +55,30 @@ class BM25Index:
                 scored.append({**chunk, "bm25": score})
         scored.sort(key=lambda r: r["bm25"], reverse=True)
         return scored[:limit]
+
+
+RESCUE_MAX_DF = 3
+RESCUE_MAX_TERMS = 3
+
+
+def rare_title_matches(index: BM25Index, query: str, limit: int = 5) -> list[dict[str, Any]]:
+    """Catalog chunks whose title carries a rare query term: the narrow rescue for a bare code like "qft".
+
+    Only short queries qualify. A long question carries enough context for the embedding, and its
+    filler words would otherwise find rare-but-irrelevant titles. Only test and package titles count:
+    "Do you offer plumbing services?" matched the FAQ title "Services We Don't Offer".
+    """
+    terms = tokenize(query)
+    if not terms or len(terms) > RESCUE_MAX_TERMS:
+        return []
+    rare = {t for t in terms if 0 < index.df.get(t, 0) <= RESCUE_MAX_DF}
+    hits = [
+        (len(rare & title), chunk)
+        for chunk, title in zip(index.chunks, index.titles)
+        if chunk.get("source") == "catalog" and rare & title
+    ]
+    hits.sort(key=lambda h: h[0], reverse=True)
+    return [chunk for _, chunk in hits[:limit]]
 
 
 def rrf_fuse(*ranked_lists: list[dict[str, Any]], k: int = 60) -> list[dict[str, Any]]:
