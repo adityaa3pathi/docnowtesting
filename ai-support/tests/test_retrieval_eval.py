@@ -84,3 +84,34 @@ async def test_prune_keeps_only_vectors_used_this_run(tmp_path, settings):
     assert await cache.embed("keep") == [1.0]
     cache.save(prune=True)
     assert list(json.loads(path.read_text()).values()) == [[1.0]]
+
+
+def test_constituent_names_are_cleaned_for_customer_queries():
+    from app.eval.build_real_set import clean
+
+    assert clean("Albumin, Serum") == "Albumin"
+    assert clean("Allergy Grass-By Elisa Method") == "Allergy Grass"
+    assert clean("HbA1c") == "HbA1c"
+
+
+def test_coverage_counts_facts_stored_but_not_indexed():
+    from app.eval.build_real_set import coverage
+
+    item = {
+        "name": "Big Package", "type": "PACKAGE", "displayPrice": 900, "discountedPrice": 500,
+        "detailsData": {"reportingTime": "26 hrs", "fastingTime": 12,
+                        "constituents": [{"name": f"T{n}"} for n in range(20)]},
+    }
+    c = coverage([item])
+    assert c["report_time"] == {"stored": 1, "indexed": 0}
+    assert c["all_constituents"] == {"stored": 1, "indexed": 0}
+    assert c["constituents_lost"] == 5
+
+
+def test_fake_express_serves_the_catalog_it_is_given():
+    import httpx
+    from app.eval.fake_express import FakeExpress
+
+    express = FakeExpress(catalog=[{"name": "Real Lipid Profile", "partnerCode": "P1"}])
+    resp = express(httpx.Request("GET", "http://x/api/catalog/products?search=lipid"))
+    assert [p["name"] for p in resp.json()["products"]] == ["Real Lipid Profile"]

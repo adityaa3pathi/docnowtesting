@@ -2,3 +2,4 @@
 __pycache__/
 .pytest_cache/
 app/eval/.cache/
+app/eval/fixtures/real/
