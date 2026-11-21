@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from app.agents.keyword import BM25Index
-from app.ingestion.catalog_sync import format_catalog_text
+from app.ingestion.catalog_sync import INDEX_SOURCE, constituent_index_docs, format_catalog_text
 from app.ingestion.embeddings import DOCUMENT, QUERY, generate_embeddings_batch
 from app.ingestion.static_docs import STATIC_DOCUMENTS
 
@@ -41,7 +41,8 @@ def build_chunks(corpus: str = "fixture") -> list[dict[str, Any]]:
         }
         for doc in STATIC_DOCUMENTS
     ]
-    for item in catalog_items(corpus):
+    items = catalog_items(corpus)
+    for item in items:
         chunks.append(
             {
                 "id": f"catalog:{item['id']}",
@@ -54,6 +55,16 @@ def build_chunks(corpus: str = "fixture") -> list[dict[str, Any]]:
                     "displayPrice": item.get("displayPrice"),
                     "discountedPrice": item.get("discountedPrice"),
                 },
+            }
+        )
+    for doc in constituent_index_docs(items):
+        chunks.append(
+            {
+                "id": f"{INDEX_SOURCE}:{doc['source_id']}",
+                "source": INDEX_SOURCE,
+                "title": doc["title"],
+                "content": doc["content"],
+                "metadata": {"test": doc["source_id"]},
             }
         )
     return chunks
@@ -120,7 +131,7 @@ class InMemoryKnowledgeBase:
     def __init__(self, chunks: list[dict[str, Any]], embeddings: list[list[float]]) -> None:
         self.chunks = chunks
         self.embeddings = embeddings
-        self.bm25 = BM25Index(chunks)
+        self.bm25 = BM25Index([c for c in chunks if c.get("source") != INDEX_SOURCE])
         self.pool = None
 
     @classmethod
@@ -128,10 +139,14 @@ class InMemoryKnowledgeBase:
         chunks = build_chunks(corpus)
         return cls(chunks, await cache.embed_many([c["content"] for c in chunks], DOCUMENT))
 
-    async def vector_search(self, embedding: list[float], limit: int = 10) -> list[dict[str, Any]]:
+    async def vector_search(
+        self, embedding: list[float], limit: int = 10, *, source: str | None = None, exclude_source: str | None = None
+    ) -> list[dict[str, Any]]:
         scored = [
             {**chunk, "similarity": _cosine(embedding, vec)}
             for chunk, vec in zip(self.chunks, self.embeddings)
+            if (source is None or chunk.get("source") == source)
+            and (exclude_source is None or chunk.get("source") != exclude_source)
         ]
         scored.sort(key=lambda r: r["similarity"], reverse=True)
         return scored[:limit]

@@ -54,6 +54,13 @@
     {"id": "r-followup-04", "category": "followup", "query": "and how long for the report?", "history": [{"role": "user", "content": "I need a Vitamin D test"}, {"role": "assistant", "content": "We offer Vitamin D (25-OH) to check for deficiency."}], "relevant": ["catalog:fx-vitd"]},
     {"id": "r-followup-05", "category": "followup", "query": "can I still cancel it?", "history": [{"role": "user", "content": "The phlebotomist has been assigned to my booking"}, {"role": "assistant", "content": "Your booking status is Sample Collector Assigned."}], "relevant": ["policy:Cancellation Policy", "booking_help:Booking Status Explanations"]},
 
+    {"id": "r-list-01", "category": "list", "query": "Which packages include HbA1c?", "relevant": ["catalog_index:HbA1c"]},
+    {"id": "r-list-02", "category": "list", "query": "List every checkup that has a complete blood count", "relevant": ["catalog_index:Complete Blood Count"]},
+    {"id": "r-list-03", "category": "list", "query": "thyroid profile kis kis package mein hai?", "relevant": ["catalog_index:Thyroid Profile"]},
+    {"id": "r-list-04", "category": "list", "query": "Which packages have a lipid profile?", "relevant": ["catalog_index:Lipid Profile"]},
+    {"id": "r-list-05", "category": "list", "query": "all packages with vitamin B12", "relevant": ["catalog_index:Vitamin B12"]},
+    {"id": "r-list-06", "category": "list", "query": "Which health checkups include a urine routine test?", "relevant": ["catalog_index:Urine Routine"]},
+
     {"id": "r-abstain-01", "category": "abstain", "query": "Can you help me book a flight to Mumbai?", "relevant": []},
     {"id": "r-abstain-02", "category": "abstain", "query": "What is the weather like in Bangalore today?", "relevant": []},
     {"id": "r-abstain-03", "category": "abstain", "query": "Write a poem about the ocean", "relevant": []},
@@ -64,17 +71,17 @@
     {"id": "r-abstain-07", "category": "abstain", "query": "Translate 'good morning' into French", "relevant": []},
     {"id": "r-abstain-08", "category": "abstain", "query": "What is the capital of Australia?", "relevant": []},
 
-    {"id": "r-not_offered-01", "category": "not_offered", "query": "How much does a MRI scan of the brain cost?", "relevant": []},
-    {"id": "r-not_offered-02", "category": "not_offered", "query": "How much does a chest X-ray cost?", "relevant": []},
-    {"id": "r-not_offered-03", "category": "not_offered", "query": "How much does a ultrasound of the abdomen cost?", "relevant": []},
-    {"id": "r-not_offered-04", "category": "not_offered", "query": "How much does a ECG at home cost?", "relevant": []},
-    {"id": "r-not_offered-05", "category": "not_offered", "query": "Can I book a CT scan of the head?", "relevant": []},
-    {"id": "r-not_offered-06", "category": "not_offered", "query": "Do you do 2D echo at home?", "relevant": []},
-    {"id": "r-not_offered-07", "category": "not_offered", "query": "TMT test price", "relevant": []},
-    {"id": "r-not_offered-08", "category": "not_offered", "query": "Do you give the flu vaccine at home?", "relevant": []},
-    {"id": "r-not_offered-09", "category": "not_offered", "query": "Is sonography available for pregnancy?", "relevant": []},
-    {"id": "r-not_offered-10", "category": "not_offered", "query": "Book an ECG for my father", "relevant": []},
-    {"id": "r-not_offered-11", "category": "not_offered", "query": "knee x-ray kitne ka hai?", "relevant": []},
-    {"id": "r-not_offered-12", "category": "not_offered", "query": "PET scan price", "relevant": []}
+    {"id": "r-not_offered-01", "category": "not_offered", "query": "How much does a MRI scan of the brain cost?", "relevant": ["faq:Services We Don't Offer"]},
+    {"id": "r-not_offered-02", "category": "not_offered", "query": "How much does a chest X-ray cost?", "relevant": ["faq:Services We Don't Offer"]},
+    {"id": "r-not_offered-03", "category": "not_offered", "query": "How much does a ultrasound of the abdomen cost?", "relevant": ["faq:Services We Don't Offer"]},
+    {"id": "r-not_offered-04", "category": "not_offered", "query": "How much does a ECG at home cost?", "relevant": ["faq:Services We Don't Offer"]},
+    {"id": "r-not_offered-05", "category": "not_offered", "query": "Can I book a CT scan of the head?", "relevant": ["faq:Services We Don't Offer"]},
+    {"id": "r-not_offered-06", "category": "not_offered", "query": "Do you do 2D echo at home?", "relevant": ["faq:Services We Don't Offer"]},
+    {"id": "r-not_offered-07", "category": "not_offered", "query": "TMT test price", "relevant": ["faq:Services We Don't Offer"]},
+    {"id": "r-not_offered-08", "category": "not_offered", "query": "Do you give the flu vaccine at home?", "relevant": ["faq:Services We Don't Offer"]},
+    {"id": "r-not_offered-09", "category": "not_offered", "query": "Is sonography available for pregnancy?", "relevant": ["faq:Services We Don't Offer"]},
+    {"id": "r-not_offered-10", "category": "not_offered", "query": "Book an ECG for my father", "relevant": ["faq:Services We Don't Offer"]},
+    {"id": "r-not_offered-11", "category": "not_offered", "query": "knee x-ray kitne ka hai?", "relevant": ["faq:Services We Don't Offer"]},
+    {"id": "r-not_offered-12", "category": "not_offered", "query": "PET scan price", "relevant": ["faq:Services We Don't Offer"]}
   ]
 }

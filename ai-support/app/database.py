@@ -10,6 +10,9 @@ import asyncpg
 from pgvector.asyncpg import register_vector
 
 from app.agents.keyword import BM25Index
+from app.agents.retrieval import INDEX_SOURCE
+
+HNSW_EF_SEARCH = 200
 from app.config import Settings
 
 logger = logging.getLogger(__name__)
@@ -76,27 +79,38 @@ class Database:
         self,
         embedding: list[float],
         limit: int = 10,
+        *,
+        source: str | None = None,
+        exclude_source: str | None = None,
     ) -> list[dict[str, Any]]:
         """Cosine similarity search over KnowledgeChunk table.
 
         Returns chunks ordered by descending similarity (1 = identical).
         The <=> operator returns cosine distance; similarity = 1 - distance.
+        source / exclude_source keep only, or drop, one source (the item and index lanes).
         """
         if not self.pool:
             raise RuntimeError("Database pool not initialized. Call connect() first.")
 
-        async with self.pool.acquire() as conn:
+        async with self.pool.acquire() as conn, conn.transaction():
+            # HNSW filters after the scan, and the scan returns ef_search rows (default 40): with a
+            # source filter that can leave too few. The table is a few hundred rows, so scan wider.
+            await conn.execute(f"SET LOCAL hnsw.ef_search = {HNSW_EF_SEARCH}")
             rows = await conn.fetch(
                 """
                 SELECT id, source, "sourceId", title, content, metadata,
                        1 - (embedding <=> $1::vector) AS similarity
                 FROM "KnowledgeChunk"
                 WHERE embedding IS NOT NULL
+                  AND ($3::text IS NULL OR source = $3)
+                  AND ($4::text IS NULL OR source <> $4)
                 ORDER BY embedding <=> $1::vector
                 LIMIT $2
                 """,
                 embedding,
                 limit,
+                source,
+                exclude_source,
             )
             return [chunk_row(r) for r in rows]
 
@@ -117,7 +131,9 @@ class Database:
     async def _rebuild_bm25(self, conn: asyncpg.Connection, version: tuple) -> None:
         """Tokenising the whole corpus is CPU-bound, so it runs off the event loop."""
         rows = await conn.fetch(
-            'SELECT id, source, "sourceId", title, content, metadata FROM "KnowledgeChunk"'
+            # Index chunks repeat every package and test name; BM25 serves the item lane only.
+            'SELECT id, source, "sourceId", title, content, metadata FROM "KnowledgeChunk" WHERE source <> $1',
+            INDEX_SOURCE,
         )
         chunks = [chunk_row(r) for r in rows]
         self._bm25 = await asyncio.to_thread(BM25Index, chunks)
