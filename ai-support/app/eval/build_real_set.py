@@ -9,6 +9,7 @@ Query sources:
       item that has it, so it is not searchable today.
   search / question / hinglish  Gemini writes customer queries for a stratified sample; label = source item.
   list  "which packages include X?" for tests 3+ items share; label = the catalog_index chunk.
+  code  a bare code from the names ("qft"); label = every item whose name carries it.
   abstain  off-topic.
   not_offered  services DocNow does not offer (imaging, ECG, vaccines).
 """
@@ -43,6 +44,15 @@ OFF_TOPIC = [
     "Recommend a laptop under 50000",
     "Translate 'good morning' into French",
     "What is the capital of Australia?",
+    # Short ones: no context words, and the catalog's food-allergy panels pull food words above 0.58.
+    "gold rate today",
+    "rice price",
+    "cricket score",
+    "pizza near me",
+    "bitcoin price",
+    "train status",
+    "hotel booking",
+    "chicken biryani",
 ]
 # Services DocNow does not offer (owner-confirmed 21-11-2026): imaging, ECG/ECHO/TMT, vaccinations.
 # Hand-checked against the catalog; they sit close to real tests in embedding space (ECG ~ EGFR).
@@ -185,6 +195,37 @@ def list_queries(items: list[dict], rng: random.Random) -> list[dict]:
     ]
 
 
+_CODE_IN_NAME = re.compile(r"\(([A-Z][A-Z0-9]{1,7})\)|^([A-Z][A-Z0-9]{2,7})\b")
+_NOT_CODES = {
+    "TEST", "BLOOD", "SERUM", "URINE", "TOTAL", "COMPLETE", "SEMEN", "ALLERGY", "STOOL",
+    "DIRECT", "INDIRECT", "GLUCOSE", "THIAMINE", "COOMBS", "TORCH",
+}
+
+
+def code_queries(items: list[dict]) -> list[dict]:
+    """Bare codes customers type ("qft", "uibc"): the case where a weak embedding could trip the dense gate.
+
+    Codes come from the names themselves: an all-caps token in brackets, or an all-caps first word.
+    """
+    holders: dict[str, set[str]] = defaultdict(set)
+    for item in items:
+        for bracket, first in _CODE_IN_NAME.findall(item["name"]):
+            code = bracket or first
+            if code not in _NOT_CODES:
+                holders[code].add(f"catalog:{item['id']}")
+    for code in holders:
+        # Label every item that carries the code anywhere in its name.
+        holders[code] |= {f"catalog:{i['id']}" for i in items if re.search(rf"\b{code}\b", i["name"])}
+    return [
+        {"category": "code", "query": code.lower(), "relevant": sorted(ids)}
+        for code, ids in sorted(holders.items())
+        if len(ids) <= TOP_K_LABELS
+    ]
+
+
+TOP_K_LABELS = 5
+
+
 def abstain_queries(items: list[dict]) -> list[dict]:
     """Off-topic queries must abstain; not-offered ones must say so (the "Services We Don't Offer" doc)."""
     return [{"category": "abstain", "query": q, "relevant": []} for q in OFF_TOPIC] + [
@@ -210,7 +251,7 @@ async def main(args: argparse.Namespace) -> int:
     else:
         queries = (
             constituent_queries(items, rng) + await llm_queries(items, rng, settings)
-            + list_queries(items, random.Random(SEED)) + abstain_queries(items)
+            + list_queries(items, random.Random(SEED)) + code_queries(items) + abstain_queries(items)
         )
     for n, q in enumerate(queries, 1):
         q["id"] = f"real-{q['category']}-{n:03d}"

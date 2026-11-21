@@ -9,7 +9,7 @@ from typing import Any
 import asyncpg
 from pgvector.asyncpg import register_vector
 
-from app.agents.keyword import BM25Index
+from app.agents.keyword import BM25Index, rare_title_matches
 from app.agents.retrieval import INDEX_SOURCE
 
 HNSW_EF_SEARCH = 200
@@ -114,8 +114,18 @@ class Database:
             )
             return [chunk_row(r) for r in rows]
 
+    async def rare_title_search(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
+        """Rescue lane for bare codes the dense gate rejected; see keyword.rare_title_matches."""
+        await self._ensure_bm25()
+        return rare_title_matches(self._bm25, query, limit)
+
     async def keyword_search(self, query: str, limit: int = 20) -> list[dict[str, Any]]:
         """BM25 over all chunks; the index is rebuilt only when ingestion has changed the table."""
+        await self._ensure_bm25()
+        return self._bm25.search(query, limit)
+
+    async def _ensure_bm25(self) -> None:
+        """The index is rebuilt only when ingestion has changed the table."""
         if not self.pool:
             raise RuntimeError("Database pool not initialized. Call connect() first.")
 
@@ -126,7 +136,6 @@ class Database:
                 async with self._bm25_lock:
                     if self._bm25 is None or version != self._bm25_version:
                         await self._rebuild_bm25(conn, version)
-        return self._bm25.search(query, limit)
 
     async def _rebuild_bm25(self, conn: asyncpg.Connection, version: tuple) -> None:
         """Tokenising the whole corpus is CPU-bound, so it runs off the event loop."""

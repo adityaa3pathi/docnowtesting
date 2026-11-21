@@ -42,6 +42,7 @@ class RetrievalResult(BaseModel):
     max_similarity: float = 0.0
     query_embedding: list[float] = Field(default_factory=list)
     failed: bool = False  # search errored; never treat as "nothing relevant"
+    rescued: bool = False  # dense gate abstained; chunks came from the rare-title BM25 rescue
 
 
 class Intent(BaseModel):
