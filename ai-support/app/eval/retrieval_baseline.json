@@ -1,0 +1,81 @@
+{
+  "label": "catalog-facts-fix",
+  "run_at_ist": "21-11-2026 19:56 IST",
+  "embedding_model": "gemini-embedding-001",
+  "embedding_dimensions": 768,
+  "relevance_threshold": 0.58,
+  "corpus": "fixture",
+  "corpus_chunks": 35,
+  "scores": {
+    "n_answerable": 46,
+    "n_off_topic": 4,
+    "recall@5": 0.9347826086956522,
+    "hit@1": 0.9130434782608695,
+    "mrr@5": 0.9184782608695652,
+    "ndcg@5": 0.917693854542307,
+    "dense_recall@20": 0.9782608695652174,
+    "bm25_recall@20": 0.9456521739130435,
+    "false_abstention_rate": 0.0,
+    "abstention_accuracy": 1.0,
+    "answerable_top_sim_min": 0.6267,
+    "off_topic_top_sim_max": 0.5535,
+    "misses": {
+      "ordering": [
+        "r-followup-01",
+        "r-followup-02",
+        "r-followup-04"
+      ]
+    },
+    "by_category": {
+      "acronym": {
+        "n": 6,
+        "recall@5": 1.0,
+        "hit@1": 1.0,
+        "mrr@5": 1.0,
+        "ndcg@5": 1.0
+      },
+      "constituent": {
+        "n": 7,
+        "recall@5": 1.0,
+        "hit@1": 0.8571428571428571,
+        "mrr@5": 0.8928571428571429,
+        "ndcg@5": 0.9186680797247704
+      },
+      "direct": {
+        "n": 7,
+        "recall@5": 1.0,
+        "hit@1": 1.0,
+        "mrr@5": 1.0,
+        "ndcg@5": 1.0
+      },
+      "followup": {
+        "n": 5,
+        "recall@5": 0.4,
+        "hit@1": 0.4,
+        "mrr@5": 0.4,
+        "ndcg@5": 0.4
+      },
+      "natural": {
+        "n": 8,
+        "recall@5": 1.0,
+        "hit@1": 1.0,
+        "mrr@5": 1.0,
+        "ndcg@5": 0.9882531794418353
+      },
+      "policy": {
+        "n": 8,
+        "recall@5": 1.0,
+        "hit@1": 1.0,
+        "mrr@5": 1.0,
+        "ndcg@5": 1.0
+      },
+      "typo": {
+        "n": 5,
+        "recall@5": 1.0,
+        "hit@1": 1.0,
+        "mrr@5": 1.0,
+        "ndcg@5": 0.9754430630676099
+      }
+    }
+  }
+}

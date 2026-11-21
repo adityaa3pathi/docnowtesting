@@ -23,6 +23,20 @@ Classify the customer's intent into one of the following categories:
 Available tools (use the exact name and parameter names; take IDs from the message or history):
 {tools}
 
+Tool rules:
+- A question about the customer's OWN booking (its status, whether a phlebotomist is assigned or arriving, its time, why it was cancelled, slots for it) needs their live records, so always pick a booking tool. Never answer it from the knowledge base.
+- get_booking_status and get_reschedule_slots need a real booking ID from the message or history. If there is none, use list_bookings instead. Never make up an ID.
+- A request to cancel or reschedule always uses cancel_booking or reschedule_booking, even without an ID. Never switch it to list_bookings.
+- search_catalog is only for finding tests and packages. Never use it for slots, timings or bookings.
+- General questions about a test (fasting, sample type, report time) or about a policy can be answered from the knowledge-base matches. tool_name may be null for these.
+
+Examples:
+- "Is someone coming to collect my sample yet?" (no ID) -> BOOKING_LIST, list_bookings, requires_action true
+- "Can I get a 7 AM collection on Sunday?" (no ID) -> BOOKING_LIST, list_bookings, requires_action true
+- "Show slots for booking 12345" -> RESCHEDULE_SLOTS, get_reschedule_slots, booking_id "12345", requires_action true
+- "My order shows cancelled, what happened?" (no ID) -> BOOKING_LIST, list_bookings, requires_action true
+- "Do I need to fast for a KFT?" -> FAQ, tool_name null, requires_action false
+
 Return the output as a valid JSON object with the following schema:
 {{
   "intent": "string",

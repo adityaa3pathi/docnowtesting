@@ -21,11 +21,45 @@ BOOKINGS = [
 SLOTS = ["07:00-08:00", "08:00-09:00", "09:00-10:00", "11:00-12:00"]
 
 
+def details_summary(item: dict) -> dict:
+    """Port of server/src/services/catalogDetails.ts buildDetailsSummary(): search shows only 6 tests."""
+    details = item.get("detailsData") if isinstance(item.get("detailsData"), dict) else {}
+    constituents = details.get("constituents") or []
+    count_match = re.search(r"\d+", item.get("parameters") or "")
+    test_count = len(constituents) or (int(count_match[0]) if count_match else None)
+    fasting = [v for v in (details.get("fasting"), details.get("fastingTime")) if v]
+    return {
+        "testCount": test_count,
+        "constituentsPreview": [c.get("name") for c in constituents[:6]],
+        "remainingConstituents": max((test_count or 0) - min(len(constituents), 6), 0),
+        "fastingLabel": " ".join(map(str, fasting)) or None,
+        "idealFor": ", ".join(details.get("gender") or []) or None,
+        "reportingTime": details.get("reportingTime") or item.get("reportTime"),
+    }
+
+
+def _list_item(item: dict) -> dict:
+    """Same fields as GET /api/catalog/products: no detailsData, only the summary."""
+    price, mrp = item.get("discountedPrice") or item.get("displayPrice"), item.get("displayPrice")
+    keep = ("id", "partnerCode", "name", "type", "displayPrice", "discountedPrice", "description",
+            "parameters", "sampleType", "reportTime")
+    return {**{k: item.get(k) for k in keep}, "price": price, "mrp": mrp if item.get("discountedPrice") else None,
+            "detailsSummary": details_summary(item)}
+
+
+def _detail(item: dict) -> dict:
+    """Same as GET /api/catalog/products/:code: the whole row plus the summary."""
+    return {**item, "price": item.get("discountedPrice") or item.get("displayPrice"),
+            "mrp": item.get("displayPrice") if item.get("discountedPrice") else None,
+            "detailsSummary": details_summary(item)}
+
+
 class FakeExpress:
     """Use as an httpx transport handler; `calls` keeps (method, path) for tool-accuracy checks."""
 
-    def __init__(self) -> None:
+    def __init__(self, catalog: list[dict] | None = None) -> None:
         self.calls: list[tuple[str, str]] = []
+        self.catalog = CATALOG if catalog is None else catalog
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         path = re.sub(r"^.*?/api", "", request.url.path)
@@ -36,11 +70,12 @@ class FakeExpress:
     def _route(self, method: str, path: str, request: httpx.Request) -> tuple[int, dict]:
         if method == "GET" and path == "/catalog/products":
             term = (request.url.params.get("search") or "").lower()
-            hits = [i for i in CATALOG if term and term in i["name"].lower()]
-            return 200, {"products": hits[: int(request.url.params.get("limit", 5))]}
+            hits = [i for i in self.catalog if term and term in i["name"].lower()]
+            limit = int(request.url.params.get("limit", 5))
+            return 200, {"products": [_list_item(i) for i in hits[:limit]], "totalCount": len(hits)}
         if method == "GET" and (m := re.fullmatch(r"/catalog/products/([^/]+)", path)):
-            item = next((i for i in CATALOG if i["partnerCode"] == m[1]), None)
-            return (200, item) if item else (404, {"error": "Product not found"})
+            item = next((i for i in self.catalog if i["partnerCode"] == m[1]), None)
+            return (200, _detail(item)) if item else (404, {"error": "Product not found"})
         # Same rule as Express authMiddleware, so a wrong auth header fails the eval too.
         if path.startswith("/bookings") and not request.headers.get("Authorization", "").startswith("Bearer "):
             return 401, {"error": "Authorization token missing"}

@@ -1,0 +1,62 @@
+{
+  "note": "Retrieval-only golden set. `relevant` lists the chunk ids (corpus.build_chunks) needed to answer. Empty `relevant` means the retriever should abstain. `history` is prior turns; the retriever does not see it yet (query rewriting is roadmap Phase 4), so followup queries score the current gap.",
+  "queries": [
+    {"id": "r-direct-01", "category": "direct", "query": "Complete Blood Count test price", "relevant": ["catalog:fx-cbc"]},
+    {"id": "r-direct-02", "category": "direct", "query": "Lipid Profile", "relevant": ["catalog:fx-lipid"]},
+    {"id": "r-direct-03", "category": "direct", "query": "How much is the Vitamin B12 test?", "relevant": ["catalog:fx-b12"]},
+    {"id": "r-direct-04", "category": "direct", "query": "Iron Studies test details", "relevant": ["catalog:fx-iron"]},
+    {"id": "r-direct-05", "category": "direct", "query": "Price of the Comprehensive Health Checkup", "relevant": ["catalog:fx-comprehensive"]},
+    {"id": "r-direct-06", "category": "direct", "query": "Antenatal Profile cost", "relevant": ["catalog:fx-antenatal"]},
+    {"id": "r-direct-07", "category": "direct", "query": "Urine routine and microscopy test", "relevant": ["catalog:fx-urine"]},
+
+    {"id": "r-natural-01", "category": "natural", "query": "I want to check my sugar levels for diabetes", "relevant": ["catalog:fx-fbs", "catalog:fx-hba1c", "catalog:fx-diabetes"]},
+    {"id": "r-natural-02", "category": "natural", "query": "test for cholesterol and heart health", "relevant": ["catalog:fx-lipid"]},
+    {"id": "r-natural-03", "category": "natural", "query": "my doctor wants my kidneys checked", "relevant": ["catalog:fx-kft"]},
+    {"id": "r-natural-04", "category": "natural", "query": "I feel tired all the time, is there a test for vitamin deficiency?", "relevant": ["catalog:fx-vitd", "catalog:fx-b12"]},
+    {"id": "r-natural-05", "category": "natural", "query": "tests recommended during pregnancy", "relevant": ["catalog:fx-antenatal"]},
+    {"id": "r-natural-06", "category": "natural", "query": "health checkup for a man above 40", "relevant": ["catalog:fx-men-40"]},
+    {"id": "r-natural-07", "category": "natural", "query": "average sugar over the last three months", "relevant": ["catalog:fx-hba1c"]},
+    {"id": "r-natural-08", "category": "natural", "query": "prostate screening", "relevant": ["catalog:fx-psa"]},
+
+    {"id": "r-acronym-01", "category": "acronym", "query": "LFT", "relevant": ["catalog:fx-lft"]},
+    {"id": "r-acronym-02", "category": "acronym", "query": "KFT price", "relevant": ["catalog:fx-kft"]},
+    {"id": "r-acronym-03", "category": "acronym", "query": "TSH test", "relevant": ["catalog:fx-tsh", "catalog:fx-thyroid"]},
+    {"id": "r-acronym-04", "category": "acronym", "query": "PPBS", "relevant": ["catalog:fx-ppbs"]},
+    {"id": "r-acronym-05", "category": "acronym", "query": "hs crp", "relevant": ["catalog:fx-crp"]},
+    {"id": "r-acronym-06", "category": "acronym", "query": "PSA", "relevant": ["catalog:fx-psa"]},
+
+    {"id": "r-typo-01", "category": "typo", "query": "thyriod test", "relevant": ["catalog:fx-thyroid", "catalog:fx-tsh"]},
+    {"id": "r-typo-02", "category": "typo", "query": "vitamin d defficiency test", "relevant": ["catalog:fx-vitd"]},
+    {"id": "r-typo-03", "category": "typo", "query": "lipid profle fasting", "relevant": ["catalog:fx-lipid"]},
+    {"id": "r-typo-04", "category": "typo", "query": "hba1c", "relevant": ["catalog:fx-hba1c"]},
+    {"id": "r-typo-05", "category": "typo", "query": "cancelation refund", "relevant": ["policy:Cancellation Policy", "policy:Refund Policy"]},
+
+    {"id": "r-constituent-01", "category": "constituent", "query": "Which package includes a homocysteine test?", "relevant": ["catalog:fx-comprehensive"]},
+    {"id": "r-constituent-02", "category": "constituent", "query": "Do you test serum amylase and lipase?", "relevant": ["catalog:fx-comprehensive"]},
+    {"id": "r-constituent-03", "category": "constituent", "query": "ferritin test", "relevant": ["catalog:fx-comprehensive"]},
+    {"id": "r-constituent-04", "category": "constituent", "query": "checkup that covers cortisol and testosterone", "relevant": ["catalog:fx-comprehensive"]},
+    {"id": "r-constituent-05", "category": "constituent", "query": "Is apolipoprotein B part of any package?", "relevant": ["catalog:fx-comprehensive"]},
+    {"id": "r-constituent-06", "category": "constituent", "query": "Which checkup includes PSA?", "relevant": ["catalog:fx-men-40"]},
+    {"id": "r-constituent-07", "category": "constituent", "query": "package with HIV and HBsAg", "relevant": ["catalog:fx-antenatal"]},
+
+    {"id": "r-policy-01", "category": "policy", "query": "can I cancel after the phlebotomist reached my home", "relevant": ["policy:Cancellation Policy", "booking_help:Booking Status Explanations"]},
+    {"id": "r-policy-02", "category": "policy", "query": "how long does a refund take to UPI", "relevant": ["policy:Refund Policy", "policy:Cancellation Policy"]},
+    {"id": "r-policy-03", "category": "policy", "query": "change my appointment time", "relevant": ["policy:Rescheduling Policy", "faq:Slot Booking and Availability"]},
+    {"id": "r-policy-04", "category": "policy", "query": "when will I get my report", "relevant": ["faq:Report Delivery"]},
+    {"id": "r-policy-05", "category": "policy", "query": "lab asked for a fresh sample", "relevant": ["booking_help:Resample Required Explanation"]},
+    {"id": "r-policy-06", "category": "policy", "query": "book tests for my parents in one order", "relevant": ["booking_help:Managing Multiple Patients"]},
+    {"id": "r-policy-07", "category": "policy", "query": "do you provide home collection in Lucknow", "relevant": ["faq:Cities and Locations Served"]},
+    {"id": "r-policy-08", "category": "policy", "query": "how do I use a promo code", "relevant": ["booking_help:Wallet Credits and Promo Codes"]},
+
+    {"id": "r-followup-01", "category": "followup", "query": "how much does it cost?", "history": [{"role": "user", "content": "Do you have a lipid profile test?"}, {"role": "assistant", "content": "Yes, we offer the Lipid Profile, which measures cholesterol and triglycerides."}], "relevant": ["catalog:fx-lipid"]},
+    {"id": "r-followup-02", "category": "followup", "query": "does that need fasting?", "history": [{"role": "user", "content": "I want the HbA1c test"}, {"role": "assistant", "content": "Sure, HbA1c shows your average blood sugar over 3 months."}], "relevant": ["catalog:fx-hba1c"]},
+    {"id": "r-followup-03", "category": "followup", "query": "what about the advanced one?", "history": [{"role": "user", "content": "What's in the basic full body checkup?"}, {"role": "assistant", "content": "The Basic Full Body Checkup covers blood count, sugar, lipids, liver, kidney and thyroid."}], "relevant": ["catalog:fx-fbc-adv"]},
+    {"id": "r-followup-04", "category": "followup", "query": "and how long for the report?", "history": [{"role": "user", "content": "I need a Vitamin D test"}, {"role": "assistant", "content": "We offer Vitamin D (25-OH) to check for deficiency."}], "relevant": ["catalog:fx-vitd"]},
+    {"id": "r-followup-05", "category": "followup", "query": "can I still cancel it?", "history": [{"role": "user", "content": "The phlebotomist has been assigned to my booking"}, {"role": "assistant", "content": "Your booking status is Sample Collector Assigned."}], "relevant": ["policy:Cancellation Policy", "booking_help:Booking Status Explanations"]},
+
+    {"id": "r-abstain-01", "category": "abstain", "query": "Can you help me book a flight to Mumbai?", "relevant": []},
+    {"id": "r-abstain-02", "category": "abstain", "query": "What is the weather like in Bangalore today?", "relevant": []},
+    {"id": "r-abstain-03", "category": "abstain", "query": "Write a poem about the ocean", "relevant": []},
+    {"id": "r-abstain-04", "category": "abstain", "query": "Do you offer plumbing services?", "relevant": []}
+  ]
+}

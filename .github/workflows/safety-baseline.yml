@@ -46,6 +46,10 @@ jobs:
     defaults:
       run:
         working-directory: server
+    # prisma validate only checks that the variable exists; nothing here connects to it.
+    # Job-level, so the validate step sees it too (the .env below is written after it).
+    env:
+      DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -100,6 +104,11 @@ jobs:
 
       - name: Test
         run: python -m pytest -q
+
+      # Scores retrieval from committed embeddings: no API key, no LLM, deterministic.
+      # Fails if Recall@5 / MRR / nDCG / abstention drop more than 0.02 below retrieval_baseline.json.
+      - name: Retrieval quality gate
+        run: python -m app.eval.retrieval_runner --offline --gate
 
   dependency-audit:
     name: Dependency audit

@@ -28,7 +28,7 @@ import httpx
 from app import genai_client
 from app.agents.orchestrator import BUSY_RESPONSE, handle_message
 from app.config import Settings
-from app.eval.corpus import EmbeddingCache, InMemoryKnowledgeBase
+from app.eval.corpus import REAL_DIR, EmbeddingCache, InMemoryKnowledgeBase, catalog_items
 from app.eval.fake_express import FakeExpress
 from app.eval.scorer import EvalResult, custom_metrics, ragas_metrics
 from app.models import AgentContext
@@ -93,6 +93,7 @@ async def run_query(q: dict, kb: InMemoryKnowledgeBase, settings: Settings) -> E
         verifier_verdict=resp.verifier_verdict if resp else None,
         expected_source=q.get("expected_source"),
         expected_tool=q.get("expected_tool"),
+        acceptable_tools=q.get("acceptable_tools", []),
         # A write tool waiting for the user's "yes" still counts as the right choice.
         tools_called=[a.tool for a in resp.actions_taken]
         + ([resp.pending_action.tool_name] if resp.pending_action else [])
@@ -110,7 +111,7 @@ async def run(args: argparse.Namespace) -> int:
         print("SUPPORT_GEMINI_API_KEY is not set. The eval calls the real pipeline and needs it.")
         return 2
 
-    queries = json.loads((EVAL_DIR / "golden_set.json").read_text())["queries"]
+    queries = json.loads(Path(args.queries).read_text())["queries"]
     if args.category:
         queries = [q for q in queries if q["category"] == args.category]
     queries = queries[: args.limit] if args.limit else queries
@@ -124,8 +125,9 @@ async def run(args: argparse.Namespace) -> int:
 
     logging.getLogger("app").addHandler(_ErrorCollector())
     init_langfuse(settings)
-    cache = EmbeddingCache(settings)
-    kb = await InMemoryKnowledgeBase.load(cache)
+    real = args.corpus == "real"
+    cache = EmbeddingCache(settings, path=REAL_DIR / "embeddings.json") if real else EmbeddingCache(settings)
+    kb = await InMemoryKnowledgeBase.load(cache, args.corpus)
     if args.no_keyword:
         kb.keyword_search = partial(_no_hits)
     # --resume keeps finished answers on disk so a run can stop when keys run out and continue later.
@@ -169,7 +171,7 @@ async def run(args: argparse.Namespace) -> int:
 
     # Swap only the HTTP client the action agent uses; Gemini's own httpx stays real.
     fake_httpx = types.SimpleNamespace(
-        AsyncClient=partial(httpx.AsyncClient, transport=httpx.MockTransport(FakeExpress())),
+        AsyncClient=partial(httpx.AsyncClient, transport=httpx.MockTransport(FakeExpress(catalog_items(args.corpus)))),
         HTTPStatusError=httpx.HTTPStatusError,
     )
     # Query embeddings go through the same disk cache, so reruns only pay for LLM calls.
@@ -230,8 +232,10 @@ def print_table(scores: dict) -> None:
 
 def save_report(args: argparse.Namespace, settings: Settings, judge_model: str, scores: dict, results: list) -> Path:
     now = datetime.now(IST)
-    REPORTS_DIR.mkdir(exist_ok=True)
-    path = REPORTS_DIR / f"{now:%Y-%m-%d-%H%M}-{args.label}.json"
+    # Real-corpus reports quote partner prices, so they stay in the gitignored snapshot folder.
+    reports = REAL_DIR / "reports" if args.corpus == "real" else REPORTS_DIR
+    reports.mkdir(parents=True, exist_ok=True)
+    path = reports / f"{now:%Y-%m-%d-%H%M}-{args.label}.json"
     path.write_text(
         json.dumps(
             {
@@ -242,6 +246,7 @@ def save_report(args: argparse.Namespace, settings: Settings, judge_model: str, 
                 "judge_model": judge_model,
                 "relevance_threshold": settings.relevance_threshold,
                 "keyword_search": not args.no_keyword,
+                "corpus": args.corpus,
                 "scores": scores,
                 "results": [asdict(r) for r in results],
             },
@@ -263,6 +268,9 @@ def main() -> None:
     parser.add_argument("--resume", default=None, help="jsonl file of finished answers to continue from")
     parser.add_argument("--per-category", type=int, default=0, help="first N questions of each category")
     parser.add_argument("--rpm", type=int, default=0, help="Gemini calls per minute allowed by the key")
+    parser.add_argument("--corpus", choices=["fixture", "real"], default="fixture",
+                        help="real = local production catalog snapshot (gitignored)")
+    parser.add_argument("--queries", default=str(EVAL_DIR / "golden_set.json"), help="query set to run")
     parser.add_argument("--no-ragas", action="store_true")
     parser.add_argument("--no-keyword", action="store_true", help="dense-only baseline (BM25 off)")
     parser.add_argument("--gate", action="store_true", help="exit 1 if a metric is below threshold")

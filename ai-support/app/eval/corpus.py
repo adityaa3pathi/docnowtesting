@@ -17,9 +17,19 @@ logger = logging.getLogger(__name__)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 CACHE_PATH = Path(__file__).parent / ".cache" / "embeddings.json"
+# "real" is a production CatalogItem snapshot with partner pricing: gitignored, local only.
+REAL_DIR = FIXTURES / "real"
+CORPORA = {"fixture": FIXTURES / "catalog.json", "real": REAL_DIR / "catalog.json"}
 
 
-def build_chunks(catalog_path: Path = FIXTURES / "catalog.json") -> list[dict[str, Any]]:
+def catalog_items(corpus: str = "fixture") -> list[dict[str, Any]]:
+    path = CORPORA[corpus]
+    if not path.exists():
+        raise FileNotFoundError(f"{path} missing; the real corpus is exported by hand (see AI_ROADMAP.md)")
+    return json.loads(path.read_text())["items"]
+
+
+def build_chunks(corpus: str = "fixture") -> list[dict[str, Any]]:
     """Chunks shaped like KnowledgeChunk rows, built the way the ingestion jobs build them."""
     chunks = [
         {
@@ -31,7 +41,7 @@ def build_chunks(catalog_path: Path = FIXTURES / "catalog.json") -> list[dict[st
         }
         for doc in STATIC_DOCUMENTS
     ]
-    for item in json.loads(catalog_path.read_text())["items"]:
+    for item in catalog_items(corpus):
         chunks.append(
             {
                 "id": f"catalog:{item['id']}",
@@ -55,13 +65,22 @@ def _cosine(a: list[float], b: list[float]) -> float:
     return dot / norm if norm else 0.0
 
 
-class EmbeddingCache:
-    """Disk cache keyed by model + text hash, so reruns don't re-pay for embeddings."""
+class MissingEmbeddingsError(RuntimeError):
+    """An offline cache was asked for text it has no vector for."""
 
-    def __init__(self, settings: Any, path: Path = CACHE_PATH) -> None:
+
+class EmbeddingCache:
+    """Disk cache keyed by model + text hash, so reruns don't re-pay for embeddings.
+
+    offline=True never calls Gemini: a miss raises, so CI fails loudly instead of needing a key.
+    """
+
+    def __init__(self, settings: Any, path: Path = CACHE_PATH, offline: bool = False) -> None:
         self.settings = settings
         self.path = path
+        self.offline = offline
         self.data: dict[str, list[float]] = json.loads(path.read_text()) if path.exists() else {}
+        self.used: set[str] = set()
 
     def _key(self, text: str, task_type: str) -> str:
         raw = f"{self.settings.embedding_model}:{self.settings.embedding_dimensions}:{task_type}:{text}"
@@ -70,13 +89,26 @@ class EmbeddingCache:
     async def embed_many(self, texts: list[str], task_type: str) -> list[list[float]]:
         missing = [t for t in dict.fromkeys(texts) if self._key(t, task_type) not in self.data]
         if missing:
+            if self.offline:
+                raise MissingEmbeddingsError(
+                    f"{len(missing)} texts have no cached embedding in {self.path} "
+                    f"(first: {missing[0][:60]!r}). Rerun locally without --offline to refresh the cache."
+                )
             logger.info("Embedding %d new texts", len(missing))
             vectors = await generate_embeddings_batch(missing, self.settings, task_type)
             for text, vec in zip(missing, vectors):
-                self.data[self._key(text, task_type)] = vec
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            self.path.write_text(json.dumps(self.data))
-        return [self.data[self._key(t, task_type)] for t in texts]
+                # 6 decimals moves cosine by ~1e-6 and halves the file, which matters once it's committed.
+                self.data[self._key(text, task_type)] = [round(x, 6) for x in vec]
+            self.save()
+        keys = [self._key(t, task_type) for t in texts]
+        self.used.update(keys)
+        return [self.data[k] for k in keys]
+
+    def save(self, prune: bool = False) -> None:
+        """prune=True keeps only vectors used this run, so stale texts don't pile up in the file."""
+        data = {k: v for k, v in self.data.items() if k in self.used} if prune else self.data
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path.write_text(json.dumps(data, separators=(",", ":"), sort_keys=True))
 
     async def embed(self, text: str) -> list[float]:
         return (await self.embed_many([text], QUERY))[0]
@@ -92,8 +124,8 @@ class InMemoryKnowledgeBase:
         self.pool = None
 
     @classmethod
-    async def load(cls, cache: EmbeddingCache) -> InMemoryKnowledgeBase:
-        chunks = build_chunks()
+    async def load(cls, cache: EmbeddingCache, corpus: str = "fixture") -> InMemoryKnowledgeBase:
+        chunks = build_chunks(corpus)
         return cls(chunks, await cache.embed_many([c["content"] for c in chunks], DOCUMENT))
 
     async def vector_search(self, embedding: list[float], limit: int = 10) -> list[dict[str, Any]]:
