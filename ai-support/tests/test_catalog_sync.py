@@ -9,6 +9,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.ingestion.catalog_sync import (
+    INDEX_SOURCE,
+    constituent_index_docs,
     format_catalog_text,
     chunk_is_current,
     prune_stale_catalog_chunks,
@@ -24,15 +26,17 @@ class FakeConn:
         self.items = items
         self.existing = existing or {}
         self.deleted_with: list[list[str]] = []
+        self.index_kept: list[list[str]] = []
 
     async def fetch(self, sql: str, *args):
         if "DELETE" in sql:
-            self.deleted_with.append(list(args[0]))
-            return [{"id": "gone-1"}]
+            source = args[1] if len(args) > 1 else "catalog"
+            (self.deleted_with if source == "catalog" else self.index_kept).append(list(args[0]))
+            return [{"id": "gone-1"}] if source == "catalog" else []
         return self.items
 
     async def fetchrow(self, sql: str, *args):
-        return self.existing.get(args[0])
+        return self.existing.get(args[-1])
 
 
 def fake_db(conn: FakeConn) -> MagicMock:
@@ -179,3 +183,49 @@ def test_catalog_description_drops_html_templates_and_placeholders():
     assert "Description" not in format_catalog_text({**base, "description": "na"})
     long = format_catalog_text({**base, "description": "word " * 200})
     assert len(long.split("Description: ")[1].split("\n")[0]) <= 404
+
+
+# ── Shared-test index (Phase 2: list questions) ──
+
+
+def _pkg(item_id: str, name: str, tests: list[str], kind: str = "PACKAGE", price: float = 999.0) -> dict:
+    return {
+        **_item(item_id, name), "type": kind, "displayPrice": price,
+        "detailsData": {"constituents": [{"name": t} for t in tests]},
+    }
+
+
+def test_index_lists_every_item_that_includes_a_shared_test():
+    items = [
+        _pkg("p1", "Basic Package", ["Vitamin B12", "TSH"]),
+        _pkg("p2", "Full Package", ["Vitamin B12", "TSH", "HbA1c"]),
+        _pkg("p3", "Thyroid Profile", ["TSH", "T3"], kind="PROFILE", price=399.0),
+        {**_item("t1", "Vitamin B12"), "displayPrice": 567.0},
+    ]
+    docs = {d["source_id"]: d for d in constituent_index_docs(items)}
+
+    assert set(docs) == {"Vitamin B12", "TSH"}  # HbA1c and T3 sit in one item only
+    tsh = docs["TSH"]["content"]
+    assert "3 in total. This is the complete list." in tsh
+    # Packages first, then profiles
+    assert tsh.index("Basic Package") < tsh.index("Full Package") < tsh.index("Thyroid Profile (profile, ₹399)")
+    assert "also available as a single test, ₹567" in docs["Vitamin B12"]["content"]
+
+
+def test_index_ignores_single_test_items_listing_themselves():
+    items = [_pkg("t1", "HbA1c", ["HbA1c"], kind="TEST"), _pkg("t2", "HbA1c Fast", ["HbA1c"], kind="TEST")]
+    assert constituent_index_docs(items) == []
+
+
+@pytest.mark.asyncio
+async def test_sync_writes_and_prunes_the_index(settings):
+    conn = FakeConn([_pkg("p1", "A", ["X", "Y"]), _pkg("p2", "B", ["X", "Z"])])
+    db = fake_db(conn)
+
+    with patch("app.ingestion.catalog_sync.generate_embedding", AsyncMock(return_value=[0.1] * 8)):
+        stats = await sync_catalog(db, settings)
+
+    written = [c.kwargs for c in db.insert_chunk.await_args_list if c.kwargs["source"] == INDEX_SOURCE]
+    assert [w["source_id"] for w in written] == ["X"]
+    assert conn.index_kept == [["X"]]
+    assert stats["created"] == 3

@@ -9,7 +9,10 @@ from typing import Any
 import asyncpg
 from pgvector.asyncpg import register_vector
 
-from app.agents.keyword import BM25Index
+from app.agents.keyword import BM25Index, rare_title_matches
+from app.agents.retrieval import INDEX_SOURCE
+
+HNSW_EF_SEARCH = 200
 from app.config import Settings
 
 logger = logging.getLogger(__name__)
@@ -76,32 +79,53 @@ class Database:
         self,
         embedding: list[float],
         limit: int = 10,
+        *,
+        source: str | None = None,
+        exclude_source: str | None = None,
     ) -> list[dict[str, Any]]:
         """Cosine similarity search over KnowledgeChunk table.
 
         Returns chunks ordered by descending similarity (1 = identical).
         The <=> operator returns cosine distance; similarity = 1 - distance.
+        source / exclude_source keep only, or drop, one source (the item and index lanes).
         """
         if not self.pool:
             raise RuntimeError("Database pool not initialized. Call connect() first.")
 
-        async with self.pool.acquire() as conn:
+        async with self.pool.acquire() as conn, conn.transaction():
+            # HNSW filters after the scan, and the scan returns ef_search rows (default 40): with a
+            # source filter that can leave too few. The table is a few hundred rows, so scan wider.
+            await conn.execute(f"SET LOCAL hnsw.ef_search = {HNSW_EF_SEARCH}")
             rows = await conn.fetch(
                 """
                 SELECT id, source, "sourceId", title, content, metadata,
                        1 - (embedding <=> $1::vector) AS similarity
                 FROM "KnowledgeChunk"
                 WHERE embedding IS NOT NULL
+                  AND ($3::text IS NULL OR source = $3)
+                  AND ($4::text IS NULL OR source <> $4)
                 ORDER BY embedding <=> $1::vector
                 LIMIT $2
                 """,
                 embedding,
                 limit,
+                source,
+                exclude_source,
             )
             return [chunk_row(r) for r in rows]
 
+    async def rare_title_search(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
+        """Rescue lane for bare codes the dense gate rejected; see keyword.rare_title_matches."""
+        await self._ensure_bm25()
+        return rare_title_matches(self._bm25, query, limit)
+
     async def keyword_search(self, query: str, limit: int = 20) -> list[dict[str, Any]]:
         """BM25 over all chunks; the index is rebuilt only when ingestion has changed the table."""
+        await self._ensure_bm25()
+        return self._bm25.search(query, limit)
+
+    async def _ensure_bm25(self) -> None:
+        """The index is rebuilt only when ingestion has changed the table."""
         if not self.pool:
             raise RuntimeError("Database pool not initialized. Call connect() first.")
 
@@ -112,12 +136,13 @@ class Database:
                 async with self._bm25_lock:
                     if self._bm25 is None or version != self._bm25_version:
                         await self._rebuild_bm25(conn, version)
-        return self._bm25.search(query, limit)
 
     async def _rebuild_bm25(self, conn: asyncpg.Connection, version: tuple) -> None:
         """Tokenising the whole corpus is CPU-bound, so it runs off the event loop."""
         rows = await conn.fetch(
-            'SELECT id, source, "sourceId", title, content, metadata FROM "KnowledgeChunk"'
+            # Index chunks repeat every package and test name; BM25 serves the item lane only.
+            'SELECT id, source, "sourceId", title, content, metadata FROM "KnowledgeChunk" WHERE source <> $1',
+            INDEX_SOURCE,
         )
         chunks = [chunk_row(r) for r in rows]
         self._bm25 = await asyncio.to_thread(BM25Index, chunks)

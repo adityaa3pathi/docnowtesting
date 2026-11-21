@@ -43,6 +43,7 @@ class TestRetrievalAgent:
             result = await retrieve("book me a flight to Delhi", mock_db, settings)
 
         assert result.should_abstain is True
+        assert result.failed is False  # a real abstention, not the error path
         assert len(result.chunks) == 0
         assert result.max_similarity == 0.0
 
@@ -101,4 +102,71 @@ class TestRetrievalAgent:
             result = await retrieve("anything", mock_db, settings)
 
         assert result.should_abstain is True
+        assert result.failed is False
         assert len(result.chunks) == 0
+
+
+@pytest.mark.asyncio
+async def test_index_chunk_is_appended_after_the_item_top_k(mock_db, settings, sample_chunks):
+    index_row = {"id": "idx", "source": "catalog_index", "title": "Packages with B12", "content": "...", "similarity": 0.9}
+
+    async def search(embedding, limit=10, *, source=None, exclude_source=None):
+        return [index_row] if source == "catalog_index" else sample_chunks
+
+    mock_db.vector_search = AsyncMock(side_effect=search)
+    with patch("app.agents.retrieval.generate_embedding", new_callable=AsyncMock, return_value=[0.1] * 768):
+        from app.agents.retrieval import TOP_K, retrieve
+
+        result = await retrieve("which packages include b12", mock_db, settings)
+
+    assert [c.id for c in result.chunks][-1] == "idx"
+    assert sum(c.source != "catalog_index" for c in result.chunks) <= TOP_K
+    assert result.chunks[-1].similarity == 0.9
+
+
+@pytest.mark.asyncio
+async def test_index_only_hit_answers_without_keyword_chunks(mock_db, settings):
+    index_row = {"id": "idx", "source": "catalog_index", "title": "t", "content": "c", "similarity": 0.8}
+    weak = [{"id": "w", "source": "catalog", "title": "t", "content": "c", "similarity": 0.3}]
+
+    async def search(embedding, limit=10, *, source=None, exclude_source=None):
+        return [index_row] if source == "catalog_index" else weak
+
+    mock_db.vector_search = AsyncMock(side_effect=search)
+    mock_db.keyword_search = AsyncMock(return_value=[{"id": "kw", "source": "catalog", "title": "t", "content": "c"}])
+    with patch("app.agents.retrieval.generate_embedding", new_callable=AsyncMock, return_value=[0.1] * 768):
+        from app.agents.retrieval import retrieve
+
+        result = await retrieve("bacteria", mock_db, settings)
+
+    assert not result.should_abstain
+    assert [c.id for c in result.chunks] == ["idx"]
+    mock_db.keyword_search.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_rescue_returns_rare_title_hits_when_dense_abstains(mock_db, settings, low_similarity_chunks):
+    rescue_row = {"id": "qft", "source": "catalog", "title": "Quantiferon-TB Gold (QFT)", "content": "c"}
+    mock_db.vector_search = AsyncMock(return_value=low_similarity_chunks)
+    mock_db.rare_title_search = AsyncMock(return_value=[rescue_row])
+    settings.bm25_rescue_enabled = True
+    with patch("app.agents.retrieval.generate_embedding", new_callable=AsyncMock, return_value=[0.1] * 768):
+        from app.agents.retrieval import retrieve
+
+        result = await retrieve("qft", mock_db, settings)
+
+    assert not result.should_abstain and result.rescued
+    assert [c.id for c in result.chunks] == ["qft"]
+
+
+@pytest.mark.asyncio
+async def test_rescue_can_be_switched_off(mock_db, settings, low_similarity_chunks):
+    settings.bm25_rescue_enabled = False
+    mock_db.vector_search = AsyncMock(return_value=low_similarity_chunks)
+    mock_db.rare_title_search = AsyncMock(return_value=[{"id": "x", "title": "X"}])
+    with patch("app.agents.retrieval.generate_embedding", new_callable=AsyncMock, return_value=[0.1] * 768):
+        from app.agents.retrieval import retrieve
+
+        result = await retrieve("qft", mock_db, settings)
+
+    assert result.should_abstain and not result.rescued

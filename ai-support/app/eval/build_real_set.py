@@ -8,7 +8,10 @@ Query sources:
       every item that lists X. "cut" means X sits past the 15-item cut in format_catalog_text() in every
       item that has it, so it is not searchable today.
   search / question / hinglish  Gemini writes customer queries for a stratified sample; label = source item.
-  abstain  off-topic, plus services the catalog does not offer.
+  list  "which packages include X?" for tests 3+ items share; label = the catalog_index chunk.
+  code  a bare code from the names ("qft"); label = every item whose name carries it.
+  abstain  off-topic.
+  not_offered  services DocNow does not offer (imaging, ECG, vaccines).
 """
 from __future__ import annotations
 
@@ -37,8 +40,37 @@ OFF_TOPIC = [
     "What is the weather like in Bangalore today?",
     "Write a poem about the ocean",
     "Do you offer plumbing services?",
+    "Who won the cricket match yesterday?",
+    "Recommend a laptop under 50000",
+    "Translate 'good morning' into French",
+    "What is the capital of Australia?",
+    # Short ones: no context words, and the catalog's food-allergy panels pull food words above 0.58.
+    "gold rate today",
+    "rice price",
+    "cricket score",
+    "pizza near me",
+    "bitcoin price",
+    "train status",
+    "hotel booking",
+    "chicken biryani",
 ]
-NOT_OFFERED = ["MRI scan of the brain", "chest X-ray", "ultrasound of the abdomen", "CT scan", "ECG at home"]
+# Services DocNow does not offer (owner-confirmed 21-11-2026): imaging, ECG/ECHO/TMT, vaccinations.
+# Hand-checked against the catalog; they sit close to real tests in embedding space (ECG ~ EGFR).
+NOT_OFFERED_DOC = "faq:Services We Don't Offer"
+NOT_OFFERED = [
+    "How much does a MRI scan of the brain cost?",
+    "How much does a chest X-ray cost?",
+    "How much does a ultrasound of the abdomen cost?",
+    "How much does a ECG at home cost?",
+    "Can I book a CT scan of the head?",
+    "Do you do 2D echo at home?",
+    "TMT test price",
+    "Do you give the flu vaccine at home?",
+    "Is sonography available for pregnancy?",
+    "Book an ECG for my father",
+    "knee x-ray kitne ka hai?",
+    "PET scan price",
+]
 
 PROMPT = """You write realistic search queries that Indian customers type into a diagnostic lab's support chat.
 
@@ -139,14 +171,65 @@ async def llm_queries(items: list[dict], rng: random.Random, settings: Settings)
     return [q for qs in results for q in qs]
 
 
-def abstain_queries(items: list[dict]) -> list[dict]:
-    names = " ".join(i["name"].lower() for i in items)
-    offered = [s for s in NOT_OFFERED if s.split()[0].lower() in names]
-    if offered:
-        print(f"Dropped as possibly offered: {offered}")
+LIST_TEMPLATES = [
+    "Which packages include {}?",
+    "List all packages and profiles that have {}",
+    "{} kis kis package mein hai?",
+]
+LIST_SAMPLE = 30
+
+
+def list_queries(items: list[dict], rng: random.Random) -> list[dict]:
+    """"Which packages include X?" where 3+ items share X: more than TOP_K item chunks could ever list."""
+    from app.ingestion.catalog_sync import INDEX_SOURCE, constituent_index_docs
+
+    shared = [d for d in constituent_index_docs(items) if d["content"].count("\n- ") + 1 >= 3]
+    picked = rng.sample(shared, min(LIST_SAMPLE, len(shared)))
     return [
-        {"category": "abstain", "query": q, "relevant": []}
-        for q in OFF_TOPIC + [f"How much does a {s} cost?" for s in NOT_OFFERED if s not in offered]
+        {
+            "category": "list",
+            "query": LIST_TEMPLATES[n % len(LIST_TEMPLATES)].format(d["source_id"]),
+            "relevant": [f"{INDEX_SOURCE}:{d['source_id']}"],
+        }
+        for n, d in enumerate(sorted(picked, key=lambda d: d["source_id"]))
+    ]
+
+
+_CODE_IN_NAME = re.compile(r"\(([A-Z][A-Z0-9]{1,7})\)|^([A-Z][A-Z0-9]{2,7})\b")
+_NOT_CODES = {
+    "TEST", "BLOOD", "SERUM", "URINE", "TOTAL", "COMPLETE", "SEMEN", "ALLERGY", "STOOL",
+    "DIRECT", "INDIRECT", "GLUCOSE", "THIAMINE", "COOMBS", "TORCH",
+}
+
+
+def code_queries(items: list[dict]) -> list[dict]:
+    """Bare codes customers type ("qft", "uibc"): the case where a weak embedding could trip the dense gate.
+
+    Codes come from the names themselves: an all-caps token in brackets, or an all-caps first word.
+    """
+    holders: dict[str, set[str]] = defaultdict(set)
+    for item in items:
+        for bracket, first in _CODE_IN_NAME.findall(item["name"]):
+            code = bracket or first
+            if code not in _NOT_CODES:
+                holders[code].add(f"catalog:{item['id']}")
+    for code in holders:
+        # Label every item that carries the code anywhere in its name.
+        holders[code] |= {f"catalog:{i['id']}" for i in items if re.search(rf"\b{code}\b", i["name"])}
+    return [
+        {"category": "code", "query": code.lower(), "relevant": sorted(ids)}
+        for code, ids in sorted(holders.items())
+        if len(ids) <= TOP_K_LABELS
+    ]
+
+
+TOP_K_LABELS = 5
+
+
+def abstain_queries(items: list[dict]) -> list[dict]:
+    """Off-topic queries must abstain; not-offered ones must say so (the "Services We Don't Offer" doc)."""
+    return [{"category": "abstain", "query": q, "relevant": []} for q in OFF_TOPIC] + [
+        {"category": "not_offered", "query": q, "relevant": [NOT_OFFERED_DOC]} for q in NOT_OFFERED
     ]
 
 
@@ -166,7 +249,10 @@ async def main(args: argparse.Namespace) -> int:
         kept = [q for q in json.loads(out.read_text())["queries"] if not q["category"].startswith("constituent")]
         queries = constituent_queries(items, rng) + kept
     else:
-        queries = constituent_queries(items, rng) + await llm_queries(items, rng, settings) + abstain_queries(items)
+        queries = (
+            constituent_queries(items, rng) + await llm_queries(items, rng, settings)
+            + list_queries(items, random.Random(SEED)) + code_queries(items) + abstain_queries(items)
+        )
     for n, q in enumerate(queries, 1):
         q["id"] = f"real-{q['category']}-{n:03d}"
     out.write_text(json.dumps({

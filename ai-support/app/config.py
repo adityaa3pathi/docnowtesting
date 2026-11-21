@@ -21,6 +21,16 @@ class Settings(BaseSettings):
     # The SDK has no default timeout, so a stalled call would hang the chat until the proxy gives up.
     genai_timeout_seconds: float = 30.0
 
+    # Cohere Rerank: reorders the fused candidates. Off by default: it sends the customer's question to
+    # Cohere (US), the same data-residency question that keeps Langfuse off. Errors fall back to RRF order.
+    cohere_api_key: str = ""
+    rerank_enabled: bool = False
+    rerank_model: str = "rerank-v3.5"
+    rerank_candidates: int = 20
+    rerank_timeout_seconds: float = 2.0
+    # Abstain when the best reranker score is below this; 0 disables the gate. Tune on both corpora.
+    rerank_min_score: float = 0.0
+
     # Groq: eval judge only, so grading does not eat the Gemini free quota
     groq_api_key: str = ""
 
@@ -35,6 +45,10 @@ class Settings(BaseSettings):
     # Tuned on the golden set with query/document embedding types (13-10-2026):
     # off-topic tops out at 0.61, answerable starts at 0.61. Re-tune if the embedding setup changes.
     relevance_threshold: float = 0.58
+    # When the dense gate abstains, a short query whose rare term is in a test title still gets that test.
+    # Off (Phase 2 eval): it saved 1/69 bare codes ("qft", 0.579) but let "gold rate today" through to the
+    # QuantiFERON-TB Gold tests. Revisit with the reranker confirming rescued chunks.
+    bm25_rescue_enabled: bool = False
     max_tokens: int = 4000
     max_conversation_turns: int = 10
     # Run intent and retrieval together; false restores the old sequential path.

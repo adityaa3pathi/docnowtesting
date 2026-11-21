@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.agents.keyword import BM25Index, rrf_fuse
+from app.agents.keyword import BM25Index, rare_title_matches, rrf_fuse
 
 CHUNKS = [
     {"id": "a", "title": "HbA1c Test", "content": "Glycated haemoglobin, 3 month sugar average"},
@@ -60,3 +60,32 @@ async def test_keyword_hits_do_not_override_abstention(mock_db, settings, low_si
         result = await retrieve("book me a flight", mock_db, settings)
 
     assert result.should_abstain and result.chunks == []
+
+
+def test_bm25_skips_terms_in_most_chunks():
+    # "test" is in every chunk: it must not produce hits that RRF would credit by rank alone.
+    chunks = [{"id": str(i), "title": f"Test {i}", "content": "test price"} for i in range(12)]
+    chunks.append({"id": "na", "title": "Sodium, Serum", "content": "test price"})
+    index = BM25Index(chunks)
+    assert index.search("sodm test price") == []
+    assert [r["id"] for r in index.search("sodium test")] == ["na"]
+
+
+def test_bm25_ignores_question_filler():
+    chunks = CHUNKS + [{"id": "d", "title": "Urea", "content": "Tells how much urea is in blood"}]
+    assert [r["id"] for r in BM25Index(chunks).search("how much does hba1c cost")] == ["a"]
+
+
+def test_rare_title_rescue_matches_short_code_queries_only():
+    chunks = [{"id": str(i), "source": "catalog", "title": f"Test {i}", "content": "blood"} for i in range(12)]
+    chunks.append({"id": "qft", "source": "catalog", "title": "Quantiferon-TB Gold (QFT)", "content": "blood"})
+    chunks.append({"id": "faq", "source": "faq", "title": "Services We Don't Offer", "content": "x"})
+    index = BM25Index(chunks)
+    assert [c["id"] for c in rare_title_matches(index, "qft")] == ["qft"]
+    assert [c["id"] for c in rare_title_matches(index, "qft test price")] == ["qft"]
+    # Long questions carry enough context for the embedding; filler must not find rare titles.
+    assert rare_title_matches(index, "is the qft gold test good for my uncle") == []
+    # A term in many titles is not rare.
+    assert rare_title_matches(index, "test") == []
+    # FAQ and policy titles never rescue an off-topic question.
+    assert rare_title_matches(index, "offer plumbing services") == []

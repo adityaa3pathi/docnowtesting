@@ -1,0 +1,3398 @@
+{
+  "label": "c3c-index-lanes-split",
+  "run_at_ist": "21-11-2026 21:38 IST",
+  "embedding_model": "gemini-embedding-001",
+  "embedding_dimensions": 768,
+  "relevance_threshold": 0.58,
+  "corpus": "fixture",
+  "corpus_chunks": 49,
+  "scores": {
+    "n_answerable": 64,
+    "n_off_topic": 8,
+    "recall@5": 0.9482758620689655,
+    "hit@1": 0.896551724137931,
+    "mrr@5": 0.9224137931034483,
+    "ndcg@5": 0.9275657706249837,
+    "context_recall": 0.953125,
+    "dense_recall@20": 0.9655172413793104,
+    "bm25_recall@20": 0.9051724137931034,
+    "false_abstention_rate": 0.0,
+    "abstention_accuracy": 1.0,
+    "answerable_top_sim_min": 0.5936,
+    "off_topic_top_sim_max": 0.5717,
+    "abstention_by_category": {
+      "abstain": 1.0
+    },
+    "misses": {
+      "ordering": [
+        "r-followup-01",
+        "r-followup-02"
+      ],
+      "not_found": [
+        "r-followup-04"
+      ]
+    },
+    "by_category": {
+      "acronym": {
+        "n": 6,
+        "recall@5": 1.0,
+        "hit@1": 1.0,
+        "mrr@5": 1.0,
+        "ndcg@5": 1.0,
+        "context_recall": 1.0
+      },
+      "constituent": {
+        "n": 7,
+        "recall@5": 1.0,
+        "hit@1": 0.8571428571428571,
+        "mrr@5": 0.9285714285714286,
+        "ndcg@5": 0.9472756790816368,
+        "context_recall": 1.0
+      },
+      "direct": {
+        "n": 7,
+        "recall@5": 1.0,
+        "hit@1": 1.0,
+        "mrr@5": 1.0,
+        "ndcg@5": 1.0,
+        "context_recall": 1.0
+      },
+      "followup": {
+        "n": 5,
+        "recall@5": 0.4,
+        "hit@1": 0.4,
+        "mrr@5": 0.4,
+        "ndcg@5": 0.4,
+        "context_recall": 0.4
+      },
+      "list": {
+        "n": 6,
+        "recall@5": 0.0,
+        "hit@1": 0.0,
+        "mrr@5": 0.0,
+        "ndcg@5": 0.0,
+        "context_recall": 1.0
+      },
+      "natural": {
+        "n": 8,
+        "recall@5": 1.0,
+        "hit@1": 1.0,
+        "mrr@5": 1.0,
+        "ndcg@5": 0.9882531794418353,
+        "context_recall": 1.0
+      },
+      "not_offered": {
+        "n": 12,
+        "recall@5": 1.0,
+        "hit@1": 0.8333333333333334,
+        "mrr@5": 0.9166666666666666,
+        "ndcg@5": 0.9384882922619097,
+        "context_recall": 1.0
+      },
+      "policy": {
+        "n": 8,
+        "recall@5": 1.0,
+        "hit@1": 1.0,
+        "mrr@5": 1.0,
+        "ndcg@5": 1.0,
+        "context_recall": 1.0
+      },
+      "typo": {
+        "n": 5,
+        "recall@5": 1.0,
+        "hit@1": 1.0,
+        "mrr@5": 1.0,
+        "ndcg@5": 1.0,
+        "context_recall": 1.0
+      }
+    }
+  },
+  "rows": [
+    {
+      "id": "r-direct-01",
+      "category": "direct",
+      "query": "Complete Blood Count test price",
+      "relevant": [
+        "catalog:fx-cbc"
+      ],
+      "final": [
+        "catalog:fx-cbc",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-comprehensive",
+        "catalog:fx-antenatal",
+        "catalog:fx-fbc-adv",
+        "catalog_index:Complete Blood Count"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7844,
+      "dense_top20": [
+        "catalog:fx-cbc",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-b12",
+        "catalog:fx-iron",
+        "catalog:fx-antenatal",
+        "catalog:fx-crp",
+        "catalog:fx-tsh",
+        "catalog:fx-lft",
+        "catalog:fx-kft",
+        "catalog:fx-hba1c",
+        "catalog:fx-thyroid",
+        "catalog:fx-fbs",
+        "catalog:fx-lipid",
+        "catalog:fx-vitd",
+        "catalog:fx-urine",
+        "catalog:fx-diabetes",
+        "catalog:fx-men-40",
+        "catalog:fx-ppbs"
+      ],
+      "bm25_top20": [
+        "catalog:fx-cbc",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-antenatal",
+        "catalog:fx-comprehensive",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-adv",
+        "faq:How Home Collection Works"
+      ]
+    },
+    {
+      "id": "r-direct-02",
+      "category": "direct",
+      "query": "Lipid Profile",
+      "relevant": [
+        "catalog:fx-lipid"
+      ],
+      "final": [
+        "catalog:fx-lipid",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-men-40",
+        "catalog:fx-thyroid",
+        "catalog:fx-fbc-adv",
+        "catalog_index:Lipid Profile"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7649,
+      "dense_top20": [
+        "catalog:fx-lipid",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-thyroid",
+        "catalog:fx-lft",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-men-40",
+        "catalog:fx-antenatal",
+        "faq:About DocNow",
+        "catalog:fx-vitd",
+        "catalog:fx-crp",
+        "catalog:fx-cbc",
+        "faq:Services We Don't Offer",
+        "catalog:fx-fbs",
+        "catalog:fx-diabetes",
+        "catalog:fx-b12",
+        "catalog:fx-iron",
+        "catalog:fx-hba1c",
+        "catalog:fx-ppbs",
+        "catalog:fx-tsh"
+      ],
+      "bm25_top20": [
+        "catalog:fx-lipid",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-antenatal",
+        "catalog:fx-thyroid",
+        "booking_help:Managing Multiple Patients"
+      ]
+    },
+    {
+      "id": "r-direct-03",
+      "category": "direct",
+      "query": "How much is the Vitamin B12 test?",
+      "relevant": [
+        "catalog:fx-b12"
+      ],
+      "final": [
+        "catalog:fx-b12",
+        "catalog:fx-vitd",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-iron",
+        "catalog_index:Vitamin B12"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7787,
+      "dense_top20": [
+        "catalog:fx-b12",
+        "catalog:fx-vitd",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-iron",
+        "catalog:fx-cbc",
+        "catalog:fx-tsh",
+        "catalog:fx-hba1c",
+        "catalog:fx-lft",
+        "faq:About DocNow",
+        "catalog:fx-men-40",
+        "catalog:fx-psa",
+        "catalog:fx-crp",
+        "catalog:fx-ppbs",
+        "catalog:fx-thyroid",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbs",
+        "catalog:fx-diabetes",
+        "catalog:fx-urine",
+        "faq:How Home Collection Works"
+      ],
+      "bm25_top20": [
+        "catalog:fx-b12",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-vitd",
+        "catalog:fx-comprehensive"
+      ]
+    },
+    {
+      "id": "r-direct-04",
+      "category": "direct",
+      "query": "Iron Studies test details",
+      "relevant": [
+        "catalog:fx-iron"
+      ],
+      "final": [
+        "catalog:fx-iron",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-cbc",
+        "faq:Phlebotomist Tracking",
+        "catalog_index:Complete Blood Count"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7789,
+      "dense_top20": [
+        "catalog:fx-iron",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-cbc",
+        "catalog:fx-comprehensive",
+        "catalog:fx-b12",
+        "catalog:fx-lft",
+        "catalog:fx-fbc-basic",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-thyroid",
+        "catalog:fx-vitd",
+        "catalog:fx-tsh",
+        "catalog:fx-lipid",
+        "catalog:fx-kft",
+        "catalog:fx-crp",
+        "faq:About DocNow",
+        "catalog:fx-fbs",
+        "faq:How Home Collection Works",
+        "catalog:fx-antenatal",
+        "faq:Services We Don't Offer",
+        "catalog:fx-hba1c"
+      ],
+      "bm25_top20": [
+        "catalog:fx-iron",
+        "catalog:fx-fbc-adv",
+        "faq:Phlebotomist Tracking",
+        "catalog:fx-comprehensive"
+      ]
+    },
+    {
+      "id": "r-direct-05",
+      "category": "direct",
+      "query": "Price of the Comprehensive Health Checkup",
+      "relevant": [
+        "catalog:fx-comprehensive"
+      ],
+      "final": [
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-lft",
+        "catalog_index:hs-CRP"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7621,
+      "dense_top20": [
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-men-40",
+        "catalog:fx-cbc",
+        "catalog:fx-antenatal",
+        "catalog:fx-lft",
+        "catalog:fx-diabetes",
+        "catalog:fx-crp",
+        "catalog:fx-b12",
+        "catalog:fx-iron",
+        "catalog:fx-lipid",
+        "catalog:fx-tsh",
+        "catalog:fx-kft",
+        "catalog:fx-psa",
+        "catalog:fx-vitd",
+        "catalog:fx-thyroid",
+        "catalog:fx-hba1c",
+        "catalog:fx-urine",
+        "catalog:fx-fbs"
+      ],
+      "bm25_top20": [
+        "catalog:fx-comprehensive",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-kft",
+        "catalog:fx-lft",
+        "faq:About DocNow",
+        "policy:Rescheduling Policy",
+        "faq:How Home Collection Works",
+        "faq:Services We Don't Offer"
+      ]
+    },
+    {
+      "id": "r-direct-06",
+      "category": "direct",
+      "query": "Antenatal Profile cost",
+      "relevant": [
+        "catalog:fx-antenatal"
+      ],
+      "final": [
+        "catalog:fx-antenatal",
+        "catalog:fx-lipid",
+        "catalog:fx-thyroid",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-fbc-basic",
+        "catalog_index:Blood Group and Rh"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7625,
+      "dense_top20": [
+        "catalog:fx-antenatal",
+        "catalog:fx-lipid",
+        "catalog:fx-thyroid",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-lft",
+        "catalog:fx-cbc",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-iron",
+        "catalog:fx-b12",
+        "catalog:fx-men-40",
+        "catalog:fx-tsh",
+        "catalog:fx-diabetes",
+        "catalog:fx-psa",
+        "faq:About DocNow",
+        "catalog:fx-crp",
+        "catalog:fx-vitd",
+        "catalog:fx-fbs",
+        "catalog:fx-kft",
+        "policy:Payment and Pricing Policy"
+      ],
+      "bm25_top20": [
+        "catalog:fx-antenatal",
+        "catalog:fx-lipid",
+        "catalog:fx-thyroid",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "booking_help:Managing Multiple Patients"
+      ]
+    },
+    {
+      "id": "r-direct-07",
+      "category": "direct",
+      "query": "Urine routine and microscopy test",
+      "relevant": [
+        "catalog:fx-urine"
+      ],
+      "final": [
+        "catalog:fx-urine",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-diabetes",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog_index:Urine Routine"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7953,
+      "dense_top20": [
+        "catalog:fx-urine",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-diabetes",
+        "catalog:fx-kft",
+        "catalog:fx-comprehensive",
+        "catalog:fx-cbc",
+        "catalog:fx-fbc-adv",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "catalog:fx-antenatal",
+        "catalog:fx-men-40",
+        "faq:Report Delivery",
+        "faq:How Home Collection Works",
+        "catalog:fx-psa",
+        "catalog:fx-b12",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-vitd",
+        "catalog:fx-lft",
+        "catalog:fx-fbs",
+        "faq:Slot Booking and Availability"
+      ],
+      "bm25_top20": [
+        "catalog:fx-urine",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-antenatal",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-diabetes",
+        "catalog:fx-men-40",
+        "faq:Services We Don't Offer"
+      ]
+    },
+    {
+      "id": "r-natural-01",
+      "category": "natural",
+      "query": "I want to check my sugar levels for diabetes",
+      "relevant": [
+        "catalog:fx-fbs",
+        "catalog:fx-hba1c",
+        "catalog:fx-diabetes"
+      ],
+      "final": [
+        "catalog:fx-diabetes",
+        "catalog:fx-ppbs",
+        "catalog:fx-hba1c",
+        "catalog:fx-fbs",
+        "catalog:fx-b12",
+        "catalog_index:Fasting Blood Sugar"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7011,
+      "dense_top20": [
+        "catalog:fx-diabetes",
+        "catalog:fx-hba1c",
+        "catalog:fx-ppbs",
+        "catalog:fx-fbs",
+        "catalog:fx-men-40",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-crp",
+        "faq:About DocNow",
+        "catalog:fx-b12",
+        "catalog:fx-vitd",
+        "catalog:fx-cbc",
+        "faq:How Home Collection Works",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-tsh",
+        "catalog:fx-psa",
+        "catalog:fx-thyroid",
+        "faq:Services We Don't Offer",
+        "catalog:fx-lipid",
+        "catalog:fx-lft"
+      ],
+      "bm25_top20": [
+        "catalog:fx-b12",
+        "catalog:fx-ppbs",
+        "catalog:fx-diabetes",
+        "catalog:fx-fbs",
+        "catalog:fx-hba1c",
+        "catalog:fx-iron",
+        "catalog:fx-vitd",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-comprehensive",
+        "catalog:fx-antenatal",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-men-40"
+      ]
+    },
+    {
+      "id": "r-natural-02",
+      "category": "natural",
+      "query": "test for cholesterol and heart health",
+      "relevant": [
+        "catalog:fx-lipid"
+      ],
+      "final": [
+        "catalog:fx-lipid",
+        "catalog:fx-comprehensive",
+        "catalog:fx-crp",
+        "catalog:fx-men-40",
+        "faq:Services We Don't Offer",
+        "catalog_index:Lipid Profile"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7247,
+      "dense_top20": [
+        "catalog:fx-lipid",
+        "catalog:fx-crp",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "faq:Services We Don't Offer",
+        "catalog:fx-men-40",
+        "catalog:fx-lft",
+        "catalog:fx-vitd",
+        "faq:About DocNow",
+        "catalog:fx-tsh",
+        "catalog:fx-thyroid",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbs",
+        "catalog:fx-diabetes",
+        "catalog:fx-kft",
+        "catalog:fx-hba1c",
+        "catalog:fx-b12",
+        "catalog:fx-ppbs",
+        "catalog:fx-psa",
+        "catalog:fx-cbc"
+      ],
+      "bm25_top20": [
+        "catalog:fx-comprehensive",
+        "catalog:fx-lipid",
+        "catalog:fx-men-40",
+        "faq:Services We Don't Offer",
+        "catalog:fx-crp",
+        "catalog:fx-kft",
+        "catalog:fx-lft",
+        "faq:About DocNow",
+        "policy:Rescheduling Policy",
+        "faq:How Home Collection Works"
+      ]
+    },
+    {
+      "id": "r-natural-03",
+      "category": "natural",
+      "query": "my doctor wants my kidneys checked",
+      "relevant": [
+        "catalog:fx-kft"
+      ],
+      "final": [
+        "catalog:fx-kft",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-men-40",
+        "catalog:fx-comprehensive",
+        "catalog_index:Kidney Function Test"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6933,
+      "dense_top20": [
+        "catalog:fx-kft",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-men-40",
+        "catalog:fx-comprehensive",
+        "catalog:fx-urine",
+        "faq:Services We Don't Offer",
+        "catalog:fx-diabetes",
+        "catalog:fx-lft",
+        "faq:About DocNow",
+        "catalog:fx-fbs",
+        "catalog:fx-psa",
+        "faq:How Home Collection Works",
+        "catalog:fx-crp",
+        "catalog:fx-tsh",
+        "catalog:fx-vitd",
+        "catalog:fx-cbc",
+        "booking_help:Booking Status Explanations",
+        "faq:Phlebotomist Tracking",
+        "catalog:fx-thyroid"
+      ],
+      "bm25_top20": []
+    },
+    {
+      "id": "r-natural-04",
+      "category": "natural",
+      "query": "I feel tired all the time, is there a test for vitamin deficiency?",
+      "relevant": [
+        "catalog:fx-vitd",
+        "catalog:fx-b12"
+      ],
+      "final": [
+        "catalog:fx-b12",
+        "catalog:fx-vitd",
+        "catalog:fx-comprehensive",
+        "catalog:fx-iron",
+        "catalog:fx-fbc-adv",
+        "catalog_index:Vitamin B12"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6873,
+      "dense_top20": [
+        "catalog:fx-b12",
+        "catalog:fx-vitd",
+        "catalog:fx-comprehensive",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "catalog:fx-iron",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-cbc",
+        "faq:How Home Collection Works",
+        "catalog:fx-tsh",
+        "catalog:fx-lft",
+        "faq:Cities and Locations Served",
+        "faq:Report Delivery",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-thyroid",
+        "catalog:fx-kft",
+        "catalog:fx-crp",
+        "booking_help:Managing Multiple Patients",
+        "catalog:fx-ppbs",
+        "catalog:fx-hba1c"
+      ],
+      "bm25_top20": [
+        "catalog:fx-b12",
+        "catalog:fx-vitd",
+        "booking_help:Managing Multiple Patients",
+        "catalog:fx-iron",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive"
+      ]
+    },
+    {
+      "id": "r-natural-05",
+      "category": "natural",
+      "query": "tests recommended during pregnancy",
+      "relevant": [
+        "catalog:fx-antenatal"
+      ],
+      "final": [
+        "catalog:fx-antenatal",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "catalog:fx-lft",
+        "catalog:fx-diabetes",
+        "catalog_index:Blood Group and Rh"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.703,
+      "dense_top20": [
+        "catalog:fx-antenatal",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-vitd",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-diabetes",
+        "catalog:fx-lft",
+        "faq:How Home Collection Works",
+        "catalog:fx-tsh",
+        "catalog:fx-fbs",
+        "catalog:fx-thyroid",
+        "catalog:fx-b12",
+        "catalog:fx-cbc",
+        "catalog:fx-ppbs",
+        "catalog:fx-lipid",
+        "catalog:fx-iron",
+        "catalog:fx-kft",
+        "catalog:fx-hba1c"
+      ],
+      "bm25_top20": [
+        "catalog:fx-antenatal",
+        "booking_help:Managing Multiple Patients",
+        "faq:Slot Booking and Availability",
+        "catalog:fx-lft",
+        "booking_help:Wallet Credits and Promo Codes",
+        "faq:Cities and Locations Served",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "catalog:fx-diabetes",
+        "faq:How Home Collection Works",
+        "faq:Report Delivery",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive"
+      ]
+    },
+    {
+      "id": "r-natural-06",
+      "category": "natural",
+      "query": "health checkup for a man above 40",
+      "relevant": [
+        "catalog:fx-men-40"
+      ],
+      "final": [
+        "catalog:fx-men-40",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-lft",
+        "catalog_index:Liver Function Test"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7791,
+      "dense_top20": [
+        "catalog:fx-men-40",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-psa",
+        "catalog:fx-diabetes",
+        "catalog:fx-crp",
+        "catalog:fx-lft",
+        "catalog:fx-lipid",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "catalog:fx-kft",
+        "catalog:fx-cbc",
+        "catalog:fx-fbs",
+        "catalog:fx-hba1c",
+        "faq:How Home Collection Works",
+        "catalog:fx-vitd",
+        "catalog:fx-b12",
+        "catalog:fx-iron",
+        "catalog:fx-thyroid"
+      ],
+      "bm25_top20": [
+        "catalog:fx-men-40",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-kft",
+        "catalog:fx-lft",
+        "faq:About DocNow",
+        "policy:Rescheduling Policy",
+        "faq:How Home Collection Works",
+        "faq:Services We Don't Offer"
+      ]
+    },
+    {
+      "id": "r-natural-07",
+      "category": "natural",
+      "query": "average sugar over the last three months",
+      "relevant": [
+        "catalog:fx-hba1c"
+      ],
+      "final": [
+        "catalog:fx-hba1c",
+        "catalog:fx-diabetes",
+        "catalog:fx-fbs",
+        "catalog:fx-ppbs",
+        "catalog:fx-comprehensive",
+        "catalog_index:Average Blood Glucose"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.699,
+      "dense_top20": [
+        "catalog:fx-hba1c",
+        "catalog:fx-diabetes",
+        "catalog:fx-fbs",
+        "catalog:fx-ppbs",
+        "catalog:fx-comprehensive",
+        "faq:About DocNow",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-thyroid",
+        "catalog:fx-cbc",
+        "catalog:fx-lft",
+        "catalog:fx-vitd",
+        "catalog:fx-antenatal",
+        "catalog:fx-tsh",
+        "faq:How Home Collection Works",
+        "catalog:fx-b12",
+        "faq:Report Delivery",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-lipid",
+        "catalog:fx-crp"
+      ],
+      "bm25_top20": [
+        "catalog:fx-hba1c",
+        "catalog:fx-diabetes",
+        "catalog:fx-fbs",
+        "catalog:fx-ppbs",
+        "catalog:fx-comprehensive",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-antenatal",
+        "faq:Cities and Locations Served"
+      ]
+    },
+    {
+      "id": "r-natural-08",
+      "category": "natural",
+      "query": "prostate screening",
+      "relevant": [
+        "catalog:fx-psa"
+      ],
+      "final": [
+        "catalog:fx-psa",
+        "catalog:fx-men-40",
+        "catalog:fx-diabetes",
+        "faq:Services We Don't Offer"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6903,
+      "dense_top20": [
+        "catalog:fx-psa",
+        "catalog:fx-men-40",
+        "catalog:fx-diabetes",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "catalog:fx-crp",
+        "faq:How Home Collection Works",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-comprehensive",
+        "catalog:fx-ppbs",
+        "policy:Rescheduling Policy",
+        "catalog:fx-vitd",
+        "catalog:fx-tsh",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-urine",
+        "catalog:fx-lft",
+        "faq:Cities and Locations Served",
+        "catalog:fx-hba1c",
+        "faq:Report Delivery"
+      ],
+      "bm25_top20": [
+        "catalog:fx-psa",
+        "catalog:fx-diabetes",
+        "catalog:fx-men-40"
+      ]
+    },
+    {
+      "id": "r-acronym-01",
+      "category": "acronym",
+      "query": "LFT",
+      "relevant": [
+        "catalog:fx-lft"
+      ],
+      "final": [
+        "catalog:fx-lft",
+        "catalog:fx-kft",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-iron",
+        "catalog_index:Liver Function Test"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7665,
+      "dense_top20": [
+        "catalog:fx-lft",
+        "catalog:fx-kft",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-iron",
+        "catalog:fx-fbs",
+        "catalog:fx-men-40",
+        "catalog:fx-lipid",
+        "catalog:fx-comprehensive",
+        "catalog:fx-b12",
+        "catalog:fx-cbc",
+        "catalog:fx-psa",
+        "catalog:fx-vitd",
+        "catalog:fx-ppbs",
+        "catalog:fx-thyroid",
+        "catalog:fx-hba1c",
+        "catalog:fx-tsh",
+        "catalog:fx-crp",
+        "catalog:fx-diabetes",
+        "faq:How Home Collection Works"
+      ],
+      "bm25_top20": [
+        "catalog:fx-lft"
+      ]
+    },
+    {
+      "id": "r-acronym-02",
+      "category": "acronym",
+      "query": "KFT price",
+      "relevant": [
+        "catalog:fx-kft"
+      ],
+      "final": [
+        "catalog:fx-kft",
+        "catalog:fx-lft",
+        "catalog:fx-iron",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbs",
+        "catalog_index:Kidney Function Test"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.731,
+      "dense_top20": [
+        "catalog:fx-kft",
+        "catalog:fx-lft",
+        "catalog:fx-iron",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbs",
+        "catalog:fx-cbc",
+        "catalog:fx-b12",
+        "catalog:fx-urine",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-tsh",
+        "catalog:fx-comprehensive",
+        "catalog:fx-thyroid",
+        "catalog:fx-hba1c",
+        "catalog:fx-psa",
+        "catalog:fx-lipid",
+        "catalog:fx-crp",
+        "catalog:fx-vitd",
+        "catalog:fx-diabetes",
+        "catalog:fx-ppbs",
+        "catalog:fx-men-40"
+      ],
+      "bm25_top20": [
+        "catalog:fx-kft"
+      ]
+    },
+    {
+      "id": "r-acronym-03",
+      "category": "acronym",
+      "query": "TSH test",
+      "relevant": [
+        "catalog:fx-tsh",
+        "catalog:fx-thyroid"
+      ],
+      "final": [
+        "catalog:fx-tsh",
+        "catalog:fx-thyroid",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog_index:Thyroid Profile"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7742,
+      "dense_top20": [
+        "catalog:fx-tsh",
+        "catalog:fx-thyroid",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-b12",
+        "catalog:fx-crp",
+        "catalog:fx-antenatal",
+        "catalog:fx-vitd",
+        "catalog:fx-iron",
+        "catalog:fx-men-40",
+        "catalog:fx-fbs",
+        "catalog:fx-lipid",
+        "catalog:fx-cbc",
+        "catalog:fx-hba1c",
+        "catalog:fx-lft",
+        "faq:About DocNow",
+        "catalog:fx-diabetes",
+        "faq:Slot Booking and Availability",
+        "catalog:fx-psa"
+      ],
+      "bm25_top20": [
+        "catalog:fx-thyroid",
+        "catalog:fx-tsh",
+        "catalog:fx-comprehensive"
+      ]
+    },
+    {
+      "id": "r-acronym-04",
+      "category": "acronym",
+      "query": "PPBS",
+      "relevant": [
+        "catalog:fx-ppbs"
+      ],
+      "final": [
+        "catalog:fx-ppbs",
+        "catalog:fx-fbs",
+        "catalog:fx-psa"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6833,
+      "dense_top20": [
+        "catalog:fx-ppbs",
+        "catalog:fx-fbs",
+        "catalog:fx-psa",
+        "booking_help:Booking Status Explanations",
+        "policy:Rescheduling Policy",
+        "faq:Slot Booking and Availability",
+        "faq:How Home Collection Works",
+        "policy:Cancellation Policy",
+        "faq:Phlebotomist Tracking",
+        "catalog:fx-hba1c",
+        "catalog:fx-cbc",
+        "catalog:fx-diabetes",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-lft",
+        "catalog:fx-b12",
+        "catalog:fx-men-40",
+        "catalog:fx-iron",
+        "booking_help:Resample Required Explanation",
+        "policy:Refund Policy",
+        "catalog:fx-kft"
+      ],
+      "bm25_top20": [
+        "catalog:fx-ppbs"
+      ]
+    },
+    {
+      "id": "r-acronym-05",
+      "category": "acronym",
+      "query": "hs crp",
+      "relevant": [
+        "catalog:fx-crp"
+      ],
+      "final": [
+        "catalog:fx-crp",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-hba1c",
+        "catalog:fx-tsh",
+        "catalog_index:hs-CRP"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6806,
+      "dense_top20": [
+        "catalog:fx-crp",
+        "catalog:fx-comprehensive",
+        "catalog:fx-hba1c",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-tsh",
+        "catalog:fx-men-40",
+        "catalog:fx-cbc",
+        "catalog:fx-fbs",
+        "catalog:fx-lipid",
+        "catalog:fx-thyroid",
+        "catalog:fx-ppbs",
+        "catalog:fx-diabetes",
+        "catalog:fx-iron",
+        "catalog:fx-b12",
+        "policy:Rescheduling Policy",
+        "catalog:fx-psa",
+        "catalog:fx-antenatal",
+        "catalog:fx-kft",
+        "catalog:fx-vitd",
+        "faq:About DocNow"
+      ],
+      "bm25_top20": [
+        "catalog:fx-crp",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive"
+      ]
+    },
+    {
+      "id": "r-acronym-06",
+      "category": "acronym",
+      "query": "PSA",
+      "relevant": [
+        "catalog:fx-psa"
+      ],
+      "final": [
+        "catalog:fx-psa",
+        "catalog:fx-men-40",
+        "catalog:fx-crp",
+        "catalog:fx-b12",
+        "catalog:fx-diabetes"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6998,
+      "dense_top20": [
+        "catalog:fx-psa",
+        "catalog:fx-men-40",
+        "catalog:fx-crp",
+        "catalog:fx-b12",
+        "catalog:fx-diabetes",
+        "catalog:fx-ppbs",
+        "catalog:fx-urine",
+        "catalog:fx-hba1c",
+        "catalog:fx-lft",
+        "catalog:fx-fbs",
+        "catalog:fx-vitd",
+        "catalog:fx-cbc",
+        "catalog:fx-kft",
+        "catalog:fx-lipid",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-fbc-basic",
+        "faq:Slot Booking and Availability",
+        "catalog:fx-tsh",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive"
+      ],
+      "bm25_top20": [
+        "catalog:fx-psa",
+        "catalog:fx-men-40"
+      ]
+    },
+    {
+      "id": "r-typo-01",
+      "category": "typo",
+      "query": "thyriod test",
+      "relevant": [
+        "catalog:fx-thyroid",
+        "catalog:fx-tsh"
+      ],
+      "final": [
+        "catalog:fx-thyroid",
+        "catalog:fx-tsh",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog_index:Thyroid Profile"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7549,
+      "dense_top20": [
+        "catalog:fx-thyroid",
+        "catalog:fx-tsh",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-b12",
+        "catalog:fx-men-40",
+        "catalog:fx-antenatal",
+        "catalog:fx-vitd",
+        "catalog:fx-iron",
+        "catalog:fx-lipid",
+        "catalog:fx-crp",
+        "catalog:fx-lft",
+        "catalog:fx-fbs",
+        "catalog:fx-cbc",
+        "catalog:fx-hba1c",
+        "catalog:fx-psa",
+        "catalog:fx-ppbs",
+        "catalog:fx-diabetes",
+        "catalog:fx-kft"
+      ],
+      "bm25_top20": []
+    },
+    {
+      "id": "r-typo-02",
+      "category": "typo",
+      "query": "vitamin d defficiency test",
+      "relevant": [
+        "catalog:fx-vitd"
+      ],
+      "final": [
+        "catalog:fx-vitd",
+        "catalog:fx-b12",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-iron",
+        "catalog_index:Vitamin B12"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7607,
+      "dense_top20": [
+        "catalog:fx-vitd",
+        "catalog:fx-b12",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-iron",
+        "catalog:fx-tsh",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "catalog:fx-thyroid",
+        "catalog:fx-ppbs",
+        "catalog:fx-lft",
+        "catalog:fx-crp",
+        "catalog:fx-psa",
+        "catalog:fx-hba1c",
+        "catalog:fx-cbc",
+        "catalog:fx-diabetes",
+        "catalog:fx-men-40",
+        "faq:How Home Collection Works",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-lipid"
+      ],
+      "bm25_top20": [
+        "catalog:fx-vitd",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-b12",
+        "catalog:fx-comprehensive"
+      ]
+    },
+    {
+      "id": "r-typo-03",
+      "category": "typo",
+      "query": "lipid profle fasting",
+      "relevant": [
+        "catalog:fx-lipid"
+      ],
+      "final": [
+        "catalog:fx-lipid",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbs",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-men-40",
+        "catalog_index:Lipid Profile"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7542,
+      "dense_top20": [
+        "catalog:fx-lipid",
+        "catalog:fx-fbs",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-lft",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-thyroid",
+        "catalog:fx-men-40",
+        "catalog:fx-diabetes",
+        "faq:About DocNow",
+        "catalog:fx-vitd",
+        "catalog:fx-cbc",
+        "catalog:fx-antenatal",
+        "catalog:fx-ppbs",
+        "faq:Services We Don't Offer",
+        "catalog:fx-iron",
+        "catalog:fx-hba1c",
+        "catalog:fx-crp",
+        "catalog:fx-b12",
+        "faq:How Home Collection Works"
+      ],
+      "bm25_top20": [
+        "catalog:fx-lipid",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-fbs",
+        "catalog:fx-diabetes",
+        "catalog:fx-vitd",
+        "catalog:fx-hba1c",
+        "catalog:fx-thyroid",
+        "catalog:fx-cbc",
+        "catalog:fx-lft",
+        "catalog:fx-comprehensive",
+        "catalog:fx-ppbs"
+      ]
+    },
+    {
+      "id": "r-typo-04",
+      "category": "typo",
+      "query": "hba1c",
+      "relevant": [
+        "catalog:fx-hba1c"
+      ],
+      "final": [
+        "catalog:fx-hba1c",
+        "catalog:fx-diabetes",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-men-40",
+        "catalog:fx-comprehensive",
+        "catalog_index:HbA1c"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7406,
+      "dense_top20": [
+        "catalog:fx-hba1c",
+        "catalog:fx-diabetes",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-fbs",
+        "catalog:fx-ppbs",
+        "catalog:fx-comprehensive",
+        "catalog:fx-men-40",
+        "catalog:fx-crp",
+        "faq:About DocNow",
+        "catalog:fx-b12",
+        "catalog:fx-cbc",
+        "faq:How Home Collection Works",
+        "catalog:fx-vitd",
+        "catalog:fx-tsh",
+        "catalog:fx-thyroid",
+        "catalog:fx-fbc-basic",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-lipid",
+        "catalog:fx-iron",
+        "catalog:fx-antenatal"
+      ],
+      "bm25_top20": [
+        "catalog:fx-hba1c",
+        "catalog:fx-diabetes",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-men-40",
+        "catalog:fx-comprehensive"
+      ]
+    },
+    {
+      "id": "r-typo-05",
+      "category": "typo",
+      "query": "cancelation refund",
+      "relevant": [
+        "policy:Cancellation Policy",
+        "policy:Refund Policy"
+      ],
+      "final": [
+        "policy:Cancellation Policy",
+        "policy:Refund Policy",
+        "booking_help:Booking Status Explanations",
+        "policy:Rescheduling Policy"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7054,
+      "dense_top20": [
+        "policy:Cancellation Policy",
+        "policy:Refund Policy",
+        "booking_help:Booking Status Explanations",
+        "policy:Rescheduling Policy",
+        "policy:Payment and Pricing Policy",
+        "faq:Slot Booking and Availability",
+        "booking_help:Resample Required Explanation",
+        "catalog:fx-thyroid",
+        "booking_help:Wallet Credits and Promo Codes",
+        "faq:How Home Collection Works",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "catalog:fx-cbc",
+        "catalog:fx-lft",
+        "catalog:fx-b12",
+        "faq:Cities and Locations Served",
+        "catalog:fx-vitd",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-kft",
+        "catalog:fx-iron"
+      ],
+      "bm25_top20": [
+        "policy:Refund Policy",
+        "policy:Cancellation Policy"
+      ]
+    },
+    {
+      "id": "r-constituent-01",
+      "category": "constituent",
+      "query": "Which package includes a homocysteine test?",
+      "relevant": [
+        "catalog:fx-comprehensive"
+      ],
+      "final": [
+        "catalog:fx-antenatal",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-diabetes",
+        "catalog:fx-men-40",
+        "catalog_index:Vitamin B12"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7398,
+      "dense_top20": [
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-antenatal",
+        "faq:About DocNow",
+        "catalog:fx-men-40",
+        "catalog:fx-b12",
+        "catalog:fx-diabetes",
+        "faq:Services We Don't Offer",
+        "catalog:fx-crp",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-thyroid",
+        "catalog:fx-tsh",
+        "catalog:fx-hba1c",
+        "faq:How Home Collection Works",
+        "catalog:fx-cbc",
+        "catalog:fx-vitd",
+        "catalog:fx-iron",
+        "catalog:fx-lipid",
+        "catalog:fx-lft",
+        "faq:Cities and Locations Served"
+      ],
+      "bm25_top20": [
+        "catalog:fx-diabetes",
+        "catalog:fx-antenatal",
+        "catalog:fx-men-40",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv"
+      ]
+    },
+    {
+      "id": "r-constituent-02",
+      "category": "constituent",
+      "query": "Do you test serum amylase and lipase?",
+      "relevant": [
+        "catalog:fx-comprehensive"
+      ],
+      "final": [
+        "catalog:fx-comprehensive",
+        "faq:About DocNow",
+        "faq:Services We Don't Offer",
+        "catalog:fx-iron",
+        "catalog:fx-fbc-adv",
+        "catalog_index:Lipid Profile"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6267,
+      "dense_top20": [
+        "faq:About DocNow",
+        "faq:Services We Don't Offer",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-lipid",
+        "faq:Cities and Locations Served",
+        "catalog:fx-men-40",
+        "catalog:fx-lft",
+        "faq:How Home Collection Works",
+        "catalog:fx-ppbs",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-diabetes",
+        "policy:Cancellation Policy",
+        "faq:Report Delivery",
+        "catalog:fx-vitd",
+        "catalog:fx-fbs",
+        "catalog:fx-psa",
+        "catalog:fx-crp",
+        "policy:Refund Policy",
+        "catalog:fx-urine"
+      ],
+      "bm25_top20": [
+        "catalog:fx-comprehensive",
+        "catalog:fx-iron"
+      ]
+    },
+    {
+      "id": "r-constituent-03",
+      "category": "constituent",
+      "query": "ferritin test",
+      "relevant": [
+        "catalog:fx-comprehensive"
+      ],
+      "final": [
+        "catalog:fx-comprehensive",
+        "catalog:fx-iron",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-b12",
+        "catalog:fx-vitd",
+        "catalog_index:Vitamin B12"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7012,
+      "dense_top20": [
+        "catalog:fx-iron",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-b12",
+        "catalog:fx-vitd",
+        "catalog:fx-cbc",
+        "catalog:fx-lft",
+        "catalog:fx-crp",
+        "catalog:fx-fbc-basic",
+        "faq:About DocNow",
+        "catalog:fx-hba1c",
+        "catalog:fx-tsh",
+        "catalog:fx-kft",
+        "catalog:fx-fbs",
+        "catalog:fx-thyroid",
+        "faq:Services We Don't Offer",
+        "faq:How Home Collection Works",
+        "catalog:fx-men-40",
+        "catalog:fx-antenatal",
+        "catalog:fx-diabetes"
+      ],
+      "bm25_top20": [
+        "catalog:fx-comprehensive"
+      ]
+    },
+    {
+      "id": "r-constituent-04",
+      "category": "constituent",
+      "query": "checkup that covers cortisol and testosterone",
+      "relevant": [
+        "catalog:fx-comprehensive"
+      ],
+      "final": [
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-men-40",
+        "faq:Services We Don't Offer",
+        "catalog_index:Thyroid Profile"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7075,
+      "dense_top20": [
+        "catalog:fx-comprehensive",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-thyroid",
+        "catalog:fx-tsh",
+        "catalog:fx-diabetes",
+        "catalog:fx-antenatal",
+        "faq:Services We Don't Offer",
+        "catalog:fx-psa",
+        "catalog:fx-lft",
+        "catalog:fx-iron",
+        "faq:About DocNow",
+        "catalog:fx-vitd",
+        "faq:How Home Collection Works",
+        "catalog:fx-crp",
+        "catalog:fx-kft",
+        "catalog:fx-cbc",
+        "catalog:fx-urine",
+        "catalog:fx-lipid"
+      ],
+      "bm25_top20": [
+        "catalog:fx-comprehensive",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "faq:About DocNow",
+        "catalog:fx-men-40",
+        "faq:Services We Don't Offer"
+      ]
+    },
+    {
+      "id": "r-constituent-05",
+      "category": "constituent",
+      "query": "Is apolipoprotein B part of any package?",
+      "relevant": [
+        "catalog:fx-comprehensive"
+      ],
+      "final": [
+        "catalog:fx-comprehensive",
+        "catalog:fx-diabetes",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-antenatal",
+        "catalog:fx-men-40",
+        "catalog_index:Lipid Profile"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6966,
+      "dense_top20": [
+        "catalog:fx-fbc-adv",
+        "catalog:fx-lipid",
+        "catalog:fx-comprehensive",
+        "catalog:fx-diabetes",
+        "catalog:fx-antenatal",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-basic",
+        "faq:About DocNow",
+        "catalog:fx-crp",
+        "faq:Services We Don't Offer",
+        "catalog:fx-ppbs",
+        "catalog:fx-lft",
+        "catalog:fx-thyroid",
+        "catalog:fx-b12",
+        "faq:How Home Collection Works",
+        "catalog:fx-iron",
+        "catalog:fx-hba1c",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-cbc",
+        "catalog:fx-vitd"
+      ],
+      "bm25_top20": [
+        "catalog:fx-comprehensive",
+        "catalog:fx-diabetes",
+        "catalog:fx-antenatal",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv"
+      ]
+    },
+    {
+      "id": "r-constituent-06",
+      "category": "constituent",
+      "query": "Which checkup includes PSA?",
+      "relevant": [
+        "catalog:fx-men-40"
+      ],
+      "final": [
+        "catalog:fx-men-40",
+        "catalog:fx-psa",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog_index:Liver Function Test"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7324,
+      "dense_top20": [
+        "catalog:fx-psa",
+        "catalog:fx-men-40",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-diabetes",
+        "faq:How Home Collection Works",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "faq:Cities and Locations Served",
+        "catalog:fx-kft",
+        "catalog:fx-urine",
+        "catalog:fx-ppbs",
+        "catalog:fx-lft",
+        "catalog:fx-antenatal",
+        "catalog:fx-b12",
+        "catalog:fx-vitd",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-cbc",
+        "catalog:fx-hba1c"
+      ],
+      "bm25_top20": [
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-psa",
+        "catalog:fx-comprehensive",
+        "catalog:fx-antenatal",
+        "catalog:fx-diabetes"
+      ]
+    },
+    {
+      "id": "r-constituent-07",
+      "category": "constituent",
+      "query": "package with HIV and HBsAg",
+      "relevant": [
+        "catalog:fx-antenatal"
+      ],
+      "final": [
+        "catalog:fx-antenatal",
+        "catalog:fx-diabetes",
+        "catalog:fx-comprehensive",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-adv",
+        "catalog_index:Blood Group and Rh"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6932,
+      "dense_top20": [
+        "catalog:fx-antenatal",
+        "catalog:fx-diabetes",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-men-40",
+        "catalog:fx-lft",
+        "catalog:fx-thyroid",
+        "catalog:fx-cbc",
+        "catalog:fx-crp",
+        "catalog:fx-b12",
+        "catalog:fx-ppbs",
+        "catalog:fx-tsh",
+        "faq:About DocNow",
+        "catalog:fx-fbs",
+        "catalog:fx-iron",
+        "faq:Services We Don't Offer",
+        "catalog:fx-hba1c",
+        "catalog:fx-psa",
+        "catalog:fx-urine"
+      ],
+      "bm25_top20": [
+        "catalog:fx-antenatal",
+        "catalog:fx-diabetes",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive"
+      ]
+    },
+    {
+      "id": "r-policy-01",
+      "category": "policy",
+      "query": "can I cancel after the phlebotomist reached my home",
+      "relevant": [
+        "policy:Cancellation Policy",
+        "booking_help:Booking Status Explanations"
+      ],
+      "final": [
+        "policy:Cancellation Policy",
+        "booking_help:Booking Status Explanations",
+        "faq:Phlebotomist Tracking",
+        "faq:How Home Collection Works",
+        "policy:Refund Policy"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7499,
+      "dense_top20": [
+        "policy:Cancellation Policy",
+        "booking_help:Booking Status Explanations",
+        "faq:Phlebotomist Tracking",
+        "booking_help:Resample Required Explanation",
+        "policy:Rescheduling Policy",
+        "policy:Refund Policy",
+        "faq:How Home Collection Works",
+        "faq:Slot Booking and Availability",
+        "faq:About DocNow",
+        "booking_help:Managing Multiple Patients",
+        "faq:Services We Don't Offer",
+        "faq:Cities and Locations Served",
+        "faq:Report Delivery",
+        "catalog:fx-cbc",
+        "catalog:fx-b12",
+        "catalog:fx-ppbs",
+        "catalog:fx-iron",
+        "catalog:fx-fbs",
+        "catalog:fx-hba1c",
+        "policy:Payment and Pricing Policy"
+      ],
+      "bm25_top20": [
+        "booking_help:Booking Status Explanations",
+        "policy:Cancellation Policy",
+        "faq:Phlebotomist Tracking",
+        "faq:How Home Collection Works",
+        "catalog:fx-ppbs",
+        "faq:Cities and Locations Served",
+        "policy:Refund Policy",
+        "faq:Report Delivery",
+        "catalog:fx-fbs",
+        "booking_help:Resample Required Explanation",
+        "booking_help:Managing Multiple Patients",
+        "faq:About DocNow",
+        "faq:Services We Don't Offer"
+      ]
+    },
+    {
+      "id": "r-policy-02",
+      "category": "policy",
+      "query": "how long does a refund take to UPI",
+      "relevant": [
+        "policy:Refund Policy",
+        "policy:Cancellation Policy"
+      ],
+      "final": [
+        "policy:Refund Policy",
+        "policy:Cancellation Policy",
+        "faq:Report Delivery",
+        "faq:Slot Booking and Availability",
+        "policy:Payment and Pricing Policy"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6518,
+      "dense_top20": [
+        "policy:Refund Policy",
+        "policy:Cancellation Policy",
+        "policy:Payment and Pricing Policy",
+        "booking_help:Booking Status Explanations",
+        "policy:Rescheduling Policy",
+        "faq:Report Delivery",
+        "faq:How Home Collection Works",
+        "faq:Services We Don't Offer",
+        "booking_help:Wallet Credits and Promo Codes",
+        "catalog:fx-urine",
+        "catalog:fx-thyroid",
+        "faq:About DocNow",
+        "faq:Slot Booking and Availability",
+        "catalog:fx-lft",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-ppbs",
+        "catalog:fx-cbc",
+        "catalog:fx-kft",
+        "catalog:fx-fbs",
+        "catalog:fx-fbc-adv"
+      ],
+      "bm25_top20": [
+        "policy:Refund Policy",
+        "policy:Cancellation Policy",
+        "faq:Report Delivery",
+        "faq:Slot Booking and Availability",
+        "policy:Payment and Pricing Policy",
+        "faq:How Home Collection Works"
+      ]
+    },
+    {
+      "id": "r-policy-03",
+      "category": "policy",
+      "query": "change my appointment time",
+      "relevant": [
+        "policy:Rescheduling Policy",
+        "faq:Slot Booking and Availability"
+      ],
+      "final": [
+        "faq:Slot Booking and Availability",
+        "policy:Rescheduling Policy",
+        "booking_help:Booking Status Explanations"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6583,
+      "dense_top20": [
+        "policy:Rescheduling Policy",
+        "faq:Slot Booking and Availability",
+        "policy:Cancellation Policy",
+        "booking_help:Booking Status Explanations",
+        "policy:Refund Policy",
+        "booking_help:Managing Multiple Patients",
+        "faq:Phlebotomist Tracking",
+        "booking_help:Resample Required Explanation",
+        "faq:Report Delivery",
+        "faq:How Home Collection Works",
+        "faq:About DocNow",
+        "policy:Payment and Pricing Policy",
+        "booking_help:Wallet Credits and Promo Codes",
+        "faq:Services We Don't Offer",
+        "faq:Cities and Locations Served",
+        "catalog:fx-b12",
+        "catalog:fx-cbc",
+        "catalog:fx-ppbs",
+        "catalog:fx-fbs",
+        "catalog:fx-hba1c"
+      ],
+      "bm25_top20": [
+        "faq:Slot Booking and Availability",
+        "booking_help:Booking Status Explanations"
+      ]
+    },
+    {
+      "id": "r-policy-04",
+      "category": "policy",
+      "query": "when will I get my report",
+      "relevant": [
+        "faq:Report Delivery"
+      ],
+      "final": [
+        "faq:Report Delivery",
+        "booking_help:Booking Status Explanations",
+        "faq:Slot Booking and Availability",
+        "policy:Rescheduling Policy",
+        "faq:How Home Collection Works"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7272,
+      "dense_top20": [
+        "faq:Report Delivery",
+        "booking_help:Booking Status Explanations",
+        "faq:Slot Booking and Availability",
+        "policy:Rescheduling Policy",
+        "faq:How Home Collection Works",
+        "faq:Phlebotomist Tracking",
+        "catalog:fx-cbc",
+        "catalog:fx-hba1c",
+        "catalog:fx-lft",
+        "catalog:fx-ppbs",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbs",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-diabetes",
+        "booking_help:Resample Required Explanation",
+        "catalog:fx-lipid",
+        "catalog:fx-b12",
+        "policy:Cancellation Policy",
+        "catalog:fx-men-40"
+      ],
+      "bm25_top20": []
+    },
+    {
+      "id": "r-policy-05",
+      "category": "policy",
+      "query": "lab asked for a fresh sample",
+      "relevant": [
+        "booking_help:Resample Required Explanation"
+      ],
+      "final": [
+        "booking_help:Resample Required Explanation",
+        "policy:Rescheduling Policy",
+        "booking_help:Booking Status Explanations",
+        "policy:Refund Policy",
+        "faq:Services We Don't Offer",
+        "catalog_index:Urine Routine"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7953,
+      "dense_top20": [
+        "booking_help:Resample Required Explanation",
+        "policy:Rescheduling Policy",
+        "booking_help:Booking Status Explanations",
+        "faq:Slot Booking and Availability",
+        "policy:Cancellation Policy",
+        "policy:Refund Policy",
+        "faq:Report Delivery",
+        "faq:How Home Collection Works",
+        "catalog:fx-urine",
+        "faq:Services We Don't Offer",
+        "catalog:fx-cbc",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbs",
+        "catalog:fx-ppbs",
+        "catalog:fx-fbc-adv",
+        "faq:About DocNow",
+        "catalog:fx-comprehensive",
+        "catalog:fx-diabetes",
+        "catalog:fx-psa",
+        "catalog:fx-iron"
+      ],
+      "bm25_top20": [
+        "booking_help:Resample Required Explanation",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "policy:Refund Policy",
+        "policy:Rescheduling Policy",
+        "faq:How Home Collection Works",
+        "booking_help:Booking Status Explanations",
+        "faq:Cities and Locations Served"
+      ]
+    },
+    {
+      "id": "r-policy-06",
+      "category": "policy",
+      "query": "book tests for my parents in one order",
+      "relevant": [
+        "booking_help:Managing Multiple Patients"
+      ],
+      "final": [
+        "booking_help:Managing Multiple Patients",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-diabetes",
+        "booking_help:Booking Status Explanations",
+        "faq:Slot Booking and Availability",
+        "catalog_index:Blood Group and Rh"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7571,
+      "dense_top20": [
+        "booking_help:Managing Multiple Patients",
+        "faq:Slot Booking and Availability",
+        "catalog:fx-fbc-basic",
+        "faq:How Home Collection Works",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "booking_help:Booking Status Explanations",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-iron",
+        "policy:Rescheduling Policy",
+        "catalog:fx-lft",
+        "policy:Cancellation Policy",
+        "catalog:fx-antenatal",
+        "catalog:fx-diabetes",
+        "catalog:fx-cbc",
+        "catalog:fx-thyroid",
+        "catalog:fx-men-40",
+        "policy:Refund Policy",
+        "faq:Services We Don't Offer",
+        "catalog:fx-tsh"
+      ],
+      "bm25_top20": [
+        "catalog:fx-diabetes",
+        "booking_help:Managing Multiple Patients",
+        "policy:Payment and Pricing Policy",
+        "booking_help:Wallet Credits and Promo Codes",
+        "policy:Refund Policy",
+        "policy:Cancellation Policy",
+        "booking_help:Booking Status Explanations",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "catalog:fx-antenatal",
+        "faq:How Home Collection Works",
+        "faq:Report Delivery",
+        "faq:Slot Booking and Availability",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "faq:Cities and Locations Served"
+      ]
+    },
+    {
+      "id": "r-policy-07",
+      "category": "policy",
+      "query": "do you provide home collection in Lucknow",
+      "relevant": [
+        "faq:Cities and Locations Served"
+      ],
+      "final": [
+        "faq:Cities and Locations Served",
+        "faq:How Home Collection Works",
+        "faq:About DocNow",
+        "faq:Services We Don't Offer",
+        "booking_help:Booking Status Explanations",
+        "catalog_index:HbA1c"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7406,
+      "dense_top20": [
+        "faq:Cities and Locations Served",
+        "faq:How Home Collection Works",
+        "booking_help:Booking Status Explanations",
+        "faq:About DocNow",
+        "policy:Cancellation Policy",
+        "faq:Services We Don't Offer",
+        "faq:Slot Booking and Availability",
+        "faq:Report Delivery",
+        "policy:Rescheduling Policy",
+        "policy:Refund Policy",
+        "booking_help:Managing Multiple Patients",
+        "catalog:fx-diabetes",
+        "booking_help:Resample Required Explanation",
+        "faq:Phlebotomist Tracking",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-cbc",
+        "catalog:fx-comprehensive",
+        "catalog:fx-b12",
+        "catalog:fx-vitd"
+      ],
+      "bm25_top20": [
+        "faq:Cities and Locations Served",
+        "faq:How Home Collection Works",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "faq:Report Delivery",
+        "faq:Slot Booking and Availability",
+        "policy:Cancellation Policy",
+        "policy:Refund Policy",
+        "booking_help:Booking Status Explanations",
+        "policy:Rescheduling Policy"
+      ]
+    },
+    {
+      "id": "r-policy-08",
+      "category": "policy",
+      "query": "how do I use a promo code",
+      "relevant": [
+        "booking_help:Wallet Credits and Promo Codes"
+      ],
+      "final": [
+        "booking_help:Wallet Credits and Promo Codes",
+        "policy:Payment and Pricing Policy",
+        "policy:Refund Policy",
+        "faq:How Home Collection Works",
+        "policy:Cancellation Policy"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6928,
+      "dense_top20": [
+        "booking_help:Wallet Credits and Promo Codes",
+        "policy:Payment and Pricing Policy",
+        "faq:How Home Collection Works",
+        "policy:Refund Policy",
+        "booking_help:Managing Multiple Patients",
+        "faq:About DocNow",
+        "policy:Cancellation Policy",
+        "faq:Phlebotomist Tracking",
+        "faq:Services We Don't Offer",
+        "faq:Cities and Locations Served",
+        "faq:Slot Booking and Availability",
+        "catalog:fx-crp",
+        "catalog:fx-b12",
+        "catalog:fx-tsh",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-men-40",
+        "catalog:fx-lft",
+        "catalog:fx-thyroid",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-cbc"
+      ],
+      "bm25_top20": [
+        "booking_help:Wallet Credits and Promo Codes",
+        "policy:Payment and Pricing Policy",
+        "policy:Refund Policy",
+        "policy:Cancellation Policy"
+      ]
+    },
+    {
+      "id": "r-followup-01",
+      "category": "followup",
+      "query": "how much does it cost?",
+      "relevant": [
+        "catalog:fx-lipid"
+      ],
+      "final": [
+        "catalog:fx-cbc",
+        "catalog:fx-b12",
+        "catalog:fx-tsh",
+        "catalog:fx-iron",
+        "policy:Payment and Pricing Policy"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6301,
+      "dense_top20": [
+        "catalog:fx-cbc",
+        "catalog:fx-b12",
+        "catalog:fx-tsh",
+        "catalog:fx-iron",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-hba1c",
+        "catalog:fx-urine",
+        "catalog:fx-fbs",
+        "catalog:fx-crp",
+        "catalog:fx-lft",
+        "catalog:fx-kft",
+        "catalog:fx-vitd",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-comprehensive",
+        "catalog:fx-psa",
+        "catalog:fx-lipid",
+        "faq:How Home Collection Works",
+        "catalog:fx-diabetes",
+        "catalog:fx-ppbs",
+        "catalog:fx-thyroid"
+      ],
+      "bm25_top20": []
+    },
+    {
+      "id": "r-followup-02",
+      "category": "followup",
+      "query": "does that need fasting?",
+      "relevant": [
+        "catalog:fx-hba1c"
+      ],
+      "final": [
+        "catalog:fx-fbs",
+        "faq:Services We Don't Offer",
+        "catalog:fx-diabetes",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-lipid",
+        "catalog_index:Fasting Blood Sugar"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6951,
+      "dense_top20": [
+        "catalog:fx-fbs",
+        "faq:Services We Don't Offer",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-diabetes",
+        "catalog:fx-ppbs",
+        "catalog:fx-lft",
+        "catalog:fx-cbc",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-lipid",
+        "catalog:fx-thyroid",
+        "catalog:fx-hba1c",
+        "catalog:fx-vitd",
+        "catalog:fx-men-40",
+        "catalog:fx-kft",
+        "catalog:fx-tsh",
+        "catalog:fx-iron",
+        "faq:Slot Booking and Availability",
+        "catalog:fx-b12",
+        "catalog:fx-urine"
+      ],
+      "bm25_top20": [
+        "faq:About DocNow",
+        "faq:Services We Don't Offer",
+        "catalog:fx-fbs",
+        "catalog:fx-diabetes",
+        "catalog:fx-vitd",
+        "catalog:fx-lipid",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-hba1c",
+        "catalog:fx-thyroid",
+        "catalog:fx-cbc",
+        "catalog:fx-lft",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-ppbs"
+      ]
+    },
+    {
+      "id": "r-followup-03",
+      "category": "followup",
+      "query": "what about the advanced one?",
+      "relevant": [
+        "catalog:fx-fbc-adv"
+      ],
+      "final": [
+        "catalog:fx-fbc-adv",
+        "catalog:fx-diabetes",
+        "catalog:fx-comprehensive",
+        "catalog:fx-hba1c",
+        "catalog:fx-crp",
+        "catalog_index:hs-CRP"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.666,
+      "dense_top20": [
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-hba1c",
+        "catalog:fx-crp",
+        "catalog:fx-tsh",
+        "catalog:fx-psa",
+        "catalog:fx-men-40",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-diabetes",
+        "catalog:fx-fbc-basic",
+        "faq:Slot Booking and Availability",
+        "faq:About DocNow",
+        "catalog:fx-kft",
+        "catalog:fx-urine",
+        "catalog:fx-b12",
+        "catalog:fx-antenatal",
+        "catalog:fx-thyroid",
+        "catalog:fx-vitd",
+        "catalog:fx-fbs",
+        "catalog:fx-iron"
+      ],
+      "bm25_top20": [
+        "catalog:fx-fbc-adv",
+        "catalog:fx-diabetes"
+      ]
+    },
+    {
+      "id": "r-followup-04",
+      "category": "followup",
+      "query": "and how long for the report?",
+      "relevant": [
+        "catalog:fx-vitd"
+      ],
+      "final": [
+        "faq:Slot Booking and Availability",
+        "faq:Report Delivery",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-hba1c",
+        "catalog:fx-ppbs"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.704,
+      "dense_top20": [
+        "faq:Report Delivery",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-hba1c",
+        "catalog:fx-ppbs",
+        "faq:Slot Booking and Availability",
+        "catalog:fx-cbc",
+        "catalog:fx-urine",
+        "policy:Rescheduling Policy",
+        "catalog:fx-fbs",
+        "faq:How Home Collection Works",
+        "catalog:fx-lft",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-kft",
+        "catalog:fx-b12",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-men-40",
+        "faq:Phlebotomist Tracking",
+        "catalog:fx-crp",
+        "catalog:fx-psa",
+        "catalog:fx-diabetes"
+      ],
+      "bm25_top20": [
+        "faq:Slot Booking and Availability"
+      ]
+    },
+    {
+      "id": "r-followup-05",
+      "category": "followup",
+      "query": "can I still cancel it?",
+      "relevant": [
+        "policy:Cancellation Policy",
+        "booking_help:Booking Status Explanations"
+      ],
+      "final": [
+        "policy:Cancellation Policy",
+        "booking_help:Booking Status Explanations",
+        "policy:Refund Policy",
+        "policy:Rescheduling Policy",
+        "faq:Slot Booking and Availability"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6897,
+      "dense_top20": [
+        "policy:Cancellation Policy",
+        "policy:Refund Policy",
+        "booking_help:Booking Status Explanations",
+        "policy:Rescheduling Policy",
+        "faq:Slot Booking and Availability",
+        "booking_help:Resample Required Explanation",
+        "faq:Phlebotomist Tracking",
+        "faq:Services We Don't Offer",
+        "policy:Payment and Pricing Policy",
+        "booking_help:Wallet Credits and Promo Codes",
+        "faq:How Home Collection Works",
+        "catalog:fx-hba1c",
+        "booking_help:Managing Multiple Patients",
+        "catalog:fx-cbc",
+        "faq:About DocNow",
+        "catalog:fx-tsh",
+        "catalog:fx-b12",
+        "catalog:fx-thyroid",
+        "faq:Cities and Locations Served",
+        "catalog:fx-fbc-basic"
+      ],
+      "bm25_top20": [
+        "booking_help:Booking Status Explanations",
+        "policy:Refund Policy",
+        "policy:Cancellation Policy"
+      ]
+    },
+    {
+      "id": "r-list-01",
+      "category": "list",
+      "query": "Which packages include HbA1c?",
+      "relevant": [
+        "catalog_index:HbA1c"
+      ],
+      "final": [
+        "catalog:fx-diabetes",
+        "catalog:fx-hba1c",
+        "catalog:fx-fbc-adv",
+        "faq:About DocNow",
+        "catalog:fx-men-40",
+        "catalog_index:HbA1c"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.8136,
+      "dense_top20": [
+        "catalog:fx-diabetes",
+        "catalog:fx-hba1c",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-men-40",
+        "catalog:fx-comprehensive",
+        "faq:About DocNow",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbs",
+        "catalog:fx-ppbs",
+        "catalog:fx-antenatal",
+        "catalog:fx-crp",
+        "faq:How Home Collection Works",
+        "catalog:fx-cbc",
+        "faq:Services We Don't Offer",
+        "catalog:fx-b12",
+        "catalog:fx-thyroid",
+        "catalog:fx-tsh",
+        "catalog:fx-iron",
+        "catalog:fx-vitd",
+        "catalog:fx-lft"
+      ],
+      "bm25_top20": [
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-hba1c",
+        "catalog:fx-diabetes",
+        "catalog:fx-fbc-adv",
+        "faq:About DocNow",
+        "faq:How Home Collection Works",
+        "faq:Services We Don't Offer",
+        "catalog:fx-men-40",
+        "catalog:fx-comprehensive"
+      ]
+    },
+    {
+      "id": "r-list-02",
+      "category": "list",
+      "query": "List every checkup that has a complete blood count",
+      "relevant": [
+        "catalog_index:Complete Blood Count"
+      ],
+      "final": [
+        "catalog:fx-fbc-basic",
+        "catalog:fx-cbc",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-men-40",
+        "catalog_index:Complete Blood Count"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7702,
+      "dense_top20": [
+        "catalog:fx-cbc",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-antenatal",
+        "catalog:fx-iron",
+        "catalog:fx-men-40",
+        "faq:Services We Don't Offer",
+        "faq:How Home Collection Works",
+        "faq:About DocNow",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-b12",
+        "catalog:fx-diabetes",
+        "catalog:fx-kft",
+        "catalog:fx-thyroid",
+        "catalog:fx-crp",
+        "catalog:fx-lft",
+        "catalog:fx-hba1c",
+        "catalog:fx-tsh",
+        "policy:Cancellation Policy"
+      ],
+      "bm25_top20": [
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-men-40",
+        "catalog:fx-comprehensive",
+        "catalog:fx-cbc",
+        "catalog:fx-antenatal",
+        "faq:About DocNow",
+        "faq:Services We Don't Offer",
+        "faq:How Home Collection Works"
+      ]
+    },
+    {
+      "id": "r-list-03",
+      "category": "list",
+      "query": "thyroid profile kis kis package mein hai?",
+      "relevant": [
+        "catalog_index:Thyroid Profile"
+      ],
+      "final": [
+        "catalog:fx-antenatal",
+        "catalog:fx-thyroid",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-adv",
+        "catalog_index:Thyroid Profile"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.815,
+      "dense_top20": [
+        "catalog:fx-thyroid",
+        "catalog:fx-antenatal",
+        "catalog:fx-tsh",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-comprehensive",
+        "catalog:fx-men-40",
+        "faq:About DocNow",
+        "catalog:fx-diabetes",
+        "faq:Services We Don't Offer",
+        "catalog:fx-iron",
+        "catalog:fx-b12",
+        "catalog:fx-cbc",
+        "catalog:fx-lipid",
+        "catalog:fx-lft",
+        "catalog:fx-crp",
+        "catalog:fx-vitd",
+        "faq:How Home Collection Works",
+        "policy:Payment and Pricing Policy",
+        "faq:Cities and Locations Served"
+      ],
+      "bm25_top20": [
+        "catalog:fx-antenatal",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-thyroid",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-diabetes",
+        "catalog:fx-tsh",
+        "catalog:fx-lipid",
+        "booking_help:Managing Multiple Patients",
+        "catalog:fx-comprehensive"
+      ]
+    },
+    {
+      "id": "r-list-04",
+      "category": "list",
+      "query": "Which packages have a lipid profile?",
+      "relevant": [
+        "catalog_index:Lipid Profile"
+      ],
+      "final": [
+        "catalog:fx-lipid",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-antenatal",
+        "catalog_index:Lipid Profile"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.8101,
+      "dense_top20": [
+        "catalog:fx-lipid",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-antenatal",
+        "faq:About DocNow",
+        "catalog:fx-comprehensive",
+        "catalog:fx-diabetes",
+        "catalog:fx-thyroid",
+        "catalog:fx-lft",
+        "faq:Services We Don't Offer",
+        "catalog:fx-crp",
+        "catalog:fx-cbc",
+        "faq:How Home Collection Works",
+        "catalog:fx-vitd",
+        "catalog:fx-iron",
+        "catalog:fx-b12",
+        "catalog:fx-ppbs",
+        "catalog:fx-kft",
+        "catalog:fx-fbs"
+      ],
+      "bm25_top20": [
+        "catalog:fx-lipid",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-antenatal",
+        "catalog:fx-thyroid",
+        "faq:About DocNow",
+        "policy:Payment and Pricing Policy",
+        "faq:How Home Collection Works",
+        "booking_help:Managing Multiple Patients",
+        "faq:Services We Don't Offer"
+      ]
+    },
+    {
+      "id": "r-list-05",
+      "category": "list",
+      "query": "all packages with vitamin B12",
+      "relevant": [
+        "catalog_index:Vitamin B12"
+      ],
+      "final": [
+        "catalog:fx-b12",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-vitd",
+        "faq:About DocNow",
+        "catalog_index:Vitamin B12"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7612,
+      "dense_top20": [
+        "catalog:fx-b12",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-men-40",
+        "catalog:fx-diabetes",
+        "catalog:fx-antenatal",
+        "catalog:fx-fbc-basic",
+        "faq:About DocNow",
+        "catalog:fx-vitd",
+        "faq:Services We Don't Offer",
+        "catalog:fx-thyroid",
+        "faq:How Home Collection Works",
+        "catalog:fx-iron",
+        "catalog:fx-tsh",
+        "catalog:fx-lft",
+        "catalog:fx-hba1c",
+        "catalog:fx-kft",
+        "catalog:fx-cbc",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-ppbs"
+      ],
+      "bm25_top20": [
+        "catalog:fx-b12",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-vitd",
+        "catalog:fx-comprehensive",
+        "booking_help:Managing Multiple Patients",
+        "faq:About DocNow",
+        "faq:How Home Collection Works",
+        "faq:Services We Don't Offer"
+      ]
+    },
+    {
+      "id": "r-list-06",
+      "category": "list",
+      "query": "Which health checkups include a urine routine test?",
+      "relevant": [
+        "catalog_index:Urine Routine"
+      ],
+      "final": [
+        "catalog:fx-urine",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-comprehensive",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-adv",
+        "catalog_index:Urine Routine"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7769,
+      "dense_top20": [
+        "catalog:fx-urine",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-comprehensive",
+        "catalog:fx-men-40",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-diabetes",
+        "catalog:fx-kft",
+        "faq:About DocNow",
+        "faq:Services We Don't Offer",
+        "catalog:fx-antenatal",
+        "faq:How Home Collection Works",
+        "catalog:fx-lft",
+        "catalog:fx-cbc",
+        "catalog:fx-psa",
+        "faq:Cities and Locations Served",
+        "catalog:fx-hba1c",
+        "catalog:fx-fbs",
+        "catalog:fx-vitd",
+        "catalog:fx-crp",
+        "catalog:fx-ppbs"
+      ],
+      "bm25_top20": [
+        "catalog:fx-urine",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-antenatal",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-men-40",
+        "policy:Payment and Pricing Policy",
+        "faq:Services We Don't Offer",
+        "catalog:fx-diabetes",
+        "catalog:fx-kft",
+        "catalog:fx-lft",
+        "faq:About DocNow",
+        "policy:Rescheduling Policy",
+        "faq:How Home Collection Works"
+      ]
+    },
+    {
+      "id": "r-abstain-01",
+      "category": "abstain",
+      "query": "Can you help me book a flight to Mumbai?",
+      "relevant": [],
+      "final": [],
+      "abstained": true,
+      "top_dense_similarity": 0.5534,
+      "dense_top20": [
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "faq:How Home Collection Works",
+        "faq:Cities and Locations Served",
+        "booking_help:Wallet Credits and Promo Codes",
+        "policy:Payment and Pricing Policy",
+        "booking_help:Managing Multiple Patients",
+        "policy:Cancellation Policy",
+        "faq:Phlebotomist Tracking",
+        "policy:Refund Policy",
+        "faq:Slot Booking and Availability",
+        "policy:Rescheduling Policy",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-b12",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-cbc",
+        "catalog:fx-comprehensive",
+        "faq:Report Delivery",
+        "catalog:fx-vitd",
+        "catalog:fx-lft"
+      ],
+      "bm25_top20": [
+        "faq:Services We Don't Offer",
+        "faq:Cities and Locations Served"
+      ]
+    },
+    {
+      "id": "r-abstain-02",
+      "category": "abstain",
+      "query": "What is the weather like in Bangalore today?",
+      "relevant": [],
+      "final": [],
+      "abstained": true,
+      "top_dense_similarity": 0.5255,
+      "dense_top20": [
+        "faq:Report Delivery",
+        "faq:Cities and Locations Served",
+        "booking_help:Booking Status Explanations",
+        "faq:About DocNow",
+        "faq:How Home Collection Works",
+        "faq:Services We Don't Offer",
+        "catalog:fx-vitd",
+        "catalog:fx-diabetes",
+        "faq:Slot Booking and Availability",
+        "catalog:fx-hba1c",
+        "policy:Rescheduling Policy",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-antenatal",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-fbs",
+        "catalog:fx-comprehensive",
+        "catalog:fx-men-40",
+        "catalog:fx-cbc",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-urine"
+      ],
+      "bm25_top20": []
+    },
+    {
+      "id": "r-abstain-03",
+      "category": "abstain",
+      "query": "Write a poem about the ocean",
+      "relevant": [],
+      "final": [],
+      "abstained": true,
+      "top_dense_similarity": 0.4683,
+      "dense_top20": [
+        "booking_help:Wallet Credits and Promo Codes",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "catalog:fx-urine",
+        "booking_help:Booking Status Explanations",
+        "faq:How Home Collection Works",
+        "policy:Cancellation Policy",
+        "booking_help:Managing Multiple Patients",
+        "faq:Report Delivery",
+        "catalog:fx-vitd",
+        "catalog:fx-cbc",
+        "policy:Refund Policy",
+        "policy:Payment and Pricing Policy",
+        "policy:Rescheduling Policy",
+        "catalog:fx-b12",
+        "catalog:fx-lipid",
+        "faq:Slot Booking and Availability",
+        "catalog:fx-fbs",
+        "catalog:fx-ppbs",
+        "catalog:fx-hba1c"
+      ],
+      "bm25_top20": []
+    },
+    {
+      "id": "r-abstain-04",
+      "category": "abstain",
+      "query": "Do you offer plumbing services?",
+      "relevant": [],
+      "final": [],
+      "abstained": true,
+      "top_dense_similarity": 0.5659,
+      "dense_top20": [
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "faq:Cities and Locations Served",
+        "faq:How Home Collection Works",
+        "booking_help:Wallet Credits and Promo Codes",
+        "faq:Report Delivery",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-urine",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-kft",
+        "catalog:fx-tsh",
+        "catalog:fx-men-40",
+        "booking_help:Managing Multiple Patients",
+        "catalog:fx-cbc",
+        "catalog:fx-lft",
+        "catalog:fx-psa",
+        "catalog:fx-thyroid",
+        "policy:Refund Policy",
+        "faq:Phlebotomist Tracking",
+        "policy:Cancellation Policy"
+      ],
+      "bm25_top20": [
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "policy:Payment and Pricing Policy"
+      ]
+    },
+    {
+      "id": "r-abstain-05",
+      "category": "abstain",
+      "query": "Who won the cricket match yesterday?",
+      "relevant": [],
+      "final": [],
+      "abstained": true,
+      "top_dense_similarity": 0.5511,
+      "dense_top20": [
+        "faq:Report Delivery",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "faq:How Home Collection Works",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-comprehensive",
+        "faq:Cities and Locations Served",
+        "catalog:fx-hba1c",
+        "policy:Refund Policy",
+        "catalog:fx-cbc",
+        "catalog:fx-men-40",
+        "catalog:fx-vitd",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-crp",
+        "catalog:fx-diabetes",
+        "policy:Cancellation Policy",
+        "catalog:fx-urine",
+        "catalog:fx-b12",
+        "faq:Phlebotomist Tracking",
+        "catalog:fx-fbc-basic"
+      ],
+      "bm25_top20": [
+        "faq:About DocNow"
+      ]
+    },
+    {
+      "id": "r-abstain-06",
+      "category": "abstain",
+      "query": "Recommend a laptop under 50000",
+      "relevant": [],
+      "final": [],
+      "abstained": true,
+      "top_dense_similarity": 0.5717,
+      "dense_top20": [
+        "faq:About DocNow",
+        "faq:Services We Don't Offer",
+        "catalog:fx-fbc-basic",
+        "faq:How Home Collection Works",
+        "catalog:fx-kft",
+        "catalog:fx-urine",
+        "catalog:fx-comprehensive",
+        "catalog:fx-lft",
+        "catalog:fx-cbc",
+        "catalog:fx-ppbs",
+        "catalog:fx-antenatal",
+        "catalog:fx-fbc-adv",
+        "faq:Cities and Locations Served",
+        "catalog:fx-men-40",
+        "catalog:fx-lipid",
+        "catalog:fx-crp",
+        "catalog:fx-b12",
+        "catalog:fx-iron",
+        "catalog:fx-tsh",
+        "catalog:fx-diabetes"
+      ],
+      "bm25_top20": []
+    },
+    {
+      "id": "r-abstain-07",
+      "category": "abstain",
+      "query": "Translate 'good morning' into French",
+      "relevant": [],
+      "final": [],
+      "abstained": true,
+      "top_dense_similarity": 0.4958,
+      "dense_top20": [
+        "faq:Slot Booking and Availability",
+        "faq:Services We Don't Offer",
+        "faq:How Home Collection Works",
+        "faq:About DocNow",
+        "faq:Cities and Locations Served",
+        "faq:Report Delivery",
+        "booking_help:Booking Status Explanations",
+        "booking_help:Wallet Credits and Promo Codes",
+        "policy:Rescheduling Policy",
+        "booking_help:Managing Multiple Patients",
+        "catalog:fx-fbs",
+        "faq:Phlebotomist Tracking",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-urine",
+        "catalog:fx-comprehensive",
+        "policy:Cancellation Policy",
+        "catalog:fx-crp",
+        "booking_help:Resample Required Explanation",
+        "catalog:fx-cbc",
+        "catalog:fx-kft"
+      ],
+      "bm25_top20": [
+        "faq:Slot Booking and Availability"
+      ]
+    },
+    {
+      "id": "r-abstain-08",
+      "category": "abstain",
+      "query": "What is the capital of Australia?",
+      "relevant": [],
+      "final": [],
+      "abstained": true,
+      "top_dense_similarity": 0.5088,
+      "dense_top20": [
+        "faq:Cities and Locations Served",
+        "faq:Services We Don't Offer",
+        "faq:About DocNow",
+        "faq:Slot Booking and Availability",
+        "booking_help:Wallet Credits and Promo Codes",
+        "faq:How Home Collection Works",
+        "policy:Cancellation Policy",
+        "policy:Payment and Pricing Policy",
+        "faq:Report Delivery",
+        "policy:Refund Policy",
+        "policy:Rescheduling Policy",
+        "booking_help:Booking Status Explanations",
+        "faq:Phlebotomist Tracking",
+        "catalog:fx-cbc",
+        "catalog:fx-b12",
+        "catalog:fx-comprehensive",
+        "booking_help:Resample Required Explanation",
+        "catalog:fx-kft",
+        "catalog:fx-antenatal",
+        "catalog:fx-fbc-adv"
+      ],
+      "bm25_top20": []
+    },
+    {
+      "id": "r-not_offered-01",
+      "category": "not_offered",
+      "query": "How much does a MRI scan of the brain cost?",
+      "relevant": [
+        "faq:Services We Don't Offer"
+      ],
+      "final": [
+        "faq:Services We Don't Offer"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.5936,
+      "dense_top20": [
+        "faq:Services We Don't Offer",
+        "catalog:fx-iron",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-cbc",
+        "catalog:fx-b12",
+        "catalog:fx-psa",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-men-40",
+        "catalog:fx-comprehensive",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-lft",
+        "catalog:fx-crp",
+        "catalog:fx-tsh",
+        "faq:About DocNow",
+        "catalog:fx-urine",
+        "catalog:fx-lipid",
+        "catalog:fx-vitd",
+        "catalog:fx-kft",
+        "catalog:fx-fbs",
+        "faq:Slot Booking and Availability"
+      ],
+      "bm25_top20": [
+        "faq:Services We Don't Offer"
+      ]
+    },
+    {
+      "id": "r-not_offered-02",
+      "category": "not_offered",
+      "query": "How much does a chest X-ray cost?",
+      "relevant": [
+        "faq:Services We Don't Offer"
+      ],
+      "final": [
+        "faq:Services We Don't Offer",
+        "catalog:fx-comprehensive",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-crp",
+        "catalog:fx-cbc"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6217,
+      "dense_top20": [
+        "faq:Services We Don't Offer",
+        "catalog:fx-comprehensive",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-crp",
+        "catalog:fx-cbc",
+        "catalog:fx-vitd",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-tsh",
+        "catalog:fx-urine",
+        "catalog:fx-lipid",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-lft",
+        "catalog:fx-kft",
+        "catalog:fx-iron",
+        "catalog:fx-b12",
+        "catalog:fx-men-40",
+        "catalog:fx-fbs",
+        "catalog:fx-diabetes",
+        "catalog:fx-thyroid",
+        "faq:Report Delivery"
+      ],
+      "bm25_top20": [
+        "faq:Services We Don't Offer"
+      ]
+    },
+    {
+      "id": "r-not_offered-03",
+      "category": "not_offered",
+      "query": "How much does a ultrasound of the abdomen cost?",
+      "relevant": [
+        "faq:Services We Don't Offer"
+      ],
+      "final": [
+        "faq:Services We Don't Offer",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.5964,
+      "dense_top20": [
+        "faq:Services We Don't Offer",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-men-40",
+        "catalog:fx-lft",
+        "catalog:fx-urine",
+        "catalog:fx-antenatal",
+        "catalog:fx-diabetes",
+        "catalog:fx-psa",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-cbc",
+        "catalog:fx-iron",
+        "catalog:fx-kft",
+        "catalog:fx-b12",
+        "faq:About DocNow",
+        "catalog:fx-vitd",
+        "catalog:fx-lipid",
+        "catalog:fx-crp",
+        "catalog:fx-tsh"
+      ],
+      "bm25_top20": [
+        "faq:Services We Don't Offer"
+      ]
+    },
+    {
+      "id": "r-not_offered-04",
+      "category": "not_offered",
+      "query": "How much does a ECG at home cost?",
+      "relevant": [
+        "faq:Services We Don't Offer"
+      ],
+      "final": [
+        "faq:How Home Collection Works",
+        "faq:Services We Don't Offer",
+        "faq:Cities and Locations Served",
+        "faq:About DocNow",
+        "booking_help:Booking Status Explanations"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.648,
+      "dense_top20": [
+        "faq:Services We Don't Offer",
+        "faq:How Home Collection Works",
+        "faq:About DocNow",
+        "faq:Cities and Locations Served",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-crp",
+        "catalog:fx-comprehensive",
+        "catalog:fx-lipid",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-hba1c",
+        "catalog:fx-b12",
+        "catalog:fx-tsh",
+        "catalog:fx-cbc",
+        "catalog:fx-men-40",
+        "catalog:fx-vitd",
+        "catalog:fx-thyroid",
+        "catalog:fx-fbc-basic",
+        "faq:Report Delivery",
+        "catalog:fx-diabetes",
+        "policy:Cancellation Policy"
+      ],
+      "bm25_top20": [
+        "booking_help:Booking Status Explanations",
+        "faq:Cities and Locations Served",
+        "faq:How Home Collection Works",
+        "faq:About DocNow",
+        "faq:Services We Don't Offer",
+        "policy:Rescheduling Policy",
+        "policy:Cancellation Policy"
+      ]
+    },
+    {
+      "id": "r-not_offered-05",
+      "category": "not_offered",
+      "query": "Can I book a CT scan of the head?",
+      "relevant": [
+        "faq:Services We Don't Offer"
+      ],
+      "final": [
+        "faq:Services We Don't Offer",
+        "faq:Slot Booking and Availability"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6409,
+      "dense_top20": [
+        "faq:Services We Don't Offer",
+        "faq:Slot Booking and Availability",
+        "faq:About DocNow",
+        "faq:How Home Collection Works",
+        "booking_help:Managing Multiple Patients",
+        "policy:Rescheduling Policy",
+        "faq:Report Delivery",
+        "faq:Cities and Locations Served",
+        "catalog:fx-comprehensive",
+        "catalog:fx-cbc",
+        "catalog:fx-fbc-basic",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-fbc-adv",
+        "policy:Payment and Pricing Policy",
+        "policy:Cancellation Policy",
+        "catalog:fx-psa",
+        "catalog:fx-b12",
+        "catalog:fx-men-40",
+        "catalog:fx-kft",
+        "catalog:fx-crp"
+      ],
+      "bm25_top20": [
+        "faq:Services We Don't Offer"
+      ]
+    },
+    {
+      "id": "r-not_offered-06",
+      "category": "not_offered",
+      "query": "Do you do 2D echo at home?",
+      "relevant": [
+        "faq:Services We Don't Offer"
+      ],
+      "final": [
+        "faq:Services We Don't Offer",
+        "faq:Cities and Locations Served",
+        "booking_help:Booking Status Explanations",
+        "faq:How Home Collection Works",
+        "faq:About DocNow"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6887,
+      "dense_top20": [
+        "faq:Services We Don't Offer",
+        "faq:Cities and Locations Served",
+        "faq:How Home Collection Works",
+        "faq:About DocNow",
+        "booking_help:Booking Status Explanations",
+        "faq:Report Delivery",
+        "booking_help:Managing Multiple Patients",
+        "faq:Slot Booking and Availability",
+        "faq:Phlebotomist Tracking",
+        "catalog:fx-vitd",
+        "policy:Rescheduling Policy",
+        "policy:Cancellation Policy",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-crp",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-lipid",
+        "catalog:fx-men-40",
+        "catalog:fx-comprehensive",
+        "catalog:fx-urine",
+        "catalog:fx-tsh"
+      ],
+      "bm25_top20": [
+        "faq:Services We Don't Offer",
+        "booking_help:Booking Status Explanations",
+        "faq:Cities and Locations Served",
+        "faq:How Home Collection Works",
+        "faq:About DocNow",
+        "policy:Rescheduling Policy",
+        "policy:Cancellation Policy"
+      ]
+    },
+    {
+      "id": "r-not_offered-07",
+      "category": "not_offered",
+      "query": "TMT test price",
+      "relevant": [
+        "faq:Services We Don't Offer"
+      ],
+      "final": [
+        "catalog:fx-thyroid",
+        "faq:Services We Don't Offer",
+        "catalog:fx-tsh",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-basic",
+        "catalog_index:Thyroid Profile"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.7146,
+      "dense_top20": [
+        "catalog:fx-thyroid",
+        "catalog:fx-tsh",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-cbc",
+        "catalog:fx-men-40",
+        "catalog:fx-lft",
+        "catalog:fx-crp",
+        "catalog:fx-iron",
+        "catalog:fx-lipid",
+        "catalog:fx-b12",
+        "catalog:fx-fbs",
+        "catalog:fx-kft",
+        "catalog:fx-antenatal",
+        "catalog:fx-vitd",
+        "catalog:fx-ppbs",
+        "catalog:fx-psa",
+        "catalog:fx-hba1c",
+        "catalog:fx-diabetes"
+      ],
+      "bm25_top20": [
+        "faq:Services We Don't Offer"
+      ]
+    },
+    {
+      "id": "r-not_offered-08",
+      "category": "not_offered",
+      "query": "Do you give the flu vaccine at home?",
+      "relevant": [
+        "faq:Services We Don't Offer"
+      ],
+      "final": [
+        "faq:Services We Don't Offer",
+        "faq:How Home Collection Works",
+        "faq:About DocNow",
+        "booking_help:Booking Status Explanations",
+        "faq:Phlebotomist Tracking"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6241,
+      "dense_top20": [
+        "faq:Services We Don't Offer",
+        "faq:Phlebotomist Tracking",
+        "faq:How Home Collection Works",
+        "faq:About DocNow",
+        "faq:Cities and Locations Served",
+        "booking_help:Managing Multiple Patients",
+        "booking_help:Booking Status Explanations",
+        "policy:Cancellation Policy",
+        "faq:Report Delivery",
+        "catalog:fx-b12",
+        "policy:Rescheduling Policy",
+        "faq:Slot Booking and Availability",
+        "catalog:fx-vitd",
+        "catalog:fx-hba1c",
+        "booking_help:Resample Required Explanation",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-diabetes",
+        "policy:Refund Policy",
+        "catalog:fx-crp",
+        "catalog:fx-tsh"
+      ],
+      "bm25_top20": [
+        "booking_help:Booking Status Explanations",
+        "faq:Cities and Locations Served",
+        "faq:How Home Collection Works",
+        "faq:About DocNow",
+        "faq:Services We Don't Offer",
+        "policy:Rescheduling Policy",
+        "policy:Cancellation Policy"
+      ]
+    },
+    {
+      "id": "r-not_offered-09",
+      "category": "not_offered",
+      "query": "Is sonography available for pregnancy?",
+      "relevant": [
+        "faq:Services We Don't Offer"
+      ],
+      "final": [
+        "faq:Services We Don't Offer",
+        "catalog:fx-antenatal",
+        "policy:Rescheduling Policy",
+        "faq:About DocNow",
+        "policy:Cancellation Policy"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6402,
+      "dense_top20": [
+        "faq:Services We Don't Offer",
+        "catalog:fx-antenatal",
+        "faq:About DocNow",
+        "faq:How Home Collection Works",
+        "faq:Report Delivery",
+        "faq:Cities and Locations Served",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-vitd",
+        "policy:Cancellation Policy",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "policy:Payment and Pricing Policy",
+        "policy:Rescheduling Policy",
+        "catalog:fx-tsh",
+        "catalog:fx-diabetes",
+        "policy:Refund Policy",
+        "catalog:fx-iron",
+        "faq:Slot Booking and Availability",
+        "catalog:fx-psa",
+        "catalog:fx-urine"
+      ],
+      "bm25_top20": [
+        "policy:Rescheduling Policy",
+        "catalog:fx-antenatal",
+        "faq:Services We Don't Offer",
+        "policy:Cancellation Policy",
+        "booking_help:Booking Status Explanations",
+        "faq:Cities and Locations Served"
+      ]
+    },
+    {
+      "id": "r-not_offered-10",
+      "category": "not_offered",
+      "query": "Book an ECG for my father",
+      "relevant": [
+        "faq:Services We Don't Offer"
+      ],
+      "final": [
+        "faq:Services We Don't Offer",
+        "booking_help:Managing Multiple Patients",
+        "faq:How Home Collection Works",
+        "catalog:fx-men-40",
+        "policy:Rescheduling Policy",
+        "catalog_index:Lipid Profile"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6546,
+      "dense_top20": [
+        "faq:Services We Don't Offer",
+        "booking_help:Managing Multiple Patients",
+        "faq:How Home Collection Works",
+        "catalog:fx-men-40",
+        "policy:Rescheduling Policy",
+        "faq:Slot Booking and Availability",
+        "faq:About DocNow",
+        "catalog:fx-lipid",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-lft",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbs",
+        "catalog:fx-psa",
+        "catalog:fx-crp",
+        "policy:Payment and Pricing Policy",
+        "booking_help:Booking Status Explanations",
+        "catalog:fx-cbc",
+        "catalog:fx-vitd",
+        "catalog:fx-b12"
+      ],
+      "bm25_top20": [
+        "faq:Services We Don't Offer"
+      ]
+    },
+    {
+      "id": "r-not_offered-11",
+      "category": "not_offered",
+      "query": "knee x-ray kitne ka hai?",
+      "relevant": [
+        "faq:Services We Don't Offer"
+      ],
+      "final": [
+        "faq:Services We Don't Offer",
+        "catalog:fx-comprehensive",
+        "catalog:fx-kft",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-b12",
+        "catalog_index:Kidney Function Test"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6448,
+      "dense_top20": [
+        "faq:Services We Don't Offer",
+        "catalog:fx-comprehensive",
+        "catalog:fx-kft",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-b12",
+        "catalog:fx-psa",
+        "catalog:fx-vitd",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-fbc-basic",
+        "faq:Cities and Locations Served",
+        "faq:About DocNow",
+        "catalog:fx-lft",
+        "catalog:fx-crp",
+        "catalog:fx-iron",
+        "catalog:fx-cbc",
+        "catalog:fx-men-40",
+        "catalog:fx-urine",
+        "catalog:fx-fbs",
+        "catalog:fx-tsh",
+        "catalog:fx-diabetes"
+      ],
+      "bm25_top20": [
+        "faq:Services We Don't Offer"
+      ]
+    },
+    {
+      "id": "r-not_offered-12",
+      "category": "not_offered",
+      "query": "PET scan price",
+      "relevant": [
+        "faq:Services We Don't Offer"
+      ],
+      "final": [
+        "faq:Services We Don't Offer",
+        "catalog:fx-psa",
+        "catalog:fx-cbc"
+      ],
+      "abstained": false,
+      "top_dense_similarity": 0.6158,
+      "dense_top20": [
+        "faq:Services We Don't Offer",
+        "catalog:fx-psa",
+        "catalog:fx-cbc",
+        "catalog:fx-fbc-basic",
+        "catalog:fx-comprehensive",
+        "catalog:fx-fbc-adv",
+        "catalog:fx-crp",
+        "catalog:fx-b12",
+        "catalog:fx-ppbs",
+        "catalog:fx-fbs",
+        "policy:Payment and Pricing Policy",
+        "catalog:fx-diabetes",
+        "catalog:fx-lft",
+        "catalog:fx-men-40",
+        "catalog:fx-iron",
+        "catalog:fx-tsh",
+        "catalog:fx-lipid",
+        "catalog:fx-hba1c",
+        "catalog:fx-urine",
+        "faq:About DocNow"
+      ],
+      "bm25_top20": [
+        "faq:Services We Don't Offer"
+      ]
+    }
+  ]
+}
