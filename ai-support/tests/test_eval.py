@@ -119,3 +119,16 @@ def test_token_metrics_are_none_without_usage():
 def test_groundedness_ignores_tool_only_answers():
     m = custom_metrics([_result(), _result(verifier_verdict="TOOL_ONLY", expected_source=None)])
     assert m["groundedness_score"] == 1.0
+
+
+def test_tool_choice_accepts_listed_alternatives_and_kb_only_answers():
+    from app.eval.scorer import tool_choice_correct
+
+    strict = dict(expected_tool="get_booking_status")
+    assert tool_choice_correct(_result(**strict, tools_called=["get_booking_status"]))
+    assert not tool_choice_correct(_result(**strict, tools_called=["list_bookings"]))
+    assert tool_choice_correct(_result(**strict, tools_called=["list_bookings"], acceptable_tools=["list_bookings"]))
+    # "none" accepts a KB answer, but a wrong tool is still wrong.
+    kb_ok = dict(expected_tool="search_catalog", acceptable_tools=["none"])
+    assert tool_choice_correct(_result(**kb_ok, tools_called=[]))
+    assert not tool_choice_correct(_result(**kb_ok, tools_called=["list_bookings"]))

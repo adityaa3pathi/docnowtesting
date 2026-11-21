@@ -61,7 +61,11 @@
       "expected_source": "catalog",
       "expected_tool": "search_catalog",
       "ground_truth": "Yes, a lipid profile test usually requires 10-12 hours of fasting.",
-      "should_abstain": false
+      "should_abstain": false,
+      "acceptable_tools": [
+        "none"
+      ],
+      "label_note": "Fasting is in the KB chunk; a grounded KB answer needs no tool."
     },
     {
       "id": "cat-08",
@@ -70,7 +74,11 @@
       "expected_source": "catalog",
       "expected_tool": "search_catalog",
       "ground_truth": "Report times vary by test, but most routine blood test reports are delivered within 24 hours.",
-      "should_abstain": false
+      "should_abstain": false,
+      "acceptable_tools": [
+        "none"
+      ],
+      "label_note": "Report time is in the KB; a grounded KB answer needs no tool."
     },
     {
       "id": "cat-09",
@@ -97,7 +105,11 @@
       "expected_source": "catalog",
       "expected_tool": "search_catalog",
       "ground_truth": "For a 45-year-old man, a comprehensive full body checkup including cardiac markers, diabetes screen, lipid profile, and prostate-specific antigen (PSA) is recommended.",
-      "should_abstain": false
+      "should_abstain": false,
+      "acceptable_tools": [
+        "none"
+      ],
+      "label_note": "The KB returns the Men's 40+ package directly."
     },
     {
       "id": "cat-12",
@@ -124,7 +136,11 @@
       "expected_source": "catalog",
       "expected_tool": "search_catalog",
       "ground_truth": "The CBC test requires a blood sample.",
-      "should_abstain": false
+      "should_abstain": false,
+      "acceptable_tools": [
+        "get_product_details"
+      ],
+      "label_note": "Sample type is a product detail; either catalog tool is valid."
     },
     {
       "id": "cat-15",
@@ -178,7 +194,11 @@
       "expected_source": null,
       "expected_tool": "get_booking_status",
       "ground_truth": "The response should provide the expected arrival time or status of the phlebotomist for today's booking.",
-      "should_abstain": false
+      "should_abstain": false,
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "label_note": "No booking ID given; get_booking_status needs one, so listing is the working choice."
     },
     {
       "id": "book-06",
@@ -187,7 +207,11 @@
       "expected_source": null,
       "expected_tool": "get_reschedule_slots",
       "ground_truth": "The response should list the available time slots for home collection tomorrow morning.",
-      "should_abstain": false
+      "should_abstain": false,
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "label_note": "Slots depend on the customer's booking; without an ID, list bookings first. A KB-only 'yes' is wrong."
     },
     {
       "id": "book-07",
@@ -196,7 +220,12 @@
       "expected_source": null,
       "expected_tool": "get_booking_status",
       "ground_truth": "The response should explain that a pending status means the booking is awaiting confirmation or payment.",
-      "should_abstain": false
+      "should_abstain": false,
+      "acceptable_tools": [
+        "none",
+        "list_bookings"
+      ],
+      "label_note": "Asks what a status means; the KB status glossary answers it."
     },
     {
       "id": "book-08",
@@ -232,7 +261,11 @@
       "expected_source": null,
       "expected_tool": "get_booking_status",
       "ground_truth": "The response should indicate whether a phlebotomist has been assigned and provide their details if available.",
-      "should_abstain": false
+      "should_abstain": false,
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "label_note": "Personal booking question without an ID: list bookings, never a generic KB answer."
     },
     {
       "id": "book-12",
@@ -250,7 +283,11 @@
       "expected_source": null,
       "expected_tool": "get_reschedule_slots",
       "ground_truth": "The response should confirm if the 8 AM slot is available for this Saturday.",
-      "should_abstain": false
+      "should_abstain": false,
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "label_note": "Slot question about their booking without an ID; search_catalog is wrong."
     },
     {
       "id": "book-14",
@@ -268,7 +305,11 @@
       "expected_source": null,
       "expected_tool": "get_booking_status",
       "ground_truth": "The response should provide the reason for the booking's cancellation based on its status.",
-      "should_abstain": false
+      "should_abstain": false,
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "label_note": "No booking ID given; get_booking_status without one errors."
     },
     {
       "id": "faq-01",
