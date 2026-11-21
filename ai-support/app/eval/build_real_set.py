@@ -8,7 +8,8 @@ Query sources:
       every item that lists X. "cut" means X sits past the 15-item cut in format_catalog_text() in every
       item that has it, so it is not searchable today.
   search / question / hinglish  Gemini writes customer queries for a stratified sample; label = source item.
-  abstain  off-topic, plus services the catalog does not offer.
+  abstain  off-topic.
+  not_offered  services DocNow does not offer (imaging, ECG, vaccines).
 """
 from __future__ import annotations
 
@@ -37,8 +38,27 @@ OFF_TOPIC = [
     "What is the weather like in Bangalore today?",
     "Write a poem about the ocean",
     "Do you offer plumbing services?",
+    "Who won the cricket match yesterday?",
+    "Recommend a laptop under 50000",
+    "Translate 'good morning' into French",
+    "What is the capital of Australia?",
 ]
-NOT_OFFERED = ["MRI scan of the brain", "chest X-ray", "ultrasound of the abdomen", "CT scan", "ECG at home"]
+# Services DocNow does not offer (owner-confirmed 21-11-2026): imaging, ECG/ECHO/TMT, vaccinations.
+# Hand-checked against the catalog; they sit close to real tests in embedding space (ECG ~ EGFR).
+NOT_OFFERED = [
+    "How much does a MRI scan of the brain cost?",
+    "How much does a chest X-ray cost?",
+    "How much does a ultrasound of the abdomen cost?",
+    "How much does a ECG at home cost?",
+    "Can I book a CT scan of the head?",
+    "Do you do 2D echo at home?",
+    "TMT test price",
+    "Do you give the flu vaccine at home?",
+    "Is sonography available for pregnancy?",
+    "Book an ECG for my father",
+    "knee x-ray kitne ka hai?",
+    "PET scan price",
+]
 
 PROMPT = """You write realistic search queries that Indian customers type into a diagnostic lab's support chat.
 
@@ -140,13 +160,9 @@ async def llm_queries(items: list[dict], rng: random.Random, settings: Settings)
 
 
 def abstain_queries(items: list[dict]) -> list[dict]:
-    names = " ".join(i["name"].lower() for i in items)
-    offered = [s for s in NOT_OFFERED if s.split()[0].lower() in names]
-    if offered:
-        print(f"Dropped as possibly offered: {offered}")
-    return [
-        {"category": "abstain", "query": q, "relevant": []}
-        for q in OFF_TOPIC + [f"How much does a {s} cost?" for s in NOT_OFFERED if s not in offered]
+    """Off-topic queries must abstain; not-offered ones must say so (the "Services We Don't Offer" doc)."""
+    return [{"category": "abstain", "query": q, "relevant": []} for q in OFF_TOPIC] + [
+        {"category": "not_offered", "query": q, "relevant": []} for q in NOT_OFFERED
     ]
 
 

@@ -30,7 +30,8 @@ from app.agents.orchestrator import BUSY_RESPONSE, handle_message
 from app.config import Settings
 from app.eval.corpus import REAL_DIR, EmbeddingCache, InMemoryKnowledgeBase, catalog_items
 from app.eval.fake_express import FakeExpress
-from app.eval.scorer import EvalResult, custom_metrics, ragas_metrics
+from app.eval.omission import OmissionChecker
+from app.eval.scorer import EvalResult, custom_metrics, probe_passed, ragas_metrics
 from app.models import AgentContext
 from app.observability import init_langfuse, shutdown_langfuse
 
@@ -63,7 +64,7 @@ class _ErrorCollector(logging.Handler):
             errors.append(f"{record.getMessage()}: {record.exc_info[1]!r}" if record.exc_info else record.getMessage())
 
 
-async def run_query(q: dict, kb: InMemoryKnowledgeBase, settings: Settings) -> EvalResult:
+async def run_query(q: dict, kb: InMemoryKnowledgeBase, settings: Settings, omissions: OmissionChecker) -> EvalResult:
     ctx = AgentContext(
         user_id="eval-user",
         is_authenticated=True,
@@ -102,6 +103,10 @@ async def run_query(q: dict, kb: InMemoryKnowledgeBase, settings: Settings) -> E
         latency_ms=int((time.monotonic() - start) * 1000),
         error=error,
         usage=resp.usage if resp else {},
+        expect_any=q.get("expect_any", []),
+        expect_none=q.get("expect_none", []),
+        expect_all=q.get("expect_all", []),
+        omissions=[f"{o.item}: {o.test}" for o in omissions.check(q["query"], resp.content)] if resp else [],
     )
 
 
@@ -128,6 +133,7 @@ async def run(args: argparse.Namespace) -> int:
     real = args.corpus == "real"
     cache = EmbeddingCache(settings, path=REAL_DIR / "embeddings.json") if real else EmbeddingCache(settings)
     kb = await InMemoryKnowledgeBase.load(cache, args.corpus)
+    omissions = OmissionChecker(catalog_items(args.corpus))
     if args.no_keyword:
         kb.keyword_search = partial(_no_hits)
     # --resume keeps finished answers on disk so a run can stop when keys run out and continue later.
@@ -154,12 +160,12 @@ async def run(args: argparse.Namespace) -> int:
         async with sem:
             if out_of_keys:
                 return None
-            result = await run_query(q, kb, settings)
+            result = await run_query(q, kb, settings, omissions)
             while result.response == BUSY_RESPONSE and spare_keys:
                 print(f"Quota hit on {q['id']}; switching to the next key ({len(spare_keys) - 1} left after this).")
                 settings.gemini_api_key = spare_keys.pop(0)
                 genai_client._client = None
-                result = await run_query(q, kb, settings)
+                result = await run_query(q, kb, settings, omissions)
             if result.response == BUSY_RESPONSE:
                 out_of_keys = True
                 return None
@@ -202,6 +208,11 @@ async def run(args: argparse.Namespace) -> int:
         scores.update(ragas_metrics(results, settings, judge_model))
 
     print_table(scores)
+    for r in results:
+        if probe_passed(r) is False:
+            print(f"probe FAILED {r.query_id}: {r.response[:160]!r}")
+        for o in r.omissions:
+            print(f"OMISSION {r.query_id}: says not included, catalog lists it -> {o}")
     report_path = save_report(args, settings, judge_model, scores, results)
     print(f"Report saved to {report_path}")
     shutdown_langfuse()
