@@ -170,3 +170,10 @@ def test_query_stability_flags_queries_whose_outcome_flips():
     assert rows["s"]["flaky"] == []
     assert rows["f"]["flaky"] == ["probe_ok", "tools", "verdicts"]
     assert rows["f"]["probe_ok"] == {"True": 1, "False": 1}
+
+
+def test_abstain_ok_queries_are_left_out_of_abstention_metrics():
+    either = dict(should_abstain=True, abstain_ok=True, expected_source=None)
+    m = custom_metrics([_result(), _result(**either, was_abstained=False)])
+    assert m["abstention_accuracy"] == 1.0
+    assert m["missed_abstention_rate"] is None

@@ -140,6 +140,7 @@ async def run_query(
         latency_ms=int((time.monotonic() - start) * 1000),
         error=error,
         usage=resp.usage if resp else {},
+        abstain_ok=q.get("abstain_ok", False),
         expect_any=q.get("expect_any", []),
         expect_none=q.get("expect_none", []),
         expect_all=q.get("expect_all", []),
