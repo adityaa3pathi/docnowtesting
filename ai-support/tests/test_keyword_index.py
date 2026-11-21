@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import asyncio
+import threading
 from contextlib import asynccontextmanager
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from app.config import Settings
+from app import database
 from app.database import Database
 
 
@@ -64,19 +66,20 @@ async def test_an_unchanged_table_is_not_re_read():
 
 @pytest.mark.asyncio
 async def test_the_rebuild_does_not_block_the_event_loop():
-    """asyncio.to_thread yields, so other tasks make progress while the index is built."""
-    conn = SlowConn()
-    db = _db(conn)
-    ticks = 0
+    """The CPU-bound index build runs in a worker thread, not on the event-loop thread.
 
-    async def ticker():
-        nonlocal ticks
-        while True:
-            ticks += 1
-            await asyncio.sleep(0)
+    Counting event-loop ticks during the build was racy: a 2-row build can finish before
+    the await suspends, so the loop never yields. The build's thread is deterministic.
+    """
+    built_on: list[int] = []
+    real_index = database.BM25Index
 
-    spinner = asyncio.create_task(ticker())
-    await db.keyword_search("hba1c")
-    spinner.cancel()
+    def spy(chunks):
+        built_on.append(threading.get_ident())
+        return real_index(chunks)
 
-    assert ticks > 0
+    with patch("app.database.BM25Index", spy):
+        await _db(SlowConn()).keyword_search("hba1c")
+
+    assert built_on, "the index was never built"
+    assert built_on[0] != threading.get_ident()
