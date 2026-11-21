@@ -39,6 +39,8 @@ class EvalResult:
     expect_all: list[str] = field(default_factory=list)
     # "X is not included in P" while the catalog lists X in P (see omission.py), as "P: X" strings.
     omissions: list[str] = field(default_factory=list)
+    # Either outcome is correct (a grounded decline or the abstention message); left out of abstention metrics.
+    abstain_ok: bool = False
     # Which pass of a --repeat run this answer came from (0 for a single run).
     repeat: int = 0
     # Intent classifier output ("INTENT/tool"); shows why a flaky query flipped.
@@ -103,7 +105,8 @@ def token_metrics(results: list[EvalResult]) -> dict[str, Any]:
 
 def custom_metrics(results: list[EvalResult]) -> dict[str, Any]:
     """Metrics that need no judge model."""
-    answerable = [r for r in results if not r.should_abstain]
+    judged = [r for r in results if not r.abstain_ok]
+    answerable = [r for r in judged if not r.should_abstain]
     with_source = [r for r in answerable if r.expected_source]
     with_tool = [r for r in results if r.expected_tool]
     latencies = sorted(r.latency_ms for r in results)
@@ -113,11 +116,11 @@ def custom_metrics(results: list[EvalResult]) -> dict[str, Any]:
     answered = [r for r in results if not r.was_abstained]
 
     return {
-        "abstention_accuracy": _rate(sum(r.should_abstain == r.was_abstained for r in results), len(results)),
+        "abstention_accuracy": _rate(sum(r.should_abstain == r.was_abstained for r in judged), len(judged)),
         "false_abstention_rate": _rate(sum(r.was_abstained for r in answerable), len(answerable)),
         "missed_abstention_rate": _rate(
-            sum(not r.was_abstained for r in results if r.should_abstain),
-            sum(r.should_abstain for r in results),
+            sum(not r.was_abstained for r in judged if r.should_abstain),
+            sum(r.should_abstain for r in judged),
         ),
         # Tool-only answers carry no KB claims and skip the verifier, so they are not scored here.
         # Legacy definition, kept comparable with old reports: off-topic refusals, abstentions and

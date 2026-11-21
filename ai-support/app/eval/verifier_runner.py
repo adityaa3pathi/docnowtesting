@@ -116,7 +116,8 @@ async def run(args: argparse.Namespace) -> int:
     print(f"\n{'Metric':<34} | {'Mean':>6} | {'Std':>6}")
     print("-" * 52)
     for metric, a in aggregate.items():
-        print(f"{metric:<34} | {a['mean']:>6.3f} | {a['std']:>6.3f}")
+        if a["mean"] is not None:
+            print(f"{metric:<34} | {a['mean']:>6.3f} | {a['std']:>6.3f}")
 
     per_case: dict[str, dict[str, Any]] = {}
     for r in rows:
