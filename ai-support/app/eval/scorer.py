@@ -39,6 +39,16 @@ class EvalResult:
     expect_all: list[str] = field(default_factory=list)
     # "X is not included in P" while the catalog lists X in P (see omission.py), as "P: X" strings.
     omissions: list[str] = field(default_factory=list)
+    # Which pass of a --repeat run this answer came from (0 for a single run).
+    repeat: int = 0
+    # Intent classifier output ("INTENT/tool"); shows why a flaky query flipped.
+    intent: Optional[str] = None
+    # Set only when the verifier really ran: off-topic refusals, abstentions and confirm prompts never reach it.
+    verifier_ran: bool = False
+    draft: Optional[str] = None
+    verifier_reasoning: Optional[str] = None
+    # Per-answer RAGAS scores, filled in when the run uses RAGAS.
+    ragas: dict[str, Optional[float]] = field(default_factory=dict)
 
 
 NO_TOOL = "none"
@@ -98,6 +108,7 @@ def custom_metrics(results: list[EvalResult]) -> dict[str, Any]:
     with_tool = [r for r in results if r.expected_tool]
     latencies = sorted(r.latency_ms for r in results)
     checked = [r for r in results if r.verifier_verdict != "TOOL_ONLY"]
+    verified = [r for r in results if r.verifier_ran]
     probed = [r for r in results if probe_passed(r) is not None]
     answered = [r for r in results if not r.was_abstained]
 
@@ -109,7 +120,12 @@ def custom_metrics(results: list[EvalResult]) -> dict[str, Any]:
             sum(r.should_abstain for r in results),
         ),
         # Tool-only answers carry no KB claims and skip the verifier, so they are not scored here.
+        # Legacy definition, kept comparable with old reports: off-topic refusals, abstentions and
+        # confirm prompts count as "not grounded" although no verifier ran (Phase 1.5 triage).
         "groundedness_score": _rate(sum(r.verifier_verdict == "GROUNDED" for r in checked), len(checked)),
+        # The verifier's own verdicts, over drafts it actually checked.
+        "verifier_pass_rate": _rate(sum(r.verifier_verdict == "GROUNDED" for r in verified), len(verified)),
+        "verifier_block_rate": _rate(sum(r.verifier_verdict == "UNGROUNDED" for r in verified), len(verified)),
         "source_hit_rate": _rate(sum(r.expected_source in r.retrieved_sources for r in with_source), len(with_source)),
         "tool_choice_accuracy": _rate(sum(tool_choice_correct(r) for r in with_tool), len(with_tool)),
         "probe_pass_rate": _rate(sum(bool(probe_passed(r)) for r in probed), len(probed)),
@@ -122,6 +138,47 @@ def custom_metrics(results: list[EvalResult]) -> dict[str, Any]:
     }
 
 
+def aggregate_runs(runs: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Mean and sample std per numeric metric across repeated runs (None where a run had no value)."""
+    out: dict[str, dict[str, Any]] = {}
+    for metric in runs[0] if runs else []:
+        values = [r[metric] for r in runs if isinstance(r.get(metric), (int, float))]
+        if not values:
+            out[metric] = {"mean": None, "std": None, "n": 0}
+            continue
+        mean = sum(values) / len(values)
+        std = (sum((v - mean) ** 2 for v in values) / (len(values) - 1)) ** 0.5 if len(values) > 1 else 0.0
+        out[metric] = {"mean": mean, "std": std, "n": len(values), "min": min(values), "max": max(values)}
+    return out
+
+
+def query_stability(results: list[EvalResult]) -> dict[str, dict[str, Any]]:
+    """Per query across repeats: how often each outcome happened, and whether any of them flipped."""
+    by_query: dict[str, list[EvalResult]] = {}
+    for r in results:
+        by_query.setdefault(r.query_id, []).append(r)
+    out = {}
+    for qid, rs in by_query.items():
+        def counts(values: list[Any]) -> dict[str, int]:
+            tally: dict[str, int] = {}
+            for v in values:
+                tally[str(v)] = tally.get(str(v), 0) + 1
+            return tally
+
+        row = {
+            "runs": len(rs),
+            "verdicts": counts([r.verifier_verdict for r in rs]),
+            "intents": counts([r.intent for r in rs]),
+            "tools": counts(["+".join(r.tools_called) or "none" for r in rs]),
+            "abstained": counts([r.was_abstained for r in rs]),
+            "tool_ok": counts([tool_choice_correct(r) for r in rs]) if rs[0].expected_tool else {},
+            "probe_ok": counts([probe_passed(r) for r in rs]) if probe_passed(rs[0]) is not None else {},
+        }
+        row["flaky"] = sorted(k for k in ("verdicts", "tools", "abstained", "tool_ok", "probe_ok") if len(row[k]) > 1)
+        out[qid] = row
+    return out
+
+
 def ragas_metrics(results: list[EvalResult], settings: Any, judge_model: str) -> dict[str, Optional[float]]:
     """RAGAS over answerable queries with a reference answer. Raises on failure, never fakes a 0."""
     from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -130,6 +187,7 @@ def ragas_metrics(results: list[EvalResult], settings: Any, judge_model: str) ->
     from ragas.llms import LangchainLLMWrapper
     from ragas.metrics import AnswerRelevancy, context_precision, context_recall, faithfulness
 
+    scored = [r for r in results if not r.should_abstain and r.ground_truth]
     rows = [
         {
             "user_input": r.query,
@@ -137,8 +195,7 @@ def ragas_metrics(results: list[EvalResult], settings: Any, judge_model: str) ->
             "retrieved_contexts": r.retrieved_contexts or [""],
             "reference": r.ground_truth,
         }
-        for r in results
-        if not r.should_abstain and r.ground_truth
+        for r in scored
     ]
     if not rows:
         return {m: None for m in RAGAS_METRICS}
@@ -160,6 +217,8 @@ def ragas_metrics(results: list[EvalResult], settings: Any, judge_model: str) ->
         show_progress=False,
     )
     frame = result.to_pandas()
+    for i, r in enumerate(scored):
+        r.ragas = {m: (None if m not in frame or frame[m].isna()[i] else float(frame[m][i])) for m in RAGAS_METRICS}
     # A NaN means the judge failed on that row; report the mean of the rows it did score.
     return {m: float(frame[m].mean()) if m in frame and frame[m].notna().any() else None for m in RAGAS_METRICS}
 
