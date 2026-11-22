@@ -56,6 +56,10 @@ class Settings(BaseSettings):
     max_conversation_turns: int = 10
     # Run intent and retrieval together; false restores the old sequential path.
     parallel_intent_retrieval: bool = True
+    # Retrieval results cached per search query until the knowledge base changes; 0 = off.
+    retrieval_cache_size: int = 512
+    # How long a knowledge-base version check is reused (BM25 rebuild and retrieval cache invalidation).
+    kb_version_ttl_seconds: float = 10.0
     # Follow-up rewrite (turns with history only): "off" searches the message as typed, "replace" searches
     # only the rewritten query, "both" searches both and fuses them (app/agents/rewrite.py).
     query_rewrite: str = "replace"

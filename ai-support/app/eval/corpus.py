@@ -154,5 +154,9 @@ class InMemoryKnowledgeBase:
     async def keyword_search(self, query: str, limit: int = 20) -> list[dict[str, Any]]:
         return self.bm25.search(query, limit)
 
+    async def kb_version(self) -> tuple:
+        """Fixed for the life of this in-memory corpus; per instance, so two corpora never share cache entries."""
+        return ("memory", id(self), len(self.chunks))
+
     async def rare_title_search(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
         return rare_title_matches(self.bm25, query, limit)
