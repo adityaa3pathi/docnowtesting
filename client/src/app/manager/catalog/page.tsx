@@ -6,15 +6,14 @@ import { useExport } from '@/hooks/useExport';
 import api from '@/lib/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import { CatalogPurposeImportDialog } from '@/components/manager/CatalogPurposeImportDialog';
+import { FastingOverrideControl, FastingFields } from '@/components/manager/FastingOverrideControl';
 
 const MAX_PURPOSE = 300; // keep in sync with server PURPOSE_MAX_LENGTH
 const PAGE_SIZE = 50;
 
 type ItemType = 'TEST' | 'PROFILE' | 'PACKAGE';
 
-interface CatalogItem {
-    id: string;
-    name: string;
+interface CatalogItem extends FastingFields {
     type: ItemType;
     purpose: string | null;
     isEnabled: boolean;
@@ -124,6 +123,7 @@ export default function CatalogPurposePage() {
                     <h1 className="text-3xl font-semibold text-gray-900">Product descriptions</h1>
                     <p className="text-gray-600 mt-1">
                         Write what each product is for. This text replaces the test list on product cards.
+                        Correct the fasting info where Healthians has it wrong.
                     </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -148,7 +148,7 @@ export default function CatalogPurposePage() {
 
             <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
                 <Info className="h-4 w-4 mt-0.5 shrink-0" />
-                <span>Changes can take up to 5 minutes to show on the website.</span>
+                <span>Changes can take up to 5 minutes to show on the website. The support chat picks up fasting corrections at its next knowledge-base sync.</span>
             </div>
 
             {/* Filters */}
@@ -259,6 +259,13 @@ export default function CatalogPurposePage() {
                                             </button>
                                         </div>
                                     </div>
+                                    <FastingOverrideControl
+                                        item={item}
+                                        onSaved={(saved) => setResult(prev => prev && {
+                                            ...prev,
+                                            items: prev.items.map(i => (i.id === item.id ? { ...i, ...saved } : i)),
+                                        })}
+                                    />
                                 </li>
                             );
                         })}

@@ -33,6 +33,18 @@ def _clean_description(text: Any, name: str) -> str | None:
     return text if len(text) <= DESCRIPTION_CHARS else text[:DESCRIPTION_CHARS].rsplit(" ", 1)[0] + "..."
 
 
+def effective_fasting(item: dict[str, Any]) -> tuple[str | None, str | None]:
+    """A manager's fasting correction wins over Healthians' detailsData.
+
+    Same rule as server/src/utils/catalogFasting.ts effectiveFasting(); keep them in step.
+    """
+    if item.get("fastingOverride"):
+        hours = item.get("fastingTimeOverride") if item["fastingOverride"] == "Required" else None
+        return item["fastingOverride"], hours
+    details = item.get("detailsData") if isinstance(item.get("detailsData"), dict) else {}
+    return details.get("fasting"), details.get("fastingTime")
+
+
 def format_catalog_text(item: dict[str, Any]) -> str:
     """Format a CatalogItem row into a text representation for embedding.
 
@@ -66,9 +78,9 @@ def format_catalog_text(item: dict[str, Any]) -> str:
     if report_time:
         parts.append(f"Report Time: {report_time}")
 
-    if details.get("fasting"):
-        hours = details.get("fastingTime")
-        parts.append(f"Fasting Required: {details['fasting']}" + (f" ({hours})" if hours else ""))
+    fasting, hours = effective_fasting(item)
+    if fasting:
+        parts.append(f"Fasting Required: {fasting}" + (f" ({hours})" if hours else ""))
 
     gender = details.get("gender")
     if isinstance(gender, list) and len(gender) == 1:
@@ -236,8 +248,11 @@ async def sync_catalog(db: Database, settings: Settings) -> dict[str, int]:
             """
             SELECT id, name, type, "displayPrice", "discountedPrice",
                    description, parameters, "sampleType", "reportTime",
-                   "partnerCode", "detailsData"
-            FROM "CatalogItem"
+                   "partnerCode", "detailsData",
+                   -- Read through to_jsonb so the sync keeps working before the server migration adds these columns.
+                   to_jsonb(c) ->> 'fastingOverride' AS "fastingOverride",
+                   to_jsonb(c) ->> 'fastingTimeOverride' AS "fastingTimeOverride"
+            FROM "CatalogItem" c
             WHERE "isEnabled" = true
             """
         )
