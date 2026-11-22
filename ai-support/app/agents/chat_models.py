@@ -113,7 +113,12 @@ def fallback_models(settings: Any) -> list[str]:
 
 
 def build_chain(settings: Any, stage: str, thinking_level: str, max_output_tokens: int | None) -> Runnable:
-    """Primary model with fallbacks. Fallbacks run without a thinking level: not every model accepts one."""
+    """Primary model with fallbacks. Fallbacks run with no thinking config, on purpose.
+
+    Measured in Phase 5 (fallback-only real probes, N=3): with no config gemini-3.1-flash-lite does
+    not think (0 thought tokens). At the stages' "low" it thinks ~106 tokens per call: p50 +1.0 s
+    (4538 -> 5535 ms), tokens/turn +316, and probe_pass 0.944 -> 0.963 +- 0.032, inside the noise.
+    """
     key = settings.gemini_api_key
     primary = _guarded(_chat_model(key, settings.llm_model, thinking_level, max_output_tokens), settings)
     backups = [_guarded(_chat_model(key, m, "", max_output_tokens), settings) for m in fallback_models(settings)]

@@ -124,3 +124,20 @@ async def test_output_cap_is_still_a_truncation_not_a_failover(fake):
 def test_fallback_list_skips_blanks_and_the_primary():
     s = _settings(llm_fallback_models=" backup-model, ,primary-model,other ")
     assert chat_models.fallback_models(s) == ["backup-model", "other"]
+
+
+
+async def test_fallback_runs_without_a_thinking_level(fake):
+    # Phase 5 (TO DO 4): "low" made the fallback think ~106 tokens/call, +1.0 s p50, no quality gain beyond noise.
+    seen = []
+
+    async def ainvoke(self, messages, **kwargs):
+        seen.append((self.model, self.thinking_level))
+        if self.model == "primary-model":
+            raise server_error(503)
+        return _reply("from backup")
+
+    chat_models._chat_model.cache_clear()
+    with patch("langchain_google_genai.ChatGoogleGenerativeAI.ainvoke", ainvoke):
+        assert await call_gemini("hi", _settings(), stage="intent") == "from backup"
+    assert seen == [("primary-model", "low"), ("backup-model", None)]

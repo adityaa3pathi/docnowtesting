@@ -6,6 +6,11 @@ import { beforeAll, expect, it, vi } from 'vitest';
 const m = vi.hoisted(() => ({ post: vi.fn(), get: vi.fn(), auth: { isAuthenticated: true, isInitialized: false } }));
 vi.mock('@/lib/api', () => ({ default: { get: m.get, post: m.post } }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => m.auth }));
+// The JSON route; streaming has its own tests (useSupportChat.stream.test.tsx).
+vi.mock('@/lib/supportStream', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/lib/supportStream')>();
+    return { ...actual, streamChat: vi.fn(async () => { throw new actual.StreamUnavailable(false); }) };
+});
 const { useSupportChat } = await import('./useSupportChat');
 
 beforeAll(() => {
