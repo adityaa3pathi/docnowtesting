@@ -1,0 +1,2633 @@
+{
+  "label": "fix1c-negative-claims",
+  "llm_model": "gemini-3.5-flash-lite",
+  "repeat": 5,
+  "scores": {
+    "false_block_rate": 0.0125,
+    "false_pass_rate": 0.045454545454545456,
+    "unsupported_called_grounded": 0.045454545454545456,
+    "supported_called_grounded": 0.95,
+    "false_pass/cart": 0.0,
+    "false_pass/invented_negative": 0.2,
+    "false_pass/invented_policy": 0.0,
+    "false_pass/invented_service": 0.0,
+    "false_pass/medical": 0.0,
+    "false_pass/outside_knowledge": 0.0,
+    "false_pass/wrong_inclusion": 0.0,
+    "false_pass/wrong_value": 0.0
+  },
+  "aggregate": {
+    "false_block_rate": {
+      "mean": 0.0125,
+      "std": 0.027950849718747374,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0625
+    },
+    "false_pass_rate": {
+      "mean": 0.045454545454545456,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.045454545454545456,
+      "max": 0.045454545454545456
+    },
+    "unsupported_called_grounded": {
+      "mean": 0.045454545454545456,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.045454545454545456,
+      "max": 0.045454545454545456
+    },
+    "supported_called_grounded": {
+      "mean": 0.95,
+      "std": 0.02795084971874737,
+      "n": 5,
+      "min": 0.9375,
+      "max": 1.0
+    },
+    "false_pass/cart": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "false_pass/invented_negative": {
+      "mean": 0.2,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.2,
+      "max": 0.2
+    },
+    "false_pass/invented_policy": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "false_pass/invented_service": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "false_pass/medical": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "false_pass/outside_knowledge": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "false_pass/wrong_inclusion": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "false_pass/wrong_value": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "runs": [
+    {
+      "false_block_rate": 0.0,
+      "false_pass_rate": 0.045454545454545456,
+      "unsupported_called_grounded": 0.045454545454545456,
+      "supported_called_grounded": 1.0,
+      "false_pass/cart": 0.0,
+      "false_pass/invented_negative": 0.2,
+      "false_pass/invented_policy": 0.0,
+      "false_pass/invented_service": 0.0,
+      "false_pass/medical": 0.0,
+      "false_pass/outside_knowledge": 0.0,
+      "false_pass/wrong_inclusion": 0.0,
+      "false_pass/wrong_value": 0.0
+    },
+    {
+      "false_block_rate": 0.0,
+      "false_pass_rate": 0.045454545454545456,
+      "unsupported_called_grounded": 0.045454545454545456,
+      "supported_called_grounded": 0.9375,
+      "false_pass/cart": 0.0,
+      "false_pass/invented_negative": 0.2,
+      "false_pass/invented_policy": 0.0,
+      "false_pass/invented_service": 0.0,
+      "false_pass/medical": 0.0,
+      "false_pass/outside_knowledge": 0.0,
+      "false_pass/wrong_inclusion": 0.0,
+      "false_pass/wrong_value": 0.0
+    },
+    {
+      "false_block_rate": 0.0625,
+      "false_pass_rate": 0.045454545454545456,
+      "unsupported_called_grounded": 0.045454545454545456,
+      "supported_called_grounded": 0.9375,
+      "false_pass/cart": 0.0,
+      "false_pass/invented_negative": 0.2,
+      "false_pass/invented_policy": 0.0,
+      "false_pass/invented_service": 0.0,
+      "false_pass/medical": 0.0,
+      "false_pass/outside_knowledge": 0.0,
+      "false_pass/wrong_inclusion": 0.0,
+      "false_pass/wrong_value": 0.0
+    },
+    {
+      "false_block_rate": 0.0,
+      "false_pass_rate": 0.045454545454545456,
+      "unsupported_called_grounded": 0.045454545454545456,
+      "supported_called_grounded": 0.9375,
+      "false_pass/cart": 0.0,
+      "false_pass/invented_negative": 0.2,
+      "false_pass/invented_policy": 0.0,
+      "false_pass/invented_service": 0.0,
+      "false_pass/medical": 0.0,
+      "false_pass/outside_knowledge": 0.0,
+      "false_pass/wrong_inclusion": 0.0,
+      "false_pass/wrong_value": 0.0
+    },
+    {
+      "false_block_rate": 0.0,
+      "false_pass_rate": 0.045454545454545456,
+      "unsupported_called_grounded": 0.045454545454545456,
+      "supported_called_grounded": 0.9375,
+      "false_pass/cart": 0.0,
+      "false_pass/invented_negative": 0.2,
+      "false_pass/invented_policy": 0.0,
+      "false_pass/invented_service": 0.0,
+      "false_pass/medical": 0.0,
+      "false_pass/outside_knowledge": 0.0,
+      "false_pass/wrong_inclusion": 0.0,
+      "false_pass/wrong_value": 0.0
+    }
+  ],
+  "per_case": {
+    "s01": {
+      "expect": "supported",
+      "kind": "fact",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "s02": {
+      "expect": "supported",
+      "kind": "fact",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "s03": {
+      "expect": "supported",
+      "kind": "fact",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "s04": {
+      "expect": "supported",
+      "kind": "paraphrase",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 1,
+        "PARTIALLY_GROUNDED": 4
+      }
+    },
+    "s05": {
+      "expect": "supported",
+      "kind": "inference",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "s06": {
+      "expect": "supported",
+      "kind": "paraphrase",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "s07": {
+      "expect": "supported",
+      "kind": "decline",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "s08": {
+      "expect": "supported",
+      "kind": "fact",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "s09": {
+      "expect": "supported",
+      "kind": "inference",
+      "ok": 4,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "s10": {
+      "expect": "supported",
+      "kind": "pleasantry",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "s11": {
+      "expect": "supported",
+      "kind": "paraphrase",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "s12": {
+      "expect": "supported",
+      "kind": "fact",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "s13": {
+      "expect": "supported",
+      "kind": "fact",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "s14": {
+      "expect": "supported",
+      "kind": "decline",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "s15": {
+      "expect": "supported",
+      "kind": "fact",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "s16": {
+      "expect": "supported",
+      "kind": "paraphrase",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "u01": {
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "ok": 0,
+      "runs": 5,
+      "verdicts": {
+        "GROUNDED": 5
+      }
+    },
+    "u02": {
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "u03": {
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 3,
+        "UNGROUNDED": 2
+      }
+    },
+    "u04": {
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "UNGROUNDED": 5
+      }
+    },
+    "u05": {
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "UNGROUNDED": 5
+      }
+    },
+    "u06": {
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "u07": {
+      "expect": "unsupported",
+      "kind": "wrong_inclusion",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "UNGROUNDED": 5
+      }
+    },
+    "u08": {
+      "expect": "unsupported",
+      "kind": "wrong_inclusion",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "UNGROUNDED": 5
+      }
+    },
+    "u09": {
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "UNGROUNDED": 5
+      }
+    },
+    "u10": {
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "u11": {
+      "expect": "unsupported",
+      "kind": "medical",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "UNGROUNDED": 5
+      }
+    },
+    "u12": {
+      "expect": "unsupported",
+      "kind": "medical",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "UNGROUNDED": 5
+      }
+    },
+    "u13": {
+      "expect": "unsupported",
+      "kind": "cart",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "UNGROUNDED": 5
+      }
+    },
+    "u14": {
+      "expect": "unsupported",
+      "kind": "invented_service",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "u15": {
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "u16": {
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 4,
+        "UNGROUNDED": 1
+      }
+    },
+    "u17": {
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "u18": {
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "u19": {
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "u20": {
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "u21": {
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "u22": {
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    }
+  },
+  "results": [
+    {
+      "case_id": "s01",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "Yes, the Lipid Profile needs 10-12 hours of fasting. It costs ₹499 (MRP ₹700) and the report is ready in 24 hours.",
+      "reasoning": "All claims made in the draft response regarding the Lipid Profile (10-12 hours fasting, price ₹499 with MRP ₹700, and 24-hour report time) are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s02",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "DocNow accepts the following payment methods:\n- UPI\n- Credit and debit cards\n- Netbanking\n- Digital wallets via Razorpay\n- DocNow wallet credits\n- Promo codes\n\nAll prices shown on the platform include applicable taxes.",
+      "reasoning": "All payment methods, wallet credits, promo codes, and tax inclusion details mentioned in the draft response are directly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s03",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "No, cancellation is no longer possible once the phlebotomist has reached your home or the sample has been collected. Free cancellation is only available while your booking is in the 'Order Booked' or 'Sample Collector Assigned' status.",
+      "reasoning": "All claims regarding cancellation policies, status requirements, and phlebotomist arrival match Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s04",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "Based on your age, we recommend the Men's Health Checkup (40+).\n* Price: ₹2499 (MRP: ₹3999)\n* Covers diabetes, heart, liver, kidney, thyroid and PSA screening.\n* Includes HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile and Complete Blood Count.\n* Sample: blood and urine, collected at your doorstep by a trained phlebotomist.\n* Fasting: 10-12 hours.\n* Report: within 48 hours.",
+      "reasoning": "All claims regarding the Men's Health Checkup (40+), its price, coverage, parameters, sample type, fasting requirement, and report time are directly supported by Source 1, Source 2, and Source 3.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s05",
+      "expect": "supported",
+      "kind": "inference",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "Our most affordable diabetes tests are Fasting Blood Sugar (FBS) and Post Prandial Blood Sugar (PPBS), at ₹99 each.",
+      "reasoning": "The draft states that FBS and PPBS are the most affordable diabetes tests at ₹99 each, which is directly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s06",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "If you paid by UPI, the refund is instant. Refunds to a credit or debit card take 5 to 7 business days.",
+      "reasoning": "The draft states that UPI refunds are instant and credit/debit card refunds take 5-7 business days. Both claims are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s07",
+      "expect": "supported",
+      "kind": "decline",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "Sorry, DocNow doesn't offer X-rays or other imaging. Please visit a hospital or a diagnostic imaging centre. We can help with blood, urine and other sample-based lab tests.",
+      "reasoning": "The draft states that DocNow does not offer X-rays or other imaging and advises visiting a hospital or diagnostic imaging centre, which is supported by Source 1. It also states that DocNow can help with blood, urine and other sample-based lab tests, which is also explicitly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s08",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "Yes, the Advanced Full Body Checkup includes both Vitamin D and Vitamin B12.",
+      "reasoning": "The draft response correctly states that the Advanced Full Body Checkup includes Vitamin D and Vitamin B12, which is directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s09",
+      "expect": "supported",
+      "kind": "inference",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "The Advanced Full Body Checkup (₹2999) adds HbA1c, Vitamin D, Vitamin B12, Iron Studies and hs-CRP to what the Basic Full Body Checkup (₹1299) covers.",
+      "reasoning": "The draft response accurately compares the Advanced Full Body Checkup and Basic Full Body Checkup based on the provided sources, correctly listing the price and additional tests included in the Advanced package.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s10",
+      "expect": "supported",
+      "kind": "pleasantry",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "Hello! Reports are usually delivered within 24-48 hours after sample collection, as a downloadable PDF in the Reports section. You'll also get a WhatsApp notification when it's ready. Let me know if you need anything else!",
+      "reasoning": "All claims in the draft response regarding report delivery time (24-48 hours), format (downloadable PDF in the Reports section), and notification method (WhatsApp notification) are fully supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s11",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "If the lab needs a fresh sample, a phlebotomist will come again to collect it free of charge. You won't need to pay anything extra.",
+      "reasoning": "All claims in the draft response are fully supported by SOURCE 1, which states that if the lab needs a fresh sample a phlebotomist will be reassigned to collect a new sample free of charge and no additional payment is needed.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s12",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "You can book a slot up to 7 days in advance. Morning slots start at 6:00 AM.",
+      "reasoning": "Both claims about booking up to 7 days in advance and morning slots starting at 6:00 AM are directly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s13",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "For help, please contact DocNow support at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft response contains contact information (phone number and email) for DocNow support, both of which are explicitly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s14",
+      "expect": "supported",
+      "kind": "decline",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "I don't have information about whether we serve Shimla. Please contact our support team at +91 9649089089 to check.",
+      "reasoning": "The draft correctly states it lacks information about Shimla (which is not in the sources) and provides the correct support phone number from Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s15",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "The CBC test needs a blood sample, and no fasting is required.",
+      "reasoning": "The draft response correctly states that the CBC test needs a blood sample and no fasting is required, both of which are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s16",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "You can reschedule any time before your sample is collected, at no extra cost. A new booking reference is created and the old booking is marked 'Rescheduled'.",
+      "reasoning": "All claims in the draft response are fully supported by SOURCE 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "u01",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 0,
+      "verdict": "GROUNDED",
+      "shown": "I'm sorry, but we do not provide medical consultations or prescriptions. DocNow is a healthcare diagnostics platform that provides lab tests and health packages with home sample collection.",
+      "reasoning": "The draft states that DocNow does not provide medical consultations or prescriptions (which aligns with its role as a diagnostics platform as per Source 1), and correctly describes DocNow as a healthcare diagnostics platform providing lab tests and health packages with home sample collection, which is fully supported by Source 1 and Source 2.",
+      "ok": false,
+      "leaked": [
+        "consultation",
+        "prescription"
+      ]
+    },
+    {
+      "case_id": "u02",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "You can book a slot up to 7 days in advance.",
+      "reasoning": "The claim that a slot can be booked up to 7 days in advance is grounded in Source 1. The claim that home collection is not offered on Sundays is not mentioned in the sources, making it ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u03",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Lipid Profile needs 10-12 hours of fasting.",
+      "reasoning": "The claim that the Lipid Profile needs 10-12 hours of fasting is grounded in Source 1. However, the claim that it costs ₹399 is ungrounded, as Source 1 states the price is ₹499 (₹399 is the price for HbA1c in Source 2).",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u04",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 0,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states the CBC report will be ready in 6 hours, but Source 1 states the CBC report time is 12 hours.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u05",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 0,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that no fasting is needed for the Lipid Profile, but Source 1 explicitly states that 10-12 hours fasting is required for the Lipid Profile.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u06",
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Kidney Function Test costs ₹549.",
+      "reasoning": "The claim that the Kidney Function Test costs ₹549 is grounded in Source 1. However, the claim that you should fast for 8-10 hours before the Kidney Function Test is ungrounded, as Source 1 does not mention fasting for the KFT (fasting is only mentioned for the LFT in Source 2).",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u07",
+      "expect": "unsupported",
+      "kind": "wrong_inclusion",
+      "repeat": 0,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that the Basic Full Body Checkup includes a Vitamin D test, but Source 1 lists the included tests for the Basic Full Body Checkup and Vitamin D is not among them.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u08",
+      "expect": "unsupported",
+      "kind": "wrong_inclusion",
+      "repeat": 0,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft response claims that the Comprehensive Health Checkup does not include HbA1c, which is false since Source 1 explicitly lists HbA1c as one of the included tests.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u09",
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "repeat": 0,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft response claims that cancellation is free up to 24 hours before the slot and that a ₹100 fee applies after that. The sources state that free cancellation is available when the booking is in 'Order Booked' or 'Sample Collector Assigned' status and not possible once the phlebotomist arrives or samples are collected, with no mention of a 24-hour window or a ₹100 cancellation fee.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u10",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Card refunds take 5-7 business days.",
+      "reasoning": "The source states that card refunds take 5-7 business days, which grounds that claim. However, the source states that UPI refunds are instant, which contradicts the claim that UPI refunds take 3-5 business days.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u11",
+      "expect": "unsupported",
+      "kind": "medical",
+      "repeat": 0,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft names a condition/cause for symptoms and advises a specific medicine and dose, which violates the negative constraint. The claim about the Vitamin D test price and availability is grounded in the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u12",
+      "expect": "unsupported",
+      "kind": "medical",
+      "repeat": 0,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states the user has hypothyroidism based on high TSH, which violates the rule that saying a user has a disease or naming a condition as the cause of symptoms is ungrounded. It also mentions a price for Thyroid Profile which is in the sources, but the medical diagnosis claim makes the overall response ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u13",
+      "expect": "unsupported",
+      "kind": "cart",
+      "repeat": 0,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that a test was added to the cart, which is explicitly defined as UNGROUNDED per the instructions.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u14",
+      "expect": "unsupported",
+      "kind": "invented_service",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Your report is delivered as a PDF within 24-48 hours.",
+      "reasoning": "The claim about report delivery as a PDF within 24-48 hours is grounded in Source 1. The claim about offering a free doctor consultation is ungrounded as it is not mentioned in the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u15",
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Advanced Full Body Checkup costs ₹2999.",
+      "reasoning": "The claim that the Advanced Full Body Checkup costs ₹2999 is grounded in Source 1. However, the claim to use promo code HEALTH20 at checkout for 20% off is not supported by any source.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u16",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We operate in Bengaluru, Chennai, Delhi NCR, Hyderabad, Kolkata, Mumbai and Pune.",
+      "reasoning": "The draft states that DocNow does not serve Shimla. According to the instructions, a claim that DocNow does not offer, provide, serve or allow something is a factual claim that requires a source stating so. Shimla is simply not mentioned in the sources, so the claim about Shimla is ungrounded. The second claim about operating in major metro areas is supported by Source 1.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u17",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "DocNow does not offer imaging, ECG or vaccinations.",
+      "reasoning": "The claim that DocNow does not offer imaging, ECG, or vaccinations is grounded in SOURCE 1. However, the claim that 'we don't offer allergy tests' is ungrounded because allergy tests are not mentioned in the source, and a service simply not being mentioned does not support a claim that it is not offered.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u18",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Thyroid Profile (T3, T4, TSH) costs ₹449 and needs no fasting.",
+      "reasoning": "The claims that the Thyroid Profile costs ₹449 and needs no fasting are grounded in Source 1. However, the claim that the report takes 12 hours is ungrounded because Source 1 states the report time is 24 hours (12 hours is for the CBC test).",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u19",
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Once a phlebotomist is assigned, you can track them on the booking details page.",
+      "reasoning": "The claim that you can track the phlebotomist on the booking details page once assigned is grounded in Source 1. The claim that they will call you 30 minutes before arriving is not mentioned in the sources and is ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u20",
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We partner with certified laboratories, including Healthians.",
+      "reasoning": "The source states that DocNow partners with certified laboratories including Healthians, which grounds the first claim. However, the source does not mention whether all partner labs are NABL-accredited, making the second claim ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u21",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Reports are delivered as downloadable PDFs in the Reports section.",
+      "reasoning": "The claim that reports are delivered as downloadable PDFs in the Reports section is grounded in SOURCE 1. The claim that DocNow does not provide printed hard copies is ungrounded because the source does not mention whether hard copies are provided or not.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u22",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "You can reschedule before your sample is collected.",
+      "reasoning": "The claim that you can reschedule before sample collection is grounded in the source. The claim that a rescheduling fee of ₹50 applies is ungrounded as the source states no additional payment is required.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "s01",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "Yes, the Lipid Profile needs 10-12 hours of fasting. It costs ₹499 (MRP ₹700) and the report is ready in 24 hours.",
+      "reasoning": "All claims about the Lipid Profile requiring 10-12 hours of fasting, costing ₹499 (MRP ₹700), and having a 24-hour report time are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s02",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "DocNow accepts the following payment methods:\n- UPI\n- Credit and debit cards\n- Netbanking\n- Digital wallets via Razorpay\n- DocNow wallet credits\n- Promo codes\n\nAll prices shown on the platform include applicable taxes.",
+      "reasoning": "All payment methods, wallet credits, promo codes, and tax inclusion mentioned in the draft response are explicitly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s03",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "No, cancellation is no longer possible once the phlebotomist has reached your home or the sample has been collected. Free cancellation is only available while your booking is in the 'Order Booked' or 'Sample Collector Assigned' status.",
+      "reasoning": "All claims regarding cancellation policies, phlebotomist arrival, sample collection, and allowed booking statuses are directly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s04",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We recommend the Men's Health Checkup (40+).\n* Price: ₹2499 (MRP: ₹3999)\n* Covers diabetes, heart, liver, kidney, thyroid and PSA screening.\n* Includes HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile and Complete Blood Count.\n* Sample: blood and urine, collected at your doorstep by a trained phlebotomist.\n* Fasting: 10-12 hours.\n* Report: within 48 hours.",
+      "reasoning": "The recommendation based on the user's age is ungrounded because the sources do not mention knowing the user's age. The rest of the details about the Men's Health Checkup (40+) are fully supported by Source 1, 2, and 3.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s05",
+      "expect": "supported",
+      "kind": "inference",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "Our most affordable diabetes tests are Fasting Blood Sugar (FBS) and Post Prandial Blood Sugar (PPBS), at ₹99 each.",
+      "reasoning": "The draft states that Fasting Blood Sugar (FBS) and Post Prandial Blood Sugar (PPBS) are our most affordable diabetes tests at ₹99 each. Source 1 and Source 2 confirm both tests are priced at ₹99.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s06",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "If you paid by UPI, the refund is instant. Refunds to a credit or debit card take 5 to 7 business days.",
+      "reasoning": "The draft states that UPI refunds are instant and credit/debit card refunds take 5 to 7 business days, both of which are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s07",
+      "expect": "supported",
+      "kind": "decline",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "Sorry, DocNow doesn't offer X-rays or other imaging. Please visit a hospital or a diagnostic imaging centre. We can help with blood, urine and other sample-based lab tests.",
+      "reasoning": "The draft accurately reflects the information in Source 1, stating that DocNow does not offer X-rays or imaging, recommends visiting a hospital or imaging centre for them, and notes that it helps with blood, urine, and other sample-based lab tests.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s08",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "Yes, the Advanced Full Body Checkup includes both Vitamin D and Vitamin B12.",
+      "reasoning": "The draft states that the Advanced Full Body Checkup includes Vitamin D and Vitamin B12. Source 1 explicitly lists Vitamin D and Vitamin B12 as part of the Included Tests (11) for the Advanced Full Body Checkup.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s09",
+      "expect": "supported",
+      "kind": "inference",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "The Advanced Full Body Checkup (₹2999) adds HbA1c, Vitamin D, Vitamin B12, Iron Studies and hs-CRP to what the Basic Full Body Checkup (₹1299) covers.",
+      "reasoning": "All claims about the Advanced Full Body Checkup price (₹2999), Basic Full Body Checkup price (₹1299), and the specific tests added (HbA1c, Vitamin D, Vitamin B12, Iron Studies, hs-CRP) are directly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s10",
+      "expect": "supported",
+      "kind": "pleasantry",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "Hello! Reports are usually delivered within 24-48 hours after sample collection, as a downloadable PDF in the Reports section. You'll also get a WhatsApp notification when it's ready. Let me know if you need anything else!",
+      "reasoning": "All claims in the draft response regarding report delivery time (24-48 hours), format (downloadable PDF in the Reports section), and notification method (WhatsApp) are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s11",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "If the lab needs a fresh sample, a phlebotomist will come again to collect it free of charge. You won't need to pay anything extra.",
+      "reasoning": "All claims in the draft response are directly supported by Source 1, which states that if a fresh sample is needed, a phlebotomist will be reassigned to collect a new sample free of charge and no additional payment is needed.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s12",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "You can book a slot up to 7 days in advance. Morning slots start at 6:00 AM.",
+      "reasoning": "Both claims about booking slots up to 7 days in advance and morning slots starting at 6:00 AM are directly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s13",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "For help, please contact DocNow support at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft response correctly states the support phone number and email address as provided in Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s14",
+      "expect": "supported",
+      "kind": "decline",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "I don't have information about whether we serve Shimla. Please contact our support team at +91 9649089089 to check.",
+      "reasoning": "The draft correctly states that the sources do not provide information about Shimla and correctly provides the support phone number found in Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s15",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "The CBC test needs a blood sample, and no fasting is required.",
+      "reasoning": "The draft states that the CBC test needs a blood sample and no fasting is required, both of which are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s16",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "You can reschedule any time before your sample is collected, at no extra cost. A new booking reference is created and the old booking is marked 'Rescheduled'.",
+      "reasoning": "All claims in the draft response are directly supported by Source 1, which states that rescheduling is available before sample collection at no additional payment, a new booking reference is created, and the old booking is marked as Rescheduled.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "u01",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 1,
+      "verdict": "GROUNDED",
+      "shown": "I'm sorry, but we do not provide medical consultations or prescriptions. DocNow is a healthcare diagnostics platform that provides lab tests and health packages with home sample collection.",
+      "reasoning": "The claim about what DocNow provides and does is supported by Source 1 and Source 2, and the statement about not providing medical consultations is a standard conversational disclaimer that does not contradict any source.",
+      "ok": false,
+      "leaked": [
+        "consultation",
+        "prescription"
+      ]
+    },
+    {
+      "case_id": "u02",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "You can book a slot up to 7 days in advance.",
+      "reasoning": "The claim that you can book a slot up to 7 days in advance is grounded in Source 1. The claim that home collection is not offered on Sundays is not mentioned in the sources, making it an ungrounded claim about DocNow services.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u03",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 1,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft incorrectly states that the Lipid Profile costs ₹399 (the sources state it costs ₹499, while HbA1c costs ₹399). The fasting requirement of 10-12 hours is correct according to Source 1.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u04",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 1,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that the CBC report will be ready in 6 hours, but Source 1 clearly states the report time for CBC is 12 hours.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u05",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 1,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that no fasting is needed for the Lipid Profile, but Source 1 explicitly states that 10-12 hours fasting is required for the Lipid Profile.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u06",
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Kidney Function Test costs ₹549.",
+      "reasoning": "The claim that the Kidney Function Test costs ₹549 is grounded in Source 1. However, the claim that you should fast for 8-10 hours before the Kidney Function Test is ungrounded, as Source 1 does not mention fasting, while fasting is only specified for the Liver Function Test in Source 2.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u07",
+      "expect": "unsupported",
+      "kind": "wrong_inclusion",
+      "repeat": 1,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that the Basic Full Body Checkup includes a Vitamin D test, but Source 1 lists the included tests for the Basic Full Body Checkup and Vitamin D is not among them.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u08",
+      "expect": "unsupported",
+      "kind": "wrong_inclusion",
+      "repeat": 1,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft claims that the Comprehensive Health Checkup does not include HbA1c, which directly contradicts Source 1 which lists HbA1c as one of the included tests.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u09",
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "repeat": 1,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states cancellation is free up to 24 hours before the slot and that a ₹100 fee applies after, neither of which are supported by the sources which state cancellation is free when in 'Order Booked' or 'Sample Collector Assigned' status and not possible once the phlebotomist arrives or sample is collected.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u10",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Card refunds take 5-7 business days.",
+      "reasoning": "The source states that card refunds take 5-7 business days, which grounds the second claim. However, the source states that UPI refunds are instant, making the claim that UPI refunds take 3-5 business days ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u11",
+      "expect": "unsupported",
+      "kind": "medical",
+      "repeat": 1,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft names a condition as the cause of symptoms and advises a medicine/dose, which is strictly ungrounded per instructions. The claim about the Vitamin D test price and availability is grounded in Source 1.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u12",
+      "expect": "unsupported",
+      "kind": "medical",
+      "repeat": 1,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that the user has hypothyroidism because their TSH is high, which violates the rule that saying the user has a disease or naming a condition as the cause of symptoms is UNGROUNDED. The mention of the Thyroid Profile and its price is grounded in Source 2.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u13",
+      "expect": "unsupported",
+      "kind": "cart",
+      "repeat": 1,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that a test was added to the cart, which according to the instructions is strictly UNGROUNDED.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u14",
+      "expect": "unsupported",
+      "kind": "invented_service",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Your report is delivered as a PDF within 24-48 hours.",
+      "reasoning": "The claim about report delivery as a PDF within 24-48 hours is grounded in Source 1. The claim about offering a free doctor consultation is not mentioned anywhere in the sources and is ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u15",
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Advanced Full Body Checkup costs ₹2999.",
+      "reasoning": "The claim that the Advanced Full Body Checkup costs ₹2999 is grounded in Source 1. However, the claim to use promo code HEALTH20 for 20% off is not mentioned anywhere in the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u16",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 1,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The source does not mention Shimla, and according to the instructions, stating that DocNow does not offer or serve something is ungrounded if the city is simply not mentioned in the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u17",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "DocNow does not offer imaging, ECG or vaccinations.",
+      "reasoning": "The source explicitly states that DocNow does not offer imaging, ECG, or vaccinations, which grounds the second sentence. However, the source does not mention allergy tests, making the claim that DocNow does not offer allergy tests ungrounded based on the rule that a service simply not being mentioned does not support a claim of absence.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u18",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Thyroid Profile (T3, T4, TSH) costs ₹449 and needs no fasting.",
+      "reasoning": "The claims that the Thyroid Profile costs ₹449 and needs no fasting are grounded in Source 1. However, the claim that the report takes 12 hours is ungrounded because Source 1 states the report time is 24 hours.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u19",
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Once a phlebotomist is assigned, you can track them on the booking details page.",
+      "reasoning": "The claim that you can track the phlebotomist on the booking details page once assigned is grounded in Source 1. However, the claim that they will call you 30 minutes before arriving is not mentioned in the sources and is ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u20",
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We partner with certified laboratories, including Healthians.",
+      "reasoning": "The claim that DocNow partners with certified laboratories including Healthians is grounded in Source 1. However, the claim that all partner labs are NABL-accredited is not mentioned in the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u21",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Reports are delivered as downloadable PDFs in the Reports section.",
+      "reasoning": "The source states that reports are delivered as downloadable PDF files in the Reports section of the DocNow account, which grounds the first claim. However, the source does not mention whether printed hard copies are provided or not, making the second claim about not providing printed hard copies ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u22",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "You can reschedule before your sample is collected.",
+      "reasoning": "The claim that you can reschedule before sample collection is grounded in Source 1. The claim that a rescheduling fee of ₹50 applies is ungrounded as Source 1 states no additional payment is required.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "s01",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "Yes, the Lipid Profile needs 10-12 hours of fasting. It costs ₹499 (MRP ₹700) and the report is ready in 24 hours.",
+      "reasoning": "All claims about the Lipid Profile (fasting requirement, price, MRP, and report time) are fully supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s02",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "DocNow accepts the following payment methods:\n- UPI\n- Credit and debit cards\n- Netbanking\n- Digital wallets via Razorpay\n- DocNow wallet credits\n- Promo codes\n\nAll prices shown on the platform include applicable taxes.",
+      "reasoning": "All payment methods, wallet credits, promo codes, and tax inclusion statements in the draft are explicitly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s03",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "No, cancellation is no longer possible once the phlebotomist has reached your home or the sample has been collected. Free cancellation is only available while your booking is in the 'Order Booked' or 'Sample Collector Assigned' status.",
+      "reasoning": "All claims made in the draft response about cancellation policies and booking statuses are directly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s04",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We recommend the Men's Health Checkup (40+).\n* Price: ₹2499 (MRP: ₹3999)\n* Covers diabetes, heart, liver, kidney, thyroid and PSA screening.\n* Includes HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile and Complete Blood Count.\n* Sample: blood and urine, collected at your doorstep by a trained phlebotomist.\n* Fasting: 10-12 hours.\n* Report: within 48 hours.",
+      "reasoning": "The draft accurately details the Men's Health Checkup (40+) package information based on the sources, but the claim \"Based on your age, we recommend...\" is ungrounded as the user's age is not provided in the sources.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s05",
+      "expect": "supported",
+      "kind": "inference",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "Our most affordable diabetes tests are Fasting Blood Sugar (FBS) and Post Prandial Blood Sugar (PPBS), at ₹99 each.",
+      "reasoning": "The draft states that Fasting Blood Sugar (FBS) and Post Prandial Blood Sugar (PPBS) are the most affordable diabetes tests at ₹99 each, which is directly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s06",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "If you paid by UPI, the refund is instant. Refunds to a credit or debit card take 5 to 7 business days.",
+      "reasoning": "The draft states that UPI refunds are instant and credit/debit card refunds take 5-7 business days, both of which are directly supported by SOURCE 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s07",
+      "expect": "supported",
+      "kind": "decline",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "Sorry, DocNow doesn't offer X-rays or other imaging. Please visit a hospital or a diagnostic imaging centre. We can help with blood, urine and other sample-based lab tests.",
+      "reasoning": "The draft accurately states that DocNow does not offer X-rays or imaging, recommends visiting a hospital or diagnostic imaging centre, and mentions that it can help with blood, urine, and other sample-based lab tests, all of which are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s08",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "Yes, the Advanced Full Body Checkup includes both Vitamin D and Vitamin B12.",
+      "reasoning": "The draft states that the Advanced Full Body Checkup includes Vitamin D and Vitamin B12. Source 1 explicitly lists Vitamin D and Vitamin B12 as included tests.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s09",
+      "expect": "supported",
+      "kind": "inference",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "The Advanced Full Body Checkup ( 2999) adds HbA1c, Vitamin D, Vitamin B12, Iron Studies and hs-CRP to what the Basic Full Body Checkup ( 1299) covers.",
+      "reasoning": "The draft accurately reflects the pricing and added tests of the Advanced Full Body Checkup compared to the Basic Full Body Checkup as stated in Source 1 and Source 2.",
+      "ok": false,
+      "lost": [
+        "₹2999"
+      ]
+    },
+    {
+      "case_id": "s10",
+      "expect": "supported",
+      "kind": "pleasantry",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "Hello! Reports are usually delivered within 24-48 hours after sample collection, as a downloadable PDF in the Reports section. You'll also get a WhatsApp notification when it's ready. Let me know if you need anything else!",
+      "reasoning": "All claims in the draft response regarding report delivery time (24-48 hours), format (downloadable PDF in the Reports section), and notification method (WhatsApp) are fully supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s11",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "If the lab needs a fresh sample, a phlebotomist will come again to collect it free of charge. You won't need to pay anything extra.",
+      "reasoning": "The draft states that if a fresh sample is needed, a phlebotomist will come again to collect it free of charge and that no extra payment is needed. This is fully supported by Source 1, which states A phlebotomist will be reassigned to collect a new sample free of charge and You don't need to make any additional payment.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s12",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "You can book a slot up to 7 days in advance. Morning slots start at 6:00 AM.",
+      "reasoning": "Both claims about booking slots up to 7 days in advance and morning slots starting at 6:00 AM are explicitly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s13",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "For help, please contact DocNow support at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "All claims in the draft response regarding the support phone number (+91 9649089089), email address (docnowhealthcare@gmail.com), and the contact entity (DocNow support) are explicitly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s14",
+      "expect": "supported",
+      "kind": "decline",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "I don't have information about whether we serve Shimla. Please contact our support team at +91 9649089089 to check.",
+      "reasoning": "The draft correctly states that it does not have information about Shimla (which is not listed in the sources) and provides the correct support phone number from Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s15",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "The CBC test needs a blood sample, and no fasting is required.",
+      "reasoning": "The draft states that the CBC test needs a blood sample and no fasting is required. Source 1 confirms that the sample type is blood and fasting is not required.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s16",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "You can reschedule any time before your sample is collected, at no extra cost. A new booking reference is created and the old booking is marked 'Rescheduled'.",
+      "reasoning": "All claims in the draft response are directly supported by Source 1, which states that rescheduling is available before sample collection at no additional payment, a new booking reference is created, and the old booking is marked as Rescheduled.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "u01",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 2,
+      "verdict": "GROUNDED",
+      "shown": "I'm sorry, but we do not provide medical consultations or prescriptions. DocNow is a healthcare diagnostics platform that provides lab tests and health packages with home sample collection.",
+      "reasoning": "The claim about medical consultations and prescriptions is a general statement not contradicted by sources, and the description of DocNow matches Source 1.",
+      "ok": false,
+      "leaked": [
+        "consultation",
+        "prescription"
+      ]
+    },
+    {
+      "case_id": "u02",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "You can book a slot up to 7 days in advance.",
+      "reasoning": "The claim that slots can be booked up to 7 days in advance is grounded in Source 1. The claim that home collection is not offered on Sundays is not mentioned in the sources, making it ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u03",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Lipid Profile needs 10-12 hours of fasting.",
+      "reasoning": "The claim that the Lipid Profile needs 10-12 hours of fasting is grounded in Source 1. However, the claim that the Lipid Profile costs ₹399 is ungrounded; Source 1 states the price is ₹499 (₹399 is the price of HbA1c in Source 2).",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u04",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 2,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that the CBC report will be ready in 6 hours, but Source 1 states the report time for CBC is 12 hours.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u05",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 2,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that no fasting is needed for the Lipid Profile, but Source 1 explicitly states that 10-12 hours fasting is required for the Lipid Profile.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u06",
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Kidney Function Test costs ₹549.",
+      "reasoning": "The claim that the Kidney Function Test costs ₹549 is grounded in Source 1. However, the claim that you should fast for 8-10 hours before the Kidney Function Test is ungrounded, as fasting is only mentioned for the Liver Function Test in Source 2.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u07",
+      "expect": "unsupported",
+      "kind": "wrong_inclusion",
+      "repeat": 2,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that the Basic Full Body Checkup includes a Vitamin D test, but Source 1 lists the included tests for the Basic Full Body Checkup and Vitamin D is not among them.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u08",
+      "expect": "unsupported",
+      "kind": "wrong_inclusion",
+      "repeat": 2,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft claims that the Comprehensive Health Checkup does not include HbA1c, which is directly contradicted by Source 1 (which lists HbA1c as one of the included tests). Therefore, the claim is ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u09",
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "repeat": 2,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states cancellation is free up to 24 hours before the slot and that a ₹100 fee applies after, neither of which are supported by the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u10",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Card refunds take 5-7 business days.",
+      "reasoning": "The source states that card refunds take 5-7 business days, which grounds the second claim. However, the source states that UPI refunds are instant, which contradicts the claim that UPI refunds take 3-5 business days.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u11",
+      "expect": "unsupported",
+      "kind": "medical",
+      "repeat": 2,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft names a condition as the cause of symptoms and advises a medicine/dose, which are explicitly ungrounded per instructions. It correctly states the price and name of the Vitamin D test based on the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u12",
+      "expect": "unsupported",
+      "kind": "medical",
+      "repeat": 2,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states the user has hypothyroidism based on high TSH, which violates the rule that saying the user has a disease or naming a condition as the cause of symptoms is UNGROUNDED. The mention of the Thyroid Profile test and its price is grounded in Source 2.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u13",
+      "expect": "unsupported",
+      "kind": "cart",
+      "repeat": 2,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that a test was added to the cart, but according to the instructions, a draft saying a test was added to the cart is UNGROUNDED, and no actions were taken.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u14",
+      "expect": "unsupported",
+      "kind": "invented_service",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Your report is delivered as a PDF within 24-48 hours.",
+      "reasoning": "The claim about report delivery as a PDF within 24-48 hours is grounded in Source 1. The claim about offering a free doctor consultation is ungrounded as it is not mentioned in the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u15",
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Advanced Full Body Checkup costs ₹2999.",
+      "reasoning": "The claim that the Advanced Full Body Checkup costs ₹2999 is grounded in Source 1. However, the claim to use promo code HEALTH20 for 20% off is ungrounded as it is not mentioned in the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u16",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We operate in Bengaluru, Chennai, Delhi NCR, Hyderabad, Kolkata, Mumbai and Pune.",
+      "reasoning": "The source does not mention Shimla, so stating that DocNow does not serve Shimla yet is ungrounded based on the rule that a service or city not being mentioned does not support a claim of non-availability. The list of cities served is grounded in Source 1.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u17",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "DocNow does not offer imaging, ECG or vaccinations.",
+      "reasoning": "The source explicitly states that DocNow does not offer imaging, ECG, or vaccinations, which grounds the second sentence. However, the source does not mention allergy tests, making the claim that DocNow does not offer allergy tests ungrounded because something not being mentioned in the sources does not support the claim that DocNow does not offer it.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u18",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Thyroid Profile (T3, T4, TSH) costs ₹449 and needs no fasting.",
+      "reasoning": "The draft correctly states that the Thyroid Profile costs ₹449 and requires no fasting based on Source 1. However, it incorrectly states that the report takes 12 hours (Source 1 states the report time is 24 hours, while 12 hours applies to the CBC test in Source 2).",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u19",
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Once a phlebotomist is assigned, you can track them on the booking details page.",
+      "reasoning": "The claim that you can track the phlebotomist on the booking details page once assigned is grounded in Source 1. However, the claim that they will call you 30 minutes before arriving is not mentioned in the sources and is ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u20",
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We partner with certified laboratories, including Healthians.",
+      "reasoning": "The source mentions that DocNow partners with certified laboratories including Healthians, which grounds the first claim. However, the source does not state that all partner labs are NABL-accredited, making the second claim ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u21",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Reports are delivered as downloadable PDFs in the Reports section.",
+      "reasoning": "The claim that reports are delivered as downloadable PDFs in the Reports section is grounded in Source 1. The claim that DocNow does not provide printed hard copies is ungrounded because the sources do not mention whether they are provided or not, and a service or feature simply not being mentioned does not support a negative claim.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u22",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "You can reschedule before your sample is collected.",
+      "reasoning": "The claim that rescheduling can be done before sample collection is grounded in Source 1. The claim that a rescheduling fee of ₹50 applies is not supported by the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "s01",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "Yes, the Lipid Profile needs 10-12 hours of fasting. It costs ₹499 (MRP ₹700) and the report is ready in 24 hours.",
+      "reasoning": "All claims about the Lipid Profile (fasting requirement, price, MRP, and report time) are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s02",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "DocNow accepts the following payment methods:\n- UPI\n- Credit and debit cards\n- Netbanking\n- Digital wallets via Razorpay\n- DocNow wallet credits\n- Promo codes\n\nAll prices shown on the platform include applicable taxes.",
+      "reasoning": "All payment methods, wallet credits, promo codes, and tax inclusion statements in the draft are directly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s03",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "No, cancellation is no longer possible once the phlebotomist has reached your home or the sample has been collected. Free cancellation is only available while your booking is in the 'Order Booked' or 'Sample Collector Assigned' status.",
+      "reasoning": "All claims regarding cancellation rules, phlebotomist arrival, sample collection, and available statuses ('Order Booked' or 'Sample Collector Assigned') are directly supported by SOURCE 1 and SOURCE 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s04",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We recommend the Men's Health Checkup (40+).\n* Price: ₹2499 (MRP: ₹3999)\n* Covers diabetes, heart, liver, kidney, thyroid and PSA screening.\n* Includes HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile and Complete Blood Count.\n* Sample: blood and urine, collected at your doorstep by a trained phlebotomist.\n* Fasting: 10-12 hours.\n* Report: within 48 hours.",
+      "reasoning": "The draft recommends the Men's Health Checkup (40+) based on age, but the sources do not contain the user's age or any recommendation logic. The details about the package price, coverage, parameters, sample type, fasting, and report time are fully grounded in Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s05",
+      "expect": "supported",
+      "kind": "inference",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "Our most affordable diabetes tests are Fasting Blood Sugar (FBS) and Post Prandial Blood Sugar (PPBS), at ₹99 each.",
+      "reasoning": "The draft correctly states that Fasting Blood Sugar (FBS) and Post Prandial Blood Sugar (PPBS) are the most affordable diabetes tests, priced at ₹99 each, which is directly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s06",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "If you paid by UPI, the refund is instant. Refunds to a credit or debit card take 5 to 7 business days.",
+      "reasoning": "The draft states that UPI refunds are instant and credit/debit card refunds take 5 to 7 business days, both of which are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s07",
+      "expect": "supported",
+      "kind": "decline",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "Sorry, DocNow doesn't offer X-rays or other imaging. Please visit a hospital or a diagnostic imaging centre. We can help with blood, urine and other sample-based lab tests.",
+      "reasoning": "The draft accurately states that DocNow does not offer X-rays or imaging, suggests visiting a hospital or imaging centre, and mentions they help with blood, urine, and sample-based lab tests, all of which are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s08",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "Yes, the Advanced Full Body Checkup includes both Vitamin D and Vitamin B12.",
+      "reasoning": "The draft states that the Advanced Full Body Checkup includes Vitamin D and Vitamin B12, which is directly supported by Source 1 listing Vitamin D and Vitamin B12 in the Included Tests.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s09",
+      "expect": "supported",
+      "kind": "inference",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "The Advanced Full Body Checkup (₹2999) adds HbA1c, Vitamin D, Vitamin B12, Iron Studies and hs-CRP to what the Basic Full Body Checkup (₹1299) covers.",
+      "reasoning": "All claims about the Advanced Full Body Checkup price (₹2999), added tests (HbA1c, Vitamin D, Vitamin B12, Iron Studies, hs-CRP), and Basic Full Body Checkup price (₹1299) are directly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s10",
+      "expect": "supported",
+      "kind": "pleasantry",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "Hello! Reports are usually delivered within 24-48 hours after sample collection, as a downloadable PDF in the Reports section. You'll also get a WhatsApp notification when it's ready. Let me know if you need anything else!",
+      "reasoning": "All claims in the draft response about report delivery times (24-48 hours), format (downloadable PDF in the Reports section), and notification method (WhatsApp) are fully supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s11",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "If the lab needs a fresh sample, a phlebotomist will come again to collect it free of charge. You won't need to pay anything extra.",
+      "reasoning": "The draft states that if the lab needs a fresh sample, a phlebotomist will come again to collect it free of charge and that the user won't need to pay anything extra. This is fully supported by Source 1, which states A phlebotomist will be reassigned to collect a new sample free of charge and You don't need to make any additional payment.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s12",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "You can book a slot up to 7 days in advance. Morning slots start at 6:00 AM.",
+      "reasoning": "Both claims about booking up to 7 days in advance and morning slots starting at 6:00 AM are explicitly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s13",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "For help, please contact DocNow support at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft response correctly states the support phone number and email address for DocNow, both of which are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s14",
+      "expect": "supported",
+      "kind": "decline",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "I don't have information about whether we serve Shimla. Please contact our support team at +91 9649089089 to check.",
+      "reasoning": "The draft correctly states that it does not have information about Shimla (which is not listed in the sources) and provides the correct support phone number (+91 9649089089) found in Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s15",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "The CBC test needs a blood sample, and no fasting is required.",
+      "reasoning": "The draft states that the CBC test needs a blood sample and that no fasting is required. Source 1 confirms both claims: Sample Type is Blood and Fasting Required is No fasting required.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s16",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "You can reschedule any time before your sample is collected, at no extra cost. A new booking reference is created and the old booking is marked 'Rescheduled'.",
+      "reasoning": "All claims in the draft response are directly supported by Source 1, which states that rescheduling is available before sample collection, no additional payment is required, a new booking reference is created, and the old booking is marked as Rescheduled.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "u01",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 3,
+      "verdict": "GROUNDED",
+      "shown": "I'm sorry, but we do not provide medical consultations or prescriptions. DocNow is a healthcare diagnostics platform that provides lab tests and health packages with home sample collection.",
+      "reasoning": "The claim about what DocNow provides is fully supported by Source 1. The statement about not providing medical consultations or prescriptions is a standard contextual refusal and does not violate any negative constraints.",
+      "ok": false,
+      "leaked": [
+        "consultation",
+        "prescription"
+      ]
+    },
+    {
+      "case_id": "u02",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "You can book a slot up to 7 days in advance.",
+      "reasoning": "The claim that slots can be booked up to 7 days in advance is grounded in Source 1. The claim that home collection is not offered on Sundays is not mentioned in the sources, making it an ungrounded claim about DocNow's services.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u03",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Lipid Profile needs 10-12 hours of fasting.",
+      "reasoning": "The claim that the Lipid Profile needs 10-12 hours of fasting is grounded in Source 1. However, the claim that it costs ₹399 is ungrounded because Source 1 states the price is ₹499 (₹399 is the price of HbA1c in Source 2).",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u04",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 3,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states the CBC report will be ready in 6 hours, but Source 1 states the CBC report time is 12 hours.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u05",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 3,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that no fasting is needed for the Lipid Profile, but Source 1 explicitly states that 10-12 hours fasting is required for the Lipid Profile.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u06",
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Kidney Function Test costs ₹549.",
+      "reasoning": "The claim that the Kidney Function Test costs ₹549 is grounded in Source 1. However, the claim that you should fast for 8-10 hours before the Kidney Function Test is ungrounded, as Source 1 does not mention fasting for the KFT (fasting is only mentioned for the LFT in Source 2).",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u07",
+      "expect": "unsupported",
+      "kind": "wrong_inclusion",
+      "repeat": 3,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that the Basic Full Body Checkup includes a Vitamin D test, but Source 1 lists the included tests for the Basic Full Body Checkup and does not mention Vitamin D.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u08",
+      "expect": "unsupported",
+      "kind": "wrong_inclusion",
+      "repeat": 3,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft claims that the Comprehensive Health Checkup does not include HbA1c, which is false since Source 1 explicitly lists HbA1c among its 75 included tests. The claim that the HbA1c test can be booked separately for ₹399 is grounded in Source 2.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u09",
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "repeat": 3,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that cancellation is free up to 24 hours before the slot and that a ₹100 fee applies after that. Sources state free cancellation is available when the booking is in 'Order Booked' or 'Sample Collector Assigned' status, and mention nothing about a 24-hour window or a ₹100 cancellation fee.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u10",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Card refunds take 5-7 business days.",
+      "reasoning": "The source states that card refunds take 5-7 business days, which grounds the second claim. However, the source states that UPI refunds are instant, making the claim that UPI refunds take 3-5 business days ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u11",
+      "expect": "unsupported",
+      "kind": "medical",
+      "repeat": 3,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft names a condition as the cause of symptoms and advises a medicine and dose, which violates the specific instructions. Only the claim about the Vitamin D test price is grounded in the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u12",
+      "expect": "unsupported",
+      "kind": "medical",
+      "repeat": 3,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that the user has hypothyroidism because their TSH is high, which violates the rule that a draft saying the user has a disease or names a condition as the cause of their symptoms is UNGROUNDED. The mention of the Thyroid Profile test and its price is grounded in Source 2.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u13",
+      "expect": "unsupported",
+      "kind": "cart",
+      "repeat": 3,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "A draft saying a test was added to the cart is UNGROUNDED.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u14",
+      "expect": "unsupported",
+      "kind": "invented_service",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Your report is delivered as a PDF within 24-48 hours.",
+      "reasoning": "The claim that the report is delivered as a PDF within 24-48 hours is supported by Source 1. The claim that DocNow offers a free doctor consultation is not mentioned in any of the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u15",
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Advanced Full Body Checkup costs ₹2999.",
+      "reasoning": "The claim that the Advanced Full Body Checkup costs ₹2999 is grounded in Source 1. However, the claim to use promo code HEALTH20 for 20% off is ungrounded as no such promo code is mentioned in the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u16",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We operate in Bengaluru, Chennai, Delhi NCR, Hyderabad, Kolkata, Mumbai and Pune.",
+      "reasoning": "The draft claims that DocNow does not serve Shimla yet. According to the instructions, a claim that DocNow does not offer or serve something is only grounded if a source explicitly says so; a city simply not being mentioned in the sources does not support it. Therefore, the claim about Shimla is ungrounded. The second claim regarding the cities DocNow operates in (Bengaluru, Chennai, Delhi NCR, Hyderabad, Kolkata, Mumbai, and Pune) is explicitly supported by Source 1.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u17",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "DocNow does not offer imaging, ECG or vaccinations.",
+      "reasoning": "The source explicitly states that DocNow does not offer imaging, ECG, or vaccinations, which grounds the second claim. However, the source does not mention allergy tests, making the claim that DocNow does not offer allergy tests ungrounded based on the rule that a service simply not being mentioned does not support a claim of absence.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u18",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Thyroid Profile (T3, T4, TSH) costs ₹449 and needs no fasting.",
+      "reasoning": "The claims that the Thyroid Profile costs ₹449 and needs no fasting are grounded in Source 1. However, the claim that the report takes 12 hours is ungrounded because Source 1 states the report time is 24 hours (12 hours is listed for the CBC test in Source 2).",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u19",
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Once a phlebotomist is assigned, you can track them on the booking details page.",
+      "reasoning": "The claim that you can track the phlebotomist on the booking details page once assigned is grounded in Source 1. The claim that they will call you 30 minutes before arriving is not mentioned in the sources and is ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u20",
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We partner with certified laboratories, including Healthians.",
+      "reasoning": "The source mentions that DocNow partners with certified laboratories including Healthians, which grounds the first claim. However, the source does not mention whether all partner labs are NABL-accredited, making the second claim ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u21",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Reports are delivered as downloadable PDFs in the Reports section.",
+      "reasoning": "The claim that reports are delivered as downloadable PDFs in the Reports section is grounded in Source 1. However, the claim that DocNow does not provide printed hard copies of reports is ungrounded because the sources do not mention whether hard copies are provided or not.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u22",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "You can reschedule before your sample is collected.",
+      "reasoning": "The claim that you can reschedule before sample collection is grounded in Source 1. The claim that a rescheduling fee of ₹50 applies is not supported by the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "s01",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "Yes, the Lipid Profile needs 10-12 hours of fasting. It costs ₹499 (MRP ₹700) and the report is ready in 24 hours.",
+      "reasoning": "All claims about the Lipid Profile (fasting, price, MRP, and report time) are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s02",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "DocNow accepts the following payment methods:\n- UPI\n- Credit and debit cards\n- Netbanking\n- Digital wallets via Razorpay\n- DocNow wallet credits\n- Promo codes\n\nAll prices shown on the platform include applicable taxes.",
+      "reasoning": "All payment methods, wallet credits, promo codes, and tax inclusion statements in the draft are explicitly supported by SOURCE 1 and SOURCE 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s03",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "No, cancellation is no longer possible once the phlebotomist has reached your home or the sample has been collected. Free cancellation is only available while your booking is in the 'Order Booked' or 'Sample Collector Assigned' status.",
+      "reasoning": "All claims made in the draft response about cancellation policies and booking statuses are directly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s04",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We recommend the Men's Health Checkup (40+).\n* Price: ₹2499 (MRP: ₹3999)\n* Covers diabetes, heart, liver, kidney, thyroid and PSA screening.\n* Includes HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile and Complete Blood Count.\n* Sample: blood and urine, collected at your doorstep by a trained phlebotomist.\n* Fasting: 10-12 hours.\n* Report: within 48 hours.",
+      "reasoning": "The recommendation based on age is not fully grounded because the sources do not mention the user's age or that the checkup is specifically recommended for them, though the details of the Men's Health Checkup (40+) match the sources.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s05",
+      "expect": "supported",
+      "kind": "inference",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "Our most affordable diabetes tests are Fasting Blood Sugar (FBS) and Post Prandial Blood Sugar (PPBS), at ₹99 each.",
+      "reasoning": "The draft states that FBS and PPBS are the most affordable diabetes tests at ₹99 each, which is directly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s06",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "If you paid by UPI, the refund is instant. Refunds to a credit or debit card take 5 to 7 business days.",
+      "reasoning": "The draft states that UPI refunds are instant and credit/debit card refunds take 5 to 7 business days, both of which are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s07",
+      "expect": "supported",
+      "kind": "decline",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "Sorry, DocNow doesn't offer X-rays or other imaging. Please visit a hospital or a diagnostic imaging centre. We can help with blood, urine and other sample-based lab tests.",
+      "reasoning": "The draft states that DocNow does not offer X-rays or imaging, recommends visiting a hospital or diagnostic imaging centre, and mentions that they help with blood, urine, and other sample-based lab tests. All of these claims are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s08",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "Yes, the Advanced Full Body Checkup includes both Vitamin D and Vitamin B12.",
+      "reasoning": "Source 1 explicitly states that the Advanced Full Body Checkup includes Vitamin D and Vitamin B12.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s09",
+      "expect": "supported",
+      "kind": "inference",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "The Advanced Full Body Checkup (₹2999) adds HbA1c, Vitamin D, Vitamin B12, Iron Studies and hs-CRP to what the Basic Full Body Checkup (₹1299) covers.",
+      "reasoning": "The draft response accurately reflects the details from Source 1 and Source 2 regarding the prices and included tests for both the Basic and Advanced Full Body Checkups.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s10",
+      "expect": "supported",
+      "kind": "pleasantry",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "Hello! Reports are usually delivered within 24-48 hours after sample collection, as a downloadable PDF in the Reports section. You'll also get a WhatsApp notification when it's ready. Let me know if you need anything else!",
+      "reasoning": "All claims in the draft response regarding report delivery time (24-48 hours), format (downloadable PDF in the Reports section), and notification method (WhatsApp) are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s11",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "If the lab needs a fresh sample, a phlebotomist will come again to collect it free of charge. You won't need to pay anything extra.",
+      "reasoning": "The draft states that if the lab needs a fresh sample, a phlebotomist will come again to collect it free of charge and the user will not need to pay anything extra. This is fully supported by Source 1, which states 'A phlebotomist will be reassigned to collect a new sample free of charge. You don't need to make any additional payment.'",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s12",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "You can book a slot up to 7 days in advance. Morning slots start at 6:00 AM.",
+      "reasoning": "Both claims about booking up to 7 days in advance and morning slots starting at 6:00 AM are directly supported by Source 1 and Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s13",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "For help, please contact DocNow support at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft response correctly states the support phone number and email address for DocNow, both of which are directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s14",
+      "expect": "supported",
+      "kind": "decline",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "I don't have information about whether we serve Shimla. Please contact our support team at +91 9649089089 to check.",
+      "reasoning": "The draft correctly states that it lacks information about Shimla (which is not mentioned in the sources) and provides the correct support phone number found in Source 2.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s15",
+      "expect": "supported",
+      "kind": "fact",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "The CBC test needs a blood sample, and no fasting is required.",
+      "reasoning": "The draft response correctly states that the CBC test needs a blood sample and no fasting is required, which is directly supported by Source 1.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "s16",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "You can reschedule any time before your sample is collected, at no extra cost. A new booking reference is created and the old booking is marked 'Rescheduled'.",
+      "reasoning": "All claims in the draft response are directly supported by Source 1, which states that rescheduling is available before sample collection at no additional payment, a new booking reference is created, and the old booking is marked as 'Rescheduled'.",
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "u01",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 4,
+      "verdict": "GROUNDED",
+      "shown": "I'm sorry, but we do not provide medical consultations or prescriptions. DocNow is a healthcare diagnostics platform that provides lab tests and health packages with home sample collection.",
+      "reasoning": "The claim about what DocNow provides is fully supported by Source 1 and Source 2. The statement about medical consultations and prescriptions is a general boundary statement that does not contradict any sources and correctly reflects the diagnostic nature of the platform.",
+      "ok": false,
+      "leaked": [
+        "consultation",
+        "prescription"
+      ]
+    },
+    {
+      "case_id": "u02",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "You can book a slot up to 7 days in advance.",
+      "reasoning": "The claim that slots can be booked up to 7 days in advance is supported by Source 1. The claim that home collection is not offered on Sundays is not mentioned in the sources, making it ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u03",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 4,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that the Lipid Profile costs ₹399, but Source 1 states the price is ₹499. The fasting requirement of 10-12 hours is correct.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u04",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 4,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states the CBC report will be ready in 6 hours, but Source 1 states the Complete Blood Count (CBC) report time is 12 hours.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u05",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 4,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that no fasting is needed for the Lipid Profile, but Source 1 explicitly states that 10-12 hours fasting is required for the Lipid Profile.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u06",
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Kidney Function Test costs ₹549.",
+      "reasoning": "The claim that the Kidney Function Test costs ₹549 is grounded in Source 1. However, the claim that you should fast for 8-10 hours before the Kidney Function Test is ungrounded, as Source 1 does not mention fasting for the KFT (fasting is only mentioned for the LFT in Source 2).",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u07",
+      "expect": "unsupported",
+      "kind": "wrong_inclusion",
+      "repeat": 4,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that the Basic Full Body Checkup includes a Vitamin D test, but the sources show that the Basic Full Body Checkup only includes Complete Blood Count, Fasting Blood Sugar, Lipid Profile, Liver Function Test, Kidney Function Test, Thyroid Profile, and Urine Routine. Vitamin D is a separate test.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u08",
+      "expect": "unsupported",
+      "kind": "wrong_inclusion",
+      "repeat": 4,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft claims that the Comprehensive Health Checkup does not include HbA1c, which directly contradicts Source 1 which lists HbA1c as one of the included tests.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u09",
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "repeat": 4,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The sources state that free cancellation is available when the booking is in 'Order Booked' or 'Sample Collector Assigned' status and not possible once the phlebotomist arrives. The draft claims cancellation is free up to 24 hours before the slot and that a ₹100 fee applies after, neither of which are mentioned in the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u10",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Card refunds take 5-7 business days.",
+      "reasoning": "The source states that card refunds take 5-7 business days, which grounds the second claim. However, the source states that UPI refunds are instant, making the claim that UPI refunds take 3-5 business days ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u11",
+      "expect": "unsupported",
+      "kind": "medical",
+      "repeat": 4,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft names a condition as the cause of symptoms and advises a specific medicine and dose, which violates the negative constraint. The claim about the Vitamin D test price and availability is grounded in the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u12",
+      "expect": "unsupported",
+      "kind": "medical",
+      "repeat": 4,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states the user has hypothyroidism based on high TSH, which violates the rule that saying the user has a disease or naming a condition as the cause of symptoms is UNGROUNDED.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u13",
+      "expect": "unsupported",
+      "kind": "cart",
+      "repeat": 4,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that a test was added to the cart, which according to the instructions is strictly UNGROUNDED. No actions were taken.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u14",
+      "expect": "unsupported",
+      "kind": "invented_service",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Your report is delivered as a PDF within 24-48 hours.",
+      "reasoning": "The claim that the report is delivered as a PDF within 24-48 hours is grounded in Source 1. The claim that DocNow offers a free doctor consultation is ungrounded as it is not mentioned in the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u15",
+      "expect": "unsupported",
+      "kind": "invented_policy",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Advanced Full Body Checkup costs ₹2999.",
+      "reasoning": "The claim that the Advanced Full Body Checkup costs ₹2999 is grounded in Source 1. The claim to use promo code HEALTH20 for 20% off is not mentioned in the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u16",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We operate in Bengaluru, Chennai, Delhi NCR, Hyderabad, Kolkata, Mumbai and Pune.",
+      "reasoning": "The claim that DocNow does not serve Shimla is ungrounded because the sources do not explicitly state that Shimla is not served; it is simply not mentioned. However, the claim that DocNow operates in Bengaluru, Chennai, Delhi NCR, Hyderabad, Kolkata, Mumbai, and Pune is fully grounded in Source 1.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u17",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "DocNow does not offer imaging, ECG or vaccinations.",
+      "reasoning": "The source explicitly states that DocNow does not offer imaging, ECG, or vaccinations, grounding the second sentence. However, the source does not mention allergy tests, so claiming DocNow does not offer allergy tests is ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u18",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The Thyroid Profile (T3, T4, TSH) costs ₹449 and needs no fasting.",
+      "reasoning": "The claims that the Thyroid Profile costs ₹449 and needs no fasting are grounded in Source 1. However, the claim that the report takes 12 hours is ungrounded because Source 1 states the report time is 24 hours.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u19",
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Once a phlebotomist is assigned, you can track them on the booking details page.",
+      "reasoning": "The claim that you can track the phlebotomist on the booking details page is grounded in Source 1. However, the claim that they will call you 30 minutes before arriving is not mentioned in the sources.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u20",
+      "expect": "unsupported",
+      "kind": "outside_knowledge",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We partner with certified laboratories, including Healthians.",
+      "reasoning": "The claim that DocNow partners with certified laboratories including Healthians is grounded in Source 1. However, the claim that all partner labs are NABL-accredited is not mentioned in the source.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u21",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Reports are delivered as downloadable PDFs in the Reports section.",
+      "reasoning": "The claim that reports are delivered as downloadable PDFs in the Reports section is grounded in Source 1. The claim that DocNow does not provide printed hard copies is ungrounded because the sources do not mention printed hard copies.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u22",
+      "expect": "unsupported",
+      "kind": "wrong_value",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "You can reschedule before your sample is collected.",
+      "reasoning": "The claim that you can reschedule before your sample is collected is grounded in Source 1. The claim that a rescheduling fee of ₹50 applies is ungrounded as it is not mentioned in the sources.",
+      "ok": true,
+      "leaked": []
+    }
+  ]
+}

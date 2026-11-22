@@ -8,6 +8,11 @@ vi.mock('@/lib/api', () => ({ default: { get: m.get, post: m.post } }));
 vi.mock('@/contexts/AuthContext', () => ({
     useAuth: () => ({ isAuthenticated: true, isInitialized: true }),
 }));
+// These tests cover the JSON route; streaming (with its fallback to here) is in useSupportChat.stream.test.tsx.
+vi.mock('@/lib/supportStream', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/lib/supportStream')>();
+    return { ...actual, streamChat: vi.fn(async () => { throw new actual.StreamUnavailable(false); }) };
+});
 const { useSupportChat } = await import('./useSupportChat');
 
 beforeAll(() => {

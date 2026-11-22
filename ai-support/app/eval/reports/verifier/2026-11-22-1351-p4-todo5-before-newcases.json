@@ -1,0 +1,337 @@
+{
+  "label": "p4-todo5-before-newcases",
+  "llm_model": "gemini-3.5-flash-lite",
+  "repeat": 5,
+  "scores": {
+    "false_block_rate": 1.0,
+    "false_pass_rate": 0.0,
+    "unsupported_called_grounded": 0.0,
+    "supported_called_grounded": 0.0,
+    "false_pass/cart": 0.0
+  },
+  "aggregate": {
+    "false_block_rate": {
+      "mean": 1.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "false_pass_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "unsupported_called_grounded": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "supported_called_grounded": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "false_pass/cart": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "runs": [
+    {
+      "false_block_rate": 1.0,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": 0.0,
+      "false_pass/cart": 0.0
+    },
+    {
+      "false_block_rate": 1.0,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": 0.0,
+      "false_pass/cart": 0.0
+    },
+    {
+      "false_block_rate": 1.0,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": 0.0,
+      "false_pass/cart": 0.0
+    },
+    {
+      "false_block_rate": 1.0,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": 0.0,
+      "false_pass/cart": 0.0
+    },
+    {
+      "false_block_rate": 1.0,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": 0.0,
+      "false_pass/cart": 0.0
+    }
+  ],
+  "per_case": {
+    "s17": {
+      "expect": "supported",
+      "kind": "cart_instruction",
+      "ok": 0,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "s18": {
+      "expect": "supported",
+      "kind": "cart_instruction",
+      "ok": 0,
+      "runs": 5,
+      "verdicts": {
+        "UNGROUNDED": 5
+      }
+    },
+    "u24": {
+      "expect": "unsupported",
+      "kind": "cart",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "UNGROUNDED": 5
+      }
+    }
+  },
+  "results": [
+    {
+      "case_id": "s17",
+      "expect": "supported",
+      "kind": "cart_instruction",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The HbA1c (Glycosylated Haemoglobin) test costs ₹399 (MRP ₹550) and needs no fasting.",
+      "reasoning": "The claims about the HbA1c test costing ₹399, having an MRP of ₹550, and requiring no fasting are fully supported by SOURCE 1. However, the claim that the user can add it to their cart to book it is ungrounded because instructions state that a draft saying a test was added to the cart or can be added to the cart is UNGROUNDED.",
+      "retries": 0,
+      "error": false,
+      "ok": false,
+      "lost": [
+        "add it to your cart"
+      ]
+    },
+    {
+      "case_id": "s18",
+      "expect": "supported",
+      "kind": "cart_instruction",
+      "repeat": 0,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "According to the instructions, a draft saying a test was added to the cart is UNGROUNDED.",
+      "retries": 0,
+      "error": false,
+      "ok": false,
+      "lost": [
+        "add it to your cart",
+        "₹1299"
+      ]
+    },
+    {
+      "case_id": "u24",
+      "expect": "unsupported",
+      "kind": "cart",
+      "repeat": 0,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that a test was added to the cart, which is explicitly deemed UNGROUNDED per the instructions.",
+      "retries": 0,
+      "error": false,
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "s17",
+      "expect": "supported",
+      "kind": "cart_instruction",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The HbA1c (Glycosylated Haemoglobin) test costs ₹399 (MRP ₹550) and needs no fasting.",
+      "reasoning": "The claims about the HbA1c test costing ₹399 with an MRP of ₹550 and requiring no fasting are supported by Source 1. The claim that the user can add it to their cart is ungrounded according to the instruction: 'A draft saying a test was added to the cart is UNGROUNDED.'",
+      "retries": 0,
+      "error": false,
+      "ok": false,
+      "lost": [
+        "add it to your cart"
+      ]
+    },
+    {
+      "case_id": "s18",
+      "expect": "supported",
+      "kind": "cart_instruction",
+      "repeat": 1,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft instructs the user to add the test to their cart, which violates the instruction: 'A draft saying a test was added to the cart is UNGROUNDED.'",
+      "retries": 0,
+      "error": false,
+      "ok": false,
+      "lost": [
+        "add it to your cart",
+        "₹1299"
+      ]
+    },
+    {
+      "case_id": "u24",
+      "expect": "unsupported",
+      "kind": "cart",
+      "repeat": 1,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that a test was added to the cart, which is explicitly deemed UNGROUNDED per instructions. The price and test name are supported by the sources.",
+      "retries": 0,
+      "error": false,
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "s17",
+      "expect": "supported",
+      "kind": "cart_instruction",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The HbA1c (Glycosylated Haemoglobin) test costs ₹399 (MRP ₹550) and needs no fasting.",
+      "reasoning": "The claims about the price (₹399, MRP ₹550) and fasting requirements (no fasting required) are grounded in SOURCE 1. However, the instruction explicitly states that a draft saying a test was added to the cart is UNGROUNDED.",
+      "retries": 0,
+      "error": false,
+      "ok": false,
+      "lost": [
+        "add it to your cart"
+      ]
+    },
+    {
+      "case_id": "s18",
+      "expect": "supported",
+      "kind": "cart_instruction",
+      "repeat": 2,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft instructs the user to add a test to the cart. According to the instructions, a draft saying a test was added to the cart is UNGROUNDED.",
+      "retries": 0,
+      "error": false,
+      "ok": false,
+      "lost": [
+        "add it to your cart",
+        "₹1299"
+      ]
+    },
+    {
+      "case_id": "u24",
+      "expect": "unsupported",
+      "kind": "cart",
+      "repeat": 2,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that a test was added to the cart, which the instructions explicitly state is UNGROUNDED. Additionally, while the price ₹299 is in the sources, the action of adding it to the cart is unsupported.",
+      "retries": 0,
+      "error": false,
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "s17",
+      "expect": "supported",
+      "kind": "cart_instruction",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The HbA1c (Glycosylated Haemoglobin) test costs ₹399 (MRP ₹550) and needs no fasting.",
+      "reasoning": "The claims about the HbA1c test costing ₹399 with an MRP of ₹550 and requiring no fasting are grounded in Source 1. However, the instruction explicitly states that 'A draft saying a test was added to the cart is UNGROUNDED', which applies to the claim about adding it to the cart.",
+      "retries": 0,
+      "error": false,
+      "ok": false,
+      "lost": [
+        "add it to your cart"
+      ]
+    },
+    {
+      "case_id": "s18",
+      "expect": "supported",
+      "kind": "cart_instruction",
+      "repeat": 3,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "According to the instructions, a draft saying a test was added to the cart is UNGROUNDED.",
+      "retries": 0,
+      "error": false,
+      "ok": false,
+      "lost": [
+        "add it to your cart",
+        "₹1299"
+      ]
+    },
+    {
+      "case_id": "u24",
+      "expect": "unsupported",
+      "kind": "cart",
+      "repeat": 3,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that a test was added to the cart, which is explicitly deemed UNGROUNDED per instructions. The price and test name are supported by the sources.",
+      "retries": 0,
+      "error": false,
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "s17",
+      "expect": "supported",
+      "kind": "cart_instruction",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "The HbA1c (Glycosylated Haemoglobin) test costs ₹399 (MRP ₹550) and needs no fasting.",
+      "reasoning": "The claims about the test price (₹399, MRP ₹550) and fasting requirements (no fasting required) are grounded in Source 1. However, the instruction states that a draft saying a test was added to the cart is UNGROUNDED.",
+      "retries": 0,
+      "error": false,
+      "ok": false,
+      "lost": [
+        "add it to your cart"
+      ]
+    },
+    {
+      "case_id": "s18",
+      "expect": "supported",
+      "kind": "cart_instruction",
+      "repeat": 4,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft instructs the user to add a test to the cart. According to the instructions, a draft saying a test was added to the cart is UNGROUNDED.",
+      "retries": 0,
+      "error": false,
+      "ok": false,
+      "lost": [
+        "add it to your cart",
+        "₹1299"
+      ]
+    },
+    {
+      "case_id": "u24",
+      "expect": "unsupported",
+      "kind": "cart",
+      "repeat": 4,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft states that the test was added to the cart, which is explicitly deemed UNGROUNDED per the instructions. The price is grounded in Source 1.",
+      "retries": 0,
+      "error": false,
+      "ok": true,
+      "leaked": []
+    }
+  ]
+}

@@ -1,0 +1,255 @@
+{
+  "_note": "Phase 3: the draft must not describe app UI (cards, buttons, add to cart); the app renders product cards itself. Seen live 2026-11-22: 'tap the Add to cart button on its card'.",
+  "queries": [
+    {
+      "id": "ui-01",
+      "query": "How do I book a CBC test?",
+      "category": "catalog",
+      "expected_source": null,
+      "expected_tool": null,
+      "acceptable_tools": [
+        "none",
+        "search_catalog",
+        "get_product_details"
+      ],
+      "ground_truth": null,
+      "should_abstain": false,
+      "expect_none": [
+        "button",
+        "tap ",
+        "click",
+        "its card",
+        "the card",
+        "product card",
+        "test card",
+        "add to cart",
+        "\"add\""
+      ]
+    },
+    {
+      "id": "ui-02",
+      "query": "I want to buy the lipid profile test",
+      "category": "catalog",
+      "expected_source": null,
+      "expected_tool": null,
+      "acceptable_tools": [
+        "none",
+        "search_catalog",
+        "get_product_details"
+      ],
+      "ground_truth": null,
+      "should_abstain": false,
+      "expect_none": [
+        "button",
+        "tap ",
+        "click",
+        "its card",
+        "the card",
+        "product card",
+        "test card",
+        "add to cart",
+        "\"add\""
+      ]
+    },
+    {
+      "id": "ui-03",
+      "query": "Add HbA1c to my cart",
+      "category": "catalog",
+      "expected_source": null,
+      "expected_tool": null,
+      "acceptable_tools": [
+        "none",
+        "search_catalog",
+        "get_product_details"
+      ],
+      "ground_truth": null,
+      "should_abstain": false,
+      "expect_none": [
+        "button",
+        "tap ",
+        "click",
+        "its card",
+        "the card",
+        "product card",
+        "test card",
+        "add to cart",
+        "\"add\""
+      ]
+    },
+    {
+      "id": "ui-04",
+      "query": "How can I order the thyroid profile?",
+      "category": "catalog",
+      "expected_source": null,
+      "expected_tool": null,
+      "acceptable_tools": [
+        "none",
+        "search_catalog",
+        "get_product_details"
+      ],
+      "ground_truth": null,
+      "should_abstain": false,
+      "expect_none": [
+        "button",
+        "tap ",
+        "click",
+        "its card",
+        "the card",
+        "product card",
+        "test card",
+        "add to cart",
+        "\"add\""
+      ]
+    },
+    {
+      "id": "ui-05",
+      "query": "Book a vitamin D test for me",
+      "category": "catalog",
+      "expected_source": null,
+      "expected_tool": null,
+      "acceptable_tools": [
+        "none",
+        "search_catalog",
+        "get_product_details"
+      ],
+      "ground_truth": null,
+      "should_abstain": false,
+      "expect_none": [
+        "button",
+        "tap ",
+        "click",
+        "its card",
+        "the card",
+        "product card",
+        "test card",
+        "add to cart",
+        "\"add\""
+      ]
+    },
+    {
+      "id": "ui-06",
+      "query": "How do I add the Basic Full Body Checkup to my cart?",
+      "category": "catalog",
+      "expected_source": null,
+      "expected_tool": null,
+      "acceptable_tools": [
+        "none",
+        "search_catalog",
+        "get_product_details"
+      ],
+      "ground_truth": null,
+      "should_abstain": false,
+      "expect_none": [
+        "button",
+        "tap ",
+        "click",
+        "its card",
+        "the card",
+        "product card",
+        "test card",
+        "add to cart",
+        "\"add\""
+      ]
+    },
+    {
+      "id": "ui-07",
+      "query": "Where can I buy a liver function test?",
+      "category": "catalog",
+      "expected_source": null,
+      "expected_tool": null,
+      "acceptable_tools": [
+        "none",
+        "search_catalog",
+        "get_product_details"
+      ],
+      "ground_truth": null,
+      "should_abstain": false,
+      "expect_none": [
+        "button",
+        "tap ",
+        "click",
+        "its card",
+        "the card",
+        "product card",
+        "test card",
+        "add to cart",
+        "\"add\""
+      ]
+    },
+    {
+      "id": "ui-08",
+      "query": "I'd like to get a kidney function test, how do I proceed?",
+      "category": "catalog",
+      "expected_source": null,
+      "expected_tool": null,
+      "acceptable_tools": [
+        "none",
+        "search_catalog",
+        "get_product_details"
+      ],
+      "ground_truth": null,
+      "should_abstain": false,
+      "expect_none": [
+        "button",
+        "tap ",
+        "click",
+        "its card",
+        "the card",
+        "product card",
+        "test card",
+        "add to cart",
+        "\"add\""
+      ]
+    },
+    {
+      "id": "ui-09",
+      "query": "Show me the diabetes screening package so I can buy it",
+      "category": "catalog",
+      "expected_source": null,
+      "expected_tool": null,
+      "acceptable_tools": [
+        "none",
+        "search_catalog",
+        "get_product_details"
+      ],
+      "ground_truth": null,
+      "should_abstain": false,
+      "expect_none": [
+        "button",
+        "tap ",
+        "click",
+        "its card",
+        "the card",
+        "product card",
+        "test card",
+        "add to cart",
+        "\"add\""
+      ]
+    },
+    {
+      "id": "ui-10",
+      "query": "What's the price of CBC and how do I book it?",
+      "category": "catalog",
+      "expected_source": null,
+      "expected_tool": null,
+      "acceptable_tools": [
+        "none",
+        "search_catalog",
+        "get_product_details"
+      ],
+      "ground_truth": null,
+      "should_abstain": false,
+      "expect_none": [
+        "button",
+        "tap ",
+        "click",
+        "its card",
+        "the card",
+        "product card",
+        "test card",
+        "add to cart",
+        "\"add\""
+      ]
+    }
+  ]
+}

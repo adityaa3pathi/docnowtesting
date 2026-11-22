@@ -15,7 +15,7 @@ import { listCallbacks, updateCallbackStatus } from '../controllers/admin/callba
 import { listCorporateInquiries, updateCorporateInquiryStatus } from '../controllers/admin/corporateInquiries';
 import { listAbandonedCarts } from '../controllers/admin/abandonedCarts';
 import { exportAdminData } from '../controllers/admin/export';
-import { listCatalog, updateCatalogItemPurpose } from '../controllers/admin/catalog';
+import { listCatalog, updateCatalogItemFasting, updateCatalogItemPurpose } from '../controllers/admin/catalog';
 import { validatePurposeImport, executePurposeImport } from '../controllers/manager/catalogPurposeBulk';
 
 import { OTP_EXPIRY_MINS, isValidMobile, persistAndSendOtp } from '../services/otp';
@@ -93,6 +93,7 @@ router.get('/export', ...mgr, exportAdminData);
 
 router.get('/catalog', ...mgr, listCatalog);
 router.put('/catalog/:id/purpose', ...mgr, updateCatalogItemPurpose);
+router.put('/catalog/:id/fasting', ...mgr, updateCatalogItemFasting);
 router.post('/catalog/import-purpose/validate', ...mgr, validatePurposeImport);
 router.post('/catalog/import-purpose/execute', ...mgr, executePurposeImport);
 

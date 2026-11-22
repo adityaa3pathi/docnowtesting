@@ -210,6 +210,20 @@ def test_other_tool_output_stays_json_but_bounded():
     assert out.startswith("{") and len(out) <= 800
 
 
+def _response(prompt=100, output=20, thoughts=5, cached=0, finish=types.FinishReason.STOP, text="ok", usage_meta=True):
+    """A real google-genai response, so LangChain's own parsing runs in the test."""
+    meta = types.GenerateContentResponseUsageMetadata(
+        prompt_token_count=prompt, candidates_token_count=output, thoughts_token_count=thoughts,
+        cached_content_token_count=cached, total_token_count=prompt + output + thoughts,
+    ) if usage_meta else None
+    return types.GenerateContentResponse(
+        candidates=[types.Candidate(content=types.Content(role="model", parts=[types.Part(text=text)]),
+                                    finish_reason=finish)],
+        usage_metadata=meta,
+        model_version="gemini-3.5-flash-lite",
+    )
+
+
 def _client(response):
     generate = AsyncMock(return_value=response)
     return SimpleNamespace(aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate))), generate
@@ -219,9 +233,8 @@ def _client(response):
 async def test_call_gemini_sends_thinking_level_and_cap(settings):
     from app.agents.llm import call_gemini
 
-    resp = SimpleNamespace(text="ok", usage_metadata=None, candidates=[])
-    client, generate = _client(resp)
-    with patch("app.agents.llm.get_genai_client", return_value=client):
+    client, generate = _client(_response(usage_meta=False))
+    with patch("app.agents.chat_models.get_genai_client", return_value=client):
         await call_gemini("p", settings, stage="intent")
     config = generate.await_args.kwargs["config"]
     assert config.thinking_config.thinking_level == types.ThinkingLevel.LOW
@@ -232,10 +245,8 @@ async def test_call_gemini_sends_thinking_level_and_cap(settings):
 async def test_cap_hit_raises_so_callers_use_their_fallback(settings):
     from app.agents.llm import TruncatedResponseError, call_gemini
 
-    resp = SimpleNamespace(text="partial", usage_metadata=None,
-                           candidates=[SimpleNamespace(finish_reason=types.FinishReason.MAX_TOKENS)])
-    client, _ = _client(resp)
-    with patch("app.agents.llm.get_genai_client", return_value=client), pytest.raises(TruncatedResponseError):
+    client, _ = _client(_response(text="partial", finish=types.FinishReason.MAX_TOKENS, usage_meta=False))
+    with patch("app.agents.chat_models.get_genai_client", return_value=client), pytest.raises(TruncatedResponseError):
         await call_gemini("p", settings, stage="draft")
 
 
@@ -256,33 +267,28 @@ def test_prompts_put_static_text_before_customer_data():
 async def test_tool_turn_cancels_the_unused_search(mock_db, settings, agent_context):
     import asyncio
 
-    finished = []
+    finished, cancelled = [], []
 
     async def slow_retrieve(*_a, **_k):
-        await asyncio.sleep(0.5)
+        try:
+            await asyncio.sleep(0.5)
+        except asyncio.CancelledError:
+            cancelled.append(True)
+            raise
         finished.append(True)
         return RetrievalResult()
 
     intent = Intent(intent="BOOKING_LIST", tool_name="list_bookings", requires_action=True, confidence=0.9)
     async def action_after_cancel(*_a, **_k):
         await asyncio.sleep(0)  # let the cancellation land
-        assert p.retrieve_task_cancelled(), "search should be cancelled before the tool runs"
+        assert cancelled, "search should be cancelled before the tool runs"
         return ActionResult(tool="list_bookings", success=True, output={"bookings": []})
 
+    # Watches the search coroutine itself: LangGraph makes its own tasks, so patching create_task no longer isolates it.
     with pipeline(intent=intent) as p:
-        tasks = []
-        real_create_task = asyncio.create_task
-
-        def track(coro):
-            task = real_create_task(coro)
-            tasks.append(task)
-            return task
-
-        p.retrieve_task_cancelled = lambda: bool(tasks) and tasks[0].cancelled()
         p.retrieve.side_effect = slow_retrieve
         p.action.side_effect = action_after_cancel
-        with patch("app.agents.orchestrator.asyncio.create_task", side_effect=track):
-            response = await handle_message("show my bookings", agent_context, mock_db, settings)
+        response = await handle_message("show my bookings", agent_context, mock_db, settings)
         await asyncio.sleep(0.6)
     assert finished == []
     assert response.verifier_verdict == "TOOL_ONLY"  # an assertion inside the tool would turn into an error reply
@@ -296,12 +302,13 @@ async def test_unsupported_thinking_level_retries_without_it(settings):
 
     rejected = errors.ClientError(400, {"error": {"code": 400, "status": "INVALID_ARGUMENT",
                                               "message": "Thinking level MINIMAL is not supported for this model."}})
-    ok = SimpleNamespace(text="ok", usage_metadata=None, candidates=[])
-    generate = AsyncMock(side_effect=[rejected, ok])
+    generate = AsyncMock(side_effect=[rejected, _response(usage_meta=False)])
     client = SimpleNamespace(aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate)))
-    with patch("app.agents.llm.get_genai_client", return_value=client):
+    with patch("app.agents.chat_models.get_genai_client", return_value=client):
         assert await call_gemini("p", settings, stage="intent") == "ok"
-    assert generate.await_args_list[1].kwargs["config"].thinking_config is None
+    first, second = (c.kwargs["config"] for c in generate.await_args_list)
+    assert first.thinking_config is not None
+    assert second.thinking_config is None or second.thinking_config.thinking_level is None
 
 
 def test_default_thinking_levels_are_supported_by_gemini_flash(settings):
@@ -327,3 +334,36 @@ async def test_logged_out_visitor_is_asked_to_log_in_for_bookings(mock_db, setti
         response = await handle_message("show my bookings", unauthenticated_context, mock_db, settings)
     p.action.assert_not_called()
     assert "log in" in response.content.lower()
+
+
+@pytest.mark.asyncio
+async def test_intent_and_retrieval_run_in_parallel(mock_db, settings, agent_context):
+    """Intent waits until the search has started; run one after the other, this would time out."""
+    import asyncio
+
+    search_started = asyncio.Event()
+
+    async def retrieve(*_a, **_k):
+        search_started.set()
+        return RetrievalResult(chunks=[CHUNK], max_similarity=0.9)
+
+    async def classify(*_a, **_k):
+        await asyncio.wait_for(search_started.wait(), timeout=1)
+        return Intent(intent="FAQ", confidence=0.9)
+
+    with pipeline() as p:
+        p.retrieve.side_effect = retrieve
+        p.classify.side_effect = classify
+        response = await handle_message("what is your refund policy", agent_context, mock_db, settings)
+    assert response.verifier_verdict == "GROUNDED"
+    p.draft.assert_awaited_once()
+
+
+def test_graph_has_the_documented_nodes():
+    from app.agents.orchestrator import SUPPORT_GRAPH
+
+    assert set(SUPPORT_GRAPH.get_graph().nodes) == {
+        "__start__", "__end__", "safety", "intent", "symptom", "fixed_reply", "retrieval",
+        "abstain", "action", "fetch_bookings", "choose_booking", "confirm", "booking_reply", "draft", "verifier",
+        "response",
+    }

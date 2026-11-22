@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+    STAGE_TEXT,
+    StreamBroken,
+    StreamUnavailable,
+    streamChat,
+    type StreamFinal,
+    type StreamStage,
+} from '@/lib/supportStream';
 
 export interface ChatSource {
     title: string;
@@ -54,6 +62,33 @@ const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
     createdAt: new Date().toISOString(),
 };
 
+// Streaming (status text while the AI works) unless turned off at build time; falls back to the JSON route.
+const STREAMING_ENABLED = process.env.NEXT_PUBLIC_SUPPORT_STREAMING !== 'off';
+// Set once the server says it has no stream route, so later messages go straight to the JSON route.
+let streamRouteMissing = false;
+
+/** The reply as the chat shows it, from the JSON body (also the stream's final event). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- also reads an older nested `message` shape
+function toAssistantMessage(data: any): ChatMessage {
+    return {
+        id: data.message_id || data.message?.id || Date.now().toString(),
+        role: 'assistant',
+        content: data.content || data.message?.content || '',
+        sources: data.sources?.map((s: any) => ({
+            title: s.title || '',
+            url: s.url,
+            type: s.source_type || s.type,
+        })) || data.message?.sources || [],
+        actions: data.actions_taken?.map((a: any) => a.summary) || data.message?.actions || [],
+        cards: toProductCards(data.cards),
+        verified: data.verified ?? data.message?.verified ?? false,
+        wasAbstained: data.was_abstained ?? data.message?.wasAbstained ?? false,
+        createdAt: new Date().toISOString(),
+    };
+}
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 /** FastAPI sends `detail`, Express sends `error`; showing it beats a generic failure line. */
 function serverErrorMessage(err: any): string | null {
     const data = err?.response?.data;
@@ -67,6 +102,8 @@ export function useSupportChat() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [conversationId, setConversationId] = useState<string | null>(null);
+    // What the AI is doing right now (streaming only); null when idle or on the JSON route.
+    const [status, setStatus] = useState<string | null>(null);
 
     // Auto-scroll trigger
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -169,15 +206,7 @@ export function useSupportChat() {
         setIsLoading(true);
         setError(null);
 
-        try {
-            const res = await api.post('/support/chat', {
-                message: text,
-                conversation_id: conversationId,
-            });
-
-            const data = res.data;
-            const newConversationId = data.conversation_id;
-
+        const rememberConversation = (newConversationId: string | undefined) => {
             if (newConversationId && newConversationId !== conversationId) {
                 setConversationId(newConversationId);
                 if (newConversationId !== 'ephemeral') {
@@ -186,24 +215,44 @@ export function useSupportChat() {
                     localStorage.removeItem('docnow_support_conversation_id');
                 }
             }
+        };
+        const body = { message: text, conversation_id: conversationId };
 
-            const assistantMessage: ChatMessage = {
-                id: data.message_id || data.message?.id || Date.now().toString(),
-                role: 'assistant',
-                content: data.content || data.message?.content || '',
-                sources: data.sources?.map((s: any) => ({
-                    title: s.title || '',
-                    url: s.url,
-                    type: s.source_type || s.type,
-                })) || data.message?.sources || [],
-                actions: data.actions_taken?.map((a: any) => a.summary) || data.message?.actions || [],
-                cards: toProductCards(data.cards),
-                verified: data.verified ?? data.message?.verified ?? false,
-                wasAbstained: data.was_abstained ?? data.message?.wasAbstained ?? false,
-                createdAt: new Date().toISOString(),
-            };
+        try {
+            let data: StreamFinal | null = null;
+            if (STREAMING_ENABLED && !streamRouteMissing) {
+                try {
+                    data = await streamChat(body, (stage: StreamStage) => setStatus(STAGE_TEXT[stage] ?? null));
+                } catch (err) {
+                    if (err instanceof StreamUnavailable) {
+                        // Nothing ran on the server: the JSON route is safe to use instead.
+                        if (err.permanent) streamRouteMissing = true;
+                    } else if (err instanceof StreamBroken) {
+                        if (!err.conversationId || err.conversationId === 'ephemeral') {
+                            // Signed-out chats store nothing and cannot book; the server cancelled the turn.
+                        } else {
+                            // The turn ran (or still runs) on the server and is stored there. Never resend it:
+                            // a repeated "yes" could repeat a booking change. Show what the server stored.
+                            rememberConversation(err.conversationId);
+                            setStatus(null);
+                            await wait(2000);
+                            await loadHistory(err.conversationId);
+                            setError('The connection dropped while answering. If no reply appears, please ask again.');
+                            return;
+                        }
+                    } else {
+                        throw err;
+                    }
+                }
+            }
+            if (!data) {
+                setStatus(null);
+                const res = await api.post<StreamFinal>('/support/chat', body);
+                data = res.data;
+            }
 
-            setMessages((prev) => [...prev, assistantMessage]);
+            rememberConversation(data.conversation_id);
+            setMessages((prev) => [...prev, toAssistantMessage(data)]);
         } catch (err: any) {
             console.error('Failed to send message:', err);
             const status = err?.response?.status;
@@ -214,6 +263,7 @@ export function useSupportChat() {
             }
             setError(serverErrorMessage(err) || 'Failed to send message.');
         } finally {
+            setStatus(null);
             setIsLoading(false);
         }
     };
@@ -240,6 +290,7 @@ export function useSupportChat() {
         resetChat,
         submitFeedback,
         isLoading,
+        status,
         error,
         conversationId,
         messagesEndRef,

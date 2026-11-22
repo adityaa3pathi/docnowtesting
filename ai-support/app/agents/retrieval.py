@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
 from typing import Any
 
@@ -11,6 +12,7 @@ from langfuse import observe
 from app.agents.keyword import rrf_fuse
 from app.agents.llm import AIBusyError
 from app.agents.rerank import rerank
+from app.agents.retrieval_cache import RetrievalCache
 from app.ingestion.embeddings import QUERY, generate_embedding
 from app.models import RetrievalResult, RetrievedChunk
 from app.observability import annotate
@@ -64,8 +66,41 @@ def _gated(top_score: float | None, settings: Any) -> bool:
     return top_score is not None and settings.rerank_min_score > 0 and top_score < settings.rerank_min_score
 
 
+# One per process (uvicorn runs one worker): results only, dropped when the knowledge base changes.
+RETRIEVAL_CACHE = RetrievalCache()
+
+
+async def _kb_version(db: Any) -> Any | None:
+    """The knowledge-base version, or None when this backend has none (test doubles) or the check failed."""
+    if not inspect.iscoroutinefunction(getattr(type(db), "kb_version", None)):
+        return None
+    try:
+        return await db.kb_version()
+    except Exception:
+        logger.warning("Knowledge-base version check failed; searching without the cache", exc_info=True)
+        return None
+
+
 @observe(name="retrieval-agent", capture_input=False, capture_output=False)
 async def retrieve(query: str, db: Any, settings: Any) -> RetrievalResult:
+    """Search the knowledge base, through the retrieval cache (app/agents/retrieval_cache.py)."""
+    size = getattr(settings, "retrieval_cache_size", 0)
+    version = await _kb_version(db) if size > 0 else None
+    if version is None:
+        return await _search(query, db, settings)
+    RETRIEVAL_CACHE.max_entries = size
+    cached = RETRIEVAL_CACHE.get(query, settings, version)
+    if cached is not None:
+        annotate(retrieval_cache="hit", chunk_ids=[c.id for c in cached.chunks])
+        logger.info("retrieval cache hit (%s)", RETRIEVAL_CACHE.stats())
+        return cached
+    result = await _search(query, db, settings)
+    RETRIEVAL_CACHE.put(query, settings, version, result)
+    logger.info("retrieval cache miss (%s)", RETRIEVAL_CACHE.stats())
+    return result
+
+
+async def _search(query: str, db: Any, settings: Any) -> RetrievalResult:
     """Retrieve relevant knowledge chunks for a user query.
 
     1. Dense search via pgvector, filtered by relevance threshold (abstention gate)
@@ -131,7 +166,8 @@ async def retrieve(query: str, db: Any, settings: Any) -> RetrievalResult:
         )
 
     except (errors.ClientError, errors.ServerError) as exc:
-        if getattr(exc, 'code', None) in (429, 503) or '503' in str(exc) or '429' in str(exc):
+        # 402: prepaid credits ran out (22-11-2026); customers get the busy reply, not "something went wrong".
+        if getattr(exc, 'code', None) in (402, 429, 503) or '503' in str(exc) or '429' in str(exc):
             raise AIBusyError from exc
         logger.exception("Error in retrieval agent")
         return RetrievalResult(chunks=[], should_abstain=True, max_similarity=0.0, failed=True)

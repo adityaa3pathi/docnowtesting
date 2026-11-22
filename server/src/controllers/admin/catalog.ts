@@ -4,6 +4,7 @@ import { prisma } from '../../db';
 import { HealthiansAdapter } from '../../adapters/healthians';
 import { buildCatalogSearchWhere, normalizeSearchTerm, normalizePurposeForSearch } from '../../utils/searchUtils';
 import { normalizePurpose } from '../../utils/catalogPurpose';
+import { normalizeFastingOverride } from '../../utils/catalogFasting';
 
 const healthians = HealthiansAdapter.getInstance();
 
@@ -225,6 +226,46 @@ export async function updateCatalogItemPurpose(req: AuthRequest, res: Response) 
         res.json(updated);
     } catch (error: any) {
         res.status(500).json({ error: 'Failed to update purpose', details: error.message });
+    }
+}
+
+/**
+ * PUT /api/manager/catalog/:id/fasting
+ * Correct the fasting facts Healthians sends (they overwrite detailsData on every fetch).
+ * Body: { fasting: "Required" | "Not Required" | null, fastingHours?: 1-24 | null }; null fasting goes back to Healthians.
+ */
+export async function updateCatalogItemFasting(req: AuthRequest, res: Response) {
+    const id = req.params.id as string;
+    const result = normalizeFastingOverride(req.body);
+    if (!result.ok) return res.status(400).json({ error: result.error });
+
+    const select = { id: true, fastingOverride: true, fastingTimeOverride: true } as const;
+    try {
+        const existing = await prisma.catalogItem.findUnique({ where: { id }, select });
+        if (!existing) return res.status(404).json({ error: 'Catalog item not found' });
+
+        // One transaction so a failed audit write never leaves an unrecorded change.
+        const updated = await prisma.$transaction(async (tx) => {
+            const row = await tx.catalogItem.update({ where: { id }, data: result.value, select });
+            if (req.userId) {
+                await tx.adminAuditLog.create({
+                    data: {
+                        adminId: req.userId,
+                        adminName: req.adminName || 'Manager',
+                        action: 'CATALOG_FASTING_OVERRIDE',
+                        entity: 'CatalogItem',
+                        targetId: id,
+                        oldValue: { fastingOverride: existing.fastingOverride, fastingTimeOverride: existing.fastingTimeOverride },
+                        newValue: { fastingOverride: row.fastingOverride, fastingTimeOverride: row.fastingTimeOverride },
+                    },
+                });
+            }
+            return row;
+        });
+
+        res.json(updated);
+    } catch (error: any) {
+        res.status(500).json({ error: 'Failed to update fasting', details: error.message });
     }
 }
 

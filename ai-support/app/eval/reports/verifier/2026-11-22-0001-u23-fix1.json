@@ -1,0 +1,150 @@
+{
+  "label": "u23-fix1",
+  "llm_model": "gemini-3.5-flash-lite",
+  "repeat": 5,
+  "scores": {
+    "false_block_rate": null,
+    "false_pass_rate": 0.0,
+    "unsupported_called_grounded": 0.0,
+    "supported_called_grounded": null,
+    "false_pass/invented_negative": 0.0
+  },
+  "aggregate": {
+    "false_block_rate": {
+      "mean": null,
+      "std": null,
+      "n": 0
+    },
+    "false_pass_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "unsupported_called_grounded": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "supported_called_grounded": {
+      "mean": null,
+      "std": null,
+      "n": 0
+    },
+    "false_pass/invented_negative": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "runs": [
+    {
+      "false_block_rate": null,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": null,
+      "false_pass/invented_negative": 0.0
+    },
+    {
+      "false_block_rate": null,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": null,
+      "false_pass/invented_negative": 0.0
+    },
+    {
+      "false_block_rate": null,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": null,
+      "false_pass/invented_negative": 0.0
+    },
+    {
+      "false_block_rate": null,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": null,
+      "false_pass/invented_negative": 0.0
+    },
+    {
+      "false_block_rate": null,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": null,
+      "false_pass/invented_negative": 0.0
+    }
+  ],
+  "per_case": {
+    "u23": {
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    }
+  },
+  "results": [
+    {
+      "case_id": "u23",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "I don't have information about writing prescriptions, as DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep.",
+      "reasoning": "The claim that DocNow brings lab tests to your doorstep is grounded in Source 1. The statement 'I don't have information about writing prescriptions' correctly describes the sources. However, the claim that DocNow 'does not provide medical consultations or prescriptions' is not explicitly supported by the provided sources, as the sources only list specific tests they do not offer (imaging, radiology, heart tests with machines, and vaccinations).",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u23",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "I don't have information about writing prescriptions.",
+      "reasoning": "The claims that DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep are supported by Source 1. The statement 'I don't have information about writing prescriptions' describes the lack of source info. However, the claim that DocNow 'does not provide medical consultations or prescriptions' is not mentioned in the sources (even though it describes DocNow's services), making that specific assertion ungrounded according to the negative claim rules.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u23",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "I don't have information about writing prescriptions, as DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep.",
+      "reasoning": "The claim that DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep is grounded in Source 1. The claim that the author does not have information about writing prescriptions is grounded in the agent's knowledge limits. However, the claim that DocNow does not provide medical consultations or prescriptions is ungrounded because the sources do not mention medical consultations or prescriptions.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u23",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "I don't have information about writing prescriptions, as DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep.",
+      "reasoning": "The draft correctly states that DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep based on Source 1. However, the claim that DocNow does not provide medical consultations or prescriptions is not explicitly mentioned in the sources, making it ungrounded.",
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "u23",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "I don't have information about writing prescriptions, as DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep.",
+      "reasoning": "The claim that DocNow is a healthcare diagnostics platform that brings lab tests to your doorstep is grounded in Source 1. However, the claim that DocNow does not provide medical consultations or prescriptions is not found in the sources.",
+      "ok": true,
+      "leaked": []
+    }
+  ]
+}

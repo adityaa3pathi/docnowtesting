@@ -9,8 +9,13 @@ pydantic-settings>=2.15,<3
 asyncpg>=0.32,<1
 pgvector>=0.5.1,<1
 
-# Google AI
-google-genai>=2.29,<3
+# Google AI. 3.x is what tests and evals have run on (dev deps pulled it in); langchain-google-genai needs it.
+google-genai>=3.3,<4
+
+# Orchestration graph
+langgraph>=1.2.24,<2
+# Chat models behind call_gemini: Gemini with with_fallbacks (Phase 4)
+langchain-google-genai>=4.4,<5
 
 # Observability (v4 SDK: `from langfuse import observe`)
 langfuse>=4.17,<5
