@@ -421,3 +421,20 @@ async def test_invoke_returns_what_ainvoke_returns(mock_db, settings):
         if "__interrupt__" in ours:
             assert [i.value for i in ours.pop("__interrupt__")] == [i.value for i in theirs.pop("__interrupt__")]
         assert ours == theirs
+
+
+def test_stream_bench_summary_per_route():
+    from app.eval.stream_bench import summarize
+
+    rows = []
+    for rnd in range(2):
+        for i in range(4):
+            rows.append({"round": rnd, "transport": "json", "final_ms": 3000 + 100 * i, "probe_ok": True})
+            rows.append({"round": rnd, "transport": "sse", "first_byte_ms": 5, "start_ms": 5, "first_status_ms": 20 + i,
+                         "final_ms": 3010 + 100 * i, "probe_ok": i != 3})
+    rows.append({"round": 0, "transport": "sse", "error": "boom"})
+    s = summarize(rows)
+    assert s["json final"]["p50"] == (3200, 0) and s["sse final"]["p50"] == (3210, 0)
+    assert s["sse first status"]["p95"] == (23, 0)
+    assert s["json probe_pass"] == 1.0 and s["sse probe_pass"] == 0.75
+    assert s["sse errors"] == 1 and s["json errors"] == 0
