@@ -1,0 +1,8371 @@
+{
+ "label": "p4-rewrite-modes",
+ "llm_model": "gemini-3.5-flash-lite",
+ "repeat": 5,
+ "aggregate": {
+  "followup": {
+   "typed": {
+    "recall@5": {
+     "mean": 0.4,
+     "std": 0.0
+    },
+    "mrr@5": {
+     "mean": 0.3667,
+     "std": 0.0
+    },
+    "context_recall": {
+     "mean": 0.4,
+     "std": 0.0
+    },
+    "false_abstention": {
+     "mean": 0.0,
+     "std": 0.0
+    }
+   },
+   "replace": {
+    "recall@5": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "mrr@5": {
+     "mean": 0.95,
+     "std": 0.0
+    },
+    "context_recall": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "false_abstention": {
+     "mean": 0.0,
+     "std": 0.0
+    }
+   },
+   "both": {
+    "recall@5": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "mrr@5": {
+     "mean": 0.6808,
+     "std": 0.0172
+    },
+    "context_recall": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "false_abstention": {
+     "mean": 0.0,
+     "std": 0.0
+    }
+   }
+  },
+  "typo_followup": {
+   "typed": {
+    "recall@5": {
+     "mean": 0.5,
+     "std": 0.0
+    },
+    "mrr@5": {
+     "mean": 0.25,
+     "std": 0.0
+    },
+    "context_recall": {
+     "mean": 0.5,
+     "std": 0.0
+    },
+    "false_abstention": {
+     "mean": 0.0,
+     "std": 0.0
+    }
+   },
+   "replace": {
+    "recall@5": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "mrr@5": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "context_recall": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "false_abstention": {
+     "mean": 0.0,
+     "std": 0.0
+    }
+   },
+   "both": {
+    "recall@5": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "mrr@5": {
+     "mean": 0.625,
+     "std": 0.0
+    },
+    "context_recall": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "false_abstention": {
+     "mean": 0.0,
+     "std": 0.0
+    }
+   }
+  },
+  "control": {
+   "typed": {
+    "recall@5": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "mrr@5": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "context_recall": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "false_abstention": {
+     "mean": 0.0,
+     "std": 0.0
+    }
+   },
+   "replace": {
+    "recall@5": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "mrr@5": {
+     "mean": 0.9375,
+     "std": 0.0
+    },
+    "context_recall": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "false_abstention": {
+     "mean": 0.0,
+     "std": 0.0
+    }
+   },
+   "both": {
+    "recall@5": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "mrr@5": {
+     "mean": 0.9375,
+     "std": 0.0
+    },
+    "context_recall": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "false_abstention": {
+     "mean": 0.0,
+     "std": 0.0
+    }
+   }
+  },
+  "all": {
+   "typed": {
+    "recall@5": {
+     "mean": 0.5667,
+     "std": 0.0
+    },
+    "mrr@5": {
+     "mean": 0.5278,
+     "std": 0.0
+    },
+    "context_recall": {
+     "mean": 0.5667,
+     "std": 0.0
+    },
+    "false_abstention": {
+     "mean": 0.0,
+     "std": 0.0
+    }
+   },
+   "replace": {
+    "recall@5": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "mrr@5": {
+     "mean": 0.95,
+     "std": 0.0
+    },
+    "context_recall": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "false_abstention": {
+     "mean": 0.0,
+     "std": 0.0
+    }
+   },
+   "both": {
+    "recall@5": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "mrr@5": {
+     "mean": 0.7456,
+     "std": 0.0115
+    },
+    "context_recall": {
+     "mean": 1.0,
+     "std": 0.0
+    },
+    "false_abstention": {
+     "mean": 0.0,
+     "std": 0.0
+    }
+   }
+  },
+  "rewrite": {
+   "p50_ms": {
+    "mean": 969.0,
+    "std": 34.2184
+   },
+   "tokens_mean": {
+    "mean": 248.1067,
+    "std": 0.653
+   },
+   "control_changed": {
+    "mean": 0.625,
+    "std": 0.0791
+   }
+  }
+ },
+ "rows": [
+  {
+   "id": "fu-01",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "how much does it cost?",
+   "rewritten": "lipid profile test price",
+   "relevant": [
+    "catalog:fx-lipid"
+   ],
+   "rewrite_ms": 1471,
+   "rewrite_tokens": 242,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-cbc",
+     "catalog:fx-b12",
+     "catalog:fx-tsh",
+     "catalog:fx-iron",
+     "policy:Payment and Pricing Policy"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-lipid",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-men-40",
+     "catalog:fx-thyroid",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-lipid",
+     "catalog:fx-cbc",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-b12",
+     "catalog:fx-men-40",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-02",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "does that need fasting?",
+   "rewritten": "HbA1c test fasting",
+   "relevant": [
+    "catalog:fx-hba1c"
+   ],
+   "rewrite_ms": 1738,
+   "rewrite_tokens": 245,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbs",
+     "faq:Services We Don't Offer",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lipid",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-hba1c",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-fbs",
+     "catalog:fx-comprehensive",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-diabetes",
+     "catalog:fx-hba1c",
+     "faq:Services We Don't Offer",
+     "catalog:fx-fbc-adv",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-03",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "what about the advanced one?",
+   "rewritten": "Advanced Full Body Checkup what it includes",
+   "relevant": [
+    "catalog:fx-fbc-adv"
+   ],
+   "rewrite_ms": 1188,
+   "rewrite_tokens": 260,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-diabetes",
+     "catalog:fx-comprehensive",
+     "catalog:fx-hba1c",
+     "catalog:fx-crp",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-comprehensive",
+     "catalog:fx-men-40",
+     "catalog:fx-antenatal",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-04",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "and how long for the report?",
+   "rewritten": "Vitamin D test report time",
+   "relevant": [
+    "catalog:fx-vitd"
+   ],
+   "rewrite_ms": 1280,
+   "rewrite_tokens": 243,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Slot Booking and Availability",
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "catalog:fx-hba1c",
+     "catalog:fx-ppbs"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Report Delivery",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Report Delivery",
+     "catalog:fx-vitd",
+     "faq:Slot Booking and Availability",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-05",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "can I still cancel it?",
+   "rewritten": "cancel booking",
+   "relevant": [
+    "policy:Cancellation Policy",
+    "booking_help:Booking Status Explanations"
+   ],
+   "rewrite_ms": 1126,
+   "rewrite_tokens": 236,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Cancellation Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "faq:Slot Booking and Availability"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Rescheduling Policy",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Rescheduling Policy",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-06",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "what's the price?",
+   "rewritten": "Thyroid Profile price",
+   "relevant": [
+    "catalog:fx-thyroid"
+   ],
+   "rewrite_ms": 1212,
+   "rewrite_tokens": 252,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-men-40",
+     "catalog:fx-cbc",
+     "catalog:fx-b12",
+     "faq:Phlebotomist Tracking",
+     "catalog:fx-fbs",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-antenatal",
+     "catalog:fx-tsh",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-men-40",
+     "catalog:fx-antenatal",
+     "catalog:fx-cbc",
+     "catalog:fx-tsh",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-07",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "is fasting needed for it?",
+   "rewritten": "Kidney Function Test fasting",
+   "relevant": [
+    "catalog:fx-kft"
+   ],
+   "rewrite_ms": 1365,
+   "rewrite_tokens": 241,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-diabetes",
+     "catalog:fx-cbc",
+     "catalog:fx-lft",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lft",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-fbs",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbs",
+     "catalog:fx-lft",
+     "catalog:fx-kft",
+     "catalog:fx-diabetes",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.25,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-08",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "which sample does it need?",
+   "rewritten": "Vitamin B12 sample",
+   "relevant": [
+    "catalog:fx-b12"
+   ],
+   "rewrite_ms": 1098,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "booking_help:Resample Required Explanation",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog:fx-ppbs",
+     "catalog:fx-fbs",
+     "catalog_index:Average Blood Glucose"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-b12",
+     "catalog:fx-vitd",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "booking_help:Booking Status Explanations",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "booking_help:Booking Status Explanations",
+     "catalog:fx-b12",
+     "booking_help:Resample Required Explanation",
+     "catalog:fx-vitd",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-09",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "how is it different from the basic one?",
+   "rewritten": "Comprehensive Health Checkup difference from basic health checkup",
+   "relevant": [
+    "catalog:fx-comprehensive",
+    "catalog:fx-fbc-basic"
+   ],
+   "rewrite_ms": 1141,
+   "rewrite_tokens": 260,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-diabetes",
+     "faq:Phlebotomist Tracking",
+     "booking_help:Managing Multiple Patients",
+     "catalog_index:Complete Blood Count"
+    ],
+    "abstained": false,
+    "recall@5": 0.5,
+    "mrr@5": 1.0,
+    "context_recall": 0.5
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-comprehensive",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-men-40",
+     "faq:Services We Don't Offer",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-10",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "what does it check?",
+   "rewritten": "hs-CRP test what does it include",
+   "relevant": [
+    "catalog:fx-crp"
+   ],
+   "rewrite_ms": 1066,
+   "rewrite_tokens": 251,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-ppbs",
+     "catalog:fx-b12",
+     "catalog:fx-vitd",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-crp",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "policy:Payment and Pricing Policy",
+     "catalog:fx-cbc",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-crp",
+     "catalog:fx-ppbs",
+     "catalog:fx-b12",
+     "catalog:fx-comprehensive",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-11",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "do I need to fast before it?",
+   "rewritten": "Post Prandial Blood Sugar PPBS fasting",
+   "relevant": [
+    "catalog:fx-ppbs"
+   ],
+   "rewrite_ms": 858,
+   "rewrite_tokens": 251,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Rescheduling Policy",
+     "catalog:fx-fbs",
+     "policy:Refund Policy",
+     "catalog:fx-fbc-basic",
+     "faq:Services We Don't Offer",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-ppbs",
+     "catalog:fx-fbs",
+     "catalog:fx-diabetes",
+     "catalog:fx-hba1c",
+     "catalog:fx-comprehensive",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-ppbs",
+     "policy:Rescheduling Policy",
+     "catalog:fx-diabetes",
+     "policy:Refund Policy",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-12",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "how many parameters are in it?",
+   "rewritten": "men's health checkup parameters",
+   "relevant": [
+    "catalog:fx-men-40"
+   ],
+   "rewrite_ms": 755,
+   "rewrite_tokens": 255,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-iron",
+     "catalog:fx-cbc",
+     "catalog:fx-urine",
+     "catalog_index:Average Blood Glucose"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-men-40",
+     "catalog:fx-comprehensive",
+     "catalog:fx-psa",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-men-40",
+     "catalog:fx-comprehensive",
+     "catalog:fx-psa",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-13",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "if I can't make it, can I move it to another day?",
+   "rewritten": "Liver Function Test reschedule",
+   "relevant": [
+    "policy:Rescheduling Policy"
+   ],
+   "rewrite_ms": 1055,
+   "rewrite_tokens": 253,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Slot Booking and Availability",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy",
+     "policy:Refund Policy",
+     "policy:Cancellation Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-lft",
+     "policy:Rescheduling Policy",
+     "faq:Slot Booking and Availability",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Slot Booking and Availability",
+     "policy:Rescheduling Policy",
+     "catalog:fx-lft",
+     "booking_help:Resample Required Explanation",
+     "catalog:fx-fbc-basic",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-14",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "how do I get my money back then?",
+   "rewritten": "cancellation refund",
+   "relevant": [
+    "policy:Refund Policy"
+   ],
+   "rewrite_ms": 1162,
+   "rewrite_tokens": 238,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Refund Policy",
+     "policy:Cancellation Policy",
+     "faq:How Home Collection Works",
+     "booking_help:Wallet Credits and Promo Codes",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Rescheduling Policy",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Resample Required Explanation",
+     "booking_help:Booking Status Explanations",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-15",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "when will the result come?",
+   "rewritten": "Iron Studies report time",
+   "relevant": [
+    "catalog:fx-iron"
+   ],
+   "rewrite_ms": 750,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "faq:Slot Booking and Availability",
+     "catalog:fx-ppbs",
+     "catalog:fx-lft"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "catalog_index:Complete Blood Count"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "catalog:fx-iron",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog_index:Complete Blood Count"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-16",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "is it included in the diabetes package?",
+   "rewritten": "is HbA1c included in the diabetes package?",
+   "relevant": [
+    "catalog:fx-diabetes"
+   ],
+   "rewrite_ms": 901,
+   "rewrite_tokens": 256,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-hba1c",
+     "catalog:fx-antenatal",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-hba1c",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog:fx-hba1c",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-17",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "what's its price?",
+   "rewritten": "PSA test price",
+   "relevant": [
+    "catalog:fx-psa"
+   ],
+   "rewrite_ms": 603,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-b12",
+     "catalog:fx-men-40",
+     "catalog:fx-cbc",
+     "faq:Phlebotomist Tracking",
+     "catalog:fx-tsh"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "catalog:fx-b12",
+     "catalog:fx-ppbs",
+     "catalog:fx-kft",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-b12",
+     "catalog:fx-men-40",
+     "catalog:fx-psa",
+     "catalog:fx-cbc",
+     "catalog:fx-ppbs",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-18",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "and one for pregnant women?",
+   "rewritten": "pregnancy health package",
+   "relevant": [
+    "catalog:fx-antenatal"
+   ],
+   "rewrite_ms": 865,
+   "rewrite_tokens": 251,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-antenatal",
+     "catalog:fx-diabetes",
+     "faq:Services We Don't Offer",
+     "catalog:fx-ppbs",
+     "catalog:fx-tsh",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-antenatal",
+     "catalog:fx-comprehensive",
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-antenatal",
+     "catalog:fx-diabetes",
+     "catalog:fx-comprehensive",
+     "faq:Services We Don't Offer",
+     "catalog:fx-men-40",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-19",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "does it need a urine sample too?",
+   "rewritten": "Basic Full Body Checkup urine sample",
+   "relevant": [
+    "catalog:fx-fbc-basic"
+   ],
+   "rewrite_ms": 1193,
+   "rewrite_tokens": 253,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-urine",
+     "catalog:fx-fbc-basic",
+     "faq:Services We Don't Offer",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-urine",
+     "catalog:fx-comprehensive",
+     "catalog:fx-men-40",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-urine",
+     "catalog:fx-fbc-adv",
+     "faq:Services We Don't Offer",
+     "catalog:fx-comprehensive",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-20",
+   "kind": "followup",
+   "repeat": 0,
+   "query": "can someone collect it from my home?",
+   "rewritten": "Urine Routine and Microscopy home collection",
+   "relevant": [
+    "catalog:fx-urine",
+    "faq:How Home Collection Works"
+   ],
+   "rewrite_ms": 1143,
+   "rewrite_tokens": 238,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:How Home Collection Works",
+     "booking_help:Managing Multiple Patients",
+     "faq:About DocNow",
+     "faq:Slot Booking and Availability"
+    ],
+    "abstained": false,
+    "recall@5": 0.5,
+    "mrr@5": 0.5,
+    "context_recall": 0.5
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-urine",
+     "faq:How Home Collection Works",
+     "catalog:fx-fbc-basic",
+     "faq:Cities and Locations Served",
+     "faq:Services We Don't Offer",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:How Home Collection Works",
+     "faq:Cities and Locations Served",
+     "catalog:fx-urine",
+     "catalog:fx-fbc-basic",
+     "booking_help:Managing Multiple Patients",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-21",
+   "kind": "typo_followup",
+   "repeat": 0,
+   "query": "how much is the thyriod one",
+   "rewritten": "Thyroid Profile price",
+   "relevant": [
+    "catalog:fx-thyroid",
+    "catalog:fx-tsh"
+   ],
+   "rewrite_ms": 715,
+   "rewrite_tokens": 256,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-tsh",
+     "catalog:fx-thyroid",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-basic",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-antenatal",
+     "catalog:fx-tsh",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-tsh",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-diabetes",
+     "catalog:fx-antenatal",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-22",
+   "kind": "typo_followup",
+   "repeat": 0,
+   "query": "does it need fastng",
+   "rewritten": "Lipid Profile fasting",
+   "relevant": [
+    "catalog:fx-lipid"
+   ],
+   "rewrite_ms": 811,
+   "rewrite_tokens": 239,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-ppbs",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-lipid",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-thyroid",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-lipid",
+     "catalog:fx-diabetes",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.25,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-01",
+   "kind": "control",
+   "repeat": 0,
+   "query": "What is your refund policy?",
+   "rewritten": "refund policy",
+   "relevant": [
+    "policy:Refund Policy"
+   ],
+   "rewrite_ms": 848,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Refund Policy",
+     "policy:Cancellation Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-02",
+   "kind": "control",
+   "repeat": 0,
+   "query": "Do you have a vitamin D test?",
+   "rewritten": "Do you have a vitamin D test?",
+   "relevant": [
+    "catalog:fx-vitd"
+   ],
+   "rewrite_ms": 732,
+   "rewrite_tokens": 250,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Services We Don't Offer",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Services We Don't Offer",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Services We Don't Offer",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-03",
+   "kind": "control",
+   "repeat": 0,
+   "query": "Which cities do you serve?",
+   "rewritten": "Which cities do you serve?",
+   "relevant": [
+    "faq:Cities and Locations Served"
+   ],
+   "rewrite_ms": 946,
+   "rewrite_tokens": 241,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:About DocNow",
+     "faq:Services We Don't Offer",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:About DocNow",
+     "faq:Services We Don't Offer",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:About DocNow",
+     "faq:Services We Don't Offer",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-04",
+   "kind": "control",
+   "repeat": 0,
+   "query": "How much is the Kidney Function Test?",
+   "rewritten": "Kidney Function Test price",
+   "relevant": [
+    "catalog:fx-kft"
+   ],
+   "rewrite_ms": 997,
+   "rewrite_tokens": 254,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-men-40",
+     "catalog:fx-lft",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lft",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lft",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-05",
+   "kind": "control",
+   "repeat": 0,
+   "query": "What payment methods do you accept?",
+   "rewritten": "payment methods",
+   "relevant": [
+    "policy:Payment and Pricing Policy"
+   ],
+   "rewrite_ms": 959,
+   "rewrite_tokens": 247,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "policy:Refund Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "policy:Refund Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-06",
+   "kind": "control",
+   "repeat": 0,
+   "query": "Can I track the phlebotomist?",
+   "rewritten": "track the phlebotomist home collection",
+   "relevant": [
+    "faq:Phlebotomist Tracking"
+   ],
+   "rewrite_ms": 965,
+   "rewrite_tokens": 245,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Phlebotomist Tracking",
+     "booking_help:Booking Status Explanations",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "booking_help:Managing Multiple Patients"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "faq:Phlebotomist Tracking",
+     "faq:How Home Collection Works",
+     "booking_help:Booking Status Explanations",
+     "faq:Cities and Locations Served",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Phlebotomist Tracking",
+     "faq:How Home Collection Works",
+     "booking_help:Booking Status Explanations",
+     "booking_help:Resample Required Explanation",
+     "faq:Cities and Locations Served"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-07",
+   "kind": "control",
+   "repeat": 0,
+   "query": "Is the PSA test available?",
+   "rewritten": "PSA test availability",
+   "relevant": [
+    "catalog:fx-psa"
+   ],
+   "rewrite_ms": 1123,
+   "rewrite_tokens": 242,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "faq:Cities and Locations Served",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "faq:Slot Booking and Availability",
+     "faq:How Home Collection Works",
+     "faq:Cities and Locations Served",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "faq:Cities and Locations Served",
+     "faq:Slot Booking and Availability",
+     "faq:How Home Collection Works",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-08",
+   "kind": "control",
+   "repeat": 0,
+   "query": "Do you have a test for iron deficiency?",
+   "rewritten": "iron deficiency test price",
+   "relevant": [
+    "catalog:fx-iron"
+   ],
+   "rewrite_ms": 878,
+   "rewrite_tokens": 248,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-vitd",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-vitd",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-vitd",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-01",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "how much does it cost?",
+   "rewritten": "Lipid Profile cost",
+   "relevant": [
+    "catalog:fx-lipid"
+   ],
+   "rewrite_ms": 1131,
+   "rewrite_tokens": 247,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-cbc",
+     "catalog:fx-b12",
+     "catalog:fx-tsh",
+     "catalog:fx-iron",
+     "policy:Payment and Pricing Policy"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-lipid",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-thyroid",
+     "catalog:fx-men-40",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-lipid",
+     "catalog:fx-cbc",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-02",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "does that need fasting?",
+   "rewritten": "HbA1c fasting",
+   "relevant": [
+    "catalog:fx-hba1c"
+   ],
+   "rewrite_ms": 1128,
+   "rewrite_tokens": 249,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbs",
+     "faq:Services We Don't Offer",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lipid",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-hba1c",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-fbs",
+     "catalog:fx-comprehensive",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-diabetes",
+     "catalog:fx-hba1c",
+     "faq:Services We Don't Offer",
+     "catalog:fx-fbc-adv",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-03",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "what about the advanced one?",
+   "rewritten": "Advanced Full Body Checkup what it includes",
+   "relevant": [
+    "catalog:fx-fbc-adv"
+   ],
+   "rewrite_ms": 810,
+   "rewrite_tokens": 260,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-diabetes",
+     "catalog:fx-comprehensive",
+     "catalog:fx-hba1c",
+     "catalog:fx-crp",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-comprehensive",
+     "catalog:fx-men-40",
+     "catalog:fx-antenatal",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-04",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "and how long for the report?",
+   "rewritten": "Vitamin D test report time",
+   "relevant": [
+    "catalog:fx-vitd"
+   ],
+   "rewrite_ms": 879,
+   "rewrite_tokens": 243,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Slot Booking and Availability",
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "catalog:fx-hba1c",
+     "catalog:fx-ppbs"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Report Delivery",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Report Delivery",
+     "catalog:fx-vitd",
+     "faq:Slot Booking and Availability",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-05",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "can I still cancel it?",
+   "rewritten": "cancel booking",
+   "relevant": [
+    "policy:Cancellation Policy",
+    "booking_help:Booking Status Explanations"
+   ],
+   "rewrite_ms": 1118,
+   "rewrite_tokens": 241,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Cancellation Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "faq:Slot Booking and Availability"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Rescheduling Policy",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Rescheduling Policy",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-06",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "what's the price?",
+   "rewritten": "Thyroid Profile price",
+   "relevant": [
+    "catalog:fx-thyroid"
+   ],
+   "rewrite_ms": 1075,
+   "rewrite_tokens": 252,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-men-40",
+     "catalog:fx-cbc",
+     "catalog:fx-b12",
+     "faq:Phlebotomist Tracking",
+     "catalog:fx-fbs",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-antenatal",
+     "catalog:fx-tsh",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-men-40",
+     "catalog:fx-antenatal",
+     "catalog:fx-cbc",
+     "catalog:fx-tsh",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-07",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "is fasting needed for it?",
+   "rewritten": "Kidney Function Test fasting",
+   "relevant": [
+    "catalog:fx-kft"
+   ],
+   "rewrite_ms": 1075,
+   "rewrite_tokens": 241,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-diabetes",
+     "catalog:fx-cbc",
+     "catalog:fx-lft",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lft",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-fbs",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbs",
+     "catalog:fx-lft",
+     "catalog:fx-kft",
+     "catalog:fx-diabetes",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.25,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-08",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "which sample does it need?",
+   "rewritten": "Vitamin B12 sample",
+   "relevant": [
+    "catalog:fx-b12"
+   ],
+   "rewrite_ms": 1024,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "booking_help:Resample Required Explanation",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog:fx-ppbs",
+     "catalog:fx-fbs",
+     "catalog_index:Average Blood Glucose"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-b12",
+     "catalog:fx-vitd",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "booking_help:Booking Status Explanations",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "booking_help:Booking Status Explanations",
+     "catalog:fx-b12",
+     "booking_help:Resample Required Explanation",
+     "catalog:fx-vitd",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-09",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "how is it different from the basic one?",
+   "rewritten": "Comprehensive Health Checkup difference from basic health checkup",
+   "relevant": [
+    "catalog:fx-comprehensive",
+    "catalog:fx-fbc-basic"
+   ],
+   "rewrite_ms": 845,
+   "rewrite_tokens": 260,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-diabetes",
+     "faq:Phlebotomist Tracking",
+     "booking_help:Managing Multiple Patients",
+     "catalog_index:Complete Blood Count"
+    ],
+    "abstained": false,
+    "recall@5": 0.5,
+    "mrr@5": 1.0,
+    "context_recall": 0.5
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-comprehensive",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-men-40",
+     "faq:Services We Don't Offer",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-10",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "what does it check?",
+   "rewritten": "hs-CRP test what does it check",
+   "relevant": [
+    "catalog:fx-crp"
+   ],
+   "rewrite_ms": 988,
+   "rewrite_tokens": 246,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-ppbs",
+     "catalog:fx-b12",
+     "catalog:fx-vitd",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-crp",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-ppbs",
+     "catalog:fx-b12",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-ppbs",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-b12",
+     "catalog:fx-crp",
+     "catalog:fx-comprehensive",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.25,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-11",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "do I need to fast before it?",
+   "rewritten": "Post Prandial Blood Sugar (PPBS) test fasting",
+   "relevant": [
+    "catalog:fx-ppbs"
+   ],
+   "rewrite_ms": 1022,
+   "rewrite_tokens": 259,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Rescheduling Policy",
+     "catalog:fx-fbs",
+     "policy:Refund Policy",
+     "catalog:fx-fbc-basic",
+     "faq:Services We Don't Offer",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-ppbs",
+     "catalog:fx-fbs",
+     "catalog:fx-diabetes",
+     "catalog:fx-hba1c",
+     "catalog:fx-fbc-basic",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-ppbs",
+     "policy:Rescheduling Policy",
+     "catalog:fx-diabetes",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-12",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "how many parameters are in it?",
+   "rewritten": "Men's Health Checkup parameters",
+   "relevant": [
+    "catalog:fx-men-40"
+   ],
+   "rewrite_ms": 781,
+   "rewrite_tokens": 255,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-iron",
+     "catalog:fx-cbc",
+     "catalog:fx-urine",
+     "catalog_index:Average Blood Glucose"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-men-40",
+     "catalog:fx-comprehensive",
+     "catalog:fx-psa",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-men-40",
+     "catalog:fx-comprehensive",
+     "catalog:fx-psa",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-13",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "if I can't make it, can I move it to another day?",
+   "rewritten": "Liver Function Test reschedule",
+   "relevant": [
+    "policy:Rescheduling Policy"
+   ],
+   "rewrite_ms": 1021,
+   "rewrite_tokens": 253,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Slot Booking and Availability",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy",
+     "policy:Refund Policy",
+     "policy:Cancellation Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-lft",
+     "policy:Rescheduling Policy",
+     "faq:Slot Booking and Availability",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Slot Booking and Availability",
+     "policy:Rescheduling Policy",
+     "catalog:fx-lft",
+     "booking_help:Resample Required Explanation",
+     "catalog:fx-fbc-basic",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-14",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "how do I get my money back then?",
+   "rewritten": "cancellation refund",
+   "relevant": [
+    "policy:Refund Policy"
+   ],
+   "rewrite_ms": 907,
+   "rewrite_tokens": 238,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Refund Policy",
+     "policy:Cancellation Policy",
+     "faq:How Home Collection Works",
+     "booking_help:Wallet Credits and Promo Codes",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Rescheduling Policy",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Resample Required Explanation",
+     "booking_help:Booking Status Explanations",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-15",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "when will the result come?",
+   "rewritten": "Iron Studies report time",
+   "relevant": [
+    "catalog:fx-iron"
+   ],
+   "rewrite_ms": 1005,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "faq:Slot Booking and Availability",
+     "catalog:fx-ppbs",
+     "catalog:fx-lft"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "catalog_index:Complete Blood Count"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "catalog:fx-iron",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog_index:Complete Blood Count"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-16",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "is it included in the diabetes package?",
+   "rewritten": "is HbA1c included in the diabetes package?",
+   "relevant": [
+    "catalog:fx-diabetes"
+   ],
+   "rewrite_ms": 1014,
+   "rewrite_tokens": 260,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-hba1c",
+     "catalog:fx-antenatal",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-hba1c",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog:fx-hba1c",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-17",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "what's its price?",
+   "rewritten": "PSA test price",
+   "relevant": [
+    "catalog:fx-psa"
+   ],
+   "rewrite_ms": 1001,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-b12",
+     "catalog:fx-men-40",
+     "catalog:fx-cbc",
+     "faq:Phlebotomist Tracking",
+     "catalog:fx-tsh"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "catalog:fx-b12",
+     "catalog:fx-ppbs",
+     "catalog:fx-kft",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-b12",
+     "catalog:fx-men-40",
+     "catalog:fx-psa",
+     "catalog:fx-cbc",
+     "catalog:fx-ppbs",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-18",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "and one for pregnant women?",
+   "rewritten": "pregnant women health package",
+   "relevant": [
+    "catalog:fx-antenatal"
+   ],
+   "rewrite_ms": 930,
+   "rewrite_tokens": 252,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-antenatal",
+     "catalog:fx-diabetes",
+     "faq:Services We Don't Offer",
+     "catalog:fx-ppbs",
+     "catalog:fx-tsh",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-antenatal",
+     "catalog:fx-comprehensive",
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-antenatal",
+     "catalog:fx-diabetes",
+     "catalog:fx-comprehensive",
+     "faq:Services We Don't Offer",
+     "catalog:fx-men-40",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-19",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "does it need a urine sample too?",
+   "rewritten": "Basic Full Body Checkup urine sample",
+   "relevant": [
+    "catalog:fx-fbc-basic"
+   ],
+   "rewrite_ms": 685,
+   "rewrite_tokens": 258,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-urine",
+     "catalog:fx-fbc-basic",
+     "faq:Services We Don't Offer",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-urine",
+     "catalog:fx-comprehensive",
+     "catalog:fx-men-40",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-urine",
+     "catalog:fx-fbc-adv",
+     "faq:Services We Don't Offer",
+     "catalog:fx-comprehensive",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-20",
+   "kind": "followup",
+   "repeat": 1,
+   "query": "can someone collect it from my home?",
+   "rewritten": "Urine Routine and Microscopy home collection",
+   "relevant": [
+    "catalog:fx-urine",
+    "faq:How Home Collection Works"
+   ],
+   "rewrite_ms": 671,
+   "rewrite_tokens": 243,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:How Home Collection Works",
+     "booking_help:Managing Multiple Patients",
+     "faq:About DocNow",
+     "faq:Slot Booking and Availability"
+    ],
+    "abstained": false,
+    "recall@5": 0.5,
+    "mrr@5": 0.5,
+    "context_recall": 0.5
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-urine",
+     "faq:How Home Collection Works",
+     "catalog:fx-fbc-basic",
+     "faq:Cities and Locations Served",
+     "faq:Services We Don't Offer",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:How Home Collection Works",
+     "faq:Cities and Locations Served",
+     "catalog:fx-urine",
+     "catalog:fx-fbc-basic",
+     "booking_help:Managing Multiple Patients",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-21",
+   "kind": "typo_followup",
+   "repeat": 1,
+   "query": "how much is the thyriod one",
+   "rewritten": "thyroid profile price",
+   "relevant": [
+    "catalog:fx-thyroid",
+    "catalog:fx-tsh"
+   ],
+   "rewrite_ms": 1094,
+   "rewrite_tokens": 256,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-tsh",
+     "catalog:fx-thyroid",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-basic",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-antenatal",
+     "catalog:fx-tsh",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-tsh",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-diabetes",
+     "catalog:fx-antenatal",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-22",
+   "kind": "typo_followup",
+   "repeat": 1,
+   "query": "does it need fastng",
+   "rewritten": "Lipid Profile fasting",
+   "relevant": [
+    "catalog:fx-lipid"
+   ],
+   "rewrite_ms": 706,
+   "rewrite_tokens": 239,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-ppbs",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-lipid",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-thyroid",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-lipid",
+     "catalog:fx-diabetes",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.25,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-01",
+   "kind": "control",
+   "repeat": 1,
+   "query": "What is your refund policy?",
+   "rewritten": "refund policy",
+   "relevant": [
+    "policy:Refund Policy"
+   ],
+   "rewrite_ms": 686,
+   "rewrite_tokens": 239,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Refund Policy",
+     "policy:Cancellation Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-02",
+   "kind": "control",
+   "repeat": 1,
+   "query": "Do you have a vitamin D test?",
+   "rewritten": "Do you have a vitamin D test?",
+   "relevant": [
+    "catalog:fx-vitd"
+   ],
+   "rewrite_ms": 729,
+   "rewrite_tokens": 250,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Services We Don't Offer",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Services We Don't Offer",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Services We Don't Offer",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-03",
+   "kind": "control",
+   "repeat": 1,
+   "query": "Which cities do you serve?",
+   "rewritten": "Which cities do you serve?",
+   "relevant": [
+    "faq:Cities and Locations Served"
+   ],
+   "rewrite_ms": 993,
+   "rewrite_tokens": 241,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:About DocNow",
+     "faq:Services We Don't Offer",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:About DocNow",
+     "faq:Services We Don't Offer",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:About DocNow",
+     "faq:Services We Don't Offer",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-04",
+   "kind": "control",
+   "repeat": 1,
+   "query": "How much is the Kidney Function Test?",
+   "rewritten": "Kidney Function Test price",
+   "relevant": [
+    "catalog:fx-kft"
+   ],
+   "rewrite_ms": 696,
+   "rewrite_tokens": 254,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-men-40",
+     "catalog:fx-lft",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lft",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lft",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-05",
+   "kind": "control",
+   "repeat": 1,
+   "query": "What payment methods do you accept?",
+   "rewritten": "What payment methods do you accept?",
+   "relevant": [
+    "policy:Payment and Pricing Policy"
+   ],
+   "rewrite_ms": 930,
+   "rewrite_tokens": 256,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-06",
+   "kind": "control",
+   "repeat": 1,
+   "query": "Can I track the phlebotomist?",
+   "rewritten": "Can I track the phlebotomist for home collection",
+   "relevant": [
+    "faq:Phlebotomist Tracking"
+   ],
+   "rewrite_ms": 724,
+   "rewrite_tokens": 253,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Phlebotomist Tracking",
+     "booking_help:Booking Status Explanations",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "booking_help:Managing Multiple Patients"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "faq:Phlebotomist Tracking",
+     "faq:How Home Collection Works",
+     "booking_help:Booking Status Explanations",
+     "policy:Cancellation Policy",
+     "faq:Cities and Locations Served"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Phlebotomist Tracking",
+     "faq:How Home Collection Works",
+     "booking_help:Booking Status Explanations",
+     "policy:Cancellation Policy",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-07",
+   "kind": "control",
+   "repeat": 1,
+   "query": "Is the PSA test available?",
+   "rewritten": "Is the PSA test available?",
+   "relevant": [
+    "catalog:fx-psa"
+   ],
+   "rewrite_ms": 853,
+   "rewrite_tokens": 249,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "faq:Cities and Locations Served",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "faq:Cities and Locations Served",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "faq:Cities and Locations Served",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-08",
+   "kind": "control",
+   "repeat": 1,
+   "query": "Do you have a test for iron deficiency?",
+   "rewritten": "iron deficiency test price",
+   "relevant": [
+    "catalog:fx-iron"
+   ],
+   "rewrite_ms": 850,
+   "rewrite_tokens": 248,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-vitd",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-vitd",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-vitd",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-01",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "how much does it cost?",
+   "rewritten": "lipid profile test price",
+   "relevant": [
+    "catalog:fx-lipid"
+   ],
+   "rewrite_ms": 990,
+   "rewrite_tokens": 242,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-cbc",
+     "catalog:fx-b12",
+     "catalog:fx-tsh",
+     "catalog:fx-iron",
+     "policy:Payment and Pricing Policy"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-lipid",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-men-40",
+     "catalog:fx-thyroid",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-lipid",
+     "catalog:fx-cbc",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-b12",
+     "catalog:fx-men-40",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-02",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "does that need fasting?",
+   "rewritten": "HbA1c fasting",
+   "relevant": [
+    "catalog:fx-hba1c"
+   ],
+   "rewrite_ms": 975,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbs",
+     "faq:Services We Don't Offer",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lipid",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-hba1c",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-fbs",
+     "catalog:fx-comprehensive",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-diabetes",
+     "catalog:fx-hba1c",
+     "faq:Services We Don't Offer",
+     "catalog:fx-fbc-adv",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-03",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "what about the advanced one?",
+   "rewritten": "Advanced full body checkup what it includes",
+   "relevant": [
+    "catalog:fx-fbc-adv"
+   ],
+   "rewrite_ms": 741,
+   "rewrite_tokens": 260,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-diabetes",
+     "catalog:fx-comprehensive",
+     "catalog:fx-hba1c",
+     "catalog:fx-crp",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-comprehensive",
+     "catalog:fx-men-40",
+     "catalog:fx-antenatal",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-04",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "and how long for the report?",
+   "rewritten": "Vitamin D (25-OH) report time",
+   "relevant": [
+    "catalog:fx-vitd"
+   ],
+   "rewrite_ms": 748,
+   "rewrite_tokens": 253,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Slot Booking and Availability",
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "catalog:fx-hba1c",
+     "catalog:fx-ppbs"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-comprehensive",
+     "catalog:fx-fbc-adv",
+     "faq:Report Delivery",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Report Delivery",
+     "catalog:fx-vitd",
+     "faq:Slot Booking and Availability",
+     "catalog:fx-b12",
+     "catalog:fx-comprehensive",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-05",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "can I still cancel it?",
+   "rewritten": "cancel booking policy",
+   "relevant": [
+    "policy:Cancellation Policy",
+    "booking_help:Booking Status Explanations"
+   ],
+   "rewrite_ms": 685,
+   "rewrite_tokens": 242,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Cancellation Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "faq:Slot Booking and Availability"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "booking_help:Booking Status Explanations",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Rescheduling Policy",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-06",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "what's the price?",
+   "rewritten": "Thyroid Profile price",
+   "relevant": [
+    "catalog:fx-thyroid"
+   ],
+   "rewrite_ms": 975,
+   "rewrite_tokens": 252,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-men-40",
+     "catalog:fx-cbc",
+     "catalog:fx-b12",
+     "faq:Phlebotomist Tracking",
+     "catalog:fx-fbs",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-antenatal",
+     "catalog:fx-tsh",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-men-40",
+     "catalog:fx-antenatal",
+     "catalog:fx-cbc",
+     "catalog:fx-tsh",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-07",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "is fasting needed for it?",
+   "rewritten": "Kidney Function Test fasting",
+   "relevant": [
+    "catalog:fx-kft"
+   ],
+   "rewrite_ms": 995,
+   "rewrite_tokens": 246,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-diabetes",
+     "catalog:fx-cbc",
+     "catalog:fx-lft",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lft",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-fbs",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbs",
+     "catalog:fx-lft",
+     "catalog:fx-kft",
+     "catalog:fx-diabetes",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.25,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-08",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "which sample does it need?",
+   "rewritten": "Vitamin B12 test sample",
+   "relevant": [
+    "catalog:fx-b12"
+   ],
+   "rewrite_ms": 1001,
+   "rewrite_tokens": 240,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "booking_help:Resample Required Explanation",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog:fx-ppbs",
+     "catalog:fx-fbs",
+     "catalog_index:Average Blood Glucose"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-b12",
+     "catalog:fx-vitd",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-hba1c",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-b12",
+     "booking_help:Resample Required Explanation",
+     "catalog:fx-vitd",
+     "booking_help:Booking Status Explanations",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-09",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "how is it different from the basic one?",
+   "rewritten": "Comprehensive Health Checkup vs basic health checkup difference",
+   "relevant": [
+    "catalog:fx-comprehensive",
+    "catalog:fx-fbc-basic"
+   ],
+   "rewrite_ms": 991,
+   "rewrite_tokens": 260,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-diabetes",
+     "faq:Phlebotomist Tracking",
+     "booking_help:Managing Multiple Patients",
+     "catalog_index:Complete Blood Count"
+    ],
+    "abstained": false,
+    "recall@5": 0.5,
+    "mrr@5": 1.0,
+    "context_recall": 0.5
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-comprehensive",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-men-40",
+     "faq:Services We Don't Offer",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-10",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "what does it check?",
+   "rewritten": "hs-CRP test what does it include",
+   "relevant": [
+    "catalog:fx-crp"
+   ],
+   "rewrite_ms": 701,
+   "rewrite_tokens": 246,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-ppbs",
+     "catalog:fx-b12",
+     "catalog:fx-vitd",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-crp",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "policy:Payment and Pricing Policy",
+     "catalog:fx-cbc",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-crp",
+     "catalog:fx-ppbs",
+     "catalog:fx-b12",
+     "catalog:fx-comprehensive",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-11",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "do I need to fast before it?",
+   "rewritten": "Post Prandial Blood Sugar PPBS fasting",
+   "relevant": [
+    "catalog:fx-ppbs"
+   ],
+   "rewrite_ms": 713,
+   "rewrite_tokens": 251,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Rescheduling Policy",
+     "catalog:fx-fbs",
+     "policy:Refund Policy",
+     "catalog:fx-fbc-basic",
+     "faq:Services We Don't Offer",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-ppbs",
+     "catalog:fx-fbs",
+     "catalog:fx-diabetes",
+     "catalog:fx-hba1c",
+     "catalog:fx-comprehensive",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-ppbs",
+     "policy:Rescheduling Policy",
+     "catalog:fx-diabetes",
+     "policy:Refund Policy",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-12",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "how many parameters are in it?",
+   "rewritten": "Men's Health Checkup parameters",
+   "relevant": [
+    "catalog:fx-men-40"
+   ],
+   "rewrite_ms": 1261,
+   "rewrite_tokens": 260,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-iron",
+     "catalog:fx-cbc",
+     "catalog:fx-urine",
+     "catalog_index:Average Blood Glucose"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-men-40",
+     "catalog:fx-comprehensive",
+     "catalog:fx-psa",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-men-40",
+     "catalog:fx-comprehensive",
+     "catalog:fx-psa",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-13",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "if I can't make it, can I move it to another day?",
+   "rewritten": "Liver Function Test reschedule",
+   "relevant": [
+    "policy:Rescheduling Policy"
+   ],
+   "rewrite_ms": 870,
+   "rewrite_tokens": 253,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Slot Booking and Availability",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy",
+     "policy:Refund Policy",
+     "policy:Cancellation Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-lft",
+     "policy:Rescheduling Policy",
+     "faq:Slot Booking and Availability",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Slot Booking and Availability",
+     "policy:Rescheduling Policy",
+     "catalog:fx-lft",
+     "booking_help:Resample Required Explanation",
+     "catalog:fx-fbc-basic",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-14",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "how do I get my money back then?",
+   "rewritten": "refund policy",
+   "relevant": [
+    "policy:Refund Policy"
+   ],
+   "rewrite_ms": 960,
+   "rewrite_tokens": 237,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Refund Policy",
+     "policy:Cancellation Policy",
+     "faq:How Home Collection Works",
+     "booking_help:Wallet Credits and Promo Codes",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "policy:Rescheduling Policy",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-15",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "when will the result come?",
+   "rewritten": "iron studies report time",
+   "relevant": [
+    "catalog:fx-iron"
+   ],
+   "rewrite_ms": 915,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "faq:Slot Booking and Availability",
+     "catalog:fx-ppbs",
+     "catalog:fx-lft"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "catalog:fx-iron",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-16",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "is it included in the diabetes package?",
+   "rewritten": "is HbA1c included in the diabetes package?",
+   "relevant": [
+    "catalog:fx-diabetes"
+   ],
+   "rewrite_ms": 984,
+   "rewrite_tokens": 256,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-hba1c",
+     "catalog:fx-antenatal",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-hba1c",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog:fx-hba1c",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-17",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "what's its price?",
+   "rewritten": "PSA test price",
+   "relevant": [
+    "catalog:fx-psa"
+   ],
+   "rewrite_ms": 699,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-b12",
+     "catalog:fx-men-40",
+     "catalog:fx-cbc",
+     "faq:Phlebotomist Tracking",
+     "catalog:fx-tsh"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "catalog:fx-b12",
+     "catalog:fx-ppbs",
+     "catalog:fx-kft",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-b12",
+     "catalog:fx-men-40",
+     "catalog:fx-psa",
+     "catalog:fx-cbc",
+     "catalog:fx-ppbs",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-18",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "and one for pregnant women?",
+   "rewritten": "pregnant women health package price and details",
+   "relevant": [
+    "catalog:fx-antenatal"
+   ],
+   "rewrite_ms": 884,
+   "rewrite_tokens": 250,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-antenatal",
+     "catalog:fx-diabetes",
+     "faq:Services We Don't Offer",
+     "catalog:fx-ppbs",
+     "catalog:fx-tsh",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-antenatal",
+     "catalog:fx-comprehensive",
+     "catalog:fx-men-40",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-antenatal",
+     "catalog:fx-diabetes",
+     "catalog:fx-comprehensive",
+     "catalog:fx-men-40",
+     "faq:Services We Don't Offer",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-19",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "does it need a urine sample too?",
+   "rewritten": "basic full body checkup urine sample",
+   "relevant": [
+    "catalog:fx-fbc-basic"
+   ],
+   "rewrite_ms": 842,
+   "rewrite_tokens": 253,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-urine",
+     "catalog:fx-fbc-basic",
+     "faq:Services We Don't Offer",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-urine",
+     "catalog:fx-comprehensive",
+     "catalog:fx-men-40",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-urine",
+     "catalog:fx-fbc-adv",
+     "faq:Services We Don't Offer",
+     "catalog:fx-comprehensive",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-20",
+   "kind": "followup",
+   "repeat": 2,
+   "query": "can someone collect it from my home?",
+   "rewritten": "Urine Routine and Microscopy home collection",
+   "relevant": [
+    "catalog:fx-urine",
+    "faq:How Home Collection Works"
+   ],
+   "rewrite_ms": 719,
+   "rewrite_tokens": 238,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:How Home Collection Works",
+     "booking_help:Managing Multiple Patients",
+     "faq:About DocNow",
+     "faq:Slot Booking and Availability"
+    ],
+    "abstained": false,
+    "recall@5": 0.5,
+    "mrr@5": 0.5,
+    "context_recall": 0.5
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-urine",
+     "faq:How Home Collection Works",
+     "catalog:fx-fbc-basic",
+     "faq:Cities and Locations Served",
+     "faq:Services We Don't Offer",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:How Home Collection Works",
+     "faq:Cities and Locations Served",
+     "catalog:fx-urine",
+     "catalog:fx-fbc-basic",
+     "booking_help:Managing Multiple Patients",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-21",
+   "kind": "typo_followup",
+   "repeat": 2,
+   "query": "how much is the thyriod one",
+   "rewritten": "Thyroid Profile price",
+   "relevant": [
+    "catalog:fx-thyroid",
+    "catalog:fx-tsh"
+   ],
+   "rewrite_ms": 1016,
+   "rewrite_tokens": 256,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-tsh",
+     "catalog:fx-thyroid",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-basic",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-antenatal",
+     "catalog:fx-tsh",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-tsh",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-diabetes",
+     "catalog:fx-antenatal",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-22",
+   "kind": "typo_followup",
+   "repeat": 2,
+   "query": "does it need fastng",
+   "rewritten": "Lipid Profile fasting",
+   "relevant": [
+    "catalog:fx-lipid"
+   ],
+   "rewrite_ms": 879,
+   "rewrite_tokens": 239,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-ppbs",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-lipid",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-thyroid",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-lipid",
+     "catalog:fx-diabetes",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.25,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-01",
+   "kind": "control",
+   "repeat": 2,
+   "query": "What is your refund policy?",
+   "rewritten": "refund policy",
+   "relevant": [
+    "policy:Refund Policy"
+   ],
+   "rewrite_ms": 735,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Refund Policy",
+     "policy:Cancellation Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-02",
+   "kind": "control",
+   "repeat": 2,
+   "query": "Do you have a vitamin D test?",
+   "rewritten": "vitamin D test price",
+   "relevant": [
+    "catalog:fx-vitd"
+   ],
+   "rewrite_ms": 997,
+   "rewrite_tokens": 247,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Services We Don't Offer",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-tsh",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-tsh",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-03",
+   "kind": "control",
+   "repeat": 2,
+   "query": "Which cities do you serve?",
+   "rewritten": "Which cities do you serve?",
+   "relevant": [
+    "faq:Cities and Locations Served"
+   ],
+   "rewrite_ms": 666,
+   "rewrite_tokens": 241,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:About DocNow",
+     "faq:Services We Don't Offer",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:About DocNow",
+     "faq:Services We Don't Offer",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:About DocNow",
+     "faq:Services We Don't Offer",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-04",
+   "kind": "control",
+   "repeat": 2,
+   "query": "How much is the Kidney Function Test?",
+   "rewritten": "Kidney Function Test price",
+   "relevant": [
+    "catalog:fx-kft"
+   ],
+   "rewrite_ms": 986,
+   "rewrite_tokens": 254,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-men-40",
+     "catalog:fx-lft",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lft",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lft",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-05",
+   "kind": "control",
+   "repeat": 2,
+   "query": "What payment methods do you accept?",
+   "rewritten": "What payment methods do you accept?",
+   "relevant": [
+    "policy:Payment and Pricing Policy"
+   ],
+   "rewrite_ms": 988,
+   "rewrite_tokens": 256,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-06",
+   "kind": "control",
+   "repeat": 2,
+   "query": "Can I track the phlebotomist?",
+   "rewritten": "track the phlebotomist home collection",
+   "relevant": [
+    "faq:Phlebotomist Tracking"
+   ],
+   "rewrite_ms": 717,
+   "rewrite_tokens": 250,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Phlebotomist Tracking",
+     "booking_help:Booking Status Explanations",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "booking_help:Managing Multiple Patients"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "faq:Phlebotomist Tracking",
+     "faq:How Home Collection Works",
+     "booking_help:Booking Status Explanations",
+     "faq:Cities and Locations Served",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Phlebotomist Tracking",
+     "faq:How Home Collection Works",
+     "booking_help:Booking Status Explanations",
+     "booking_help:Resample Required Explanation",
+     "faq:Cities and Locations Served"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-07",
+   "kind": "control",
+   "repeat": 2,
+   "query": "Is the PSA test available?",
+   "rewritten": "Is the PSA test available?",
+   "relevant": [
+    "catalog:fx-psa"
+   ],
+   "rewrite_ms": 998,
+   "rewrite_tokens": 245,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "faq:Cities and Locations Served",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "faq:Cities and Locations Served",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "faq:Cities and Locations Served",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-08",
+   "kind": "control",
+   "repeat": 2,
+   "query": "Do you have a test for iron deficiency?",
+   "rewritten": "iron deficiency test",
+   "relevant": [
+    "catalog:fx-iron"
+   ],
+   "rewrite_ms": 1032,
+   "rewrite_tokens": 247,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-vitd",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-vitd",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-vitd",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-01",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "how much does it cost?",
+   "rewritten": "Lipid Profile test price",
+   "relevant": [
+    "catalog:fx-lipid"
+   ],
+   "rewrite_ms": 699,
+   "rewrite_tokens": 243,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-cbc",
+     "catalog:fx-b12",
+     "catalog:fx-tsh",
+     "catalog:fx-iron",
+     "policy:Payment and Pricing Policy"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-lipid",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-thyroid",
+     "catalog:fx-men-40",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-lipid",
+     "catalog:fx-cbc",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-02",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "does that need fasting?",
+   "rewritten": "HbA1c fasting",
+   "relevant": [
+    "catalog:fx-hba1c"
+   ],
+   "rewrite_ms": 851,
+   "rewrite_tokens": 249,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbs",
+     "faq:Services We Don't Offer",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lipid",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-hba1c",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-fbs",
+     "catalog:fx-comprehensive",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-diabetes",
+     "catalog:fx-hba1c",
+     "faq:Services We Don't Offer",
+     "catalog:fx-fbc-adv",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-03",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "what about the advanced one?",
+   "rewritten": "Advanced Full Body Checkup what it includes",
+   "relevant": [
+    "catalog:fx-fbc-adv"
+   ],
+   "rewrite_ms": 983,
+   "rewrite_tokens": 260,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-diabetes",
+     "catalog:fx-comprehensive",
+     "catalog:fx-hba1c",
+     "catalog:fx-crp",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-comprehensive",
+     "catalog:fx-men-40",
+     "catalog:fx-antenatal",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-04",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "and how long for the report?",
+   "rewritten": "Vitamin D test report time",
+   "relevant": [
+    "catalog:fx-vitd"
+   ],
+   "rewrite_ms": 836,
+   "rewrite_tokens": 243,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Slot Booking and Availability",
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "catalog:fx-hba1c",
+     "catalog:fx-ppbs"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Report Delivery",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Report Delivery",
+     "catalog:fx-vitd",
+     "faq:Slot Booking and Availability",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-05",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "can I still cancel it?",
+   "rewritten": "cancel booking",
+   "relevant": [
+    "policy:Cancellation Policy",
+    "booking_help:Booking Status Explanations"
+   ],
+   "rewrite_ms": 994,
+   "rewrite_tokens": 236,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Cancellation Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "faq:Slot Booking and Availability"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Rescheduling Policy",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Rescheduling Policy",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-06",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "what's the price?",
+   "rewritten": "thyroid profile price",
+   "relevant": [
+    "catalog:fx-thyroid"
+   ],
+   "rewrite_ms": 1165,
+   "rewrite_tokens": 252,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-men-40",
+     "catalog:fx-cbc",
+     "catalog:fx-b12",
+     "faq:Phlebotomist Tracking",
+     "catalog:fx-fbs",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-antenatal",
+     "catalog:fx-tsh",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-men-40",
+     "catalog:fx-antenatal",
+     "catalog:fx-cbc",
+     "catalog:fx-tsh",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-07",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "is fasting needed for it?",
+   "rewritten": "Kidney Function Test fasting",
+   "relevant": [
+    "catalog:fx-kft"
+   ],
+   "rewrite_ms": 967,
+   "rewrite_tokens": 241,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-diabetes",
+     "catalog:fx-cbc",
+     "catalog:fx-lft",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lft",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-fbs",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbs",
+     "catalog:fx-lft",
+     "catalog:fx-kft",
+     "catalog:fx-diabetes",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.25,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-08",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "which sample does it need?",
+   "rewritten": "Vitamin B12 test sample",
+   "relevant": [
+    "catalog:fx-b12"
+   ],
+   "rewrite_ms": 977,
+   "rewrite_tokens": 240,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "booking_help:Resample Required Explanation",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog:fx-ppbs",
+     "catalog:fx-fbs",
+     "catalog_index:Average Blood Glucose"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-b12",
+     "catalog:fx-vitd",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-hba1c",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-b12",
+     "booking_help:Resample Required Explanation",
+     "catalog:fx-vitd",
+     "booking_help:Booking Status Explanations",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-09",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "how is it different from the basic one?",
+   "rewritten": "Comprehensive Health Checkup difference from basic health checkup",
+   "relevant": [
+    "catalog:fx-comprehensive",
+    "catalog:fx-fbc-basic"
+   ],
+   "rewrite_ms": 1009,
+   "rewrite_tokens": 260,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-diabetes",
+     "faq:Phlebotomist Tracking",
+     "booking_help:Managing Multiple Patients",
+     "catalog_index:Complete Blood Count"
+    ],
+    "abstained": false,
+    "recall@5": 0.5,
+    "mrr@5": 1.0,
+    "context_recall": 0.5
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-comprehensive",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-men-40",
+     "faq:Services We Don't Offer",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-10",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "what does it check?",
+   "rewritten": "hs-CRP test what it includes",
+   "relevant": [
+    "catalog:fx-crp"
+   ],
+   "rewrite_ms": 766,
+   "rewrite_tokens": 245,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-ppbs",
+     "catalog:fx-b12",
+     "catalog:fx-vitd",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-crp",
+     "catalog:fx-comprehensive",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-men-40",
+     "catalog:fx-diabetes",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-crp",
+     "catalog:fx-ppbs",
+     "catalog:fx-comprehensive",
+     "catalog:fx-b12",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-11",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "do I need to fast before it?",
+   "rewritten": "Post Prandial Blood Sugar PPBS test fasting",
+   "relevant": [
+    "catalog:fx-ppbs"
+   ],
+   "rewrite_ms": 841,
+   "rewrite_tokens": 252,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Rescheduling Policy",
+     "catalog:fx-fbs",
+     "policy:Refund Policy",
+     "catalog:fx-fbc-basic",
+     "faq:Services We Don't Offer",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-ppbs",
+     "catalog:fx-fbs",
+     "catalog:fx-diabetes",
+     "catalog:fx-hba1c",
+     "catalog:fx-fbc-basic",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-ppbs",
+     "policy:Rescheduling Policy",
+     "catalog:fx-diabetes",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-12",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "how many parameters are in it?",
+   "rewritten": "men's health checkup parameters",
+   "relevant": [
+    "catalog:fx-men-40"
+   ],
+   "rewrite_ms": 1131,
+   "rewrite_tokens": 260,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-iron",
+     "catalog:fx-cbc",
+     "catalog:fx-urine",
+     "catalog_index:Average Blood Glucose"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-men-40",
+     "catalog:fx-comprehensive",
+     "catalog:fx-psa",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-men-40",
+     "catalog:fx-comprehensive",
+     "catalog:fx-psa",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-13",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "if I can't make it, can I move it to another day?",
+   "rewritten": "Liver Function Test reschedule",
+   "relevant": [
+    "policy:Rescheduling Policy"
+   ],
+   "rewrite_ms": 975,
+   "rewrite_tokens": 253,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Slot Booking and Availability",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy",
+     "policy:Refund Policy",
+     "policy:Cancellation Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-lft",
+     "policy:Rescheduling Policy",
+     "faq:Slot Booking and Availability",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Slot Booking and Availability",
+     "policy:Rescheduling Policy",
+     "catalog:fx-lft",
+     "booking_help:Resample Required Explanation",
+     "catalog:fx-fbc-basic",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-14",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "how do I get my money back then?",
+   "rewritten": "booking cancellation refund",
+   "relevant": [
+    "policy:Refund Policy"
+   ],
+   "rewrite_ms": 937,
+   "rewrite_tokens": 238,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Refund Policy",
+     "policy:Cancellation Policy",
+     "faq:How Home Collection Works",
+     "booking_help:Wallet Credits and Promo Codes",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Rescheduling Policy",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Resample Required Explanation",
+     "booking_help:Booking Status Explanations",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-15",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "when will the result come?",
+   "rewritten": "iron studies report time",
+   "relevant": [
+    "catalog:fx-iron"
+   ],
+   "rewrite_ms": 1005,
+   "rewrite_tokens": 239,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "faq:Slot Booking and Availability",
+     "catalog:fx-ppbs",
+     "catalog:fx-lft"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "catalog:fx-iron",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-16",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "is it included in the diabetes package?",
+   "rewritten": "HbA1c diabetes package inclusion",
+   "relevant": [
+    "catalog:fx-diabetes"
+   ],
+   "rewrite_ms": 866,
+   "rewrite_tokens": 257,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-hba1c",
+     "catalog:fx-antenatal",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-hba1c",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog:fx-hba1c",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-17",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "what's its price?",
+   "rewritten": "PSA test price",
+   "relevant": [
+    "catalog:fx-psa"
+   ],
+   "rewrite_ms": 975,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-b12",
+     "catalog:fx-men-40",
+     "catalog:fx-cbc",
+     "faq:Phlebotomist Tracking",
+     "catalog:fx-tsh"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "catalog:fx-b12",
+     "catalog:fx-ppbs",
+     "catalog:fx-kft",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-b12",
+     "catalog:fx-men-40",
+     "catalog:fx-psa",
+     "catalog:fx-cbc",
+     "catalog:fx-ppbs",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-18",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "and one for pregnant women?",
+   "rewritten": "pregnancy health package",
+   "relevant": [
+    "catalog:fx-antenatal"
+   ],
+   "rewrite_ms": 847,
+   "rewrite_tokens": 251,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-antenatal",
+     "catalog:fx-diabetes",
+     "faq:Services We Don't Offer",
+     "catalog:fx-ppbs",
+     "catalog:fx-tsh",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-antenatal",
+     "catalog:fx-comprehensive",
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-antenatal",
+     "catalog:fx-diabetes",
+     "catalog:fx-comprehensive",
+     "faq:Services We Don't Offer",
+     "catalog:fx-men-40",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-19",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "does it need a urine sample too?",
+   "rewritten": "Basic Full Body Checkup urine sample",
+   "relevant": [
+    "catalog:fx-fbc-basic"
+   ],
+   "rewrite_ms": 1056,
+   "rewrite_tokens": 253,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-urine",
+     "catalog:fx-fbc-basic",
+     "faq:Services We Don't Offer",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-urine",
+     "catalog:fx-comprehensive",
+     "catalog:fx-men-40",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-urine",
+     "catalog:fx-fbc-adv",
+     "faq:Services We Don't Offer",
+     "catalog:fx-comprehensive",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-20",
+   "kind": "followup",
+   "repeat": 3,
+   "query": "can someone collect it from my home?",
+   "rewritten": "Urine Routine and Microscopy home collection",
+   "relevant": [
+    "catalog:fx-urine",
+    "faq:How Home Collection Works"
+   ],
+   "rewrite_ms": 914,
+   "rewrite_tokens": 243,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:How Home Collection Works",
+     "booking_help:Managing Multiple Patients",
+     "faq:About DocNow",
+     "faq:Slot Booking and Availability"
+    ],
+    "abstained": false,
+    "recall@5": 0.5,
+    "mrr@5": 0.5,
+    "context_recall": 0.5
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-urine",
+     "faq:How Home Collection Works",
+     "catalog:fx-fbc-basic",
+     "faq:Cities and Locations Served",
+     "faq:Services We Don't Offer",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:How Home Collection Works",
+     "faq:Cities and Locations Served",
+     "catalog:fx-urine",
+     "catalog:fx-fbc-basic",
+     "booking_help:Managing Multiple Patients",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-21",
+   "kind": "typo_followup",
+   "repeat": 3,
+   "query": "how much is the thyriod one",
+   "rewritten": "Thyroid Profile price",
+   "relevant": [
+    "catalog:fx-thyroid",
+    "catalog:fx-tsh"
+   ],
+   "rewrite_ms": 1056,
+   "rewrite_tokens": 251,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-tsh",
+     "catalog:fx-thyroid",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-basic",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-antenatal",
+     "catalog:fx-tsh",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-tsh",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-diabetes",
+     "catalog:fx-antenatal",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-22",
+   "kind": "typo_followup",
+   "repeat": 3,
+   "query": "does it need fastng",
+   "rewritten": "Lipid Profile fasting",
+   "relevant": [
+    "catalog:fx-lipid"
+   ],
+   "rewrite_ms": 1121,
+   "rewrite_tokens": 234,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-ppbs",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-lipid",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-thyroid",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-lipid",
+     "catalog:fx-diabetes",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.25,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-01",
+   "kind": "control",
+   "repeat": 3,
+   "query": "What is your refund policy?",
+   "rewritten": "refund policy",
+   "relevant": [
+    "policy:Refund Policy"
+   ],
+   "rewrite_ms": 975,
+   "rewrite_tokens": 239,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Refund Policy",
+     "policy:Cancellation Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-02",
+   "kind": "control",
+   "repeat": 3,
+   "query": "Do you have a vitamin D test?",
+   "rewritten": "vitamin D test",
+   "relevant": [
+    "catalog:fx-vitd"
+   ],
+   "rewrite_ms": 688,
+   "rewrite_tokens": 241,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Services We Don't Offer",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:About DocNow",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:About DocNow",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-03",
+   "kind": "control",
+   "repeat": 3,
+   "query": "Which cities do you serve?",
+   "rewritten": "Which cities do you serve?",
+   "relevant": [
+    "faq:Cities and Locations Served"
+   ],
+   "rewrite_ms": 970,
+   "rewrite_tokens": 241,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:About DocNow",
+     "faq:Services We Don't Offer",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:About DocNow",
+     "faq:Services We Don't Offer",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:About DocNow",
+     "faq:Services We Don't Offer",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-04",
+   "kind": "control",
+   "repeat": 3,
+   "query": "How much is the Kidney Function Test?",
+   "rewritten": "Kidney Function Test price",
+   "relevant": [
+    "catalog:fx-kft"
+   ],
+   "rewrite_ms": 950,
+   "rewrite_tokens": 254,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-men-40",
+     "catalog:fx-lft",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lft",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lft",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-05",
+   "kind": "control",
+   "repeat": 3,
+   "query": "What payment methods do you accept?",
+   "rewritten": "What payment methods do you accept?",
+   "relevant": [
+    "policy:Payment and Pricing Policy"
+   ],
+   "rewrite_ms": 1177,
+   "rewrite_tokens": 256,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-06",
+   "kind": "control",
+   "repeat": 3,
+   "query": "Can I track the phlebotomist?",
+   "rewritten": "track phlebotomist home collection",
+   "relevant": [
+    "faq:Phlebotomist Tracking"
+   ],
+   "rewrite_ms": 979,
+   "rewrite_tokens": 249,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Phlebotomist Tracking",
+     "booking_help:Booking Status Explanations",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "booking_help:Managing Multiple Patients"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "faq:Phlebotomist Tracking",
+     "faq:How Home Collection Works",
+     "booking_help:Booking Status Explanations",
+     "faq:Cities and Locations Served",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Phlebotomist Tracking",
+     "faq:How Home Collection Works",
+     "booking_help:Booking Status Explanations",
+     "booking_help:Resample Required Explanation",
+     "faq:Cities and Locations Served"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-07",
+   "kind": "control",
+   "repeat": 3,
+   "query": "Is the PSA test available?",
+   "rewritten": "Is the PSA test available?",
+   "relevant": [
+    "catalog:fx-psa"
+   ],
+   "rewrite_ms": 1003,
+   "rewrite_tokens": 249,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "faq:Cities and Locations Served",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "faq:Cities and Locations Served",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "faq:Cities and Locations Served",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-08",
+   "kind": "control",
+   "repeat": 3,
+   "query": "Do you have a test for iron deficiency?",
+   "rewritten": "iron deficiency test price",
+   "relevant": [
+    "catalog:fx-iron"
+   ],
+   "rewrite_ms": 990,
+   "rewrite_tokens": 248,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-vitd",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-vitd",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-vitd",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-01",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "how much does it cost?",
+   "rewritten": "lipid profile test price",
+   "relevant": [
+    "catalog:fx-lipid"
+   ],
+   "rewrite_ms": 631,
+   "rewrite_tokens": 247,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-cbc",
+     "catalog:fx-b12",
+     "catalog:fx-tsh",
+     "catalog:fx-iron",
+     "policy:Payment and Pricing Policy"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-lipid",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-men-40",
+     "catalog:fx-thyroid",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-lipid",
+     "catalog:fx-cbc",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-b12",
+     "catalog:fx-men-40",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-02",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "does that need fasting?",
+   "rewritten": "HbA1c fasting",
+   "relevant": [
+    "catalog:fx-hba1c"
+   ],
+   "rewrite_ms": 860,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbs",
+     "faq:Services We Don't Offer",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lipid",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-hba1c",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-fbs",
+     "catalog:fx-comprehensive",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-diabetes",
+     "catalog:fx-hba1c",
+     "faq:Services We Don't Offer",
+     "catalog:fx-fbc-adv",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-03",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "what about the advanced one?",
+   "rewritten": "Advanced Full Body Checkup inclusions",
+   "relevant": [
+    "catalog:fx-fbc-adv"
+   ],
+   "rewrite_ms": 906,
+   "rewrite_tokens": 258,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-diabetes",
+     "catalog:fx-comprehensive",
+     "catalog:fx-hba1c",
+     "catalog:fx-crp",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-comprehensive",
+     "catalog:fx-men-40",
+     "faq:Services We Don't Offer",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-04",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "and how long for the report?",
+   "rewritten": "Vitamin D test report time",
+   "relevant": [
+    "catalog:fx-vitd"
+   ],
+   "rewrite_ms": 971,
+   "rewrite_tokens": 248,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Slot Booking and Availability",
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "catalog:fx-hba1c",
+     "catalog:fx-ppbs"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Report Delivery",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Report Delivery",
+     "catalog:fx-vitd",
+     "faq:Slot Booking and Availability",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-05",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "can I still cancel it?",
+   "rewritten": "cancel booking policy",
+   "relevant": [
+    "policy:Cancellation Policy",
+    "booking_help:Booking Status Explanations"
+   ],
+   "rewrite_ms": 824,
+   "rewrite_tokens": 242,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Cancellation Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "faq:Slot Booking and Availability"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "booking_help:Booking Status Explanations",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Booking Status Explanations",
+     "policy:Rescheduling Policy",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-06",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "what's the price?",
+   "rewritten": "Thyroid Profile price",
+   "relevant": [
+    "catalog:fx-thyroid"
+   ],
+   "rewrite_ms": 989,
+   "rewrite_tokens": 252,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-men-40",
+     "catalog:fx-cbc",
+     "catalog:fx-b12",
+     "faq:Phlebotomist Tracking",
+     "catalog:fx-fbs",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-antenatal",
+     "catalog:fx-tsh",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-men-40",
+     "catalog:fx-antenatal",
+     "catalog:fx-cbc",
+     "catalog:fx-tsh",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-07",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "is fasting needed for it?",
+   "rewritten": "Kidney Function Test fasting",
+   "relevant": [
+    "catalog:fx-kft"
+   ],
+   "rewrite_ms": 988,
+   "rewrite_tokens": 241,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-diabetes",
+     "catalog:fx-cbc",
+     "catalog:fx-lft",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lft",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-fbs",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbs",
+     "catalog:fx-lft",
+     "catalog:fx-kft",
+     "catalog:fx-diabetes",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.25,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-08",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "which sample does it need?",
+   "rewritten": "Vitamin B12 sample",
+   "relevant": [
+    "catalog:fx-b12"
+   ],
+   "rewrite_ms": 734,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "booking_help:Resample Required Explanation",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog:fx-ppbs",
+     "catalog:fx-fbs",
+     "catalog_index:Average Blood Glucose"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-b12",
+     "catalog:fx-vitd",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "booking_help:Booking Status Explanations",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "booking_help:Booking Status Explanations",
+     "catalog:fx-b12",
+     "booking_help:Resample Required Explanation",
+     "catalog:fx-vitd",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-09",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "how is it different from the basic one?",
+   "rewritten": "Comprehensive Health Checkup difference from basic health checkup",
+   "relevant": [
+    "catalog:fx-comprehensive",
+    "catalog:fx-fbc-basic"
+   ],
+   "rewrite_ms": 1433,
+   "rewrite_tokens": 260,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-diabetes",
+     "faq:Phlebotomist Tracking",
+     "booking_help:Managing Multiple Patients",
+     "catalog_index:Complete Blood Count"
+    ],
+    "abstained": false,
+    "recall@5": 0.5,
+    "mrr@5": 1.0,
+    "context_recall": 0.5
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-comprehensive",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-men-40",
+     "faq:Services We Don't Offer",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-10",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "what does it check?",
+   "rewritten": "hs-CRP test what does it check",
+   "relevant": [
+    "catalog:fx-crp"
+   ],
+   "rewrite_ms": 971,
+   "rewrite_tokens": 251,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-ppbs",
+     "catalog:fx-b12",
+     "catalog:fx-vitd",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-crp",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-ppbs",
+     "catalog:fx-b12",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-ppbs",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-b12",
+     "catalog:fx-crp",
+     "catalog:fx-comprehensive",
+     "catalog_index:hs-CRP"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.25,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-11",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "do I need to fast before it?",
+   "rewritten": "Post Prandial Blood Sugar (PPBS) fasting",
+   "relevant": [
+    "catalog:fx-ppbs"
+   ],
+   "rewrite_ms": 1117,
+   "rewrite_tokens": 253,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Rescheduling Policy",
+     "catalog:fx-fbs",
+     "policy:Refund Policy",
+     "catalog:fx-fbc-basic",
+     "faq:Services We Don't Offer",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-ppbs",
+     "catalog:fx-fbs",
+     "catalog:fx-diabetes",
+     "catalog:fx-hba1c",
+     "catalog:fx-comprehensive",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-ppbs",
+     "policy:Rescheduling Policy",
+     "catalog:fx-diabetes",
+     "policy:Refund Policy",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-12",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "how many parameters are in it?",
+   "rewritten": "Men's Health Checkup parameters",
+   "relevant": [
+    "catalog:fx-men-40"
+   ],
+   "rewrite_ms": 991,
+   "rewrite_tokens": 255,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-iron",
+     "catalog:fx-cbc",
+     "catalog:fx-urine",
+     "catalog_index:Average Blood Glucose"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-men-40",
+     "catalog:fx-comprehensive",
+     "catalog:fx-psa",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-men-40",
+     "catalog:fx-comprehensive",
+     "catalog:fx-psa",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-13",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "if I can't make it, can I move it to another day?",
+   "rewritten": "Liver Function Test reschedule",
+   "relevant": [
+    "policy:Rescheduling Policy"
+   ],
+   "rewrite_ms": 697,
+   "rewrite_tokens": 253,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Slot Booking and Availability",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy",
+     "policy:Refund Policy",
+     "policy:Cancellation Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-lft",
+     "policy:Rescheduling Policy",
+     "faq:Slot Booking and Availability",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Slot Booking and Availability",
+     "policy:Rescheduling Policy",
+     "catalog:fx-lft",
+     "booking_help:Resample Required Explanation",
+     "catalog:fx-fbc-basic",
+     "catalog_index:Liver Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-14",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "how do I get my money back then?",
+   "rewritten": "refund policy",
+   "relevant": [
+    "policy:Refund Policy"
+   ],
+   "rewrite_ms": 1103,
+   "rewrite_tokens": 237,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Refund Policy",
+     "policy:Cancellation Policy",
+     "faq:How Home Collection Works",
+     "booking_help:Wallet Credits and Promo Codes",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "policy:Rescheduling Policy",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-15",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "when will the result come?",
+   "rewritten": "iron studies report time",
+   "relevant": [
+    "catalog:fx-iron"
+   ],
+   "rewrite_ms": 1029,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "faq:Slot Booking and Availability",
+     "catalog:fx-ppbs",
+     "catalog:fx-lft"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Report Delivery",
+     "booking_help:Booking Status Explanations",
+     "catalog:fx-iron",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-16",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "is it included in the diabetes package?",
+   "rewritten": "is HbA1c included in the diabetes package?",
+   "relevant": [
+    "catalog:fx-diabetes"
+   ],
+   "rewrite_ms": 1006,
+   "rewrite_tokens": 260,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-hba1c",
+     "catalog:fx-antenatal",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-hba1c",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog:fx-hba1c",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-17",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "what's its price?",
+   "rewritten": "PSA test price",
+   "relevant": [
+    "catalog:fx-psa"
+   ],
+   "rewrite_ms": 1022,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-b12",
+     "catalog:fx-men-40",
+     "catalog:fx-cbc",
+     "faq:Phlebotomist Tracking",
+     "catalog:fx-tsh"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "catalog:fx-b12",
+     "catalog:fx-ppbs",
+     "catalog:fx-kft",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-b12",
+     "catalog:fx-men-40",
+     "catalog:fx-psa",
+     "catalog:fx-cbc",
+     "catalog:fx-ppbs",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.3333333333333333,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-18",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "and one for pregnant women?",
+   "rewritten": "pregnancy health package",
+   "relevant": [
+    "catalog:fx-antenatal"
+   ],
+   "rewrite_ms": 911,
+   "rewrite_tokens": 251,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-antenatal",
+     "catalog:fx-diabetes",
+     "faq:Services We Don't Offer",
+     "catalog:fx-ppbs",
+     "catalog:fx-tsh",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-antenatal",
+     "catalog:fx-comprehensive",
+     "catalog:fx-diabetes",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-antenatal",
+     "catalog:fx-diabetes",
+     "catalog:fx-comprehensive",
+     "faq:Services We Don't Offer",
+     "catalog:fx-men-40",
+     "catalog_index:Blood Group and Rh"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-19",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "does it need a urine sample too?",
+   "rewritten": "Basic Full Body Checkup urine sample",
+   "relevant": [
+    "catalog:fx-fbc-basic"
+   ],
+   "rewrite_ms": 804,
+   "rewrite_tokens": 258,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-urine",
+     "catalog:fx-fbc-basic",
+     "faq:Services We Don't Offer",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-urine",
+     "catalog:fx-comprehensive",
+     "catalog:fx-men-40",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbc-basic",
+     "catalog:fx-urine",
+     "catalog:fx-fbc-adv",
+     "faq:Services We Don't Offer",
+     "catalog:fx-comprehensive",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-20",
+   "kind": "followup",
+   "repeat": 4,
+   "query": "can someone collect it from my home?",
+   "rewritten": "Urine Routine and Microscopy home collection",
+   "relevant": [
+    "catalog:fx-urine",
+    "faq:How Home Collection Works"
+   ],
+   "rewrite_ms": 841,
+   "rewrite_tokens": 243,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:How Home Collection Works",
+     "booking_help:Managing Multiple Patients",
+     "faq:About DocNow",
+     "faq:Slot Booking and Availability"
+    ],
+    "abstained": false,
+    "recall@5": 0.5,
+    "mrr@5": 0.5,
+    "context_recall": 0.5
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-urine",
+     "faq:How Home Collection Works",
+     "catalog:fx-fbc-basic",
+     "faq:Cities and Locations Served",
+     "faq:Services We Don't Offer",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:How Home Collection Works",
+     "faq:Cities and Locations Served",
+     "catalog:fx-urine",
+     "catalog:fx-fbc-basic",
+     "booking_help:Managing Multiple Patients",
+     "catalog_index:Urine Routine"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-21",
+   "kind": "typo_followup",
+   "repeat": 4,
+   "query": "how much is the thyriod one",
+   "rewritten": "thyroid profile price",
+   "relevant": [
+    "catalog:fx-thyroid",
+    "catalog:fx-tsh"
+   ],
+   "rewrite_ms": 1050,
+   "rewrite_tokens": 256,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-diabetes",
+     "catalog:fx-tsh",
+     "catalog:fx-thyroid",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-basic",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-antenatal",
+     "catalog:fx-tsh",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-thyroid",
+     "catalog:fx-tsh",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-diabetes",
+     "catalog:fx-antenatal",
+     "catalog_index:Thyroid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "fu-22",
+   "kind": "typo_followup",
+   "repeat": 4,
+   "query": "does it need fastng",
+   "rewritten": "Lipid Profile fasting",
+   "relevant": [
+    "catalog:fx-lipid"
+   ],
+   "rewrite_ms": 1117,
+   "rewrite_tokens": 239,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-diabetes",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-ppbs",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Fasting Blood Sugar"
+    ],
+    "abstained": false,
+    "recall@5": 0.0,
+    "mrr@5": 0.0,
+    "context_recall": 0.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-lipid",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-thyroid",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-fbs",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-lipid",
+     "catalog:fx-diabetes",
+     "catalog_index:Lipid Profile"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.25,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-01",
+   "kind": "control",
+   "repeat": 4,
+   "query": "What is your refund policy?",
+   "rewritten": "refund policy",
+   "relevant": [
+    "policy:Refund Policy"
+   ],
+   "rewrite_ms": 1081,
+   "rewrite_tokens": 239,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Refund Policy",
+     "policy:Cancellation Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Cancellation Policy",
+     "policy:Refund Policy",
+     "policy:Rescheduling Policy",
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 0.5,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-02",
+   "kind": "control",
+   "repeat": 4,
+   "query": "Do you have a vitamin D test?",
+   "rewritten": "vitamin D test",
+   "relevant": [
+    "catalog:fx-vitd"
+   ],
+   "rewrite_ms": 978,
+   "rewrite_tokens": 241,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:Services We Don't Offer",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:About DocNow",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-vitd",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "faq:About DocNow",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-03",
+   "kind": "control",
+   "repeat": 4,
+   "query": "Which cities do you serve?",
+   "rewritten": "Which cities do you serve?",
+   "relevant": [
+    "faq:Cities and Locations Served"
+   ],
+   "rewrite_ms": 1037,
+   "rewrite_tokens": 241,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:About DocNow",
+     "faq:Services We Don't Offer",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:About DocNow",
+     "faq:Services We Don't Offer",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Cities and Locations Served",
+     "faq:About DocNow",
+     "faq:Services We Don't Offer",
+     "faq:How Home Collection Works"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-04",
+   "kind": "control",
+   "repeat": 4,
+   "query": "How much is the Kidney Function Test?",
+   "rewritten": "Kidney Function Test price",
+   "relevant": [
+    "catalog:fx-kft"
+   ],
+   "rewrite_ms": 870,
+   "rewrite_tokens": 254,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-men-40",
+     "catalog:fx-lft",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lft",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-kft",
+     "catalog:fx-fbc-basic",
+     "catalog:fx-lft",
+     "catalog:fx-men-40",
+     "catalog:fx-fbc-adv",
+     "catalog_index:Kidney Function Test"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-05",
+   "kind": "control",
+   "repeat": 4,
+   "query": "What payment methods do you accept?",
+   "rewritten": "What payment methods do you accept?",
+   "relevant": [
+    "policy:Payment and Pricing Policy"
+   ],
+   "rewrite_ms": 869,
+   "rewrite_tokens": 256,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "policy:Payment and Pricing Policy",
+     "booking_help:Wallet Credits and Promo Codes",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "policy:Rescheduling Policy"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-06",
+   "kind": "control",
+   "repeat": 4,
+   "query": "Can I track the phlebotomist?",
+   "rewritten": "track phlebotomist home collection",
+   "relevant": [
+    "faq:Phlebotomist Tracking"
+   ],
+   "rewrite_ms": 695,
+   "rewrite_tokens": 244,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "faq:Phlebotomist Tracking",
+     "booking_help:Booking Status Explanations",
+     "faq:How Home Collection Works",
+     "booking_help:Resample Required Explanation",
+     "booking_help:Managing Multiple Patients"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "faq:Phlebotomist Tracking",
+     "faq:How Home Collection Works",
+     "booking_help:Booking Status Explanations",
+     "faq:Cities and Locations Served",
+     "booking_help:Resample Required Explanation"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "faq:Phlebotomist Tracking",
+     "faq:How Home Collection Works",
+     "booking_help:Booking Status Explanations",
+     "booking_help:Resample Required Explanation",
+     "faq:Cities and Locations Served"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-07",
+   "kind": "control",
+   "repeat": 4,
+   "query": "Is the PSA test available?",
+   "rewritten": "Is the PSA test available?",
+   "relevant": [
+    "catalog:fx-psa"
+   ],
+   "rewrite_ms": 1105,
+   "rewrite_tokens": 245,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "faq:Cities and Locations Served",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "faq:Cities and Locations Served",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-psa",
+     "catalog:fx-men-40",
+     "faq:Cities and Locations Served",
+     "booking_help:Booking Status Explanations",
+     "faq:Services We Don't Offer",
+     "catalog_index:HbA1c"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  },
+  {
+   "id": "ctl-08",
+   "kind": "control",
+   "repeat": 4,
+   "query": "Do you have a test for iron deficiency?",
+   "rewritten": "iron deficiency test price",
+   "relevant": [
+    "catalog:fx-iron"
+   ],
+   "rewrite_ms": 975,
+   "rewrite_tokens": 248,
+   "rewrite_calls": 1,
+   "typed": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-vitd",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "replace": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-vitd",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   },
+   "both": {
+    "final": [
+     "catalog:fx-iron",
+     "catalog:fx-b12",
+     "catalog:fx-fbc-adv",
+     "catalog:fx-comprehensive",
+     "catalog:fx-vitd",
+     "catalog_index:Vitamin B12"
+    ],
+    "abstained": false,
+    "recall@5": 1.0,
+    "mrr@5": 1.0,
+    "context_recall": 1.0
+   }
+  }
+ ]
+}
