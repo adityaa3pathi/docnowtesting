@@ -10,7 +10,7 @@ from typing import Any
 from google.genai import types
 
 # Stage names used by call_gemini callers and the eval's per-stage metrics.
-STAGES = ("intent", "draft", "verifier")
+STAGES = ("intent", "draft", "verifier", "rewrite")
 
 
 @dataclass

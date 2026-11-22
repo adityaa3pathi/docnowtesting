@@ -105,6 +105,8 @@ async def run_query(
         is_authenticated=True,
         access_token="eval-token",
         conversation_id=f"eval-{q['id']}-r{repeat}",
+        # Multi-turn sets (followup_set.json) carry the earlier turns; single-turn sets have none.
+        conversation_history=q.get("history", []),
     )
     start = time.monotonic()
     error = None
@@ -248,7 +250,7 @@ async def run(args: argparse.Namespace) -> int:
         from app.eval.groq_llm import make_groq_call
 
         groq_call = make_groq_call(args.groq_model)
-        patches += [patch(f"app.agents.{m}.call_gemini", groq_call) for m in ("orchestrator", "verifier")]
+        patches += [patch(f"app.agents.{m}.call_gemini", groq_call) for m in ("orchestrator", "verifier", "rewrite")]
     with contextlib.ExitStack() as stack:
         for p in patches:
             stack.enter_context(p)

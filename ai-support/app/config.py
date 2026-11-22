@@ -53,6 +53,11 @@ class Settings(BaseSettings):
     max_conversation_turns: int = 10
     # Run intent and retrieval together; false restores the old sequential path.
     parallel_intent_retrieval: bool = True
+    # Follow-up rewrite (turns with history only): "off" searches the message as typed, "replace" searches
+    # only the rewritten query, "both" searches both and fuses them (app/agents/rewrite.py).
+    query_rewrite: str = "replace"
+    rewrite_thinking_level: str = "low"
+    rewrite_max_output_tokens: int = 256
 
     # Per-call thinking and output caps (caps include thinking tokens); "" sends no thinking config.
     # gemini-3.7-flash rejects "minimal"; a rejected level is retried once without thinking config.

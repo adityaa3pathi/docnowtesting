@@ -33,6 +33,7 @@ from app.agents.cards import cards_from_actions, live_cards_for_chunks
 from app.agents.symptoms import symptom_reply
 from app.agents.llm import AIBusyError, call_gemini
 from app.agents.retrieval import retrieve
+from app.agents.rewrite import merge_results, needs_rewrite, rewrite_query
 from app.agents.tool_output import MAX_BOOKINGS_IN_PROMPT, compact_tool_output
 from app.agents.verifier import verify
 from app.models import (
@@ -334,7 +335,8 @@ def _elapsed(start: float) -> int:
 #   (* interrupt(): the turn ends with a question and the next message resumes the graph there)
 #
 # Search starts as an asyncio task inside the intent node and the retrieval node joins or
-# cancels it. A LangGraph fan-out would wait for both branches, so booking and off-topic
+# cancels it. On turns with history the task first rewrites a follow-up into a standalone query
+# (search(); settings.query_rewrite), so the rewrite call overlaps intent classification too. A LangGraph fan-out would wait for both branches, so booking and off-topic
 # turns would pay for a search they never use. The task lives in the per-turn runtime
 # context, not in graph state. Nodes call retrieve/classify_intent/generate_draft/verify
 # through this module's globals, so patching app.agents.orchestrator.<name> still works.
@@ -394,10 +396,10 @@ async def intent_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
         intent = ctx.pending_action
     elif settings.parallel_intent_retrieval:
         # Search runs while intent is classified; tool and greeting turns cancel it unused.
-        deps.retrieval_task = asyncio.create_task(retrieve(message, deps.db, settings))
+        deps.retrieval_task = asyncio.create_task(search(message, ctx, deps.db, settings))
         intent = await classify_intent(message, "", ctx, settings)
     else:
-        retrieval = await retrieve(message, deps.db, settings)
+        retrieval = await search(message, ctx, deps.db, settings)
         summary = "; ".join(f"{c.title} ({c.source}, sim={c.similarity:.2f})" for c in retrieval.chunks)
         intent = await classify_intent(message, summary or "none", ctx, settings)
     logger.info(
@@ -416,6 +418,32 @@ async def intent_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
         intent = intent.model_copy(update={"intent": "FAQ", "tool_name": None, "requires_action": False})
 
     return {"intent": intent, "confirmed": confirmed, "retrieval": retrieval}
+
+
+async def search(message: str, ctx: AgentContext, db: Any, settings: Any) -> RetrievalResult:
+    """Knowledge-base search for this turn: the message as typed, or a follow-up rewritten to stand alone.
+
+    The rewrite (one small model call, turns with history only) runs inside the search task, so it
+    overlaps intent classification just as the search does. Intent, draft and verifier still get the
+    customer's own words; only the search query changes. Modes: settings.query_rewrite.
+    """
+    mode = settings.query_rewrite
+    if mode not in ("replace", "both") or not needs_rewrite(ctx):
+        return await retrieve(message, db, settings)
+    if mode == "replace":
+        query = await rewrite_query(message, ctx, settings)
+        return await retrieve(query, db, settings)
+    # "both": the typed search runs while the rewrite is generated; the results are fused.
+    typed = asyncio.create_task(retrieve(message, db, settings))
+    try:
+        query = await rewrite_query(message, ctx, settings)
+        if query == message:
+            return await typed
+        rewritten = await retrieve(query, db, settings)
+        return merge_results(rewritten, await typed)
+    finally:
+        if not typed.done():
+            typed.cancel()
 
 
 def route_after_intent(state: TurnState) -> str:
