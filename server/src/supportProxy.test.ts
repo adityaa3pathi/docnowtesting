@@ -70,7 +70,7 @@ describe('support proxy', () => {
     });
 
     it('passes stream events through as they are sent, with the body, secret and no-buffer headers', async () => {
-        const { seen, base } = await setup(500);
+        const { seen, base } = await setup(1500);
         const t0 = Date.now();
         const res = await fetch(`${base}/api/support/chat/stream`, {
             method: 'POST',
@@ -90,8 +90,9 @@ describe('support proxy', () => {
         const doneAt = Date.now() - t0;
 
         expect(first).toContain('event: start');
-        expect(firstAt).toBeLessThan(300); // not held until the turn ends
-        expect(doneAt).toBeGreaterThanOrEqual(500);
+        // Not held until the turn ends: relative, so a loaded CI box can't flake it.
+        expect(doneAt).toBeGreaterThanOrEqual(1500);
+        expect(doneAt - firstAt).toBeGreaterThan(1000);
         expect(first + rest).toContain('event: final');
         expect(seen.bodies[0]).toEqual({ message: 'hi', conversation_id: null });
         expect(seen.secrets[0]).toBe('shh');
