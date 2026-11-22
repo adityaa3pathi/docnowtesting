@@ -229,3 +229,38 @@ async def test_sync_writes_and_prunes_the_index(settings):
     assert [w["source_id"] for w in written] == ["X"]
     assert conn.index_kept == [["X"]]
     assert stats["created"] == 3
+
+
+# Healthians' data for "Lipid Profile (Non Fasting)" (profile_114, prod 2026-11-22).
+_NON_FASTING = {
+    "id": "i1", "name": "Lipid Profile (Non Fasting)", "type": "PROFILE", "displayPrice": 899, "discountedPrice": 429,
+    "partnerCode": "profile_114", "detailsData": {"fasting": "Required", "fastingTime": "12 hour(s)", "constituents": []},
+}
+
+
+def test_catalog_text_uses_healthians_fasting_without_a_correction():
+    assert "Fasting Required: Required (12 hour(s))" in format_catalog_text(_NON_FASTING)
+
+
+def test_a_manager_fasting_correction_replaces_healthians_in_the_chunk():
+    fixed = {**_NON_FASTING, "fastingOverride": "Not Required", "fastingTimeOverride": None}
+    text = format_catalog_text(fixed)
+    assert "Fasting Required: Not Required" in text
+    assert "12 hour" not in text
+
+
+def test_a_required_correction_keeps_only_its_own_hours():
+    fixed = {**_NON_FASTING, "fastingOverride": "Required", "fastingTimeOverride": "10 hour(s)"}
+    assert "Fasting Required: Required (10 hour(s))" in format_catalog_text(fixed)
+    stale = {**_NON_FASTING, "fastingOverride": "Not Required", "fastingTimeOverride": "10 hour(s)"}
+    assert "hour" not in format_catalog_text(stale).split("Fasting Required:")[1].split("\n")[0]
+
+
+def test_sync_query_reads_the_override_columns_tolerantly():
+    """Read through to_jsonb, so the AI can deploy before the server migration adds the columns."""
+    import inspect
+
+    from app.ingestion import catalog_sync
+
+    source = inspect.getsource(catalog_sync.sync_catalog)
+    assert "to_jsonb(c) ->> 'fastingOverride'" in source and "to_jsonb(c) ->> 'fastingTimeOverride'" in source
