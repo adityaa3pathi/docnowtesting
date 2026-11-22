@@ -1,0 +1,238 @@
+{
+  "label": "p4-todo5-new-line-recheck",
+  "llm_model": "gemini-3.5-flash-lite",
+  "repeat": 5,
+  "scores": {
+    "false_block_rate": 0.0,
+    "false_pass_rate": 0.0,
+    "unsupported_called_grounded": 0.0,
+    "supported_called_grounded": 0.0,
+    "false_pass/invented_negative": 0.0
+  },
+  "aggregate": {
+    "false_block_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "false_pass_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "unsupported_called_grounded": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "supported_called_grounded": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "false_pass/invented_negative": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "runs": [
+    {
+      "false_block_rate": 0.0,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": 0.0,
+      "false_pass/invented_negative": 0.0
+    },
+    {
+      "false_block_rate": 0.0,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": 0.0,
+      "false_pass/invented_negative": 0.0
+    },
+    {
+      "false_block_rate": 0.0,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": 0.0,
+      "false_pass/invented_negative": 0.0
+    },
+    {
+      "false_block_rate": 0.0,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": 0.0,
+      "false_pass/invented_negative": 0.0
+    },
+    {
+      "false_block_rate": 0.0,
+      "false_pass_rate": 0.0,
+      "unsupported_called_grounded": 0.0,
+      "supported_called_grounded": 0.0,
+      "false_pass/invented_negative": 0.0
+    }
+  ],
+  "per_case": {
+    "s04": {
+      "expect": "supported",
+      "kind": "paraphrase",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "PARTIALLY_GROUNDED": 5
+      }
+    },
+    "h05": {
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "ok": 5,
+      "runs": 5,
+      "verdicts": {
+        "UNGROUNDED": 5
+      }
+    }
+  },
+  "results": [
+    {
+      "case_id": "s04",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 0,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We offer the Men's Health Checkup (40+).\n* Price: ₹2499 (MRP: ₹3999)\n* Covers diabetes, heart, liver, kidney, thyroid and PSA screening.\n* Includes HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile and Complete Blood Count.\n* Sample: blood and urine, collected at your doorstep by a trained phlebotomist.\n* Fasting: 10-12 hours.\n* Report: within 48 hours.",
+      "reasoning": "The recommendation based on age is ungrounded as the sources do not know the user's age. All other details about the Men's Health Checkup (40+) are fully grounded in Source 1, 2, and 3.",
+      "retries": 0,
+      "error": false,
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h05",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 0,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The sources list the cities and regions where DocNow operates, but Jammu is not explicitly mentioned as a city not served. Therefore, the claim that DocNow does not serve Jammu is ungrounded based on strict source verification rules.",
+      "retries": 0,
+      "error": false,
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "s04",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 1,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We offer the Men's Health Checkup (40+).\n* Price: ₹2499 (MRP: ₹3999)\n* Covers diabetes, heart, liver, kidney, thyroid and PSA screening.\n* Includes HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile and Complete Blood Count.\n* Sample: blood and urine, collected at your doorstep by a trained phlebotomist.\n* Fasting: 10-12 hours.\n* Report: within 48 hours.",
+      "reasoning": "The recommendation based on age is ungrounded as the sources do not know the user's age. All other details about the Men's Health Checkup (40+) are fully supported by Source 1, 2, and 3.",
+      "retries": 0,
+      "error": false,
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h05",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 1,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft claims that DocNow does not serve Jammu, but the sources do not mention Jammu or state that DocNow does not serve it.",
+      "retries": 0,
+      "error": false,
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "s04",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 2,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "Here is the Men's Health Checkup (40+):\n* Price: ₹2499 (MRP: ₹3999)\n* Covers diabetes, heart, liver, kidney, thyroid and PSA screening.\n* Includes HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile and Complete Blood Count.\n* Sample: blood and urine, collected at your doorstep by a trained phlebotomist.\n* Fasting: 10-12 hours.\n* Report: within 48 hours.",
+      "reasoning": "The recommendation based on age is ungrounded as the sources do not mention the user's age or provide a recommendation based on it. However, all the details about the Men's Health Checkup (40+) such as price, coverage, parameters, sample type, fasting, and report time are fully grounded in Source 1, 2, and 3.",
+      "retries": 0,
+      "error": false,
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h05",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 2,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft claims that DocNow does not serve Jammu. According to the instructions, a claim that DocNow does not serve something is a factual claim that must be explicitly supported by a source. The sources list cities served, but do not explicitly mention Jammu as a city not served, making the claim ungrounded.",
+      "retries": 0,
+      "error": false,
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "s04",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 3,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We offer the Men's Health Checkup (40+).\n* Price: ₹2499 (MRP: ₹3999)\n* Covers diabetes, heart, liver, kidney, thyroid and PSA screening.\n* Includes HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile and Complete Blood Count.\n* Sample: blood and urine, collected at your doorstep by a trained phlebotomist.\n* Fasting: 10-12 hours.\n* Report: within 48 hours.",
+      "reasoning": "The draft recommends a specific test based on the user's age, which is ungrounded since the sources do not provide the user's age or recommend tests based on it. The rest of the details about the Men's Health Checkup (40+) are fully grounded in Source 1, 2, and 3.",
+      "retries": 0,
+      "error": false,
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h05",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 3,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft claims that DocNow does not serve Jammu, but the sources do not explicitly state whether Jammu is served or not. According to the instructions, a claim that DocNow does not offer, provide, serve, or allow something is ungrounded unless explicitly supported by a source.",
+      "retries": 0,
+      "error": false,
+      "ok": true,
+      "leaked": []
+    },
+    {
+      "case_id": "s04",
+      "expect": "supported",
+      "kind": "paraphrase",
+      "repeat": 4,
+      "verdict": "PARTIALLY_GROUNDED",
+      "shown": "We recommend the Men's Health Checkup (40+).\n* Price: ₹2499 (MRP: ₹3999)\n* Covers diabetes, heart, liver, kidney, thyroid and PSA screening.\n* Includes HbA1c, Lipid Profile, PSA, Liver Function Test, Kidney Function Test, Thyroid Profile and Complete Blood Count.\n* Sample: blood and urine, collected at your doorstep by a trained phlebotomist.\n* Fasting: 10-12 hours.\n* Report: within 48 hours.",
+      "reasoning": "The recommendation based on age is ungrounded because the sources do not know the user's age or recommend it specifically based on age in this context, although the package itself is for men over 40. The details about the Men's Health Checkup (40+) price, coverage, parameters, sample type, fasting, and report time are fully grounded in Source 1 and Source 3.",
+      "retries": 0,
+      "error": false,
+      "ok": true,
+      "lost": []
+    },
+    {
+      "case_id": "h05",
+      "expect": "unsupported",
+      "kind": "invented_negative",
+      "repeat": 4,
+      "verdict": "UNGROUNDED",
+      "shown": "I'm sorry, I don't have enough verified information to answer that accurately. For help with this, please contact our support team at +91 9649089089 or docnowhealthcare@gmail.com.",
+      "reasoning": "The draft claims that DocNow does not serve Jammu, but the sources do not explicitly state whether Jammu is served or not. According to the instructions, a claim that DocNow does not offer, provide, serve, or allow something is ungrounded unless a source explicitly states so.",
+      "retries": 0,
+      "error": false,
+      "ok": true,
+      "leaked": []
+    }
+  ]
+}
