@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     embedding_model: str = "gemini-embedding-001"
     embedding_dimensions: int = 768
     llm_model: str = "gemini-3.5-flash-lite"
+    # Tried in order when llm_model fails with an outage error (429, 5xx, timeout, 402, retired model);
+    # comma-separated, "" = no failover. Same API key, so a key- or billing-level outage hits them too.
+    llm_fallback_models: str = "gemini-3.1-flash-lite"
     # The SDK has no default timeout, so a stalled call would hang the chat until the proxy gives up.
     genai_timeout_seconds: float = 30.0
 
@@ -53,6 +56,15 @@ class Settings(BaseSettings):
     max_conversation_turns: int = 10
     # Run intent and retrieval together; false restores the old sequential path.
     parallel_intent_retrieval: bool = True
+    # Retrieval results cached per search query until the knowledge base changes; 0 = off.
+    retrieval_cache_size: int = 512
+    # How long a knowledge-base version check is reused (BM25 rebuild and retrieval cache invalidation).
+    kb_version_ttl_seconds: float = 10.0
+    # Follow-up rewrite (turns with history only): "off" searches the message as typed, "replace" searches
+    # only the rewritten query, "both" searches both and fuses them (app/agents/rewrite.py).
+    query_rewrite: str = "replace"
+    rewrite_thinking_level: str = "low"
+    rewrite_max_output_tokens: int = 256
 
     # Per-call thinking and output caps (caps include thinking tokens); "" sends no thinking config.
     # gemini-3.7-flash rejects "minimal"; a rejected level is retried once without thinking config.

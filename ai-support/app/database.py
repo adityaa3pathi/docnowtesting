@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 import json
 import logging
 from typing import Any
@@ -53,6 +54,8 @@ class Database:
         self._bm25: BM25Index | None = None
         self._bm25_version: tuple | None = None
         self._bm25_lock = asyncio.Lock()
+        self._kb_version: tuple | None = None
+        self._kb_version_at = 0.0
 
     async def connect(self) -> None:
         """Create the connection pool and register pgvector types."""
@@ -124,17 +127,33 @@ class Database:
         await self._ensure_bm25()
         return self._bm25.search(query, limit)
 
+    async def kb_version(self) -> tuple:
+        """Changes whenever ingestion adds, updates or deletes a chunk (upserts bump "updatedAt").
+
+        Remembered for kb_version_ttl_seconds, so the BM25 index and the retrieval cache share one
+        query every few seconds instead of one each per turn; a re-sync shows up within that window.
+        """
+        if not self.pool:
+            raise RuntimeError("Database pool not initialized. Call connect() first.")
+        ttl = getattr(self.settings, "kb_version_ttl_seconds", 0.0)
+        if self._kb_version is not None and time.monotonic() - self._kb_version_at < ttl:
+            return self._kb_version
+        async with self.pool.acquire() as conn:
+            version = tuple(await conn.fetchrow('SELECT count(*), max("updatedAt") FROM "KnowledgeChunk"'))
+        self._kb_version, self._kb_version_at = version, time.monotonic()
+        return version
+
     async def _ensure_bm25(self) -> None:
         """The index is rebuilt only when ingestion has changed the table."""
         if not self.pool:
             raise RuntimeError("Database pool not initialized. Call connect() first.")
 
-        async with self.pool.acquire() as conn:
-            version = tuple(await conn.fetchrow('SELECT count(*), max("updatedAt") FROM "KnowledgeChunk"'))
-            if self._bm25 is None or version != self._bm25_version:
-                # The lock makes concurrent requests wait for one rebuild instead of each doing its own.
-                async with self._bm25_lock:
-                    if self._bm25 is None or version != self._bm25_version:
+        version = await self.kb_version()
+        if self._bm25 is None or version != self._bm25_version:
+            # The lock makes concurrent requests wait for one rebuild instead of each doing its own.
+            async with self._bm25_lock:
+                if self._bm25 is None or version != self._bm25_version:
+                    async with self.pool.acquire() as conn:
                         await self._rebuild_bm25(conn, version)
 
     async def _rebuild_bm25(self, conn: asyncpg.Connection, version: tuple) -> None:

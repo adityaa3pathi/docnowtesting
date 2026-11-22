@@ -210,6 +210,20 @@ def test_other_tool_output_stays_json_but_bounded():
     assert out.startswith("{") and len(out) <= 800
 
 
+def _response(prompt=100, output=20, thoughts=5, cached=0, finish=types.FinishReason.STOP, text="ok", usage_meta=True):
+    """A real google-genai response, so LangChain's own parsing runs in the test."""
+    meta = types.GenerateContentResponseUsageMetadata(
+        prompt_token_count=prompt, candidates_token_count=output, thoughts_token_count=thoughts,
+        cached_content_token_count=cached, total_token_count=prompt + output + thoughts,
+    ) if usage_meta else None
+    return types.GenerateContentResponse(
+        candidates=[types.Candidate(content=types.Content(role="model", parts=[types.Part(text=text)]),
+                                    finish_reason=finish)],
+        usage_metadata=meta,
+        model_version="gemini-3.5-flash-lite",
+    )
+
+
 def _client(response):
     generate = AsyncMock(return_value=response)
     return SimpleNamespace(aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate))), generate
@@ -219,9 +233,8 @@ def _client(response):
 async def test_call_gemini_sends_thinking_level_and_cap(settings):
     from app.agents.llm import call_gemini
 
-    resp = SimpleNamespace(text="ok", usage_metadata=None, candidates=[])
-    client, generate = _client(resp)
-    with patch("app.agents.llm.get_genai_client", return_value=client):
+    client, generate = _client(_response(usage_meta=False))
+    with patch("app.agents.chat_models.get_genai_client", return_value=client):
         await call_gemini("p", settings, stage="intent")
     config = generate.await_args.kwargs["config"]
     assert config.thinking_config.thinking_level == types.ThinkingLevel.LOW
@@ -232,10 +245,8 @@ async def test_call_gemini_sends_thinking_level_and_cap(settings):
 async def test_cap_hit_raises_so_callers_use_their_fallback(settings):
     from app.agents.llm import TruncatedResponseError, call_gemini
 
-    resp = SimpleNamespace(text="partial", usage_metadata=None,
-                           candidates=[SimpleNamespace(finish_reason=types.FinishReason.MAX_TOKENS)])
-    client, _ = _client(resp)
-    with patch("app.agents.llm.get_genai_client", return_value=client), pytest.raises(TruncatedResponseError):
+    client, _ = _client(_response(text="partial", finish=types.FinishReason.MAX_TOKENS, usage_meta=False))
+    with patch("app.agents.chat_models.get_genai_client", return_value=client), pytest.raises(TruncatedResponseError):
         await call_gemini("p", settings, stage="draft")
 
 
@@ -291,12 +302,13 @@ async def test_unsupported_thinking_level_retries_without_it(settings):
 
     rejected = errors.ClientError(400, {"error": {"code": 400, "status": "INVALID_ARGUMENT",
                                               "message": "Thinking level MINIMAL is not supported for this model."}})
-    ok = SimpleNamespace(text="ok", usage_metadata=None, candidates=[])
-    generate = AsyncMock(side_effect=[rejected, ok])
+    generate = AsyncMock(side_effect=[rejected, _response(usage_meta=False)])
     client = SimpleNamespace(aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate)))
-    with patch("app.agents.llm.get_genai_client", return_value=client):
+    with patch("app.agents.chat_models.get_genai_client", return_value=client):
         assert await call_gemini("p", settings, stage="intent") == "ok"
-    assert generate.await_args_list[1].kwargs["config"].thinking_config is None
+    first, second = (c.kwargs["config"] for c in generate.await_args_list)
+    assert first.thinking_config is not None
+    assert second.thinking_config is None or second.thinking_config.thinking_level is None
 
 
 def test_default_thinking_levels_are_supported_by_gemini_flash(settings):

@@ -4,10 +4,8 @@ import logging
 import time
 from typing import Any, Optional
 
-from google.genai import errors, types
-
 from app.agents import usage
-from app.genai_client import get_genai_client
+from app.agents.chat_models import BUSY_STATUSES, FailoverError, build_chain, messages_for, status_of
 
 logger = logging.getLogger(__name__)
 
@@ -20,21 +18,9 @@ class TruncatedResponseError(Exception):
     """The output cap cut the reply short; callers fall back instead of using partial text."""
 
 
-async def _generate(settings: Any, prompt: str, config_kwargs: dict[str, Any], stage: str) -> Any:
-    models = get_genai_client(settings).aio.models
-    try:
-        return await models.generate_content(
-            model=settings.llm_model, contents=prompt, config=types.GenerateContentConfig(**config_kwargs)
-        )
-    except errors.ClientError as exc:
-        # A model that rejects the thinking level must not take the whole chat down.
-        if exc.code != 400 or "thinking" not in str(exc.message).lower() or "thinking_config" not in config_kwargs:
-            raise
-        logger.warning("Model %s rejected %s thinking config; retrying without it", settings.llm_model, stage)
-        config_kwargs = {k: v for k, v in config_kwargs.items() if k != "thinking_config"}
-        return await models.generate_content(
-            model=settings.llm_model, contents=prompt, config=types.GenerateContentConfig(**config_kwargs)
-        )
+def _thinking_rejected(exc: BaseException, thinking_level: str) -> bool:
+    """A model that rejects the thinking level must not take the whole chat down."""
+    return bool(thinking_level) and status_of(exc) == 400 and "thinking" in str(exc).lower()
 
 
 async def call_gemini(
@@ -46,45 +32,51 @@ async def call_gemini(
     response_json_schema: Optional[dict[str, Any]] = None,
     stage: str = "llm",
 ) -> str:
-    """Calls the Gemini API."""
-    config_kwargs: dict[str, Any] = {"temperature": temperature}
-    thinking_level = getattr(settings, f"{stage}_thinking_level", "")
-    if thinking_level:
-        config_kwargs["thinking_config"] = types.ThinkingConfig(thinking_level=thinking_level.upper())
+    """One model call: the configured Gemini model, then settings.llm_fallback_models on outage errors.
+
+    Raises AIBusyError when every model is unavailable (429/503, or 402 exhausted credits),
+    TruncatedResponseError when the output cap cut the reply short.
+    """
+    thinking_level = getattr(settings, f"{stage}_thinking_level", "") or ""
     max_output = getattr(settings, f"{stage}_max_output_tokens", None)
-    if max_output:
-        config_kwargs["max_output_tokens"] = max_output
-    if system_prompt:
-        config_kwargs["system_instruction"] = system_prompt
-    if response_mime_type:
-        config_kwargs["response_mime_type"] = response_mime_type
+    kwargs: dict[str, Any] = {"temperature": temperature}
     if response_json_schema:
         # Gemini then guarantees the JSON shape instead of us hoping for it.
-        config_kwargs["response_mime_type"] = "application/json"
-        config_kwargs["response_json_schema"] = response_json_schema
+        kwargs["response_mime_type"] = "application/json"
+        kwargs["response_json_schema"] = response_json_schema
+    elif response_mime_type:
+        kwargs["response_mime_type"] = response_mime_type
+    payload = {"messages": messages_for(prompt, system_prompt), "kwargs": kwargs}
 
+    start = time.monotonic()
     try:
-        start = time.monotonic()
-        response = await _generate(settings, prompt, config_kwargs, stage)
-        call = usage.from_response(response, stage, settings.llm_model, int((time.monotonic() - start) * 1000))
-        usage.record(call)
-        logger.info(
-            "gemini stage=%s prompt=%d output=%d thoughts=%d cached=%d latency_ms=%d cap_hit=%s",
-            stage, call.prompt_tokens, call.output_tokens, call.thought_tokens,
-            call.cached_tokens, call.latency_ms, call.cap_hit,
-        )
-        if call.cap_hit:
-            raise TruncatedResponseError(stage)
-        return response.text
-    except (errors.ClientError, errors.ServerError) as exc:
-        if getattr(exc, 'code', None) in (429, 503) or '503' in str(exc) or '429' in str(exc):
-            logger.warning("Gemini API unavailable (%s): %s", getattr(exc, 'code', 503), getattr(exc, 'message', str(exc)))
+        try:
+            message = await build_chain(settings, stage, thinking_level, max_output).ainvoke(payload)
+        except Exception as exc:
+            if not _thinking_rejected(exc, thinking_level):
+                raise
+            logger.warning("Model %s rejected %s thinking config; retrying without it", settings.llm_model, stage)
+            message = await build_chain(settings, stage, "", max_output).ainvoke(payload)
+    except FailoverError as exc:
+        if exc.status in BUSY_STATUSES:
+            logger.warning("All models unavailable for %s (%s): %s", stage, exc.status, exc)
             raise AIBusyError from exc
         logger.exception("Error calling Gemini API")
-        raise
-    except TruncatedResponseError:
-        logger.warning("Gemini %s reply hit its output cap", stage)
         raise
     except Exception:
         logger.exception("Error calling Gemini API")
         raise
+
+    call = usage.from_response(message, stage, settings.llm_model, int((time.monotonic() - start) * 1000))
+    usage.record(call)
+    if call.model != settings.llm_model:
+        logger.warning("gemini stage=%s answered by fallback model %s", stage, call.model)
+    logger.info(
+        "gemini stage=%s model=%s prompt=%d output=%d thoughts=%d cached=%d latency_ms=%d cap_hit=%s",
+        stage, call.model, call.prompt_tokens, call.output_tokens, call.thought_tokens,
+        call.cached_tokens, call.latency_ms, call.cap_hit,
+    )
+    if call.cap_hit:
+        logger.warning("Gemini %s reply hit its output cap", stage)
+        raise TruncatedResponseError(stage)
+    return message.text

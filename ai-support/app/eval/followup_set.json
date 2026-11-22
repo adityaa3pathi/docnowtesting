@@ -1,0 +1,926 @@
+{
+ "note": "Phase 4 multi-turn set on the fixture corpus. 'followup'/'typo_followup': the message only makes sense with the history (pronouns, 'the advanced one'). 'control': history is present but the message stands alone; a rewrite must not drag the old topic in. 'relevant' feeds retrieval scoring; the other fields are the golden-set shape for app.eval.runner (which passes 'history' as conversation_history).",
+ "queries": [
+  {
+   "id": "fu-01",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "how much does it cost?",
+   "history": [
+    {
+     "role": "user",
+     "content": "Do you have a lipid profile test?"
+    },
+    {
+     "role": "assistant",
+     "content": "Yes, we offer the Lipid Profile, which measures cholesterol and triglycerides."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-lipid"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "499"
+   ]
+  },
+  {
+   "id": "fu-02",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "does that need fasting?",
+   "history": [
+    {
+     "role": "user",
+     "content": "I want the HbA1c test"
+    },
+    {
+     "role": "assistant",
+     "content": "Sure, HbA1c shows your average blood sugar over 3 months."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-hba1c"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "no fasting",
+    "not required",
+    "don't need to fast",
+    "do not need to fast",
+    "doesn't need",
+    "does not need",
+    "not need"
+   ]
+  },
+  {
+   "id": "fu-03",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "what about the advanced one?",
+   "history": [
+    {
+     "role": "user",
+     "content": "What's in the basic full body checkup?"
+    },
+    {
+     "role": "assistant",
+     "content": "The Basic Full Body Checkup covers blood count, sugar, lipids, liver, kidney and thyroid."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-fbc-adv"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "Advanced Full Body"
+   ]
+  },
+  {
+   "id": "fu-04",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "and how long for the report?",
+   "history": [
+    {
+     "role": "user",
+     "content": "I need a Vitamin D test"
+    },
+    {
+     "role": "assistant",
+     "content": "We offer Vitamin D (25-OH) to check for deficiency."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-vitd"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "24 hours"
+   ]
+  },
+  {
+   "id": "fu-05",
+   "category": "policy",
+   "kind": "followup",
+   "query": "can I still cancel it?",
+   "history": [
+    {
+     "role": "user",
+     "content": "The phlebotomist has been assigned to my booking"
+    },
+    {
+     "role": "assistant",
+     "content": "Your booking status is Sample Collector Assigned."
+    }
+   ],
+   "relevant": [
+    "policy:Cancellation Policy",
+    "booking_help:Booking Status Explanations"
+   ],
+   "expected_source": "policy",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "list_bookings",
+    "cancel_booking"
+   ],
+   "ground_truth": null,
+   "should_abstain": false
+  },
+  {
+   "id": "fu-06",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "what's the price?",
+   "history": [
+    {
+     "role": "user",
+     "content": "Tell me about the thyroid profile"
+    },
+    {
+     "role": "assistant",
+     "content": "The Thyroid Profile (T3, T4, TSH) checks how well your thyroid is working."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-thyroid"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "449"
+   ]
+  },
+  {
+   "id": "fu-07",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "is fasting needed for it?",
+   "history": [
+    {
+     "role": "user",
+     "content": "Do you have a kidney function test?"
+    },
+    {
+     "role": "assistant",
+     "content": "Yes, we offer the Kidney Function Test (KFT)."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-kft"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false
+  },
+  {
+   "id": "fu-08",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "which sample does it need?",
+   "history": [
+    {
+     "role": "user",
+     "content": "I want to check my vitamin B12"
+    },
+    {
+     "role": "assistant",
+     "content": "We offer the Vitamin B12 test."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-b12"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "blood"
+   ]
+  },
+  {
+   "id": "fu-09",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "how is it different from the basic one?",
+   "history": [
+    {
+     "role": "user",
+     "content": "What does the comprehensive health checkup include?"
+    },
+    {
+     "role": "assistant",
+     "content": "The Comprehensive Health Checkup includes 75 tests across blood, urine and stool."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-comprehensive",
+    "catalog:fx-fbc-basic"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false
+  },
+  {
+   "id": "fu-10",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "what does it check?",
+   "history": [
+    {
+     "role": "user",
+     "content": "Is the hs-CRP test available?"
+    },
+    {
+     "role": "assistant",
+     "content": "Yes, we offer hs-CRP (High Sensitivity C-Reactive Protein)."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-crp"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "inflammation",
+    "C-Reactive",
+    "CRP"
+   ]
+  },
+  {
+   "id": "fu-11",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "do I need to fast before it?",
+   "history": [
+    {
+     "role": "user",
+     "content": "My doctor asked for a post prandial sugar test"
+    },
+    {
+     "role": "assistant",
+     "content": "We offer the Post Prandial Blood Sugar (PPBS) test."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-ppbs"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "2 hours",
+    "meal"
+   ]
+  },
+  {
+   "id": "fu-12",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "how many parameters are in it?",
+   "history": [
+    {
+     "role": "user",
+     "content": "Tell me about the men's health checkup"
+    },
+    {
+     "role": "assistant",
+     "content": "The Men's Health Checkup (40+) is a package for men over 40."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-men-40"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "78"
+   ]
+  },
+  {
+   "id": "fu-13",
+   "category": "policy",
+   "kind": "followup",
+   "query": "if I can't make it, can I move it to another day?",
+   "history": [
+    {
+     "role": "user",
+     "content": "I booked a liver function test for tomorrow morning"
+    },
+    {
+     "role": "assistant",
+     "content": "Great, your Liver Function Test is booked."
+    }
+   ],
+   "relevant": [
+    "policy:Rescheduling Policy"
+   ],
+   "expected_source": "policy",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "list_bookings",
+    "reschedule_booking",
+    "get_reschedule_slots"
+   ],
+   "ground_truth": null,
+   "should_abstain": false
+  },
+  {
+   "id": "fu-14",
+   "category": "policy",
+   "kind": "followup",
+   "query": "how do I get my money back then?",
+   "history": [
+    {
+     "role": "user",
+     "content": "I cancelled my booking yesterday"
+    },
+    {
+     "role": "assistant",
+     "content": "Your booking has been cancelled."
+    }
+   ],
+   "relevant": [
+    "policy:Refund Policy"
+   ],
+   "expected_source": "policy",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "list_bookings"
+   ],
+   "ground_truth": null,
+   "should_abstain": false
+  },
+  {
+   "id": "fu-15",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "when will the result come?",
+   "history": [
+    {
+     "role": "user",
+     "content": "I gave my sample for iron studies this morning"
+    },
+    {
+     "role": "assistant",
+     "content": "Thanks, your Iron Studies sample has been collected."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-iron"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details",
+    "list_bookings"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "24 hours"
+   ]
+  },
+  {
+   "id": "fu-16",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "is it included in the diabetes package?",
+   "history": [
+    {
+     "role": "user",
+     "content": "I want an HbA1c test"
+    },
+    {
+     "role": "assistant",
+     "content": "We offer HbA1c (Glycosylated Haemoglobin) for ₹399."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-diabetes"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "Diabetes Screening"
+   ]
+  },
+  {
+   "id": "fu-17",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "what's its price?",
+   "history": [
+    {
+     "role": "user",
+     "content": "Do you do PSA testing?"
+    },
+    {
+     "role": "assistant",
+     "content": "Yes, we offer the PSA (Prostate Specific Antigen) test."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-psa"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "649"
+   ]
+  },
+  {
+   "id": "fu-18",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "and one for pregnant women?",
+   "history": [
+    {
+     "role": "user",
+     "content": "What health packages do you have?"
+    },
+    {
+     "role": "assistant",
+     "content": "We have full body checkups, a men's health checkup and a diabetes screening package."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-antenatal"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "Antenatal"
+   ]
+  },
+  {
+   "id": "fu-19",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "does it need a urine sample too?",
+   "history": [
+    {
+     "role": "user",
+     "content": "Tell me about the basic full body checkup"
+    },
+    {
+     "role": "assistant",
+     "content": "The Basic Full Body Checkup costs ₹1299 and covers 62 parameters."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-fbc-basic"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "urine"
+   ]
+  },
+  {
+   "id": "fu-20",
+   "category": "catalog",
+   "kind": "followup",
+   "query": "can someone collect it from my home?",
+   "history": [
+    {
+     "role": "user",
+     "content": "I need a urine routine test"
+    },
+    {
+     "role": "assistant",
+     "content": "We offer Urine Routine and Microscopy."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-urine",
+    "faq:How Home Collection Works"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "home"
+   ]
+  },
+  {
+   "id": "fu-21",
+   "category": "catalog",
+   "kind": "typo_followup",
+   "query": "how much is the thyriod one",
+   "history": [
+    {
+     "role": "user",
+     "content": "Do you have thyroid tests?"
+    },
+    {
+     "role": "assistant",
+     "content": "Yes, we have the Thyroid Profile (T3, T4, TSH) and a TSH test."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-thyroid",
+    "catalog:fx-tsh"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "449",
+    "249"
+   ]
+  },
+  {
+   "id": "fu-22",
+   "category": "catalog",
+   "kind": "typo_followup",
+   "query": "does it need fastng",
+   "history": [
+    {
+     "role": "user",
+     "content": "lipid profle"
+    },
+    {
+     "role": "assistant",
+     "content": "We offer the Lipid Profile, which measures cholesterol and triglycerides."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-lipid"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "10-12"
+   ]
+  },
+  {
+   "id": "ctl-01",
+   "category": "policy",
+   "kind": "control",
+   "query": "What is your refund policy?",
+   "history": [
+    {
+     "role": "user",
+     "content": "Do you have a lipid profile test?"
+    },
+    {
+     "role": "assistant",
+     "content": "Yes, we offer the Lipid Profile for ₹499."
+    }
+   ],
+   "relevant": [
+    "policy:Refund Policy"
+   ],
+   "expected_source": "policy",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false
+  },
+  {
+   "id": "ctl-02",
+   "category": "catalog",
+   "kind": "control",
+   "query": "Do you have a vitamin D test?",
+   "history": [
+    {
+     "role": "user",
+     "content": "I want the HbA1c test"
+    },
+    {
+     "role": "assistant",
+     "content": "Sure, HbA1c costs ₹399."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-vitd"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "899"
+   ]
+  },
+  {
+   "id": "ctl-03",
+   "category": "policy",
+   "kind": "control",
+   "query": "Which cities do you serve?",
+   "history": [
+    {
+     "role": "user",
+     "content": "How much is a CBC?"
+    },
+    {
+     "role": "assistant",
+     "content": "The Complete Blood Count (CBC) costs ₹299."
+    }
+   ],
+   "relevant": [
+    "faq:Cities and Locations Served"
+   ],
+   "expected_source": "faq",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false
+  },
+  {
+   "id": "ctl-04",
+   "category": "catalog",
+   "kind": "control",
+   "query": "How much is the Kidney Function Test?",
+   "history": [
+    {
+     "role": "user",
+     "content": "Tell me about the liver function test"
+    },
+    {
+     "role": "assistant",
+     "content": "The Liver Function Test (LFT) costs ₹549 and checks 11 parameters."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-kft"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "549"
+   ]
+  },
+  {
+   "id": "ctl-05",
+   "category": "policy",
+   "kind": "control",
+   "query": "What payment methods do you accept?",
+   "history": [
+    {
+     "role": "user",
+     "content": "Do you have a thyroid test?"
+    },
+    {
+     "role": "assistant",
+     "content": "Yes, the Thyroid Profile (T3, T4, TSH) costs ₹449."
+    }
+   ],
+   "relevant": [
+    "policy:Payment and Pricing Policy"
+   ],
+   "expected_source": "policy",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "UPI"
+   ]
+  },
+  {
+   "id": "ctl-06",
+   "category": "policy",
+   "kind": "control",
+   "query": "Can I track the phlebotomist?",
+   "history": [
+    {
+     "role": "user",
+     "content": "How does home collection work?"
+    },
+    {
+     "role": "assistant",
+     "content": "A certified phlebotomist visits your home at the slot you picked."
+    }
+   ],
+   "relevant": [
+    "faq:Phlebotomist Tracking"
+   ],
+   "expected_source": "faq",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false
+  },
+  {
+   "id": "ctl-07",
+   "category": "catalog",
+   "kind": "control",
+   "query": "Is the PSA test available?",
+   "history": [
+    {
+     "role": "user",
+     "content": "I want to check my vitamin B12"
+    },
+    {
+     "role": "assistant",
+     "content": "We offer the Vitamin B12 test for ₹699."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-psa"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "649"
+   ]
+  },
+  {
+   "id": "ctl-08",
+   "category": "catalog",
+   "kind": "control",
+   "query": "Do you have a test for iron deficiency?",
+   "history": [
+    {
+     "role": "user",
+     "content": "What does the CBC check?"
+    },
+    {
+     "role": "assistant",
+     "content": "The CBC counts red cells, white cells, platelets and haemoglobin."
+    }
+   ],
+   "relevant": [
+    "catalog:fx-iron"
+   ],
+   "expected_source": "catalog",
+   "expected_tool": null,
+   "acceptable_tools": [
+    "none",
+    "search_catalog",
+    "get_product_details"
+   ],
+   "ground_truth": null,
+   "should_abstain": false,
+   "expect_any": [
+    "Iron Studies"
+   ]
+  }
+ ]
+}
