@@ -18,7 +18,8 @@ import logging
 import re
 import time
 import uuid
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from typing import Any, TypedDict
 
 from langfuse import observe
@@ -122,6 +123,10 @@ _CONFIRM = re.compile(
     r"^\s*(yes|y|yeah|yep|confirm|confirmed|ok|okay|sure|go ahead|do it|haan|haan ji|ha|ji)\s*(please)?[.!\s]*$",
     re.IGNORECASE,
 )
+
+
+def _is_confirmation(message: str, ctx: AgentContext) -> bool:
+    return ctx.pending_action is not None and bool(_CONFIRM.match(message))
 
 
 def _history_text(ctx: AgentContext) -> str:
@@ -298,13 +303,21 @@ async def handle_message(
     ctx: AgentContext,
     db: Any,
     settings: Any,
+    events: TurnEvents | None = None,
 ) -> SupportResponse:
     """Full agent pipeline: Retrieve → Classify → Act → Generate → Verify.
 
-    This is the main entry point called by the chat route handler.
+    This is the main entry point called by both chat routes. `events` (the streaming route only)
+    receives status events while the turn runs; the answer itself is only the returned response.
     """
     with usage.track_turn() as turn:
-        response = await _run_pipeline(message, ctx, db, settings)
+        try:
+            response = await _run_pipeline(message, ctx, db, settings, events)
+        except asyncio.CancelledError:
+            # The streaming client went away before any write started; nothing is stored for this turn.
+            spent = turn.summary()
+            logger.info("turn cancelled calls=%d total=%d", spent["calls"], spent["total_tokens"])
+            raise
     summary = turn.summary()
     response.usage = summary
     response.token_count = summary["total_tokens"]
@@ -343,6 +356,48 @@ def _elapsed(start: float) -> int:
 # ──────────────────────────────────────────────
 
 
+# Statuses a streaming client is told, named for what the turn does next. They never carry answer
+# text: the reply leaves the server once, after the verifier (or as fixed text / an abstention).
+SEARCHING, CHECKING_BOOKINGS, UPDATING_BOOKING, DRAFTING, VERIFYING = (
+    "searching", "checking_bookings", "updating_booking", "drafting", "verifying",
+)
+STATUSES = (SEARCHING, CHECKING_BOOKINGS, UPDATING_BOOKING, DRAFTING, VERIFYING)
+_NODE_STATUS = {"fetch_bookings": CHECKING_BOOKINGS, "draft": DRAFTING, "booking_reply": DRAFTING, "verifier": VERIFYING}
+
+
+@dataclass
+class TurnEvents:
+    """What the streaming route learns while a turn runs (Phase 5).
+
+    on_status gets each new status once. write_started turns true just before a booking write is
+    sent to Express; from then on the route lets the turn finish and store its reply even if the
+    client has gone, and before it the route may cancel the turn (no write has begun).
+    """
+
+    on_status: Callable[[str], None] = lambda _stage: None
+    write_started: bool = False
+    sent: list[str] = field(default_factory=list)
+
+    def status(self, stage: str) -> None:
+        if not self.sent or self.sent[-1] != stage:
+            self.sent.append(stage)
+            self.on_status(stage)
+
+
+def _status_for(node: str, state: dict, ctx: AgentContext) -> str | None:
+    """The status to show when `node` starts, from the state it starts with."""
+    if node == "intent":
+        # A "yes" to a pending write runs it without a search.
+        return None if _is_confirmation(state["message"], ctx) else SEARCHING
+    if node == "action":
+        intent = state["intent"]
+        tool = TOOL_REGISTRY.get(intent.tool_name)
+        if tool and tool.is_write:
+            return UPDATING_BOOKING if state.get("confirmed") and not _is_blank_id(intent) else CHECKING_BOOKINGS
+        return CHECKING_BOOKINGS if tool and tool.requires_auth else SEARCHING
+    return _NODE_STATUS.get(node)
+
+
 @dataclass
 class TurnDeps:
     """Per-turn dependencies handed to every node as the LangGraph runtime context."""
@@ -351,6 +406,7 @@ class TurnDeps:
     db: Any
     settings: Any
     retrieval_task: asyncio.Task | None = None
+    events: TurnEvents | None = None
 
 
 class TurnState(TypedDict, total=False):
@@ -390,7 +446,7 @@ async def intent_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
     message, ctx, settings = state["message"], deps.ctx, deps.settings
 
     # A "yes" to the write action asked about last turn runs it; no search needed.
-    confirmed = ctx.pending_action is not None and bool(_CONFIRM.match(message))
+    confirmed = _is_confirmation(message, ctx)
     retrieval = RetrievalResult()
     if confirmed:
         intent = ctx.pending_action
@@ -525,6 +581,9 @@ async def action_node(state: TurnState, runtime: Runtime[TurnDeps]) -> dict:
 
     from app.agents.action import execute_action
 
+    if tool_def and tool_def.is_write and deps.events:
+        # Set with no await before the call: the route never cancels a turn once this is true.
+        deps.events.write_started = True
     action_result = await execute_action(intent, deps.ctx, deps.settings)
     actions = [action_result]
 
@@ -714,8 +773,13 @@ def _thread_id(ctx: AgentContext) -> str:
 
 
 async def _forget(thread: str) -> None:
+    _forget_now(thread)
+
+
+def _forget_now(thread: str) -> None:
+    # No await, so it also runs inside a task that is being cancelled.
     _PAUSED.pop(thread, None)
-    await _CHECKPOINTER.adelete_thread(thread)
+    _CHECKPOINTER.delete_thread(thread)
 
 
 async def _sweep_paused() -> None:
@@ -725,10 +789,27 @@ async def _sweep_paused() -> None:
 
 
 async def _invoke(payload: Any, thread: str, deps: TurnDeps) -> dict:
-    # durability="exit": write the checkpoint only when the run stops (an interrupt or the end).
-    return await SUPPORT_GRAPH.ainvoke(
-        payload, {"configurable": {"thread_id": thread}}, context=deps, durability="exit"
-    )
+    """Run the graph; returns exactly what SUPPORT_GRAPH.ainvoke returns.
+
+    ainvoke is astream(stream_mode=["updates", "values"]) keeping the last values and any
+    interrupts; this does the same, plus "tasks" (node starts) for the streaming status events.
+    durability="exit": write the checkpoint only when the run stops (an interrupt or the end).
+    """
+    latest: Any = None
+    interrupts: list = []
+    async for mode, chunk in SUPPORT_GRAPH.astream(
+        payload, {"configurable": {"thread_id": thread}}, context=deps, durability="exit",
+        stream_mode=["updates", "values", "tasks"],
+    ):
+        if mode == "values":
+            latest = chunk
+        elif mode == "updates":
+            if isinstance(chunk, dict) and (found := chunk.get("__interrupt__")) is not None:
+                interrupts.extend(found)
+        elif deps.events is not None and "input" in chunk:  # a node is starting
+            if stage := _status_for(chunk["name"], chunk["input"], deps.ctx):
+                deps.events.status(stage)
+    return {**latest, "__interrupt__": interrupts} if interrupts else latest
 
 
 async def _run_pipeline(
@@ -736,9 +817,10 @@ async def _run_pipeline(
     ctx: AgentContext,
     db: Any,
     settings: Any,
+    events: TurnEvents | None = None,
 ) -> SupportResponse:
     start_time = time.monotonic()
-    deps = TurnDeps(ctx=ctx, db=db, settings=settings)
+    deps = TurnDeps(ctx=ctx, db=db, settings=settings, events=events)
     thread = _thread_id(ctx)
     try:
         await _sweep_paused()
@@ -762,6 +844,12 @@ async def _run_pipeline(
         else:
             await _forget(thread)
             response = final["response"]
+    except asyncio.CancelledError:
+        # Only the streaming route cancels a turn, and never once a write started. Drop the thread
+        # so a half-run graph can never be resumed later; the next message starts afresh (a "yes"
+        # then needs the stored pending_action, as after a restart).
+        _forget_now(thread)
+        raise
     except AIBusyError:
         await _forget(thread)
         response = SupportResponse(content=BUSY_RESPONSE, was_abstained=True)

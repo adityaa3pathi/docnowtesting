@@ -146,6 +146,20 @@ class ChatResponse(BaseModel):
     cards: list[ProductCard] = Field(default_factory=list)
 
 
+class PendingActionOut(BaseModel):
+    """The write a reply asks the customer to pick a booking for or confirm. Shown only: the server
+    keeps its own copy (stored with the message), and a client never sends it back."""
+
+    tool: str | None = None
+    parameters: dict[str, Any] = Field(default_factory=dict)
+
+
+class ChatStreamFinal(ChatResponse):
+    """The `final` event of POST /api/support/chat/stream: the JSON route's body plus pending_action."""
+
+    pending_action: PendingActionOut | None = None
+
+
 class MessageEntry(BaseModel):
     """A single message in conversation history."""
 
