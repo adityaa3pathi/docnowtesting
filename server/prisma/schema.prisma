@@ -551,6 +551,8 @@ model CatalogItem {
   sampleType       String?            // e.g. "Blood"
   reportTime       String?            // e.g. "24-48 hours"
   purpose          String?            // Manager-written "What it's for"; catalog sync never writes it
+  fastingOverride     String?         // Manager correction of Healthians' fasting: "Required" | "Not Required"; catalog sync never writes it
+  fastingTimeOverride String?         // With fastingOverride "Required", e.g. "12 hour(s)"; null otherwise
   searchPurpose    String             @default("")  // Lowercase, stripped of hyphens/spaces/special chars for fuzzy search
   partnerData      Json?              // Raw Healthians response for reference
   detailsData      Json?              // Cached normalized Healthians detail metadata for cards/detail pages

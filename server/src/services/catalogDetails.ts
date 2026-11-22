@@ -1,6 +1,7 @@
 import { CatalogItemType, Prisma } from '@prisma/client';
 import { prisma } from '../db';
 import { HealthiansAdapter } from '../adapters/healthians';
+import { effectiveFasting } from '../utils/catalogFasting';
 
 type DealType = 'package' | 'profile' | 'parameter';
 
@@ -116,6 +117,8 @@ export function buildDetailsSummary(item: {
     parameters?: string | null;
     reportTime?: string | null;
     detailsData?: Prisma.JsonValue | null;
+    fastingOverride?: string | null;
+    fastingTimeOverride?: string | null;
 }) {
     const details = parseCachedDetails(item.detailsData);
     const constituents = details?.constituents || [];
@@ -123,7 +126,8 @@ export function buildDetailsSummary(item: {
     const fallbackCount = fallbackCountMatch ? Number(fallbackCountMatch[0]) : null;
     const testCount = constituents.length || fallbackCount || null;
     const reportingTime = details?.reportingTime || item.reportTime || null;
-    const fastingParts = [details?.fasting, details?.fastingTime].filter(Boolean);
+    const fasting = effectiveFasting(details, item);
+    const fastingParts = [fasting.fasting, fasting.fastingTime].filter(Boolean);
 
     return {
         testCount,
