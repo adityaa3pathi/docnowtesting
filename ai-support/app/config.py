@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     embedding_model: str = "gemini-embedding-001"
     embedding_dimensions: int = 768
     llm_model: str = "gemini-3.5-flash-lite"
+    # Tried in order when llm_model fails with an outage error (429, 5xx, timeout, 402, retired model);
+    # comma-separated, "" = no failover. Same API key, so a key- or billing-level outage hits them too.
+    llm_fallback_models: str = "gemini-3.1-flash-lite"
     # The SDK has no default timeout, so a stalled call would hang the chat until the proxy gives up.
     genai_timeout_seconds: float = 30.0
 

@@ -11,14 +11,18 @@ from app.agents import usage
 from app.agents.llm import call_gemini
 
 
-def _response(prompt=100, output=20, thoughts=5, cached=0, finish=types.FinishReason.STOP, text="ok"):
-    meta = SimpleNamespace(
-        prompt_token_count=prompt,
-        candidates_token_count=output,
-        thoughts_token_count=thoughts,
-        cached_content_token_count=cached,
+def _response(prompt=100, output=20, thoughts=5, cached=0, finish=types.FinishReason.STOP, text="ok", usage_meta=True):
+    """A real google-genai response, so LangChain's own parsing runs in the test."""
+    meta = types.GenerateContentResponseUsageMetadata(
+        prompt_token_count=prompt, candidates_token_count=output, thoughts_token_count=thoughts,
+        cached_content_token_count=cached, total_token_count=prompt + output + thoughts,
+    ) if usage_meta else None
+    return types.GenerateContentResponse(
+        candidates=[types.Candidate(content=types.Content(role="model", parts=[types.Part(text=text)]),
+                                    finish_reason=finish)],
+        usage_metadata=meta,
+        model_version="gemini-3.5-flash-lite",
     )
-    return SimpleNamespace(text=text, usage_metadata=meta, candidates=[SimpleNamespace(finish_reason=finish)])
 
 
 def _client(*responses):
@@ -29,7 +33,7 @@ def _client(*responses):
 @pytest.mark.asyncio
 async def test_usage_is_summed_across_calls_in_one_turn(settings):
     client = _client(_response(100, 20, 5), _response(300, 80, 10, cached=50), _response(200, 10, 0))
-    with patch("app.agents.llm.get_genai_client", return_value=client), usage.track_turn() as turn:
+    with patch("app.agents.chat_models.get_genai_client", return_value=client), usage.track_turn() as turn:
         for stage in ("intent", "draft", "verifier"):
             await call_gemini("p", settings, stage=stage)
 
@@ -45,8 +49,8 @@ async def test_usage_is_summed_across_calls_in_one_turn(settings):
 
 @pytest.mark.asyncio
 async def test_missing_usage_metadata_counts_as_zero(settings):
-    resp = SimpleNamespace(text="ok", usage_metadata=None, candidates=[])
-    with patch("app.agents.llm.get_genai_client", return_value=_client(resp)), usage.track_turn() as turn:
+    resp = _response(usage_meta=False)
+    with patch("app.agents.chat_models.get_genai_client", return_value=_client(resp)), usage.track_turn() as turn:
         assert await call_gemini("p", settings, stage="intent") == "ok"
     assert turn.total_tokens() == 0
     assert turn.summary()["calls"] == 1
@@ -58,7 +62,7 @@ async def test_cap_hit_is_recorded_before_raising(settings):
 
     resp = _response(finish=types.FinishReason.MAX_TOKENS)
     with (
-        patch("app.agents.llm.get_genai_client", return_value=_client(resp)),
+        patch("app.agents.chat_models.get_genai_client", return_value=_client(resp)),
         usage.track_turn() as turn,
         pytest.raises(TruncatedResponseError),
     ):
@@ -68,7 +72,7 @@ async def test_cap_hit_is_recorded_before_raising(settings):
 
 @pytest.mark.asyncio
 async def test_calls_outside_a_turn_do_not_fail(settings):
-    with patch("app.agents.llm.get_genai_client", return_value=_client(_response())):
+    with patch("app.agents.chat_models.get_genai_client", return_value=_client(_response())):
         assert await call_gemini("p", settings, stage="intent") == "ok"
 
 
@@ -80,7 +84,7 @@ async def test_handle_message_reports_turn_tokens(mock_db, settings, agent_conte
     intent_json = '{"intent": "GREETING", "requires_action": false, "confidence": 0.9}'
     client = _client(_response(120, 30, 6, text=intent_json))
     with (
-        patch("app.agents.llm.get_genai_client", return_value=client),
+        patch("app.agents.chat_models.get_genai_client", return_value=client),
         patch("app.agents.orchestrator.retrieve", new_callable=AsyncMock,
               return_value=RetrievalResult(should_abstain=True)),
     ):

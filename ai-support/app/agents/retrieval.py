@@ -131,7 +131,8 @@ async def retrieve(query: str, db: Any, settings: Any) -> RetrievalResult:
         )
 
     except (errors.ClientError, errors.ServerError) as exc:
-        if getattr(exc, 'code', None) in (429, 503) or '503' in str(exc) or '429' in str(exc):
+        # 402: prepaid credits ran out (22-11-2026); customers get the busy reply, not "something went wrong".
+        if getattr(exc, 'code', None) in (402, 429, 503) or '503' in str(exc) or '429' in str(exc):
             raise AIBusyError from exc
         logger.exception("Error in retrieval agent")
         return RetrievalResult(chunks=[], should_abstain=True, max_similarity=0.0, failed=True)
