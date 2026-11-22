@@ -21,6 +21,7 @@ export function SupportChat() {
         resetChat,
         submitFeedback,
         isLoading,
+        status,
         error,
         messagesEndRef
     } = useSupportChat();
@@ -102,6 +103,10 @@ export function SupportChat() {
                                             <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
                                             <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce"></span>
                                         </div>
+                                        {/* What the AI is doing (streaming); never part of the answer. */}
+                                        {status && (
+                                            <span className="text-xs text-gray-500" aria-live="polite">{status}</span>
+                                        )}
                                     </div>
                                 </div>
                             )}
