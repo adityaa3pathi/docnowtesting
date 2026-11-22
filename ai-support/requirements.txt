@@ -12,6 +12,9 @@ pgvector>=0.5.1,<1
 # Google AI
 google-genai>=2.29,<3
 
+# Orchestration graph (only langchain-core comes with it; no LangChain chat models)
+langgraph>=1.2.24,<2
+
 # Observability (v4 SDK: `from langfuse import observe`)
 langfuse>=4.17,<5
 

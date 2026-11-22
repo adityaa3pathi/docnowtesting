@@ -1,0 +1,5089 @@
+{
+  "label": "phase3-slotfill-booking",
+  "run_at_ist": "22-11-2026 00:44 IST",
+  "llm_model": "gemini-3.5-flash-lite",
+  "embedding_model": "gemini-embedding-001",
+  "judge_model": "gemini-3.5-flash-lite",
+  "relevance_threshold": 0.58,
+  "keyword_search": true,
+  "rerank": null,
+  "rerank_min_score": null,
+  "corpus": "fixture",
+  "repeat": 5,
+  "scores": {
+    "abstention_accuracy": 1.0,
+    "false_abstention_rate": 0.0,
+    "missed_abstention_rate": null,
+    "groundedness_score": 0.03333333333333333,
+    "verifier_pass_rate": 1.0,
+    "verifier_block_rate": 0.0,
+    "source_hit_rate": null,
+    "tool_choice_accuracy": 0.9866666666666667,
+    "probe_pass_rate": null,
+    "omission_error_rate": 0.0,
+    "error_rate": 0.0,
+    "p50_latency_ms": 1751.4,
+    "p95_latency_ms": 2685.8,
+    "tokens_per_turn_mean": 1388.6,
+    "tokens_per_turn_p95": 1974.4,
+    "cap_hit_rate": 0.0,
+    "intent_output_p99": 69.0,
+    "draft_output_p99": 163.4,
+    "verifier_output_p99": 186.0
+  },
+  "aggregate": {
+    "abstention_accuracy": {
+      "mean": 1.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "false_abstention_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "missed_abstention_rate": {
+      "mean": null,
+      "std": null,
+      "n": 0
+    },
+    "groundedness_score": {
+      "mean": 0.03333333333333333,
+      "std": 0.07453559924999299,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.16666666666666666
+    },
+    "verifier_pass_rate": {
+      "mean": 1.0,
+      "std": 0.0,
+      "n": 1,
+      "min": 1.0,
+      "max": 1.0
+    },
+    "verifier_block_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 1,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "source_hit_rate": {
+      "mean": null,
+      "std": null,
+      "n": 0
+    },
+    "tool_choice_accuracy": {
+      "mean": 0.9866666666666667,
+      "std": 0.029814239699997188,
+      "n": 5,
+      "min": 0.9333333333333333,
+      "max": 1.0
+    },
+    "probe_pass_rate": {
+      "mean": null,
+      "std": null,
+      "n": 0
+    },
+    "omission_error_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "error_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "p50_latency_ms": {
+      "mean": 1751.4,
+      "std": 187.14646670455738,
+      "n": 5,
+      "min": 1604,
+      "max": 2040
+    },
+    "p95_latency_ms": {
+      "mean": 2685.8,
+      "std": 850.8438164551707,
+      "n": 5,
+      "min": 2010,
+      "max": 3998
+    },
+    "tokens_per_turn_mean": {
+      "mean": 1388.6,
+      "std": 60.08577202632916,
+      "n": 5,
+      "min": 1359,
+      "max": 1496
+    },
+    "tokens_per_turn_p95": {
+      "mean": 1974.4,
+      "std": 864.7076384535989,
+      "n": 5,
+      "min": 1572,
+      "max": 3521
+    },
+    "cap_hit_rate": {
+      "mean": 0.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "intent_output_p99": {
+      "mean": 69.0,
+      "std": 0.0,
+      "n": 5,
+      "min": 69,
+      "max": 69
+    },
+    "draft_output_p99": {
+      "mean": 163.4,
+      "std": 16.622274212634082,
+      "n": 5,
+      "min": 142,
+      "max": 178
+    },
+    "verifier_output_p99": {
+      "mean": 186.0,
+      "std": 0.0,
+      "n": 1,
+      "min": 186,
+      "max": 186
+    }
+  },
+  "runs": [
+    {
+      "abstention_accuracy": 1.0,
+      "false_abstention_rate": 0.0,
+      "missed_abstention_rate": null,
+      "groundedness_score": 0.0,
+      "verifier_pass_rate": null,
+      "verifier_block_rate": null,
+      "source_hit_rate": null,
+      "tool_choice_accuracy": 1.0,
+      "probe_pass_rate": null,
+      "omission_error_rate": 0.0,
+      "error_rate": 0.0,
+      "p50_latency_ms": 1842,
+      "p95_latency_ms": 2314,
+      "tokens_per_turn_mean": 1360,
+      "tokens_per_turn_p95": 1574,
+      "cap_hit_rate": 0.0,
+      "intent_output_p99": 69,
+      "draft_output_p99": 142,
+      "verifier_output_p99": null
+    },
+    {
+      "abstention_accuracy": 1.0,
+      "false_abstention_rate": 0.0,
+      "missed_abstention_rate": null,
+      "groundedness_score": 0.16666666666666666,
+      "verifier_pass_rate": 1.0,
+      "verifier_block_rate": 0.0,
+      "source_hit_rate": null,
+      "tool_choice_accuracy": 0.9333333333333333,
+      "probe_pass_rate": null,
+      "omission_error_rate": 0.0,
+      "error_rate": 0.0,
+      "p50_latency_ms": 1634,
+      "p95_latency_ms": 3075,
+      "tokens_per_turn_mean": 1496,
+      "tokens_per_turn_p95": 3521,
+      "cap_hit_rate": 0.0,
+      "intent_output_p99": 69,
+      "draft_output_p99": 178,
+      "verifier_output_p99": 186
+    },
+    {
+      "abstention_accuracy": 1.0,
+      "false_abstention_rate": 0.0,
+      "missed_abstention_rate": null,
+      "groundedness_score": 0.0,
+      "verifier_pass_rate": null,
+      "verifier_block_rate": null,
+      "source_hit_rate": null,
+      "tool_choice_accuracy": 1.0,
+      "probe_pass_rate": null,
+      "omission_error_rate": 0.0,
+      "error_rate": 0.0,
+      "p50_latency_ms": 1637,
+      "p95_latency_ms": 2010,
+      "tokens_per_turn_mean": 1363,
+      "tokens_per_turn_p95": 1598,
+      "cap_hit_rate": 0.0,
+      "intent_output_p99": 69,
+      "draft_output_p99": 175,
+      "verifier_output_p99": null
+    },
+    {
+      "abstention_accuracy": 1.0,
+      "false_abstention_rate": 0.0,
+      "missed_abstention_rate": null,
+      "groundedness_score": 0.0,
+      "verifier_pass_rate": null,
+      "verifier_block_rate": null,
+      "source_hit_rate": null,
+      "tool_choice_accuracy": 1.0,
+      "probe_pass_rate": null,
+      "omission_error_rate": 0.0,
+      "error_rate": 0.0,
+      "p50_latency_ms": 2040,
+      "p95_latency_ms": 3998,
+      "tokens_per_turn_mean": 1365,
+      "tokens_per_turn_p95": 1607,
+      "cap_hit_rate": 0.0,
+      "intent_output_p99": 69,
+      "draft_output_p99": 173,
+      "verifier_output_p99": null
+    },
+    {
+      "abstention_accuracy": 1.0,
+      "false_abstention_rate": 0.0,
+      "missed_abstention_rate": null,
+      "groundedness_score": 0.0,
+      "verifier_pass_rate": null,
+      "verifier_block_rate": null,
+      "source_hit_rate": null,
+      "tool_choice_accuracy": 1.0,
+      "probe_pass_rate": null,
+      "omission_error_rate": 0.0,
+      "error_rate": 0.0,
+      "p50_latency_ms": 1604,
+      "p95_latency_ms": 2032,
+      "tokens_per_turn_mean": 1359,
+      "tokens_per_turn_p95": 1572,
+      "cap_hit_rate": 0.0,
+      "intent_output_p99": 69,
+      "draft_output_p99": 149,
+      "verifier_output_p99": null
+    }
+  ],
+  "per_query": {
+    "book-01": {
+      "runs": 5,
+      "verdicts": {
+        "TOOL_ONLY": 5
+      },
+      "intents": {
+        "BOOKING_STATUS/get_booking_status": 5
+      },
+      "tools": {
+        "get_booking_status": 5
+      },
+      "abstained": {
+        "False": 5
+      },
+      "tool_ok": {
+        "True": 5
+      },
+      "probe_ok": {},
+      "flaky": []
+    },
+    "book-02": {
+      "runs": 5,
+      "verdicts": {
+        "None": 5
+      },
+      "intents": {
+        "BOOKING_CANCEL/cancel_booking": 5
+      },
+      "tools": {
+        "list_bookings+cancel_booking": 5
+      },
+      "abstained": {
+        "False": 5
+      },
+      "tool_ok": {
+        "True": 5
+      },
+      "probe_ok": {},
+      "flaky": []
+    },
+    "book-03": {
+      "runs": 5,
+      "verdicts": {
+        "None": 5
+      },
+      "intents": {
+        "BOOKING_RESCHEDULE/reschedule_booking": 5
+      },
+      "tools": {
+        "list_bookings+reschedule_booking": 5
+      },
+      "abstained": {
+        "False": 5
+      },
+      "tool_ok": {
+        "True": 5
+      },
+      "probe_ok": {},
+      "flaky": []
+    },
+    "book-04": {
+      "runs": 5,
+      "verdicts": {
+        "TOOL_ONLY": 5
+      },
+      "intents": {
+        "BOOKING_LIST/list_bookings": 5
+      },
+      "tools": {
+        "list_bookings": 5
+      },
+      "abstained": {
+        "False": 5
+      },
+      "tool_ok": {
+        "True": 5
+      },
+      "probe_ok": {},
+      "flaky": []
+    },
+    "book-05": {
+      "runs": 5,
+      "verdicts": {
+        "TOOL_ONLY": 5
+      },
+      "intents": {
+        "BOOKING_LIST/list_bookings": 5
+      },
+      "tools": {
+        "list_bookings": 5
+      },
+      "abstained": {
+        "False": 5
+      },
+      "tool_ok": {
+        "True": 5
+      },
+      "probe_ok": {},
+      "flaky": []
+    },
+    "book-06": {
+      "runs": 5,
+      "verdicts": {
+        "TOOL_ONLY": 5
+      },
+      "intents": {
+        "BOOKING_LIST/list_bookings": 5
+      },
+      "tools": {
+        "list_bookings": 5
+      },
+      "abstained": {
+        "False": 5
+      },
+      "tool_ok": {
+        "True": 5
+      },
+      "probe_ok": {},
+      "flaky": []
+    },
+    "book-07": {
+      "runs": 5,
+      "verdicts": {
+        "TOOL_ONLY": 5
+      },
+      "intents": {
+        "BOOKING_LIST/list_bookings": 5
+      },
+      "tools": {
+        "list_bookings": 5
+      },
+      "abstained": {
+        "False": 5
+      },
+      "tool_ok": {
+        "True": 5
+      },
+      "probe_ok": {},
+      "flaky": []
+    },
+    "book-08": {
+      "runs": 5,
+      "verdicts": {
+        "None": 5
+      },
+      "intents": {
+        "BOOKING_CANCEL/cancel_booking": 5
+      },
+      "tools": {
+        "cancel_booking": 5
+      },
+      "abstained": {
+        "False": 5
+      },
+      "tool_ok": {
+        "True": 5
+      },
+      "probe_ok": {},
+      "flaky": []
+    },
+    "book-09": {
+      "runs": 5,
+      "verdicts": {
+        "TOOL_ONLY": 5
+      },
+      "intents": {
+        "BOOKING_LIST/list_bookings": 5
+      },
+      "tools": {
+        "list_bookings": 5
+      },
+      "abstained": {
+        "False": 5
+      },
+      "tool_ok": {
+        "True": 5
+      },
+      "probe_ok": {},
+      "flaky": []
+    },
+    "book-10": {
+      "runs": 5,
+      "verdicts": {
+        "None": 5
+      },
+      "intents": {
+        "BOOKING_RESCHEDULE/reschedule_booking": 5
+      },
+      "tools": {
+        "list_bookings+reschedule_booking": 5
+      },
+      "abstained": {
+        "False": 5
+      },
+      "tool_ok": {
+        "True": 5
+      },
+      "probe_ok": {},
+      "flaky": []
+    },
+    "book-11": {
+      "runs": 5,
+      "verdicts": {
+        "TOOL_ONLY": 5
+      },
+      "intents": {
+        "BOOKING_LIST/list_bookings": 5
+      },
+      "tools": {
+        "list_bookings": 5
+      },
+      "abstained": {
+        "False": 5
+      },
+      "tool_ok": {
+        "True": 5
+      },
+      "probe_ok": {},
+      "flaky": []
+    },
+    "book-12": {
+      "runs": 5,
+      "verdicts": {
+        "TOOL_ONLY": 5
+      },
+      "intents": {
+        "BOOKING_LIST/list_bookings": 5
+      },
+      "tools": {
+        "list_bookings": 5
+      },
+      "abstained": {
+        "False": 5
+      },
+      "tool_ok": {
+        "True": 5
+      },
+      "probe_ok": {},
+      "flaky": []
+    },
+    "book-13": {
+      "runs": 5,
+      "verdicts": {
+        "TOOL_ONLY": 4,
+        "GROUNDED": 1
+      },
+      "intents": {
+        "BOOKING_LIST/list_bookings": 4,
+        "CATALOG_SEARCH/-": 1
+      },
+      "tools": {
+        "list_bookings": 4,
+        "none": 1
+      },
+      "abstained": {
+        "False": 5
+      },
+      "tool_ok": {
+        "True": 4,
+        "False": 1
+      },
+      "probe_ok": {},
+      "flaky": [
+        "tool_ok",
+        "tools",
+        "verdicts"
+      ]
+    },
+    "book-14": {
+      "runs": 5,
+      "verdicts": {
+        "None": 5
+      },
+      "intents": {
+        "BOOKING_RESCHEDULE/reschedule_booking": 5
+      },
+      "tools": {
+        "list_bookings+reschedule_booking": 5
+      },
+      "abstained": {
+        "False": 5
+      },
+      "tool_ok": {
+        "True": 5
+      },
+      "probe_ok": {},
+      "flaky": []
+    },
+    "book-15": {
+      "runs": 5,
+      "verdicts": {
+        "TOOL_ONLY": 5
+      },
+      "intents": {
+        "BOOKING_LIST/list_bookings": 5
+      },
+      "tools": {
+        "list_bookings": 5
+      },
+      "abstained": {
+        "False": 5
+      },
+      "tool_ok": {
+        "True": 5
+      },
+      "probe_ok": {},
+      "flaky": []
+    }
+  },
+  "results": [
+    {
+      "query_id": "book-01",
+      "category": "booking",
+      "query": "Can you check the status of my booking #12345?",
+      "response": "I've checked the status of your booking (#12345) for the Complete Blood Count (CBC) test. \n\nHere are the current details:\n* **Status:** Sample Collector Assigned\n* **Phlebotomist:** Ravi K.\n* **Scheduled Slot:** Tomorrow 09:00-10:00\n* **Patient:** Self\n\nLet me know if you need help with anything else!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the current status (e.g., confirmed, pending, completed) of booking #12345.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "get_booking_status"
+      ],
+      "latency_ms": 1982,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1337,
+        "output_tokens": 158,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1495,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 993,
+            "output_tokens": 69,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1124,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 344,
+            "output_tokens": 89,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 838,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 0,
+      "intent": "BOOKING_STATUS/get_booking_status",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-02",
+      "category": "booking",
+      "query": "I want to cancel my booking for tomorrow.",
+      "response": "Which booking do you want to cancel?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should assist the user in cancelling their upcoming booking.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "list_bookings",
+        "cancel_booking"
+      ],
+      "latency_ms": 1400,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 987,
+        "output_tokens": 51,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1038,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1263,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 0,
+      "intent": "BOOKING_CANCEL/cancel_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-03",
+      "category": "booking",
+      "query": "Can I reschedule my appointment to next Monday?",
+      "response": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should guide the user to reschedule their appointment to next Monday.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "list_bookings",
+        "reschedule_booking"
+      ],
+      "latency_ms": 1270,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 987,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1041,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1143,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 0,
+      "intent": "BOOKING_RESCHEDULE/reschedule_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-04",
+      "category": "booking",
+      "query": "List all my upcoming bookings.",
+      "response": "Here are your upcoming bookings:\n\n* **Complete Blood Count (CBC)**\n  * **When:** Tomorrow 09:00-10:00\n  * **Status:** Sample Collector Assigned (ID: 12345)\n\n* **Lipid Profile**\n  * **When:** Saturday 08:00-09:00\n  * **Status:** Order Booked (ID: 98765)",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should display a list of all upcoming bookings for the user.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1847,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 148,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1521,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 50,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 917,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 98,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 777,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 0,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-05",
+      "category": "booking",
+      "query": "When will the phlebotomist arrive for my booking today?",
+      "response": "I checked your bookings, but I don't see any appointments scheduled for today. \n\nHere are your current bookings:\n- **Complete Blood Count (CBC):** Tomorrow, 09:00-10:00 (Sample Collector Assigned)\n- **Lipid Profile:** Saturday, 08:00-09:00 (Order Booked)\n- **Thyroid Profile:** Last Monday (Cancelled)\n\nIf you believe you have a booking scheduled for today that is not listed here, please let me know so I can look into it further!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the expected arrival time or status of the phlebotomist for today's booking.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2312,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1385,
+        "output_tokens": 172,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1557,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 990,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1254,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 395,
+            "output_tokens": 121,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1043,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 0,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-06",
+      "category": "booking",
+      "query": "Are there any slots available for tomorrow morning?",
+      "response": "I see that you already have an appointment booked for tomorrow from 09:00 to 10:00 for a Complete Blood Count (CBC), and a sample collector has been assigned. \n\nHowever, I don't have the current real-time schedule to check for other available slots for tomorrow morning beyond your existing booking.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should list the available time slots for home collection tomorrow morning.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2314,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1379,
+        "output_tokens": 121,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1500,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1125,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 392,
+            "output_tokens": 70,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1174,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 0,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-07",
+      "category": "booking",
+      "query": "My booking status says pending, what does that mean?",
+      "response": "I see you have a few bookings with DocNow:\n\n*   **Complete Blood Count (CBC)** (Tomorrow 09:00-10:00): Sample Collector Assigned\n*   **Lipid Profile** (Saturday 08:00-09:00): Order Booked\n*   **Thyroid Profile** (Last Monday 07:00-08:00): Cancelled\n\nHowever, the provided context and your current booking statuses do not specifically explain what a \"pending\" status means. I don't have that information on hand. If you are referring to a specific booking, please let me know which one!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should explain that a pending status means the booking is awaiting confirmation or payment.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2127,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 191,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1574,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 799,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 140,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1317,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "none",
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 0,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-08",
+      "category": "booking",
+      "query": "I need to cancel booking number 98765.",
+      "response": "Please confirm: do you want me to cancel this booking (booking_id: 98765)? Reply YES to continue, or anything else to stop.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should confirm the cancellation process for booking #98765.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "cancel_booking"
+      ],
+      "latency_ms": 944,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 991,
+        "output_tokens": 67,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1058,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 991,
+            "output_tokens": 67,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 935,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 0,
+      "intent": "BOOKING_CANCEL/cancel_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-09",
+      "category": "booking",
+      "query": "What time is my appointment for the CBC test?",
+      "response": "Based on your bookings, your appointment for the Complete Blood Count (CBC) test is scheduled for tomorrow from 09:00 to 10:00. The current status is \"Sample Collector Assigned\".",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should look up the user's bookings and provide the appointment time for their CBC test.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1537,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1381,
+        "output_tokens": 95,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1476,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 787,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 393,
+            "output_tokens": 44,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 725,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 0,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-10",
+      "category": "booking",
+      "query": "Can you change my booking time from 9 AM to 11 AM?",
+      "response": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should process the rescheduling of the booking from 9 AM to 11 AM if slots are available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "list_bookings",
+        "reschedule_booking"
+      ],
+      "latency_ms": 892,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 994,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1048,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 994,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 869,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 0,
+      "intent": "BOOKING_RESCHEDULE/reschedule_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-11",
+      "category": "booking",
+      "query": "Has a phlebotomist been assigned to my booking?",
+      "response": "Yes, a sample collector (phlebotomist) has been assigned to your upcoming Complete Blood Count (CBC) booking scheduled for tomorrow between 09:00 and 10:00 (Booking ID: 12345).",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should indicate whether a phlebotomist has been assigned and provide their details if available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1665,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 102,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1485,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 778,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 874,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 0,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-12",
+      "category": "booking",
+      "query": "Show me my past bookings.",
+      "response": "Here are your past and current bookings based on our records:\n\n* **Complete Blood Count (CBC)**\n  * **When:** Tomorrow 09:00-10:00\n  * **Status:** Sample Collector Assigned\n\n* **Lipid Profile**\n  * **When:** Saturday 08:00-09:00\n  * **Status:** Order Booked\n\n* **Thyroid Profile (T3, T4, TSH)**\n  * **When:** Last Monday 07:00-08:00\n  * **Status:** Cancelled\n\nLet me know if you need help with any of these appointments!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should display the user's booking history.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2016,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 192,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1565,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 50,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1045,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 142,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 960,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 0,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-13",
+      "category": "booking",
+      "query": "Is 8 AM available for home collection this Saturday?",
+      "response": "I'm sorry, but I don't have the information to check available time slots for new bookings. However, I can see you already have a Lipid Profile test booked for this Saturday from 08:00-09:00. Let me know if you need help with your existing bookings!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should confirm if the 8 AM slot is available for this Saturday.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1842,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 115,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1498,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 914,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 64,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 903,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 0,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-14",
+      "category": "booking",
+      "query": "I missed my appointment, can I reschedule it?",
+      "response": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should help the user reschedule their missed appointment to a new date and time.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "list_bookings",
+        "reschedule_booking"
+      ],
+      "latency_ms": 1111,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 988,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1042,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1100,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 0,
+      "intent": "BOOKING_RESCHEDULE/reschedule_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-15",
+      "category": "booking",
+      "query": "Why is my booking cancelled?",
+      "response": "I checked your bookings and found that your Thyroid Profile (T3, T4, TSH) test (Booking ID: 55501) was cancelled. However, I don't have the specific reason for why this cancellation occurred in my system. \n\nIf you would like to rebook this test or need further assistance, please let me know!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the reason for the booking's cancellation based on its status.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1843,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 126,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1499,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 914,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 75,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 902,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 0,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-01",
+      "category": "booking",
+      "query": "Can you check the status of my booking #12345?",
+      "response": "I've checked the status of your booking (#12345) for the Complete Blood Count (CBC) test. \n\nHere are the current details:\n* **Status:** Sample Collector Assigned\n* **Phlebotomist:** Ravi K.\n* **Scheduled Slot:** Tomorrow 09:00-10:00\n* **Patient:** Self\n\nLet me know if you need help with anything else!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the current status (e.g., confirmed, pending, completed) of booking #12345.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "get_booking_status"
+      ],
+      "latency_ms": 1634,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1337,
+        "output_tokens": 158,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1495,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 993,
+            "output_tokens": 69,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 768,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 344,
+            "output_tokens": 89,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 855,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 1,
+      "intent": "BOOKING_STATUS/get_booking_status",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-02",
+      "category": "booking",
+      "query": "I want to cancel my booking for tomorrow.",
+      "response": "Which booking do you want to cancel?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should assist the user in cancelling their upcoming booking.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "list_bookings",
+        "cancel_booking"
+      ],
+      "latency_ms": 927,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 987,
+        "output_tokens": 51,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1038,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 917,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 1,
+      "intent": "BOOKING_CANCEL/cancel_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-03",
+      "category": "booking",
+      "query": "Can I reschedule my appointment to next Monday?",
+      "response": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should guide the user to reschedule their appointment to next Monday.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "list_bookings",
+        "reschedule_booking"
+      ],
+      "latency_ms": 949,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 987,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1041,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 914,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 1,
+      "intent": "BOOKING_RESCHEDULE/reschedule_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-04",
+      "category": "booking",
+      "query": "List all my upcoming bookings.",
+      "response": "Here are your upcoming bookings:\n\n* **Booking ID: 12345**\n  * **Tests:** Complete Blood Count (CBC)\n  * **When:** Tomorrow, 09:00 - 10:00\n  * **Status:** Sample Collector Assigned\n\n* **Booking ID: 98765**\n  * **Tests:** Lipid Profile\n  * **When:** Saturday, 08:00 - 09:00\n  * **Status:** Order Booked\n\nLet me know if you need help with anything else!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should display a list of all upcoming bookings for the user.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1632,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 174,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1547,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 50,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 808,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 124,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 814,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 1,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-05",
+      "category": "booking",
+      "query": "When will the phlebotomist arrive for my booking today?",
+      "response": "I checked your bookings, but I don't see any appointments scheduled for today. \n\nHere are your current bookings:\n- **Complete Blood Count (CBC)**: Tomorrow from 09:00 - 10:00 (Sample Collector Assigned)\n- **Lipid Profile**: Saturday from 08:00 - 09:00 (Order Booked)\n- **Thyroid Profile (T3, T4, TSH)**: Last Monday (Cancelled)\n\nIf you believe you have a booking for today, please let me know so I can look into it further!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the expected arrival time or status of the phlebotomist for today's booking.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2047,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1385,
+        "output_tokens": 178,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1563,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 990,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 860,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 395,
+            "output_tokens": 127,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1168,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 1,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-06",
+      "category": "booking",
+      "query": "Are there any slots available for tomorrow morning?",
+      "response": "I don't have the information to check available slots for tomorrow morning. However, I can see that you already have an existing booking for tomorrow from 09:00-10:00 for a Complete Blood Count (CBC) with a sample collector assigned. \n\nIf you need to book a new appointment or check other specific times, please let me know!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should list the available time slots for home collection tomorrow morning.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1692,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1379,
+        "output_tokens": 128,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1507,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 807,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 392,
+            "output_tokens": 77,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 872,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 1,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-07",
+      "category": "booking",
+      "query": "My booking status says pending, what does that mean?",
+      "response": "I see you have a couple of active bookings with us: one for a Complete Blood Count (CBC) tomorrow with a sample collector already assigned, and one for a Lipid Profile on Saturday which is currently marked as \"Order Booked\". \n\nHowever, I don't have specific information in my system explaining what a \"pending\" status means in detail. For the most up-to-date assistance regarding your specific booking status, please reach out to our support team directly.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should explain that a pending status means the booking is awaiting confirmation or payment.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2019,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 147,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1530,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 833,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 96,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1171,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "none",
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 1,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-08",
+      "category": "booking",
+      "query": "I need to cancel booking number 98765.",
+      "response": "Please confirm: do you want me to cancel this booking (booking_id: 98765)? Reply YES to continue, or anything else to stop.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should confirm the cancellation process for booking #98765.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "cancel_booking"
+      ],
+      "latency_ms": 1130,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 991,
+        "output_tokens": 67,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1058,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 991,
+            "output_tokens": 67,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1121,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 1,
+      "intent": "BOOKING_CANCEL/cancel_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-09",
+      "category": "booking",
+      "query": "What time is my appointment for the CBC test?",
+      "response": "Your Complete Blood Count (CBC) test appointment is scheduled for tomorrow from 09:00 to 10:00.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should look up the user's bookings and provide the appointment time for their CBC test.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1476,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1381,
+        "output_tokens": 79,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1460,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 784,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 393,
+            "output_tokens": 28,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 682,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 1,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-10",
+      "category": "booking",
+      "query": "Can you change my booking time from 9 AM to 11 AM?",
+      "response": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should process the rescheduling of the booking from 9 AM to 11 AM if slots are available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "list_bookings",
+        "reschedule_booking"
+      ],
+      "latency_ms": 932,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 994,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1048,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 994,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 911,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 1,
+      "intent": "BOOKING_RESCHEDULE/reschedule_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-11",
+      "category": "booking",
+      "query": "Has a phlebotomist been assigned to my booking?",
+      "response": "Yes, a sample collector (phlebotomist) has been assigned to your upcoming Complete Blood Count (CBC) booking scheduled for tomorrow from 09:00 to 10:00 (Booking ID: 12345).",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should indicate whether a phlebotomist has been assigned and provide their details if available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1942,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 102,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1485,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 914,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1012,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 1,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-12",
+      "category": "booking",
+      "query": "Show me my past bookings.",
+      "response": "Here are your bookings, including past and upcoming ones:\n\n* **Thyroid Profile (T3, T4, TSH)**\n  * **When:** Last Monday 07:00-08:00\n  * **Status:** Cancelled\n  * **Booking ID:** 55501\n\n* **Complete Blood Count (CBC)**\n  * **When:** Tomorrow 09:00-10:00\n  * **Status:** Sample Collector Assigned\n  * **Booking ID:** 12345\n\n* **Lipid Profile**\n  * **When:** Saturday 08:00-09:00\n  * **Status:** Order Booked\n  * **Booking ID:** 98765\n\nLet me know if you need help with anything else!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should display the user's booking history.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1941,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 228,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1601,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 50,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 812,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 178,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1119,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 1,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-13",
+      "category": "booking",
+      "query": "Is 8 AM available for home collection this Saturday?",
+      "response": "Morning slots start from 6:00 AM, and time slots can be booked up to 7 days in advance. However, slot availability depends on your specific location and the tests selected. You can check exact slot availability for this Saturday by entering your 6-digit pincode in the location selector at the top of docnow.in or during checkout.",
+      "retrieved_contexts": [
+        "Time slots can be booked up to 7 days in advance. Morning slots start from 6:00 AM. You can select your preferred collection time during checkout. Slot availability depends on your location and the tests selected. If you need to change your appointment time, you can reschedule from the 'My Bookings' section as long as your sample hasn't been collected yet.",
+        "Rescheduling is available before sample collection. You cannot reschedule if the booking status is: Cancelled, Sample Collected, Sample Received at Lab, Report Generated, Health Counselling Done, Report Available, Completed, Rescheduled, or Refunded. Camp bookings cannot be rescheduled online. Available time slots are shown up to 7 days ahead, starting from 6:00 AM. When you reschedule, a new booking reference is created and your old booking is marked as 'Rescheduled'. No additional payment is required.",
+        "DocNow provides doorstep diagnostic lab tests and home sample collection across 100+ cities in India. We operate in major metro areas including Bengaluru, Chennai, Delhi NCR (Delhi, Gurgaon, Noida, Faridabad, Greater Noida, and Ghaziabad), Hyderabad, Kolkata, Mumbai, and Pune. We also serve over 100 other cities across India, such as Agra, Ahmedabad, Amritsar, Bhopal, Bhubaneswar, Chandigarh, Dehradun, Guwahati, Gwalior, Indore, Jaipur, Jodhpur, Kanpur, Lucknow, Ludhiana, Meerut, Mysuru, Nagpur, Nashik, Patna, Raipur, Ranchi, Surat, Udaipur, Vadodara, Varanasi, Vijayawada, and Visakhapatnam. Certified phlebotomists arrive at your home or office to safely collect samples. You can verify whether home collection is available at your exact address by entering your 6-digit pincode in the location selector at the top of docnow.in or during checkout.",
+        "Order Booked: Your appointment is confirmed. You can cancel or reschedule. Sample Collector Assigned: A phlebotomist has been assigned and will arrive at your scheduled slot time. You can still cancel at this stage. Sample Collector Reached Home: The phlebotomist is at your door. Cancellation is no longer possible. Sample Collected: Your sample has been picked up and is being transported to the laboratory. Sample Received at Lab: Your sample is being processed at the laboratory. Report Generated: Your report is being verified by doctors before release. Report Available: Your diagnostic report is ready! Check the Reports section to download your PDF.",
+        "DocNow brings diagnostic lab tests to your doorstep. Here's how it works: 1) Browse and select tests or health packages on DocNow. 2) Add them to your cart and select a convenient date and time slot. 3) Complete payment via UPI, card, netbanking, or wallet. 4) A certified phlebotomist arrives at your home at the scheduled time. 5) The sample is collected safely and transported to the partner laboratory. 6) Your diagnostic report is delivered digitally as a downloadable PDF. You'll receive WhatsApp notifications for booking confirmation, phlebotomist assignment, and report availability.",
+        "Packages and profiles that include Fasting Blood Sugar: 3 in total. This is the complete list.\n- Basic Full Body Checkup (package, ₹1299)\n- Comprehensive Health Checkup (package, ₹4999)\n- Diabetes Screening Package (package, ₹699)"
+      ],
+      "retrieved_sources": [
+        "faq",
+        "policy",
+        "faq",
+        "booking_help",
+        "faq",
+        "catalog_index"
+      ],
+      "ground_truth": "The response should confirm if the 8 AM slot is available for this Saturday.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "GROUNDED",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [],
+      "latency_ms": 3075,
+      "error": null,
+      "usage": {
+        "calls": 3,
+        "prompt_tokens": 3214,
+        "output_tokens": 307,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 3521,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 48,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1004,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1035,
+            "output_tokens": 73,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1008,
+            "cap_hit": false
+          },
+          {
+            "stage": "verifier",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 1190,
+            "output_tokens": 186,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1038,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 1,
+      "intent": "CATALOG_SEARCH/-",
+      "verifier_ran": true,
+      "draft": "Morning slots start from 6:00 AM, and time slots can be booked up to 7 days in advance. However, slot availability depends on your specific location and the tests selected. You can check exact slot availability for this Saturday by entering your 6-digit pincode in the location selector at the top of docnow.in or during checkout.",
+      "verifier_reasoning": "All claims regarding morning slots starting at 6:00 AM, booking up to 7 days in advance, slot availability depending on location and tests selected, and checking availability by entering a 6-digit pincode in the location selector or during checkout are directly supported by Source 1 and Source 3.",
+      "ragas": {}
+    },
+    {
+      "query_id": "book-14",
+      "category": "booking",
+      "query": "I missed my appointment, can I reschedule it?",
+      "response": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should help the user reschedule their missed appointment to a new date and time.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "list_bookings",
+        "reschedule_booking"
+      ],
+      "latency_ms": 905,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 988,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1042,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 895,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 1,
+      "intent": "BOOKING_RESCHEDULE/reschedule_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-15",
+      "category": "booking",
+      "query": "Why is my booking cancelled?",
+      "response": "I see you have a booking (ID: 55501) for the Thyroid Profile (T3, T4, TSH) that shows a status of \"Cancelled.\" \n\nHowever, I don't have the specific reason for why this cancellation occurred in my system. If you'd like, I can help you book a new appointment for your Thyroid Profile!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the reason for the booking's cancellation based on its status.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1932,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 129,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1502,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1018,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 78,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 894,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 1,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-01",
+      "category": "booking",
+      "query": "Can you check the status of my booking #12345?",
+      "response": "I've checked the status of your booking (#12345) for the Complete Blood Count (CBC) test. \n\nHere are the current details:\n* **Status:** Sample Collector Assigned\n* **Phlebotomist:** Ravi K.\n* **Scheduled Slot:** Tomorrow 09:00-10:00\n* **Patient:** Self\n\nLet me know if you need help with anything else!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the current status (e.g., confirmed, pending, completed) of booking #12345.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "get_booking_status"
+      ],
+      "latency_ms": 1720,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1337,
+        "output_tokens": 158,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1495,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 993,
+            "output_tokens": 69,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 935,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 344,
+            "output_tokens": 89,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 769,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 2,
+      "intent": "BOOKING_STATUS/get_booking_status",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-02",
+      "category": "booking",
+      "query": "I want to cancel my booking for tomorrow.",
+      "response": "Which booking do you want to cancel?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should assist the user in cancelling their upcoming booking.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "list_bookings",
+        "cancel_booking"
+      ],
+      "latency_ms": 737,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 987,
+        "output_tokens": 50,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1037,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 50,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 727,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 2,
+      "intent": "BOOKING_CANCEL/cancel_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-03",
+      "category": "booking",
+      "query": "Can I reschedule my appointment to next Monday?",
+      "response": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should guide the user to reschedule their appointment to next Monday.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "list_bookings",
+        "reschedule_booking"
+      ],
+      "latency_ms": 803,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 987,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1041,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 782,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 2,
+      "intent": "BOOKING_RESCHEDULE/reschedule_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-04",
+      "category": "booking",
+      "query": "List all my upcoming bookings.",
+      "response": "Here are your upcoming bookings:\n\n* **Booking ID: 12345**\n  * Tests: Complete Blood Count (CBC)\n  * When: Tomorrow 09:00-10:00\n  * Status: Sample Collector Assigned\n\n* **Booking ID: 98765**\n  * Tests: Lipid Profile\n  * When: Saturday 08:00-09:00\n  * Status: Order Booked",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should display a list of all upcoming bookings for the user.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1881,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 152,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1525,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 50,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 850,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 102,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1019,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 2,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-05",
+      "category": "booking",
+      "query": "When will the phlebotomist arrive for my booking today?",
+      "response": "I checked your bookings, but I don't see any appointments scheduled for today. \n\nHere are your current bookings:\n- **Complete Blood Count (CBC):** Tomorrow, 09:00 - 10:00 (Sample Collector Assigned)\n- **Lipid Profile:** Saturday, 08:00 - 09:00 (Order Booked)\n- **Thyroid Profile:** Last Monday (Cancelled)\n\nIf you believe there is an error or need to schedule a test for today, please let me know!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the expected arrival time or status of the phlebotomist for today's booking.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1900,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1385,
+        "output_tokens": 167,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1552,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 990,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 935,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 395,
+            "output_tokens": 116,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 946,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 2,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-06",
+      "category": "booking",
+      "query": "Are there any slots available for tomorrow morning?",
+      "response": "I don't have the information to check real-time slot availability for new bookings. However, I can see that you already have an existing appointment scheduled for tomorrow from 09:00 to 10:00 for a Complete Blood Count (CBC) test, and a sample collector has been assigned. \n\nIf you need to book an additional test or change this appointment, please let me know!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should list the available time slots for home collection tomorrow morning.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1737,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1379,
+        "output_tokens": 136,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1515,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 919,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 392,
+            "output_tokens": 85,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 803,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 2,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-07",
+      "category": "booking",
+      "query": "My booking status says pending, what does that mean?",
+      "response": "I don't have the specific information about what \"pending\" means in the context of our system policies. However, I can see your current bookings:\n\n* **Complete Blood Count (CBC):** Tomorrow 09:00-10:00 (Sample Collector Assigned)\n* **Lipid Profile:** Saturday 08:00-09:00 (Order Booked)\n* **Thyroid Profile (T3, T4, TSH):** Last Monday 07:00-08:00 (Cancelled)\n\nIf you are referring to the \"Order Booked\" status, it means your test has been successfully scheduled and we are currently processing it to assign a sample collector. If you need further assistance with a specific booking, please let me know!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should explain that a pending status means the booking is awaiting confirmation or payment.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2010,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 206,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1589,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 39,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 803,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 167,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1185,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "none",
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 2,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-08",
+      "category": "booking",
+      "query": "I need to cancel booking number 98765.",
+      "response": "Please confirm: do you want me to cancel this booking (booking_id: 98765)? Reply YES to continue, or anything else to stop.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should confirm the cancellation process for booking #98765.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "cancel_booking"
+      ],
+      "latency_ms": 827,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 991,
+        "output_tokens": 67,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1058,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 991,
+            "output_tokens": 67,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 811,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 2,
+      "intent": "BOOKING_CANCEL/cancel_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-09",
+      "category": "booking",
+      "query": "What time is my appointment for the CBC test?",
+      "response": "Your appointment for the Complete Blood Count (CBC) test is scheduled for tomorrow from 09:00 to 10:00.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should look up the user's bookings and provide the appointment time for their CBC test.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1634,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1381,
+        "output_tokens": 81,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1462,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 810,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 393,
+            "output_tokens": 30,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 809,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 2,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-10",
+      "category": "booking",
+      "query": "Can you change my booking time from 9 AM to 11 AM?",
+      "response": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should process the rescheduling of the booking from 9 AM to 11 AM if slots are available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "list_bookings",
+        "reschedule_booking"
+      ],
+      "latency_ms": 788,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 994,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1048,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 994,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 778,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 2,
+      "intent": "BOOKING_RESCHEDULE/reschedule_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-11",
+      "category": "booking",
+      "query": "Has a phlebotomist been assigned to my booking?",
+      "response": "Yes, a sample collector (phlebotomist) has been assigned to your upcoming Complete Blood Count (CBC) booking scheduled for tomorrow from 09:00 to 10:00 (Booking ID: 12345).",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should indicate whether a phlebotomist has been assigned and provide their details if available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1637,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 102,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1485,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 834,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 794,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 2,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-12",
+      "category": "booking",
+      "query": "Show me my past bookings.",
+      "response": "Here are your bookings, including past and upcoming ones:\n\n* **Thyroid Profile (T3, T4, TSH)**\n  * **When:** Last Monday 07:00-08:00\n  * **Status:** Cancelled\n  * **ID:** 55501\n\n* **Complete Blood Count (CBC)**\n  * **When:** Tomorrow 09:00-10:00\n  * **Status:** Sample Collector Assigned\n  * **ID:** 12345\n\n* **Lipid Profile**\n  * **When:** Saturday 08:00-09:00\n  * **Status:** Order Booked\n  * **ID:** 98765\n\nLet me know if you need help with anything else!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should display the user's booking history.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1972,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 225,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1598,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 50,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 914,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 175,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1047,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 2,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-13",
+      "category": "booking",
+      "query": "Is 8 AM available for home collection this Saturday?",
+      "response": "I don't have the information to check real-time slot availability for this Saturday. However, I can see you already have an appointment booked for Lipid Profile this Saturday from 08:00 to 09:00. Would you like help with that existing booking?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should confirm if the 8 AM slot is available for this Saturday.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1827,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 108,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1491,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 50,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 940,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 58,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 877,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 2,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-14",
+      "category": "booking",
+      "query": "I missed my appointment, can I reschedule it?",
+      "response": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should help the user reschedule their missed appointment to a new date and time.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "list_bookings",
+        "reschedule_booking"
+      ],
+      "latency_ms": 776,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 988,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1042,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 766,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 2,
+      "intent": "BOOKING_RESCHEDULE/reschedule_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-15",
+      "category": "booking",
+      "query": "Why is my booking cancelled?",
+      "response": "I see from your account that you have a booking for the Thyroid Profile (T3, T4, TSH) with the status \"Cancelled\" (ID: 55501, scheduled for last Monday). \n\nHowever, I don't have the specific reason for why this booking was cancelled in my system. If you'd like, I can help you book a new appointment for the Thyroid Profile at your convenience.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the reason for the booking's cancellation based on its status.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1574,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 140,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1513,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 771,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 89,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 779,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 2,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-01",
+      "category": "booking",
+      "query": "Can you check the status of my booking #12345?",
+      "response": "I've checked the status of your booking (#12345) for the Complete Blood Count (CBC) test. \n\nHere are the current details:\n* **Status:** Sample Collector Assigned\n* **Slot:** Tomorrow 09:00 - 10:00\n* **Phlebotomist:** Ravi K.\n* **Patient:** Self\n\nLet me know if you need help with anything else!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the current status (e.g., confirmed, pending, completed) of booking #12345.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "get_booking_status"
+      ],
+      "latency_ms": 2206,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1337,
+        "output_tokens": 158,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1495,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 993,
+            "output_tokens": 69,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1277,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 344,
+            "output_tokens": 89,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 909,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 3,
+      "intent": "BOOKING_STATUS/get_booking_status",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-02",
+      "category": "booking",
+      "query": "I want to cancel my booking for tomorrow.",
+      "response": "Which booking do you want to cancel?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should assist the user in cancelling their upcoming booking.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "list_bookings",
+        "cancel_booking"
+      ],
+      "latency_ms": 860,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 987,
+        "output_tokens": 51,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1038,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 838,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 3,
+      "intent": "BOOKING_CANCEL/cancel_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-03",
+      "category": "booking",
+      "query": "Can I reschedule my appointment to next Monday?",
+      "response": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should guide the user to reschedule their appointment to next Monday.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "list_bookings",
+        "reschedule_booking"
+      ],
+      "latency_ms": 822,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 987,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1041,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 798,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 3,
+      "intent": "BOOKING_RESCHEDULE/reschedule_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-04",
+      "category": "booking",
+      "query": "List all my upcoming bookings.",
+      "response": "Here are your upcoming bookings:\n\n* **Booking ID:** 12345\n  * **Tests:** Complete Blood Count (CBC)\n  * **When:** Tomorrow 09:00-10:00\n  * **Status:** Sample Collector Assigned\n\n* **Booking ID:** 98765\n  * **Tests:** Lipid Profile\n  * **When:** Saturday 08:00-09:00\n  * **Status:** Order Booked",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should display a list of all upcoming bookings for the user.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2470,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 156,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1529,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 50,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1423,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 106,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 909,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 3,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-05",
+      "category": "booking",
+      "query": "When will the phlebotomist arrive for my booking today?",
+      "response": "I checked your bookings, but I don't see any appointments scheduled for today. \n\nHere are your current bookings:\n- **Complete Blood Count (CBC)**: Tomorrow, 09:00 - 10:00 (Sample Collector Assigned)\n- **Lipid Profile**: Saturday, 08:00 - 09:00 (Order Booked)\n- **Thyroid Profile**: Last Monday, 07:00 - 08:00 (Cancelled)\n\nIf you believe there is an error or need to book a test for today, please let me know!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the expected arrival time or status of the phlebotomist for today's booking.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2335,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1385,
+        "output_tokens": 181,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1566,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 990,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1052,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 395,
+            "output_tokens": 130,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1160,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 3,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-06",
+      "category": "booking",
+      "query": "Are there any slots available for tomorrow morning?",
+      "response": "I don't have the information to check currently available new slots for tomorrow morning. However, I can see you already have a booking for tomorrow from 09:00 to 10:00 for a Complete Blood Count (CBC) with a sample collector assigned. \n\nIf you need to book a new appointment or check other available times, please let me know!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should list the available time slots for home collection tomorrow morning.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 3014,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1379,
+        "output_tokens": 117,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1496,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 39,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1406,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 392,
+            "output_tokens": 78,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1459,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 3,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-07",
+      "category": "booking",
+      "query": "My booking status says pending, what does that mean?",
+      "response": "I checked your recent bookings, and here is their current status:\n\n* **Complete Blood Count (CBC):** Sample Collector Assigned (Tomorrow, 09:00–10:00)\n* **Lipid Profile:** Order Booked (Saturday, 08:00–09:00)\n* **Thyroid Profile (T3, T4, TSH):** Cancelled\n\nI don't have information in my system about a \"pending\" status specifically, but an **\"Order Booked\"** status means your test has been successfully scheduled and we are currently processing it to assign a sample collector. Once assigned, it will update to \"Sample Collector Assigned,\" just like your CBC test. \n\nIf you have any other questions or need help with a specific booking, please let me know!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should explain that a pending status means the booking is awaiting confirmation or payment.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2135,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 224,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1607,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 806,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 173,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1316,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "none",
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 3,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-08",
+      "category": "booking",
+      "query": "I need to cancel booking number 98765.",
+      "response": "Please confirm: do you want me to cancel this booking (booking_id: 98765)? Reply YES to continue, or anything else to stop.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should confirm the cancellation process for booking #98765.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "cancel_booking"
+      ],
+      "latency_ms": 1184,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 991,
+        "output_tokens": 67,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1058,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 991,
+            "output_tokens": 67,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1175,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 3,
+      "intent": "BOOKING_CANCEL/cancel_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-09",
+      "category": "booking",
+      "query": "What time is my appointment for the CBC test?",
+      "response": "Based on your booking details, your Complete Blood Count (CBC) test appointment is scheduled for tomorrow between 09:00 and 10:00 AM. A sample collector has already been assigned!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should look up the user's bookings and provide the appointment time for their CBC test.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2255,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1381,
+        "output_tokens": 94,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1475,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1079,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 393,
+            "output_tokens": 43,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1165,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 3,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-10",
+      "category": "booking",
+      "query": "Can you change my booking time from 9 AM to 11 AM?",
+      "response": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should process the rescheduling of the booking from 9 AM to 11 AM if slots are available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "list_bookings",
+        "reschedule_booking"
+      ],
+      "latency_ms": 841,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 994,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1048,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 994,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 830,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 3,
+      "intent": "BOOKING_RESCHEDULE/reschedule_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-11",
+      "category": "booking",
+      "query": "Has a phlebotomist been assigned to my booking?",
+      "response": "Yes, a sample collector (phlebotomist) has been assigned to your upcoming Complete Blood Count (CBC) booking scheduled for tomorrow between 09:00 and 10:00 (Booking ID: 12345).",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should indicate whether a phlebotomist has been assigned and provide their details if available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 3998,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 102,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1485,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 3194,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 794,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 3,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-12",
+      "category": "booking",
+      "query": "Show me my past bookings.",
+      "response": "Here are your past and current bookings based on our records:\n\n* **Complete Blood Count (CBC)**\n  * **When:** Tomorrow 09:00-10:00\n  * **Status:** Sample Collector Assigned (ID: 12345)\n\n* **Lipid Profile**\n  * **When:** Saturday 08:00-09:00\n  * **Status:** Order Booked (ID: 98765)\n\n* **Thyroid Profile (T3, T4, TSH)**\n  * **When:** Last Monday 07:00-08:00\n  * **Status:** Cancelled (ID: 55501)\n\nLet me know if you need help with any of these appointments!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should display the user's booking history.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2040,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 222,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1595,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 50,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1076,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 172,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 955,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 3,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-13",
+      "category": "booking",
+      "query": "Is 8 AM available for home collection this Saturday?",
+      "response": "I don't have the information to check available time slots for future bookings. However, I can see you already have a Lipid Profile test booked for this Saturday from 08:00-09:00. Is there anything else I can help you with regarding your existing appointments?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should confirm if the 8 AM slot is available for this Saturday.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1761,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 111,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1494,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 930,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 60,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 821,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 3,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-14",
+      "category": "booking",
+      "query": "I missed my appointment, can I reschedule it?",
+      "response": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should help the user reschedule their missed appointment to a new date and time.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "list_bookings",
+        "reschedule_booking"
+      ],
+      "latency_ms": 745,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 988,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1042,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 735,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 3,
+      "intent": "BOOKING_RESCHEDULE/reschedule_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-15",
+      "category": "booking",
+      "query": "Why is my booking cancelled?",
+      "response": "I see that you have a booking (ID: 55501) for the Thyroid Profile (T3, T4, TSH) that shows as cancelled. However, I don't have the specific reason for the cancellation in my system. \n\nIf you would like to know why this happened or if you'd like to rebook, please let me know and I can assist you further!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the reason for the booking's cancellation based on its status.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1650,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 136,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1509,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 848,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 85,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 792,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 3,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-01",
+      "category": "booking",
+      "query": "Can you check the status of my booking #12345?",
+      "response": "I have checked the status of your booking (#12345). \n\nHere are the details:\n* **Status:** Sample Collector Assigned\n* **Tests:** Complete Blood Count (CBC)\n* **Slot:** Tomorrow 09:00-10:00\n* **Phlebotomist:** Ravi K.\n* **Patient:** Self\n\nLet me know if you need help with anything else!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the current status (e.g., confirmed, pending, completed) of booking #12345.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "get_booking_status"
+      ],
+      "latency_ms": 1604,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1337,
+        "output_tokens": 156,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1493,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 993,
+            "output_tokens": 69,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 803,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 344,
+            "output_tokens": 87,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 791,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 4,
+      "intent": "BOOKING_STATUS/get_booking_status",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-02",
+      "category": "booking",
+      "query": "I want to cancel my booking for tomorrow.",
+      "response": "Which booking do you want to cancel?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should assist the user in cancelling their upcoming booking.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "list_bookings",
+        "cancel_booking"
+      ],
+      "latency_ms": 949,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 987,
+        "output_tokens": 51,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1038,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 904,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 4,
+      "intent": "BOOKING_CANCEL/cancel_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-03",
+      "category": "booking",
+      "query": "Can I reschedule my appointment to next Monday?",
+      "response": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should guide the user to reschedule their appointment to next Monday.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "list_bookings",
+        "reschedule_booking"
+      ],
+      "latency_ms": 935,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 987,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1041,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 904,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 4,
+      "intent": "BOOKING_RESCHEDULE/reschedule_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-04",
+      "category": "booking",
+      "query": "List all my upcoming bookings.",
+      "response": "Here are your upcoming bookings:\n\n* **Booking ID:** 12345\n  * **Tests:** Complete Blood Count (CBC)\n  * **When:** Tomorrow 09:00-10:00\n  * **Status:** Sample Collector Assigned\n\n* **Booking ID:** 98765\n  * **Tests:** Lipid Profile\n  * **When:** Saturday 08:00-09:00\n  * **Status:** Order Booked",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should display a list of all upcoming bookings for the user.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1880,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 156,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1529,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 50,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1076,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 106,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 794,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 4,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-05",
+      "category": "booking",
+      "query": "When will the phlebotomist arrive for my booking today?",
+      "response": "I checked your bookings, and you currently have two upcoming appointments:\n- **Complete Blood Count (CBC):** Tomorrow from 09:00 - 10:00 (Sample Collector Assigned)\n- **Lipid Profile:** Saturday from 08:00 - 09:00 (Order Booked)\n\nI do not see any bookings scheduled for today.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the expected arrival time or status of the phlebotomist for today's booking.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1580,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1385,
+        "output_tokens": 132,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1517,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 990,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 775,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 395,
+            "output_tokens": 81,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 795,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 4,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-06",
+      "category": "booking",
+      "query": "Are there any slots available for tomorrow morning?",
+      "response": "I don't have the information to check real-time available slots for tomorrow morning. However, I can see that you already have an appointment scheduled for tomorrow from 09:00 to 10:00 for a Complete Blood Count (CBC) with a sample collector assigned. \n\nIf you need to change or book an additional appointment, please let me know!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should list the available time slots for home collection tomorrow morning.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1692,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1379,
+        "output_tokens": 129,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1508,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 987,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 895,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 392,
+            "output_tokens": 78,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 781,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 4,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-07",
+      "category": "booking",
+      "query": "My booking status says pending, what does that mean?",
+      "response": "I don't have the specific information on what a \"pending\" status means in our policy context. However, looking at your current bookings, I see you have two active appointments: \n\n* **Complete Blood Count (CBC)** scheduled for Tomorrow at 09:00-10:00 (Status: Sample Collector Assigned)\n* **Lipid Profile** scheduled for Saturday at 08:00-09:00 (Status: Order Booked)\n\nIf you have a specific booking showing as \"pending,\" could you please let me know which test ID or date it refers to?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should explain that a pending status means the booking is awaiting confirmation or payment.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 2032,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 178,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1561,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 799,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 127,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1217,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "none",
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 4,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-08",
+      "category": "booking",
+      "query": "I need to cancel booking number 98765.",
+      "response": "Please confirm: do you want me to cancel this booking (booking_id: 98765)? Reply YES to continue, or anything else to stop.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should confirm the cancellation process for booking #98765.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "cancel_booking",
+      "tools_called": [
+        "cancel_booking"
+      ],
+      "latency_ms": 843,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 991,
+        "output_tokens": 67,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1058,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 991,
+            "output_tokens": 67,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 835,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 4,
+      "intent": "BOOKING_CANCEL/cancel_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-09",
+      "category": "booking",
+      "query": "What time is my appointment for the CBC test?",
+      "response": "Your appointment for the Complete Blood Count (CBC) test is scheduled for tomorrow between 09:00 and 10:00.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should look up the user's bookings and provide the appointment time for their CBC test.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1481,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1381,
+        "output_tokens": 81,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1462,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 815,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 393,
+            "output_tokens": 30,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 656,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 4,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-10",
+      "category": "booking",
+      "query": "Can you change my booking time from 9 AM to 11 AM?",
+      "response": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should process the rescheduling of the booking from 9 AM to 11 AM if slots are available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "list_bookings",
+        "reschedule_booking"
+      ],
+      "latency_ms": 929,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 994,
+        "output_tokens": 54,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1048,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 994,
+            "output_tokens": 54,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 920,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 4,
+      "intent": "BOOKING_RESCHEDULE/reschedule_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-11",
+      "category": "booking",
+      "query": "Has a phlebotomist been assigned to my booking?",
+      "response": "Yes! For your upcoming Complete Blood Count (CBC) booking (ID: 12345) scheduled for tomorrow from 09:00-10:00, a sample collector has already been assigned (status: Sample Collector Assigned). \n\nFor your Lipid Profile booking (ID: 98765) on Saturday, the order is currently booked and a collector will be assigned soon.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should indicate whether a phlebotomist has been assigned and provide their details if available.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1611,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 137,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1520,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 769,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 86,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 831,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 4,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-12",
+      "category": "booking",
+      "query": "Show me my past bookings.",
+      "response": "Here are your bookings, including past and upcoming ones based on our records:\n\n* **Thyroid Profile (T3, T4, TSH)**\n  * **When:** Last Monday, 07:00 - 08:00\n  * **Status:** Cancelled\n\n* **Complete Blood Count (CBC)**\n  * **When:** Tomorrow, 09:00 - 10:00\n  * **Status:** Sample Collector Assigned\n\n* **Lipid Profile**\n  * **When:** Saturday, 08:00 - 09:00\n  * **Status:** Order Booked\n\nLet me know if you need help with anything else!",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should display the user's booking history.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "list_bookings",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1737,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 199,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1572,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 50,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 757,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 149,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 955,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 4,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-13",
+      "category": "booking",
+      "query": "Is 8 AM available for home collection this Saturday?",
+      "response": "I don't have the information to check real-time slot availability for this Saturday. However, I can see you already have an appointment booked for Lipid Profile this Saturday from 08:00 to 09:00 (Booking ID: 98765). Would you like to know anything else about your existing bookings?",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should confirm if the 8 AM slot is available for this Saturday.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_reschedule_slots",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1632,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1383,
+        "output_tokens": 122,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1505,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 989,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 856,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 394,
+            "output_tokens": 71,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 766,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 4,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-14",
+      "category": "booking",
+      "query": "I missed my appointment, can I reschedule it?",
+      "response": "Which booking do you want to reschedule?\n1. Complete Blood Count (CBC), Tomorrow 09:00-10:00 (booking 12345, Sample Collector Assigned)\n2. Lipid Profile, Saturday 08:00-09:00 (booking 98765, Order Booked)\nReply with its number or booking ID.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should help the user reschedule their missed appointment to a new date and time.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": null,
+      "expected_source": null,
+      "expected_tool": "reschedule_booking",
+      "tools_called": [
+        "list_bookings",
+        "reschedule_booking"
+      ],
+      "latency_ms": 711,
+      "error": null,
+      "usage": {
+        "calls": 1,
+        "prompt_tokens": 988,
+        "output_tokens": 42,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1030,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 988,
+            "output_tokens": 42,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 698,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 4,
+      "intent": "BOOKING_RESCHEDULE/reschedule_booking",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    },
+    {
+      "query_id": "book-15",
+      "category": "booking",
+      "query": "Why is my booking cancelled?",
+      "response": "I see that you have a booking (ID: 55501) for a Thyroid Profile (T3, T4, TSH) that is marked as cancelled. However, I don't have the specific reason for the cancellation in my system. \n\nIf you'd like, I can help you rebook this test or assist you with your other active bookings.",
+      "retrieved_contexts": [],
+      "retrieved_sources": [],
+      "ground_truth": "The response should provide the reason for the booking's cancellation based on its status.",
+      "should_abstain": false,
+      "was_abstained": false,
+      "verifier_verdict": "TOOL_ONLY",
+      "expected_source": null,
+      "expected_tool": "get_booking_status",
+      "tools_called": [
+        "list_bookings"
+      ],
+      "latency_ms": 1944,
+      "error": null,
+      "usage": {
+        "calls": 2,
+        "prompt_tokens": 1373,
+        "output_tokens": 130,
+        "thought_tokens": 0,
+        "cached_tokens": 0,
+        "cap_hits": 0,
+        "total_tokens": 1503,
+        "per_call": [
+          {
+            "stage": "intent",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 984,
+            "output_tokens": 51,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 916,
+            "cap_hit": false
+          },
+          {
+            "stage": "draft",
+            "model": "gemini-3.5-flash-lite",
+            "prompt_tokens": 389,
+            "output_tokens": 79,
+            "thought_tokens": 0,
+            "cached_tokens": 0,
+            "latency_ms": 1018,
+            "cap_hit": false
+          }
+        ]
+      },
+      "acceptable_tools": [
+        "list_bookings"
+      ],
+      "expect_any": [],
+      "expect_none": [],
+      "expect_all": [],
+      "omissions": [],
+      "abstain_ok": false,
+      "repeat": 4,
+      "intent": "BOOKING_LIST/list_bookings",
+      "verifier_ran": false,
+      "draft": null,
+      "verifier_reasoning": null,
+      "ragas": {}
+    }
+  ]
+}
