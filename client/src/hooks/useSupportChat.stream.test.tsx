@@ -169,13 +169,13 @@ describe('useSupportChat streaming', () => {
         fetchMock.mockResolvedValue(sseResponse([
             'event: start\ndata: {"conversation_id": "ephemeral"}\n\n',
         ], { breakAt: 1 }));
-        m.post.mockResolvedValue({ data: { conversation_id: 'ephemeral', message_id: 'ephemeral', content: 'CBC is ₹279.' } });
+        m.post.mockResolvedValue({ data: { conversation_id: 'ephemeral', message_id: 'ephemeral', content: 'CBC is ₹100 (test value).' } });
 
         const root = await mount();
         await act(async () => seen!.sendMessage('CBC price?'));
 
         expect(m.post).toHaveBeenCalledWith('/support/chat', { message: 'CBC price?', conversation_id: null });
-        expect(seen!.messages.at(-1)!.content).toBe('CBC is ₹279.');
+        expect(seen!.messages.at(-1)!.content).toBe('CBC is ₹100 (test value).');
         act(() => root.unmount());
     });
 
