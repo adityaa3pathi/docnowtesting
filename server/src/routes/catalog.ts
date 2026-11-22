@@ -3,6 +3,7 @@ import { prisma } from '../db';
 import { HealthiansAdapter } from '../adapters/healthians';
 import { buildCatalogSearchWhere, rankSearchResults } from '../utils/searchUtils';
 import { buildDetailsSummary, hydrateCatalogDetails } from '../services/catalogDetails';
+import { applyFastingOverrideToPartnerDetails, FastingOverride } from '../utils/catalogFasting';
 import { getOrSetJsonCache, hashCacheValue } from '../utils/cache';
 
 const router = Router();
@@ -238,8 +239,15 @@ router.get('/product-details/:dealType/:dealTypeId', async (req: Request, res: R
              return res.status(404).json({ error: details.message || 'Product details not found' });
         }
 
-        res.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=3600');
-        res.json(details);
+        // A manager's fasting correction wins over Healthians' data; applied after the cache so it shows at once.
+        const correction = await prisma.catalogItem.findFirst({
+            where: { partnerCode: { in: [`${dealType.toLowerCase()}_${dealTypeId}`, dealTypeId] } },
+            select: { fastingOverride: true, fastingTimeOverride: true },
+        });
+
+        // 5 min, not a day: the reply now also depends on a manager correction (Healthians stays Redis-cached 30 days).
+        res.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=60');
+        res.json(applyFastingOverrideToPartnerDetails(details, correction as FastingOverride | null));
     } catch (error: any) {
         console.error('[Catalog] Error fetching product details:', error.message);
         res.status(500).json({ error: 'Failed to fetch product details' });
