@@ -8,6 +8,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from google.genai import types
+from langchain_core.messages import AIMessage
 
 # Stage names used by call_gemini callers and the eval's per-stage metrics.
 STAGES = ("intent", "draft", "verifier", "rewrite")
@@ -60,6 +61,12 @@ def track_turn() -> Iterator[TurnUsage]:
 
 
 def from_response(response: Any, stage: str, model: str, latency_ms: int) -> CallUsage:
+    """Token counts from a google-genai response or a LangChain AIMessage (call_gemini since Phase 4).
+
+    For an AIMessage, `model` is the one that actually answered, so a fallback shows in the usage.
+    """
+    if isinstance(response, AIMessage):
+        return _from_message(response, stage, model, latency_ms)
     meta = getattr(response, "usage_metadata", None)
 
     def count(name: str) -> int:
@@ -76,6 +83,22 @@ def from_response(response: Any, stage: str, model: str, latency_ms: int) -> Cal
         cached_tokens=count("cached_content_token_count"),
         latency_ms=latency_ms,
         cap_hit=cap_hit,
+    )
+
+
+def _from_message(message: AIMessage, stage: str, model: str, latency_ms: int) -> CallUsage:
+    meta = message.usage_metadata or {}
+    thoughts = int((meta.get("output_token_details") or {}).get("reasoning", 0) or 0)
+    # LangChain counts thinking inside output_tokens; CallUsage keeps them apart, as google-genai does.
+    return CallUsage(
+        stage=stage,
+        model=message.response_metadata.get("model_name") or model,
+        prompt_tokens=int(meta.get("input_tokens", 0) or 0),
+        output_tokens=max(int(meta.get("output_tokens", 0) or 0) - thoughts, 0),
+        thought_tokens=thoughts,
+        cached_tokens=int((meta.get("input_token_details") or {}).get("cache_read", 0) or 0),
+        latency_ms=latency_ms,
+        cap_hit=message.response_metadata.get("finish_reason") == "MAX_TOKENS",
     )
 
 
