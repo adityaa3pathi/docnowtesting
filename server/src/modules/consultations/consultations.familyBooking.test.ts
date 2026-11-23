@@ -102,7 +102,7 @@ describe('access rule', () => {
 function bookingRow(over: Record<string, unknown> = {}, patient: Record<string, unknown> = {}) {
     return {
         id: 'c-1', userId: BOOKER, patientId: 'p-mother', doctorId: 'doc-1', slotId: 's-1', status: 'CONFIRMED', type: 'VIDEO',
-        startsAt: START, createdAt: at(-3 * 24 * 60), holdExpiresAt: at(-60), feePaise: 50000, policySnapshot: {},
+        startsAt: START, createdAt: at(-3 * 24 * 60), holdExpiresAt: at(-60), feePaise: 50000, walletPaise: 0, policySnapshot: {},
         doctorJoinedAt: null, patientJoinedAt: null, cancelReason: null, reviewReason: null,
         guestToken: '11111111-2222-3333-4444-555555555555', isCaregiverJoined: true,
         doctor: { displayName: 'Sharma', photoUrl: null, qualification: 'MBBS', specialty: { name: 'General Physician' } },

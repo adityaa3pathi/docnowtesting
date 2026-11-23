@@ -1,6 +1,8 @@
 /**
  * Refund records. A record is created under a lock on its payment row, sized to what is still
- * refundable, so refunds on one payment can never add up to more than was captured.
+ * refundable, so refunds on one payment can never add up to more than was captured. A booking paid
+ * partly from the wallet has two payment rows, so its refund is two records: the card part goes
+ * back through Razorpay, the wallet part straight back to the wallet.
  */
 import { randomUUID } from 'crypto';
 import { Prisma, PrismaClient } from '@prisma/client';
@@ -9,9 +11,12 @@ import { logAlert } from '../../utils/logger';
 import { ConsultRazorpay, normalizeRazorpayError, RazorpayRefund, realConsultRazorpay } from './consultations.razorpay';
 import { remainingRefundable } from './consultations.money';
 import type { Tx } from './consultations.transitions';
+import { creditWallet, walletText, WALLET_REF } from './consultations.wallet';
 
 /** Either a client or a transaction: these helpers only use model delegates. */
 export type RefundDb = Pick<Tx, 'consultationRefund' | 'consultation' | 'slot'>;
+/** markRefundProcessed locks the consultation row, so it needs a transaction. */
+export type RefundTx = Pick<Tx, 'consultationRefund' | 'consultation' | 'slot' | '$queryRaw'>;
 
 export type RefundReason = 'PATIENT_CANCEL' | 'DOCTOR_NO_SHOW' | 'LATE_PAYMENT_SLOT_LOST' | 'PAID_AFTER_CANCEL' | 'DUPLICATE_PAYMENT' | 'ADMIN' | 'EXTERNAL';
 
@@ -59,12 +64,25 @@ export type RefundEvent = {
 
 const REFUNDED_AFTER: RefundReason[] = ['PATIENT_CANCEL', 'DOCTOR_NO_SHOW'];
 
-/** Marks a refund processed and, for cancels and no-shows, moves the consultation to refunded. */
-export async function markRefundProcessed(tx: RefundDb, refundId: string): Promise<void> {
+/**
+ * Marks a refund processed and, for cancels and no-shows, moves the consultation to refunded once
+ * every part of its refund is processed. Must run inside a transaction: the consultation row is
+ * locked first, so two parts finishing at the same moment take turns and the second one sees the first.
+ */
+export async function markRefundProcessed(tx: RefundTx, refundId: string): Promise<void> {
+    const target = await tx.consultationRefund.findUnique({ where: { id: refundId }, select: { consultationId: true } });
+    if (!target) return;
+    await tx.$queryRaw`SELECT id FROM "Consultation" WHERE id = ${target.consultationId} FOR UPDATE`;
     const res = await tx.consultationRefund.updateMany({ where: { id: refundId, status: { in: ['PENDING', 'FAILED'] } }, data: { status: 'PROCESSED', lastError: null } });
     if (res.count !== 1) return;
     const refund = await tx.consultationRefund.findUniqueOrThrow({ where: { id: refundId } });
-    if (REFUNDED_AFTER.includes(refund.reason)) {
+    // A two-part refund (wallet and card) is done when its last part is. A failed part is not done:
+    // staff retry it, and that retry finishes the booking.
+    const otherPart = await tx.consultationRefund.findFirst({
+        where: { consultationId: refund.consultationId, id: { not: refund.id }, reason: { in: REFUNDED_AFTER }, status: { not: 'PROCESSED' } },
+        select: { id: true },
+    });
+    if (REFUNDED_AFTER.includes(refund.reason) && !otherPart) {
         const c = await tx.consultation.findUniqueOrThrow({ where: { id: refund.consultationId }, select: { status: true, slotId: true } });
         const res = await tx.consultation.updateMany({
             where: { id: refund.consultationId, status: { in: ['CANCELLED', 'NO_SHOW_PATIENT', 'NO_SHOW_DOCTOR'] } },
@@ -109,7 +127,41 @@ export async function applyRefundEvent(tx: Tx, ev: RefundEvent): Promise<'update
     return external ? 'external' : 'updated';
 }
 
-// ── Running a refund at Razorpay ────────────────────────
+/** One status for a refund that may come in two parts (wallet and card): pending until every part is done. */
+export function overallRefundStatus(refunds: { status: 'PENDING' | 'PROCESSED' | 'FAILED' }[]) {
+    if (refunds.length === 0) return null;
+    if (refunds.some((r) => r.status === 'PENDING')) return 'PENDING' as const;
+    if (refunds.some((r) => r.status === 'FAILED')) return 'FAILED' as const;
+    return 'PROCESSED' as const;
+}
+
+// ── Running a refund ────────────────────────────────────
+
+/**
+ * The wallet part: credited back in one transaction with marking the record processed. The ledger
+ * row is keyed by the refund record, so a repeat (a retry, the reconciler) credits nothing twice.
+ */
+async function runWalletRefund(db: PrismaClient, refundId: string): Promise<'processed' | 'pending' | 'failed' | 'skipped'> {
+    try {
+        return await db.$transaction(async (tx) => {
+            const r = await tx.consultationRefund.findUnique({ where: { id: refundId }, include: { consultation: { select: { userId: true } } } });
+            if (!r || r.status !== 'PENDING') return 'skipped';
+            await creditWallet(tx, r.consultation.userId, r.amountPaise, { type: WALLET_REF.REFUND, id: r.id }, walletText.refund(r.consultationId));
+            await markRefundProcessed(tx, r.id);
+            return 'processed';
+        });
+    } catch (e) {
+        // Counted like a Razorpay attempt, so one that keeps failing reaches the staff queue.
+        const message = e instanceof Error ? e.message.slice(0, 300) : 'Wallet refund failed';
+        const after = await db.consultationRefund.update({ where: { id: refundId }, data: { attempts: { increment: 1 }, lastError: message } });
+        if (after.attempts >= MAX_REFUND_ATTEMPTS) {
+            await markRefundFailed(db, refundId, message, false);
+            logAlert('consult_wallet_refund_failed', { refundId });
+            return 'failed';
+        }
+        return 'pending';
+    }
+}
 
 export const MAX_REFUND_ATTEMPTS = 5;
 
@@ -143,7 +195,7 @@ export async function reopenRefund(db: PrismaClient, refundId: string): Promise<
 async function adopt(db: PrismaClient, refundId: string, made: RazorpayRefund): Promise<'processed' | 'pending'> {
     await db.consultationRefund.updateMany({ where: { id: refundId, razorpayRefundId: null }, data: { razorpayRefundId: made.id } });
     if (made.status === 'processed') {
-        await markRefundProcessed(db, refundId);
+        await db.$transaction((tx) => markRefundProcessed(tx, refundId));
         return 'processed';
     }
     return 'pending';
@@ -159,6 +211,7 @@ export async function runRefund(refundId: string, deps: RefundRunDeps = {}): Pro
     const razorpay = deps.razorpay ?? realConsultRazorpay();
 
     const r = await db.consultationRefund.findUnique({ where: { id: refundId }, include: { payment: true } });
+    if (r?.payment.source === 'WALLET') return r.attempts >= MAX_REFUND_ATTEMPTS ? 'skipped' : runWalletRefund(db, refundId);
     if (!r || r.status !== 'PENDING' || r.attempts >= MAX_REFUND_ATTEMPTS || !r.payment.razorpayPaymentId) return 'skipped';
 
     const claim = await db.consultationRefund.updateMany({ where: { id: r.id, status: 'PENDING', attempts: r.attempts }, data: { attempts: { increment: 1 } } });
@@ -196,5 +249,23 @@ export async function runRefund(refundId: string, deps: RefundRunDeps = {}): Pro
         }
         await db.consultationRefund.updateMany({ where: { id: r.id }, data: { lastError: err.message } });
         return 'pending';
+    }
+}
+
+/**
+ * Runs the refunds just created, card parts first, so a two-part refund is marked done by its last
+ * part. A failure here is left to the reconciler, which retries pending refunds.
+ */
+export async function runRefunds(records: { id: string; status: string; paymentId: string }[], deps: RefundRunDeps = {}) {
+    const db = deps.db ?? prisma;
+    const pending = records.filter((r) => r.status === 'PENDING');
+    if (pending.length === 0) return;
+    const wallet = new Set((await db.consultationPayment.findMany({ where: { id: { in: pending.map((r) => r.paymentId) }, source: 'WALLET' }, select: { id: true } })).map((p) => p.id));
+    for (const r of [...pending.filter((r) => !wallet.has(r.paymentId)), ...pending.filter((r) => wallet.has(r.paymentId))]) {
+        try {
+            await runRefund(r.id, deps);
+        } catch {
+            logAlert('consult_refund_run_error', { refundId: r.id });
+        }
     }
 }

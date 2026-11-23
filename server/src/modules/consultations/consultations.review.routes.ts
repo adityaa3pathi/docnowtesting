@@ -13,6 +13,7 @@ import { getClientIP } from '../../utils/adminHelpers';
 import { cancelConsultation } from './consultations.cancellation';
 import { confirmPayment } from './consultations.payments';
 import { createRefundRecord, MAX_REFUND_ATTEMPTS, reopenRefund, runRefund } from './consultations.refunds';
+import { expireHold } from './consultations.transitions';
 import { OPEN_PAYMENT_STATUSES } from './consultations.types';
 import { DoctorError } from './doctors.status';
 import { sendConsultError } from './consultations.http';
@@ -44,7 +45,7 @@ reviewRoutes.get('/review', ...admin, async (_req: AuthRequest, res: Response) =
         const [flagged, refunds] = await Promise.all([
             prisma.consultation.findMany({
                 where: { reviewReason: { not: null }, status: { in: OPEN_PAYMENT_STATUSES } },
-                select: { id: true, status: true, reviewReason: true, feePaise: true, updatedAt: true },
+                select: { id: true, status: true, reviewReason: true, feePaise: true, walletPaise: true, updatedAt: true },
                 orderBy: { updatedAt: 'asc' },
                 take: 100,
             }),
@@ -93,19 +94,21 @@ reviewRoutes.post('/review/consultations/:id/resolve', ...admin, async (req: Aut
 
         const c = await prisma.consultation.findFirst({ where: { id: id.data, reviewReason: { not: null } }, include: { payments: true } });
         if (!c) throw new DoctorError(404, 'Not found');
-        const payment = c.payments.find((p) => p.status === 'CAPTURED' && p.razorpayPaymentId);
+        const payment = c.payments.find((p) => p.source === 'RAZORPAY' && p.status === 'CAPTURED' && p.razorpayPaymentId);
         if (!payment) throw new DoctorError(409, 'No captured payment to resolve');
 
         let outcome: string;
         if (parse.data.action === 'confirm') {
             outcome = await confirmPayment(
-                { paymentId: payment.razorpayPaymentId!, orderId: payment.razorpayOrderId, amountPaise: payment.amountPaise, currency: 'INR' },
+                { paymentId: payment.razorpayPaymentId!, orderId: payment.razorpayOrderId!, amountPaise: payment.amountPaise, currency: 'INR' },
                 { acceptAmount: true },
             );
         } else {
             const record = await prisma.$transaction(async (tx) => {
                 const created = await createRefundRecord(tx, { consultationId: c.id, paymentId: payment.id, reason: 'ADMIN' });
                 await tx.consultation.update({ where: { id: c.id }, data: { reviewReason: null } });
+                // The booking will not go ahead: a hold still open ends now, giving back the slot and any wallet part.
+                await expireHold(tx, c.id);
                 return created;
             });
             outcome = record ? await runRefund(record.id) : 'nothing_to_refund';

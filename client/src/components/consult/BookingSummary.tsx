@@ -9,9 +9,11 @@ interface Props {
     amount: string;
     amountLabel?: string;
     personName?: string;
+    /** Price lines above the total (fee, wallet part, ...), already formatted. */
+    lines?: { label: string; value: string }[];
 }
 
-export function BookingSummary({ doctorName, specialty, startsAt, endsAt, amount, amountLabel = 'Fee', personName }: Props) {
+export function BookingSummary({ doctorName, specialty, startsAt, endsAt, amount, amountLabel = 'Fee', personName, lines }: Props) {
     return (
         <dl className="space-y-3 rounded-xl border border-border bg-surface p-4 text-sm">
             <div>
@@ -29,6 +31,16 @@ export function BookingSummary({ doctorName, specialty, startsAt, endsAt, amount
                 <div>
                     <dt className="text-xs text-ink-muted">Visit is for</dt>
                     <dd className="font-semibold text-ink">{personName}</dd>
+                </div>
+            )}
+            {lines && lines.length > 0 && (
+                <div className="space-y-1.5 border-t border-border pt-3">
+                    {lines.map((l) => (
+                        <div key={l.label} className="flex items-center justify-between gap-3">
+                            <dt className="text-ink-muted">{l.label}</dt>
+                            <dd className="text-ink">{l.value}</dd>
+                        </div>
+                    ))}
                 </div>
             )}
             <div className="flex items-center justify-between border-t border-border pt-3">

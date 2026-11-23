@@ -2,14 +2,15 @@
 import Link from 'next/link';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle2, Lock, ChevronLeft, Users } from 'lucide-react';
+import { CheckCircle2, Lock, ChevronLeft, Users, Wallet } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthGate } from '@/contexts/AuthGateContext';
 import { consult, errorMessage, errorStatus } from '@/lib/consult/api';
 import { attemptKey, forgetAttemptKey } from '@/lib/consult/idempotency';
 import { loadSavedBooking, mapCreateError, saveBooking } from '@/lib/consult/bookingFlow';
-import { formatRupees } from '@/lib/consult/format';
+import { formatPaise } from '@/lib/consult/format';
+import { consultPrice, walletRupeesToPaise } from '@/lib/consult/price';
 import { serverNow } from '@/lib/consult/time';
 import { AddFamilyMemberDialog } from '@/components/profile/AddFamilyMemberDialog';
 import { HealthDetailsForm } from '@/components/health/HealthDetailsForm';
@@ -49,6 +50,33 @@ function BookPage() {
     const [addOpen, setAddOpen] = useState(false);
     const [busy, setBusy] = useState(false);
     const [problem, setProblem] = useState<{ message: string; myLink?: boolean } | null>(null);
+    // DocNow wallet: the balance in paise (null until loaded or when it can't be read) and the switch.
+    const [walletBalancePaise, setWalletBalancePaise] = useState<number | null>(null);
+    const [useWallet, setUseWallet] = useState(false);
+
+    const loadWallet = useCallback(async () => {
+        try {
+            const res = await api.get('/profile/wallet');
+            const paise = walletRupeesToPaise(res.data?.balance);
+            setWalletBalancePaise(paise);
+            if (paise === 0) setUseWallet(false);
+        } catch {
+            // No wallet line rather than a wrong one; paying by card still works.
+            setWalletBalancePaise(null);
+            setUseWallet(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!isInitialized || !isAuthenticated) return;
+        let alive = true;
+        api.get('/profile/wallet')
+            .then((res) => { if (alive) setWalletBalancePaise(walletRupeesToPaise(res.data?.balance)); })
+            .catch(() => { if (alive) setWalletBalancePaise(null); });
+        return () => {
+            alive = false;
+        };
+    }, [isInitialized, isAuthenticated]);
 
     const backToDoctor = useCallback(
         (notice: string) => router.replace(doctorId ? `/consult/doctors/${doctorId}?notice=${notice}` : '/consult'),
@@ -103,15 +131,25 @@ function BookPage() {
         }
         setBusy(true);
         setProblem(null);
+        const fee = Math.round((doctor?.consultationFee ?? 0) * 100);
+        const shown = consultPrice(fee, walletBalancePaise ?? 0, useWallet);
+        const withWallet = shown.walletPaise > 0;
+        const variant = withWallet ? 'wallet' : '';
         try {
-            const res = await consult.createBooking({ slotId: slot.id, patientId: personId, idempotencyKey: attemptKey(slot.id, personId) });
+            const res = await consult.createBooking({
+                slotId: slot.id, patientId: personId, idempotencyKey: attemptKey(slot.id, personId, variant), ...(withWallet ? { useWallet: true, expectedWalletPaise: shown.walletPaise } : {}),
+            });
             saveBooking({ id: res.consultationId, slotId: slot.id, patientId: personId });
-            router.push(`/consult/booking/${res.consultationId}?pay=1`);
+            // Paid in full from the wallet: already confirmed, nothing to open.
+            router.push(res.status === 'CONFIRMED' ? `/consult/booking/${res.consultationId}` : `/consult/booking/${res.consultationId}?pay=1`);
         } catch (e) {
             const action = mapCreateError(errorStatus(e), (e as { response?: { data?: { error?: string } } })?.response?.data?.error);
-            if (action.forgetKey) forgetAttemptKey(slot.id, personId);
+            if (action.forgetKey) forgetAttemptKey(slot.id, personId, variant);
             const message = errorMessage(e);
-            if (action.kind === 'slot_taken') backToDoctor('slot_taken');
+            if (action.kind === 'wallet_changed') {
+                void loadWallet();
+                setProblem({ message: 'Your wallet balance just changed. Check the amount below and try again.' });
+            } else if (action.kind === 'slot_taken') backToDoctor('slot_taken');
             else if (action.kind === 'login') openAuthDialog();
             else if (action.kind === 'too_many') setProblem({ message, myLink: true });
             else if (action.kind === 'busy') setProblem({ message: 'The payment service is busy. Please try again in a moment.' });
@@ -189,6 +227,8 @@ function BookPage() {
         );
     }
 
+    const price = consultPrice(Math.round(doctor.consultationFee * 100), walletBalancePaise ?? 0, useWallet);
+
     return (
         <>
             <main className="mx-auto w-full max-w-2xl px-4 py-6 pb-16">
@@ -217,9 +257,41 @@ function BookPage() {
                         specialty={doctor.specialty.name}
                         startsAt={slot.startsAt}
                         endsAt={slot.endsAt}
-                        amount={formatRupees(doctor.consultationFee)}
+                        lines={price.walletPaise > 0 ? [
+                            { label: 'Consultation fee', value: formatPaise(price.feePaise) },
+                            { label: 'From DocNow wallet', value: `− ${formatPaise(price.walletPaise)}` },
+                        ] : undefined}
+                        amountLabel={price.walletPaise > 0 ? 'To pay now' : 'Fee'}
+                        amount={formatPaise(price.payPaise)}
                     />
                 </Card>
+
+                {/* DocNow wallet: shown only when there is money in it */}
+                {(walletBalancePaise ?? 0) > 0 && (
+                    <Card className="mt-6 p-4">
+                        <label className="flex cursor-pointer items-start gap-3">
+                            <input
+                                type="checkbox"
+                                className="mt-1 h-5 w-5 shrink-0 accent-[var(--color-primary)]"
+                                checked={useWallet}
+                                onChange={(e) => setUseWallet(e.target.checked)}
+                            />
+                            <span className="min-w-0">
+                                <span className="flex items-center gap-2 font-semibold text-ink">
+                                    <Wallet className="h-4 w-4 text-ink-subtle" aria-hidden /> Use DocNow wallet
+                                </span>
+                                <span className="mt-0.5 block text-sm text-ink-muted">
+                                    Balance {formatPaise(walletBalancePaise ?? 0)}.{' '}
+                                    {useWallet
+                                        ? price.payPaise === 0
+                                            ? 'Your wallet covers the whole fee.'
+                                            : `${formatPaise(price.walletPaise)} from your wallet, the rest by card or UPI.`
+                                        : 'Pay part or all of the fee from it.'}
+                                </span>
+                            </span>
+                        </label>
+                    </Card>
+                )}
 
                 {/* Patient Picker Card */}
                 <Card className="mt-6 p-6">
@@ -260,13 +332,15 @@ function BookPage() {
 
                 {/* Pay Button */}
                 <Button size="lg" className="mt-6 w-full" disabled={!personId} loading={busy} onClick={pay}>
-                    {busy ? 'Getting your payment ready' : `Pay ${formatRupees(doctor.consultationFee)}`}
+                    {busy
+                        ? price.payPaise === 0 ? 'Booking' : 'Getting your payment ready'
+                        : price.payPaise === 0 ? `Book · ${formatPaise(price.walletPaise)} from wallet` : `Pay ${formatPaise(price.payPaise)}`}
                 </Button>
 
                 {/* Trust Line */}
                 <div className="mt-3 flex items-center justify-center gap-2 text-sm text-ink-muted">
                     <Lock className="h-4 w-4 text-ink-subtle" aria-hidden />
-                    <span>Secured by Razorpay · Your time is held while you pay</span>
+                    <span>{price.payPaise === 0 ? 'Paid from your DocNow wallet · Confirmed at once' : 'Secured by Razorpay · Your time is held while you pay'}</span>
                 </div>
 
                 <AddFamilyMemberDialog

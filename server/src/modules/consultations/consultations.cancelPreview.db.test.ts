@@ -92,7 +92,7 @@ describeDb('the cancel box: what the customer is told before cancelling (real Po
 
     it('offers nothing and no tiers for a booking that was never paid', async () => {
         const c = await unpaid();
-        expect(await preview(c.user as any, c.id)).toEqual({ percent: 0, refundPaise: 0, paidPaise: 0 });
+        expect(await preview(c.user as any, c.id)).toEqual({ percent: 0, refundPaise: 0, walletRefundPaise: 0, paidPaise: 0, walletPaidPaise: 0 });
     });
 
     it('refuses a preview once the consultation can no longer be cancelled', async () => {

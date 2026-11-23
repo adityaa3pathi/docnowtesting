@@ -3,6 +3,7 @@
  * exactly when one active consultation points at it. Every change is a conditional update.
  */
 import { Prisma } from '@prisma/client';
+import { captureWalletHold, releaseWalletHold, retakeWalletHold } from './consultations.wallet';
 
 export type Tx = Prisma.TransactionClient;
 
@@ -17,7 +18,7 @@ export async function holdSlot(tx: Tx, slotId: string): Promise<boolean> {
     return res.count === 1;
 }
 
-/** Expires an unpaid hold and frees its slot. False when the consultation is no longer pending payment. */
+/** Expires an unpaid hold, frees its slot and gives back any wallet part. False when the consultation is no longer pending payment. */
 export async function expireHold(tx: Tx, consultationId: string): Promise<boolean> {
     const c = await tx.consultation.findUnique({ where: { id: consultationId }, select: { slotId: true } });
     if (!c) return false;
@@ -27,26 +28,36 @@ export async function expireHold(tx: Tx, consultationId: string): Promise<boolea
     });
     if (res.count !== 1) return false;
     await releaseSlot(tx, c.slotId);
+    await releaseWalletHold(tx, consultationId);
     return true;
 }
 
 export class SlotLost extends Error {}
 
-/** Pending payment to confirmed, once, recording which payment did it. False when another caller won. */
-export async function confirmPending(tx: Tx, consultationId: string, paymentId: string): Promise<boolean> {
+/**
+ * Pending payment to confirmed, once, recording which payment did it (a Razorpay payment id, or
+ * walletConfirmation() for a booking the wallet paid in full). False when another caller won.
+ */
+export async function confirmPending(tx: Tx, consultationId: string, paymentId: string, now = new Date()): Promise<boolean> {
     const res = await tx.consultation.updateMany({
         where: { id: consultationId, status: 'PENDING_PAYMENT', confirmingPaymentId: null },
         data: { status: 'CONFIRMED', confirmingPaymentId: paymentId, reviewReason: null },
     });
-    return res.count === 1;
+    if (res.count !== 1) return false;
+    await captureWalletHold(tx, consultationId, now);
+    return true;
 }
 
+/** confirmingPaymentId of a booking the wallet paid in full. Never a Razorpay id (those start "pay_"). */
+export const walletConfirmation = (walletPartId: string) => `wallet:${walletPartId}`;
+
 /**
- * Late payment on an expired hold: take the slot back and confirm, or throw SlotLost so the whole
- * transaction rolls back and the caller refunds instead.
+ * Late payment on an expired hold: take the slot back (and the wallet part, given back at expiry)
+ * and confirm, or throw SlotLost so the whole transaction rolls back and the caller refunds instead.
  */
-export async function reclaimExpired(tx: Tx, consultationId: string, slotId: string, paymentId: string): Promise<void> {
+export async function reclaimExpired(tx: Tx, consultationId: string, slotId: string, paymentId: string, now = new Date()): Promise<void> {
     if (!(await holdSlot(tx, slotId))) throw new SlotLost();
+    if (!(await retakeWalletHold(tx, consultationId, now))) throw new SlotLost('wallet');
     try {
         const res = await tx.consultation.updateMany({
             where: { id: consultationId, status: 'EXPIRED', confirmingPaymentId: null },

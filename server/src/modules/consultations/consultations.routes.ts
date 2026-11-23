@@ -28,6 +28,8 @@ const bookingSchema = z.object({
     isCaregiverJoined: z.boolean().optional(),
     attachedReportIds: z.array(z.string().uuid('Invalid report')).max(5, 'Attach at most 5 reports').optional(),
     attachmentIds: z.array(z.string().uuid('Invalid document')).max(MAX_ATTACHMENTS_PER_BOOKING, `Attach at most ${MAX_ATTACHMENTS_PER_BOOKING} documents`).optional(),
+    useWallet: z.boolean().optional(),
+    expectedWalletPaise: z.number().int().min(0).optional(),
 });
 
 // NMC telemedicine consent: the join screen's checkbox. Without it nobody on the patient's side gets a room token.

@@ -7,6 +7,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '../../db';
 import { logAlert } from '../../utils/logger';
 import { verifyCheckoutSignature } from '../../utils/razorpaySignature';
+import { cardDuePaise } from './consultations.money';
 import { createRefundRecord, RefundReason } from './consultations.refunds';
 import { ConsultRazorpay, normalizeRazorpayError, realConsultRazorpay } from './consultations.razorpay';
 import { confirmPending, reclaimExpired, SlotLost, Tx } from './consultations.transitions';
@@ -48,9 +49,12 @@ export async function confirmPayment(fact: PaymentFact, deps: ConfirmDeps = {}):
     const db: Db = deps.db ?? prisma;
     const now = (deps.now ?? (() => new Date()))();
 
+    // An undefined order id would match any row, including a wallet part (which has no order).
+    if (!fact.orderId) return 'unknown_order';
     const orderRow = await db.consultationPayment.findFirst({ where: { razorpayOrderId: fact.orderId }, include: { consultation: true } });
     if (!orderRow) return 'unknown_order';
-    const expectedPaise = orderRow.consultation.feePaise;
+    // The card part only: what the wallet covered was taken when the slot was held.
+    const expectedPaise = cardDuePaise(orderRow.consultation);
 
     const payment = await attachPayment(db, fact);
     if (!payment) return 'unknown_order';
@@ -75,7 +79,7 @@ export async function confirmPayment(fact: PaymentFact, deps: ConfirmDeps = {}):
         if (c.confirmingPaymentId) return refund('DUPLICATE_PAYMENT');
 
         if (c.status === 'PENDING_PAYMENT') {
-            if (await confirmPending(tx, c.id, fact.paymentId)) return 'confirmed';
+            if (await confirmPending(tx, c.id, fact.paymentId, now)) return 'confirmed';
             const again = await tx.consultation.findUniqueOrThrow({ where: { id: c.id } });
             return again.confirmingPaymentId === fact.paymentId ? 'already' : refund('DUPLICATE_PAYMENT');
         }
@@ -88,12 +92,14 @@ export async function confirmPayment(fact: PaymentFact, deps: ConfirmDeps = {}):
             try {
                 // A nested transaction (savepoint) so a lost slot rolls back only the re-claim, not the refund below.
                 await tx.$executeRaw`SAVEPOINT reclaim`;
-                await reclaimExpired(tx, c.id, c.slotId, fact.paymentId);
+                await reclaimExpired(tx, c.id, c.slotId, fact.paymentId, now);
                 await tx.$executeRaw`RELEASE SAVEPOINT reclaim`;
                 return 'reclaimed';
             } catch (e) {
                 if (!(e instanceof SlotLost)) throw e;
                 await tx.$executeRaw`ROLLBACK TO SAVEPOINT reclaim`;
+                // The slot was free but the wallet part, given back at expiry, has since been spent.
+                if (e.message === 'wallet') logAlert('consult_late_payment_wallet_spent', { consultationId: c.id, paymentId: fact.paymentId });
                 return refund('LATE_PAYMENT_SLOT_LOST');
             }
         }
@@ -116,10 +122,10 @@ export async function verifyAndConfirm(
 
     const c = await db.consultation.findFirst({
         where: { id: consultationId, userId },
-        include: { payments: { orderBy: { createdAt: 'asc' } } },
+        include: { payments: { where: { source: 'RAZORPAY' }, orderBy: { createdAt: 'asc' } } },
     });
     if (!c || c.payments.length === 0) throw new DoctorError(404, 'Not found');
-    const orderId = c.payments[0].razorpayOrderId;
+    const orderId = c.payments[0].razorpayOrderId!;
 
     if (body.razorpay_order_id && body.razorpay_order_id !== orderId) throw new DoctorError(400, 'Order does not match this booking');
     if (!verifyCheckoutSignature(orderId, body.razorpay_payment_id, body.razorpay_signature, process.env.RAZORPAY_KEY_SECRET)) {
@@ -132,7 +138,7 @@ export async function verifyAndConfirm(
     try {
         payment = await razorpay.fetchPayment(body.razorpay_payment_id);
         if (payment.order_id === orderId && payment.status === 'authorized') {
-            payment = await razorpay.capturePayment(payment.id, c.feePaise);
+            payment = await razorpay.capturePayment(payment.id, cardDuePaise(c));
         }
     } catch (e) {
         const err = normalizeRazorpayError(e);

@@ -47,8 +47,11 @@ export interface CreateBookingResponse {
     consultationId: string;
     status: ConsultationStatus;
     razorpayOrderId: string | null;
-    /** Paise. */
+    /** Paise, what Razorpay collects: the fee less the wallet part. 0 when the wallet paid it all. */
     amountPaise: number;
+    /** Paise. Older servers leave these out (then the fee is amountPaise and nothing came from the wallet). */
+    feePaise?: number;
+    walletPaise?: number;
     currency: string;
     keyId: string | null;
     holdExpiresAt: string;
@@ -67,6 +70,8 @@ export interface BookingView extends CreateBookingResponse {
     paymentCaptured: boolean;
     underStaffCheck: boolean;
     refundPaise: number;
+    /** The part of refundPaise that goes back to the DocNow wallet; the rest goes to the card/UPI. */
+    walletRefundPaise?: number;
     refundStatus: 'PENDING' | 'PROCESSED' | 'FAILED' | null;
     type: ConsultationType;
     hasPrescription: boolean;
@@ -99,6 +104,9 @@ export interface CancelPreview {
     percent: number;
     refundPaise: number;
     paidPaise: number;
+    /** The parts of paidPaise / refundPaise that came from and go back to the DocNow wallet. */
+    walletPaidPaise?: number;
+    walletRefundPaise?: number;
     /** The cancellation policy saved with this booking (older servers leave it out). */
     policy?: { refundTiers: { minHoursBefore: number; percent: number }[]; doctorNoShowFullRefund: boolean };
     /** Set when the patient moved the booking: the tiers count to this earlier time. */
@@ -108,6 +116,7 @@ export interface CancelPreview {
 export interface CancelResult {
     status: ConsultationStatus;
     refundPaise: number;
+    walletRefundPaise?: number;
     refundStatus: 'PENDING' | 'PROCESSED' | 'FAILED' | null;
 }
 
@@ -250,6 +259,8 @@ export interface FlaggedPayment {
     status: ConsultationStatus;
     reviewReason: string | null;
     feePaise: number;
+    /** Paid from the wallet; Razorpay was due feePaise minus this (older servers leave it out). */
+    walletPaise?: number;
     updatedAt: string;
 }
 
@@ -437,7 +448,7 @@ export interface AdminAppointment {
 }
 
 export interface AdminAppointmentDetail extends AdminAppointment {
-    payments: { id: string; status: 'CREATED' | 'CAPTURED' | 'FAILED'; amountPaise: number; razorpayPaymentId: string | null; createdAt: string }[];
+    payments: { id: string; source?: 'RAZORPAY' | 'WALLET'; status: 'CREATED' | 'CAPTURED' | 'FAILED' | 'RELEASED'; amountPaise: number; razorpayPaymentId: string | null; createdAt: string }[];
     refunds: { id: string; status: 'PENDING' | 'PROCESSED' | 'FAILED'; amountPaise: number; createdAt: string }[];
     cancelledBy: string | null;
     cancelReason: string | null;

@@ -981,6 +981,14 @@ enum ConsultPaymentStatus {
   CREATED
   CAPTURED
   FAILED
+  RELEASED // wallet part of a hold that ended unpaid: the money went back to the wallet
+}
+
+// Where a consultation payment came from. A booking has at most one of each: the card/UPI part
+// through Razorpay and the part taken from the DocNow wallet.
+enum ConsultPaymentSource {
+  RAZORPAY
+  WALLET
 }
 
 enum ConsultRefundStatus {
@@ -1045,6 +1053,9 @@ model Consultation {
   endedAt             DateTime?
   // Self-serve reschedules so far (the policy caps them; late-doctor moves don't count).
   rescheduleCount     Int                @default(0)
+  // Paid from the DocNow wallet (taken when the slot is held). The card/UPI part is feePaise
+  // minus this; a booking the wallet covers in full confirms without Razorpay.
+  walletPaise         Int                @default(0)
   // The earliest start this booking had before the patient moved it. Cancellation refund tiers use
   // it, so moving a booking can never raise its refund. Null: never moved by the patient.
   refundBasisStartsAt DateTime?
@@ -1106,7 +1117,9 @@ model ConsultationMove {
 model ConsultationPayment {
   id                String               @id @default(uuid())
   consultationId    String
-  razorpayOrderId   String
+  source            ConsultPaymentSource @default(RAZORPAY)
+  // Null only for the wallet part (one per consultation, a raw-SQL partial unique index).
+  razorpayOrderId   String?
   razorpayPaymentId String?              @unique
   amountPaise       Int
   status            ConsultPaymentStatus @default(CREATED)

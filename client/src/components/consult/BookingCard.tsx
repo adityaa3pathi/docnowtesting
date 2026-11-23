@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { CalendarClock } from 'lucide-react';
 import { formatPaise } from '@/lib/consult/format';
+import { bookingTotalPaise } from '@/lib/consult/price';
 import { formatIstDateTime } from '@/lib/consult/time';
 import { statusInfo } from '@/lib/consult/status';
 import { Badge } from './Badge';
@@ -23,7 +24,7 @@ export function BookingCard({ booking, holdLive }: { booking: BookingView; holdL
                 </div>
                 <p className="mt-2 text-sm font-semibold text-ink">{formatIstDateTime(booking.startsAt)}</p>
                 <p className="text-xs text-ink-muted">
-                    For {booking.patientName} · {formatPaise(booking.amountPaise)}
+                    For {booking.patientName} · {formatPaise(bookingTotalPaise(booking))}
                 </p>
                 {holdLive && <p className="mt-2 text-sm font-semibold text-primary">Continue to pay</p>}
             </Link>
