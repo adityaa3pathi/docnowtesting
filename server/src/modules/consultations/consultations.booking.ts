@@ -1,20 +1,23 @@
 /**
- * Booking: hold a slot, copy the rules, and create the Razorpay order.
- * The slot is held in one transaction. Razorpay is called outside it, and a failure releases the hold.
+ * Booking: hold a slot, copy the rules, take any wallet part, and create the Razorpay order for the rest.
+ * The slot and the wallet part are held in one transaction. Razorpay is called outside it, and a
+ * failure releases both. A booking the wallet pays in full confirms in that transaction, without Razorpay.
  */
 import { createHash, randomUUID } from 'crypto';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '../../db';
 import { logAlert } from '../../utils/logger';
-import { feeFromBps, toPaise } from './consultations.money';
+import { cardDuePaise, feeFromBps, toPaise, walletShare } from './consultations.money';
 import { getActivePolicy } from './consultations.policy.service';
 import { selfRescheduleState } from './consultations.rescheduleRules';
 import { ConsultRazorpay, normalizeRazorpayError, realConsultRazorpay } from './consultations.razorpay';
-import { expireHold, holdSlot } from './consultations.transitions';
+import { confirmPending, expireHold, holdSlot, walletConfirmation } from './consultations.transitions';
+import { debitWallet, walletBalancePaise, walletText, WALLET_REF } from './consultations.wallet';
 import { DOCTOR_LATE_AFTER_MS, noShowDeadlines } from './consultations.room';
 import { DoctorError } from './doctors.status';
 import { accessFor, familyWhere, isSelf, userMobile } from './consultations.family';
 import { attachmentsFor, claimAttachments, type AttachmentStorage } from './consultations.attachments';
+import { overallRefundStatus } from './consultations.refunds';
 
 export const MAX_OPEN_HOLDS_PER_USER = 3;
 export const MAX_OPEN_HOLDS_PER_DOCTOR = 1;
@@ -31,7 +34,14 @@ export type BookingInput = {
     attachedReportIds?: string[];
     /** Photos / PDFs of outside records the booker uploaded just before (POST /attachments). */
     attachmentIds?: string[];
+    /** Pay what the DocNow wallet covers from it; Razorpay collects the rest. */
+    useWallet?: boolean;
+    /** The wallet amount the patient was shown. A different amount now is refused, never silently used. */
+    expectedWalletPaise?: number;
 };
+
+/** The wallet balance changed between showing it and booking (another tab spent it). */
+export const WALLET_CHANGED = 'Your wallet balance just changed. Please check the amount and try again';
 
 export const MAX_ATTACHED_REPORTS = 5;
 /** Base of the zero-login web room link sent to family members. */
@@ -39,12 +49,15 @@ export const guestJoinUrl = (token: string) => `${(process.env.GUEST_CALL_BASE_U
 
 const SLOT_TAKEN = 'Slot is no longer available';
 
-function response(c: { id: string; holdExpiresAt: Date; status: string; feePaise: number }, orderId: string | undefined) {
+function response(c: { id: string; holdExpiresAt: Date; status: string; feePaise: number; walletPaise: number }, orderId: string | null | undefined) {
     return {
         consultationId: c.id,
         status: c.status,
         razorpayOrderId: orderId ?? null,
-        amountPaise: c.feePaise,
+        // What Razorpay collects. The fee and the wallet part are listed too, for the price breakdown.
+        amountPaise: cardDuePaise(c),
+        feePaise: c.feePaise,
+        walletPaise: c.walletPaise,
         currency: 'INR',
         keyId: process.env.RAZORPAY_KEY_ID ?? null,
         holdExpiresAt: c.holdExpiresAt,
@@ -54,10 +67,12 @@ function response(c: { id: string; holdExpiresAt: Date; status: string; feePaise
 async function existingBooking(db: PrismaClient, input: BookingInput, requestHash: string) {
     const found = await db.consultation.findUnique({
         where: { userId_idempotencyKey: { userId: input.userId, idempotencyKey: input.idempotencyKey } },
-        include: { payments: { orderBy: { createdAt: 'desc' }, take: 1 } },
+        include: { payments: { where: { source: 'RAZORPAY' }, orderBy: { createdAt: 'desc' }, take: 1 } },
     });
     if (!found) return null;
     if (found.requestHash !== requestHash) throw new DoctorError(409, 'This idempotency key was used for a different request');
+    // Paid in full from the wallet: it confirmed in the booking call itself, so a repeat gets the same answer.
+    if (found.confirmingPaymentId?.startsWith('wallet:')) return response(found, null);
     const orderId = found.payments[0]?.razorpayOrderId;
     if (found.status !== 'PENDING_PAYMENT') throw new DoctorError(409, 'This booking has ended. Start a new booking with a new idempotency key');
     if (!orderId) throw new DoctorError(409, 'This booking is still being set up. Try again in a moment');
@@ -68,11 +83,11 @@ async function existingBooking(db: PrismaClient, input: BookingInput, requestHas
 async function releaseStaleHold(db: PrismaClient, razorpay: ConsultRazorpay, slotId: string, now: Date) {
     const held = await db.consultation.findFirst({
         where: { slotId, status: 'PENDING_PAYMENT' },
-        include: { payments: true },
+        include: { payments: { where: { source: 'RAZORPAY' } } },
     });
     if (!held || held.holdExpiresAt > now) throw new DoctorError(409, SLOT_TAKEN);
     try {
-        for (const orderId of new Set(held.payments.map((p) => p.razorpayOrderId))) {
+        for (const orderId of new Set(held.payments.map((p) => p.razorpayOrderId!))) {
             const paid = await razorpay.fetchOrderPayments(orderId);
             if (paid.some((p) => p.status === 'captured' || p.status === 'authorized')) throw new DoctorError(409, SLOT_TAKEN);
         }
@@ -88,7 +103,8 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
     const db = deps.db ?? prisma;
     const razorpay = deps.razorpay ?? realConsultRazorpay();
     const now = (deps.now ?? (() => new Date()))();
-    const requestHash = createHash('sha256').update(`${input.slotId}|${input.patientId}`).digest('hex');
+    // The wallet choice is part of the request; left out when off, so older hashes still match.
+    const requestHash = createHash('sha256').update(`${input.slotId}|${input.patientId}${input.useWallet ? '|wallet' : ''}`).digest('hex');
 
     const repeated = await existingBooking(db, input, requestHash);
     if (repeated) return repeated;
@@ -132,6 +148,10 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
     try {
         consultation = await db.$transaction(async (tx) => {
             if (!(await holdSlot(tx, slot.id))) throw new DoctorError(409, SLOT_TAKEN);
+            const walletPaise = input.useWallet ? walletShare(feePaise, await walletBalancePaise(tx, input.userId)) : 0;
+            if (input.useWallet && input.expectedWalletPaise !== undefined && input.expectedWalletPaise !== walletPaise) {
+                throw new DoctorError(409, WALLET_CHANGED);
+            }
             const created = await tx.consultation.create({
                 data: {
                     userId: input.userId,
@@ -140,6 +160,7 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
                     slotId: slot.id,
                     startsAt: slot.startsAt,
                     feePaise,
+                    walletPaise,
                     platformFeePaise: feeFromBps(feePaise, rules.platformFeeBps),
                     policyId,
                     policySnapshot: rules as unknown as Prisma.InputJsonValue,
@@ -153,7 +174,19 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
                 },
             });
             await claimAttachments(tx, input.userId, created.id, input.attachmentIds ?? [], now);
-            return created;
+            if (walletPaise === 0) return created;
+
+            // The wallet part is taken now, with the hold; it goes back if the hold ends unpaid.
+            const part = await tx.consultationPayment.create({
+                data: { consultationId: created.id, source: 'WALLET', amountPaise: walletPaise },
+            });
+            if (!(await debitWallet(tx, input.userId, walletPaise, { type: WALLET_REF.DEBIT, id: part.id }, walletText.paid(created.id)))) {
+                throw new DoctorError(409, WALLET_CHANGED);
+            }
+            if (cardDuePaise(created) > 0) return created;
+            // Paid in full from the wallet: confirmed here, with no Razorpay order.
+            if (!(await confirmPending(tx, created.id, walletConfirmation(part.id), now))) throw new Error('Wallet booking could not be confirmed');
+            return tx.consultation.findUniqueOrThrow({ where: { id: created.id } });
         });
     } catch (e) {
         if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
@@ -164,10 +197,13 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
         throw e;
     }
 
+    if (consultation.status === 'CONFIRMED') return response(consultation, null);
+
+    const amountPaise = cardDuePaise(consultation);
     let orderId: string;
     try {
         const order = await razorpay.createOrder({
-            amountPaise: feePaise,
+            amountPaise,
             receipt: consultation.orderReceipt,
             notes: { kind: 'consult', consultationId: consultation.id },
         });
@@ -178,7 +214,7 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
         await db.$transaction((tx) => expireHold(tx, consultation.id));
         throw new DoctorError(502, 'Payment service unavailable. Please try again');
     }
-    await db.consultationPayment.create({ data: { consultationId: consultation.id, razorpayOrderId: orderId, amountPaise: feePaise } });
+    await db.consultationPayment.create({ data: { consultationId: consultation.id, razorpayOrderId: orderId, amountPaise } });
     return response(consultation, orderId);
 }
 
@@ -198,6 +234,7 @@ type BookingRow = Prisma.ConsultationGetPayload<{ include: typeof viewInclude }>
 /** What the patient screens need: the booking, who and when, and where payment and refund stand. */
 function toView(c: BookingRow) {
     const live = c.refunds.filter((r) => !(r.status === 'FAILED' && r.failureConfirmed));
+    const walletRefundPaise = live.filter((r) => c.payments.find((p) => p.id === r.paymentId)?.source === 'WALLET').reduce((sum, r) => sum + r.amountPaise, 0);
     const rxStatus = c.prescriptions.length > 0
         ? 'ISSUED'
         : c.note !== null
@@ -205,7 +242,7 @@ function toView(c: BookingRow) {
         : (c.status === 'COMPLETED' ? 'NOT_REQUIRED' : 'PENDING');
 
     return {
-        ...response(c, c.payments[0]?.razorpayOrderId),
+        ...response(c, c.payments.find((p) => p.source === 'RAZORPAY')?.razorpayOrderId),
         startsAt: c.startsAt,
         endsAt: c.slot.endsAt,
         doctorId: c.doctorId,
@@ -216,7 +253,9 @@ function toView(c: BookingRow) {
         paymentCaptured: c.payments.some((p) => p.status === 'CAPTURED'),
         underStaffCheck: c.reviewReason !== null,
         refundPaise: live.reduce((sum, r) => sum + r.amountPaise, 0),
-        refundStatus: c.refunds[0]?.status ?? null,
+        // The part of refundPaise that went back to the DocNow wallet (the rest goes to the card/UPI).
+        walletRefundPaise,
+        refundStatus: overallRefundStatus(live.length ? live : c.refunds),
         hasPrescription: c.prescriptions.length > 0,
         prescriptionId: c.prescriptions[0]?.id ?? null,
         rxStatus,

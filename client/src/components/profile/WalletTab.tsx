@@ -14,6 +14,14 @@ interface Transaction {
     createdAt: string;
 }
 
+/** Tags for consultation entries; other types show as stored (ORDER, REFUND, ...). */
+const TAGS: Record<string, string> = {
+    CONSULT: 'Consultation',
+    CONSULT_REDEBIT: 'Consultation',
+    CONSULT_RELEASE: 'Returned',
+    CONSULT_REFUND: 'Refund',
+};
+
 export function WalletTab() {
     const [balance, setBalance] = useState(0);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -86,7 +94,7 @@ export function WalletTab() {
                                         })}
                                         {txn.referenceType && (
                                             <span className="ml-2 px-1.5 py-0.5 bg-gray-100 rounded text-[10px] uppercase tracking-wider">
-                                                {txn.referenceType.replace('_', ' ')}
+                                                {TAGS[txn.referenceType] ?? txn.referenceType.replace('_', ' ')}
                                             </span>
                                         )}
                                     </p>

@@ -29,7 +29,7 @@ export function istDayRange(date?: string, now = new Date()) {
 }
 
 const rowSelect = {
-    id: true, status: true, type: true, startsAt: true, feePaise: true, platformFeePaise: true,
+    id: true, status: true, type: true, startsAt: true, feePaise: true, walletPaise: true, platformFeePaise: true,
     patientJoinedAt: true, doctorJoinedAt: true, startedAt: true, endedAt: true, reviewReason: true,
     slot: { select: { endsAt: true } },
     doctor: { select: { id: true, displayName: true, specialty: { select: { name: true } } } },
@@ -65,7 +65,7 @@ export async function getAppointment(id: string) {
         select: {
             ...rowSelect,
             cancelledBy: true, cancelReason: true, cancelledAt: true, createdAt: true,
-            payments: { select: { id: true, status: true, amountPaise: true, razorpayPaymentId: true, createdAt: true }, orderBy: { createdAt: 'desc' } },
+            payments: { select: { id: true, source: true, status: true, amountPaise: true, razorpayPaymentId: true, createdAt: true }, orderBy: { createdAt: 'desc' } },
             refunds: { select: { id: true, status: true, amountPaise: true, createdAt: true }, orderBy: { createdAt: 'desc' } },
         },
     });

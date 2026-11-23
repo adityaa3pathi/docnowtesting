@@ -1,6 +1,7 @@
 /**
- * One key per booking attempt (slot plus person). A repeat of the same attempt reuses it, so the
- * server returns the same order. After a dead booking the key is forgotten, so the next try is fresh.
+ * One key per booking attempt (slot, person, and how it is paid, e.g. "wallet"). A repeat of the
+ * same attempt reuses it, so the server returns the same order. Changing how it is paid is a new
+ * attempt. After a dead booking the key is forgotten, so the next try is fresh.
  */
 const PREFIX = 'consult-attempt:';
 
@@ -17,9 +18,11 @@ function newKey(): string {
     return `k_${id.replace(/[^A-Za-z0-9_-]/g, '')}`.slice(0, 64);
 }
 
-export function attemptKey(slotId: string, patientId: string): string {
+const keyName = (slotId: string, patientId: string, variant: string) => `${PREFIX}${slotId}:${patientId}${variant ? `:${variant}` : ''}`;
+
+export function attemptKey(slotId: string, patientId: string, variant = ''): string {
     const store = storage();
-    const name = `${PREFIX}${slotId}:${patientId}`;
+    const name = keyName(slotId, patientId, variant);
     const existing = store?.getItem(name);
     if (existing) return existing;
     const key = newKey();
@@ -27,6 +30,6 @@ export function attemptKey(slotId: string, patientId: string): string {
     return key;
 }
 
-export function forgetAttemptKey(slotId: string, patientId: string) {
-    storage()?.removeItem(`${PREFIX}${slotId}:${patientId}`);
+export function forgetAttemptKey(slotId: string, patientId: string, variant = '') {
+    storage()?.removeItem(keyName(slotId, patientId, variant));
 }

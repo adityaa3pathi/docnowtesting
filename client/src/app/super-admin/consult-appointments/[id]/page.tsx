@@ -77,7 +77,7 @@ export default function ConsultAppointmentPage({ params }: { params: Promise<{ i
                             <h2 className="mb-2 font-bold text-gray-900">Payments</h2>
                             {a.payments.length === 0 ? <p className="text-sm text-gray-500">No payments.</p> : (
                                 <Rows rows={a.payments.map((p) => [
-                                    `${formatIstDateTime(p.createdAt)}${p.razorpayPaymentId ? ` · ${p.razorpayPaymentId}` : ''}`,
+                                    `${formatIstDateTime(p.createdAt)} · ${p.source === 'WALLET' ? 'DocNow wallet' : p.razorpayPaymentId ?? 'Razorpay'}`,
                                     `${formatPaise(p.amountPaise)} · ${p.status.toLowerCase()}`,
                                 ])} />
                             )}

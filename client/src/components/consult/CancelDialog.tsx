@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { consult, errorMessage } from '@/lib/consult/api';
 import { cancelPolicyLines } from '@/lib/consult/cancelPolicy';
 import { formatPaise } from '@/lib/consult/format';
+import { refundDestination } from '@/lib/consult/price';
 import { formatIstDateTime } from '@/lib/consult/time';
 import type { CancelPreview, CancelResult } from '@/lib/consult/types';
 
@@ -74,7 +75,7 @@ export function CancelDialog({ open, bookingId, unpaid, onClose, onCancelled }: 
                             <DialogTitle>Booking cancelled</DialogTitle>
                             <DialogDescription>
                                 {result.refundPaise > 0
-                                    ? `Refund: ${formatPaise(result.refundPaise)}.`
+                                    ? `Refund: ${refundDestination(result.refundPaise, result.walletRefundPaise, formatPaise)}.`
                                     : wasUnpaid
                                       ? 'The time was released. Nothing was charged.'
                                       : 'No refund applies to this cancellation.'}
@@ -96,6 +97,9 @@ export function CancelDialog({ open, bookingId, unpaid, onClose, onCancelled }: 
                                 {preview && (
                                     <p>
                                         About <b>{formatPaise(preview.refundPaise)}</b> will be refunded ({preview.percent}% of {formatPaise(preview.paidPaise)}). This is an estimate. You will see the final amount after cancelling.
+                                        {(preview.walletPaidPaise ?? 0) > 0 && preview.refundPaise > 0 && (
+                                            <> It goes back the way you paid: {refundDestination(preview.refundPaise, preview.walletRefundPaise, formatPaise)}.</>
+                                        )}
                                     </p>
                                 )}
                                 {!preview && !previewError && <p>Checking your refund...</p>}

@@ -6,7 +6,8 @@ import { PrismaClient } from '@prisma/client';
 import { prisma } from '../../db';
 import { logAlert } from '../../utils/logger';
 import { ConsultRazorpay } from './consultations.razorpay';
-import { createRefundRecord, runRefund } from './consultations.refunds';
+import { paidParts } from './consultations.money';
+import { createRefundRecord, runRefunds } from './consultations.refunds';
 import { noShowDeadlines } from './consultations.room';
 import { CEILINGS } from './consultations.policy';
 
@@ -25,30 +26,35 @@ export async function settleNoShows(deps: Deps = {}) {
 
     const doctorCandidates = await db.consultation.findMany({
         where: { status: { in: ['CONFIRMED', 'WAITING'] }, doctorJoinedAt: null, startsAt: window },
-        select: { id: true, doctorId: true, startsAt: true, policySnapshot: true, confirmingPaymentId: true, payments: { select: { id: true, razorpayPaymentId: true } } },
+        select: { id: true, doctorId: true, startsAt: true, policySnapshot: true, confirmingPaymentId: true, payments: { select: { id: true, source: true, status: true, razorpayPaymentId: true } } },
         take: BATCH,
     });
     for (const c of doctorCandidates) {
         if (now < noShowDeadlines(c).doctorBy) continue;
-        const payment = c.payments.find((p) => p.razorpayPaymentId && p.razorpayPaymentId === c.confirmingPaymentId);
-        const { changed, refund } = await db.$transaction(async (tx) => {
+        // Everything paid comes back: the card part to the card, the wallet part to the wallet.
+        const parts = paidParts(c);
+        const { changed, refunds } = await db.$transaction(async (tx) => {
             const res = await tx.consultation.updateMany({
                 where: { id: c.id, status: { in: ['CONFIRMED', 'WAITING'] }, doctorJoinedAt: null },
                 data: { status: 'NO_SHOW_DOCTOR' },
             });
-            if (res.count !== 1 || !payment) return { changed: res.count === 1, refund: null };
-            return { changed: true, refund: await createRefundRecord(tx, { consultationId: c.id, paymentId: payment.id, reason: 'DOCTOR_NO_SHOW' }) };
+            const made = [];
+            if (res.count === 1) {
+                for (const part of parts) {
+                    const r = await createRefundRecord(tx, { consultationId: c.id, paymentId: part.id, reason: 'DOCTOR_NO_SHOW' });
+                    if (r) made.push(r);
+                }
+            }
+            return { changed: res.count === 1, refunds: made };
         });
         if (changed) {
             doctors++;
             // Staff follow up with the doctor; repeat offenders show on the admin doctor list.
             logAlert('consult_doctor_no_show', { consultationId: c.id, doctorId: c.doctorId });
         }
-        if (changed && !payment) logAlert('consult_doctor_no_show_without_payment', { consultationId: c.id });
-        if (refund?.status === 'PENDING') {
-            // The reconciler retries a refund that fails here.
-            await runRefund(refund.id, { db, razorpay: deps.razorpay }).catch(() => logAlert('consult_refund_run_error', { refundId: refund.id }));
-        }
+        if (changed && parts.length === 0) logAlert('consult_doctor_no_show_without_payment', { consultationId: c.id });
+        // The reconciler retries a refund that fails here.
+        await runRefunds(refunds, { db, razorpay: deps.razorpay });
     }
 
     const patientCandidates = await db.consultation.findMany({

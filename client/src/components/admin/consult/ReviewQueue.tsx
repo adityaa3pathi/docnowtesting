@@ -81,7 +81,11 @@ export function ReviewQueue() {
                                                 <span className="break-all text-xs text-gray-500">{p.id}</span>
                                             </div>
                                             <p className="mt-2 text-sm text-gray-700">{p.reviewReason ?? 'Needs a check.'}</p>
-                                            <p className="text-sm text-gray-500">Fee {formatPaise(p.feePaise)}</p>
+                                            <p className="text-sm text-gray-500">
+                                                {(p.walletPaise ?? 0) > 0
+                                                    ? `Card/UPI due ${formatPaise(p.feePaise - (p.walletPaise ?? 0))} (fee ${formatPaise(p.feePaise)}, ${formatPaise(p.walletPaise ?? 0)} from wallet)`
+                                                    : `Fee ${formatPaise(p.feePaise)}`}
+                                            </p>
                                             <div className="mt-3 flex gap-2">
                                                 <Button size="sm" onClick={() => setAction({ kind: 'confirm', id: p.id })}>Confirm</Button>
                                                 <Button size="sm" variant="outline" onClick={() => setAction({ kind: 'refund', id: p.id })}>Refund</Button>

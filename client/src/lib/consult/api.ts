@@ -61,7 +61,7 @@ export const consult = {
         api.get<DoctorSummary[]>('/consult/doctors', { params: specialtyId ? { specialtyId } : undefined }).then(data),
     doctor: (id: string) => api.get<DoctorPublicProfile>(`/consult/doctors/${id}`).then(data),
     slots: (doctorId: string) => api.get<Slot[]>(`/consult/doctors/${doctorId}/slots`).then(data),
-    createBooking: (body: { slotId: string; patientId: string; idempotencyKey: string }) =>
+    createBooking: (body: { slotId: string; patientId: string; idempotencyKey: string; useWallet?: boolean; expectedWalletPaise?: number }) =>
         api.post<CreateBookingResponse>('/consult/bookings', body).then(data),
     bookings: () => api.get<BookingView[]>('/consult/bookings').then(data),
     booking: (id: string) => api.get<BookingView>(`/consult/bookings/${id}`, { timeout: 10_000 }).then(data),

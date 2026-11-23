@@ -65,7 +65,7 @@ export async function runConsultCycle(deps: CycleDeps = {}) {
 
     // 1. A crash after creating the order but before storing its id: find the order by receipt.
     const orphans = await db.consultation.findMany({
-        where: { status: { in: OPEN_PAYMENT_STATUSES }, payments: { none: {} }, createdAt: { lt: new Date(now.getTime() - LIMITS.orphanMinAgeMs), gt: new Date(now.getTime() - LIMITS.lookbackMs) } },
+        where: { status: { in: OPEN_PAYMENT_STATUSES }, payments: { none: { source: 'RAZORPAY' } }, createdAt: { lt: new Date(now.getTime() - LIMITS.orphanMinAgeMs), gt: new Date(now.getTime() - LIMITS.lookbackMs) } },
         orderBy: { createdAt: 'desc' },
         take: LIMITS.batch,
     });
@@ -77,12 +77,12 @@ export async function runConsultCycle(deps: CycleDeps = {}) {
     // 2. Lapsed holds: confirm if Razorpay shows a captured payment, otherwise expire and free the slot.
     const lapsed = await db.consultation.findMany({
         where: { status: 'PENDING_PAYMENT', holdExpiresAt: { lt: now } },
-        include: { payments: true },
+        include: { payments: { where: { source: 'RAZORPAY' } } },
         take: LIMITS.batch,
     });
     await each('lapsed', lapsed, async (c) => {
         let paid = 0;
-        for (const orderId of new Set(c.payments.map((p) => p.razorpayOrderId))) paid += await confirmCaptured(orderId);
+        for (const orderId of new Set(c.payments.map((p) => p.razorpayOrderId!))) paid += await confirmCaptured(orderId);
         if (paid === 0) await db.$transaction((tx) => expireHold(tx, c.id));
     });
 
@@ -93,6 +93,7 @@ export async function runConsultCycle(deps: CycleDeps = {}) {
     const freshAfter = new Date(now.getTime() - LIMITS.freshOrderMs);
     const open = await db.consultationPayment.findMany({
         where: {
+            source: 'RAZORPAY',
             status: 'CREATED',
             razorpayPaymentId: null,
             createdAt: { lt: new Date(now.getTime() - LIMITS.openPaymentMinAgeMs), gt: new Date(now.getTime() - LIMITS.lookbackMs) },
@@ -105,7 +106,7 @@ export async function runConsultCycle(deps: CycleDeps = {}) {
         take: LIMITS.batch,
     });
     await each('open', open, async (p) => {
-        const found = await confirmCaptured(p.razorpayOrderId);
+        const found = await confirmCaptured(p.razorpayOrderId!);
         if (found === 0) await db.consultationPayment.updateMany({ where: { id: p.id }, data: { updatedAt: now } });
     });
 

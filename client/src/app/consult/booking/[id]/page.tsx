@@ -9,6 +9,7 @@ import { useAuthGate } from '@/contexts/AuthGateContext';
 import { useBookingFlow } from '@/hooks/useBookingFlow';
 import { consult } from '@/lib/consult/api';
 import { formatPaise } from '@/lib/consult/format';
+import { bookedPriceLines, refundDestination } from '@/lib/consult/price';
 import { formatCountdown } from '@/lib/consult/bookingFlow';
 import { changeTimeRules } from '@/lib/consult/changeTime';
 import { formatIstDateTime } from '@/lib/consult/time';
@@ -33,6 +34,16 @@ const REFUND_TEXT = {
 
 function RefundLine({ booking }: { booking: BookingView }) {
     if (booking.refundPaise <= 0) return null;
+    // Part of it went back to the wallet: say where each part goes, not "original payment method".
+    if ((booking.walletRefundPaise ?? 0) > 0) {
+        const done = booking.refundStatus === 'PROCESSED';
+        return (
+            <p className="rounded-xl bg-primary-soft px-4 py-3 text-sm font-semibold">
+                Refund {done ? 'sent' : 'on its way'}: {refundDestination(booking.refundPaise, booking.walletRefundPaise, formatPaise)}.
+                {booking.refundStatus === 'FAILED' && ' Part of it needs a manual step. Our team has been told.'}
+            </p>
+        );
+    }
     return (
         <p className="rounded-xl bg-primary-soft px-4 py-3 text-sm font-semibold">
             {formatPaise(booking.refundPaise)}: {booking.refundStatus ? REFUND_TEXT[booking.refundStatus] : 'Refund being prepared'}
@@ -141,8 +152,7 @@ function BookingDetail() {
             startsAt={booking.startsAt}
             endsAt={booking.endsAt}
             personName={booking.patientName}
-            amount={formatPaise(booking.amountPaise)}
-            amountLabel="Amount"
+            {...bookedPriceLines(booking, formatPaise)}
         />
     );
     const paidButUnsettled = booking.status === 'PENDING_PAYMENT' && (booking.paymentCaptured || flow.paidHere);
