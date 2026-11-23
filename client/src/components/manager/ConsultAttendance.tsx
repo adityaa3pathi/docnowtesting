@@ -105,7 +105,12 @@ function Report({ report }: { report: AttendanceReport }) {
             )}
 
             {report.issues.length > 0 && (
-                <Table caption="Consultations with a no-show or late join" head={['When (IST)', 'Doctor', 'Patient', 'Doctor joined', 'Patient joined']}>
+                <Table
+                    caption={report.issuesTotal > report.issues.length
+                        ? `Consultations with a no-show or late join (newest ${report.issues.length} of ${report.issuesTotal}; Export CSV for all)`
+                        : 'Consultations with a no-show or late join'}
+                    head={['When (IST)', 'Doctor', 'Patient', 'Doctor joined', 'Patient joined']}
+                >
                     {report.issues.map((r) => (
                         <tr key={r.consultationId}>
                             <td className={cn(td, 'whitespace-nowrap')}>{formatIstDateTime(r.startsAt)}</td>

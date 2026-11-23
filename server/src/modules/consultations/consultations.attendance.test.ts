@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../db', () => ({ prisma: {} }));
-const { attendanceRange, classify, csvCell, LATE_AFTER_MINUTES } = await import('./consultations.attendance');
+const { attendanceQuery, attendanceRange, classify, csvCell, LATE_AFTER_MINUTES } = await import('./consultations.attendance');
 
 const start = new Date('2026-11-20T05:30:00Z'); // 11:00 IST
 const at = (minutes: number, seconds = 0) => new Date(start.getTime() + minutes * 60_000 + seconds * 1000);
@@ -50,6 +50,15 @@ describe('attendanceRange: IST days', () => {
         expect(() => attendanceRange({ from: '2026-11-02', to: '2026-11-01' })).toThrow('The start date must be on or before the end date');
         expect(() => attendanceRange({ from: '2025-01-01', to: '2026-01-01' })).not.toThrow();
         expect(() => attendanceRange({ from: '2025-01-01', to: '2026-01-02' })).toThrow('Pick a range of at most 366 days');
+    });
+});
+
+describe('attendanceQuery', () => {
+    it('takes real calendar days only', () => {
+        expect(attendanceQuery.safeParse({ from: '2028-02-29', to: '2028-03-01' }).success).toBe(true);
+        for (const bad of ['2026-02-29', '2026-02-31', '2026-13-01', '2026-11-1']) {
+            expect(attendanceQuery.safeParse({ from: bad }).success).toBe(false);
+        }
     });
 });
 

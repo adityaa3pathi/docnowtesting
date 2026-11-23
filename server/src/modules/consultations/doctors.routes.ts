@@ -116,6 +116,9 @@ consultPublicRoutes.get('/doctors/:id/photo', async (req, res) => {
         const link = id.success ? await doctorPhotoLink(id.data) : null;
         if (!link) return res.status(404).json({ error: 'No photo' });
         res.set('Cache-Control', 'public, max-age=3600');
+        // The site (docnow.in) shows these from the API's origin (api.docnow.in); helmet's default
+        // same-origin policy would block every doctor photo. They are public, so any origin may embed them.
+        res.set('Cross-Origin-Resource-Policy', 'cross-origin');
         res.redirect(302, link);
     } catch (e) { fail(res, e, 'doctor photo'); }
 });

@@ -50,7 +50,11 @@ export function DoctorForm() {
 
     async function pickPhoto(file: File | undefined) {
         if (!file) return;
-        if (!PHOTO_TYPES.includes(file.type)) return setPhotoError('Choose a JPG, PNG or WebP photo.');
+        if (!PHOTO_TYPES.includes(file.type)) {
+            // Drop any earlier pick too, so the form never sends a photo the admin meant to replace.
+            setPhoto(null);
+            return setPhotoError('Choose a JPG, PNG or WebP photo.');
+        }
         const blob = await shrinkPhoto(file);
         setPhoto({ blob, preview: URL.createObjectURL(blob) });
         setPhotoError(null);

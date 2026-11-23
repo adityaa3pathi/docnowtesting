@@ -79,8 +79,10 @@ describeDb('manager report: consultation no-shows and late joins (real Postgres)
 
     it('counts due consultations only, with no-shows and late joins per side', async () => {
         await scenario();
-        const { status, body } = await getJson(`${app.url}/manager/consult/attendance`, managerToken);
-        expect(status).toBe(200);
+        const res = await fetch(`${app.url}/manager/consult/attendance`, { headers: { authorization: `Bearer ${managerToken}` } });
+        expect(res.status).toBe(200);
+        expect(res.headers.get('cache-control')).toBe('private, no-store');
+        const body = await res.json();
         expect(body.lateAfterMinutes).toBe(5);
         expect(body.truncated).toBe(false);
         expect(body.totals).toEqual({
@@ -108,6 +110,7 @@ describeDb('manager report: consultation no-shows and late joins (real Postgres)
         const { c } = await scenario();
         const { body } = await getJson(`${app.url}/manager/consult/attendance`, managerToken);
         expect(body.issues.map((r: { consultationId: string }) => r.consultationId)).toEqual([c.refundedNoShow.id, c.doctorNoShow.id, c.patientNoShow.id, c.bothLate.id]);
+        expect(body.issuesTotal).toBe(4);
         const late = body.issues[3];
         expect(late).toMatchObject({ doctorName: 'Dr Asha', patientName: 'Priya', status: 'COMPLETED' });
         expect(late.doctor).toMatchObject({ outcome: 'LATE', minutesLate: 8 });
@@ -121,7 +124,7 @@ describeDb('manager report: consultation no-shows and late joins (real Postgres)
         expect(body.totals.consultations).toBe(1);
         expect(body.issues.map((r: { consultationId: string }) => r.consultationId)).toEqual([c.old.id]);
 
-        for (const [query, error] of [['from=2026-11-02&to=2026-11-01', 'The start date must be on or before the end date'], ['from=1-2-2026', 'Dates must be YYYY-MM-DD']]) {
+        for (const [query, error] of [['from=2026-11-02&to=2026-11-01', 'The start date must be on or before the end date'], ['from=1-2-2026', 'Dates must be YYYY-MM-DD'], ['from=2026-02-31', 'That date does not exist']]) {
             const res = await getJson(`${app.url}/manager/consult/attendance?${query}`, managerToken);
             expect(res).toEqual({ status: 400, body: { error } });
         }
@@ -143,6 +146,7 @@ describeDb('manager report: consultation no-shows and late joins (real Postgres)
         const res = await fetch(`${app.url}/manager/consult/attendance.csv?from=${from}&to=${to}`, { headers: { authorization: `Bearer ${managerToken}` } });
         expect(res.status).toBe(200);
         expect(res.headers.get('content-type')).toContain('text/csv');
+        expect(res.headers.get('cache-control')).toBe('private, no-store');
         expect(res.headers.get('content-disposition')).toBe(`attachment; filename="consult-no-shows-${from}-to-${to}.csv"`);
         const lines = (await res.text()).replace(/^﻿/, '').split('\r\n');
         expect(lines[0]).toContain('"Doctor attendance"');

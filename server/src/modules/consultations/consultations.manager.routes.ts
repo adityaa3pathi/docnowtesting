@@ -5,7 +5,7 @@
 import { Response, Router } from 'express';
 import { authMiddleware, AuthRequest } from '../../middleware/auth';
 import { requireManager } from '../../middleware/requireManager';
-import { attendanceCsv, attendanceQuery, buildAttendanceReport } from './consultations.attendance';
+import { attendanceCsv, attendanceQuery, buildAttendanceReport, MAX_ISSUES_SHOWN } from './consultations.attendance';
 import { DoctorError } from './doctors.status';
 
 export const consultManagerRoutes = Router();
@@ -23,6 +23,8 @@ async function report(req: AuthRequest, res: Response) {
         res.status(400).json({ error: parse.error.issues[0].message });
         return null;
     }
+    // Patients' names and mobiles: never kept by a browser or proxy cache.
+    res.setHeader('Cache-Control', 'private, no-store');
     return buildAttendanceReport(parse.data);
 }
 
@@ -30,7 +32,8 @@ async function report(req: AuthRequest, res: Response) {
 consultManagerRoutes.get('/attendance', ...mgr, async (req: AuthRequest, res: Response) => {
     try {
         const r = await report(req, res);
-        if (r) res.json(r);
+        // The newest problems only; a long range can hold thousands, and the CSV has them all.
+        if (r) res.json({ ...r, issues: r.issues.slice(0, MAX_ISSUES_SHOWN), issuesTotal: r.issues.length });
     } catch (e) { fail(res, e, 'attendance'); }
 });
 

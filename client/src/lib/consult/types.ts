@@ -110,7 +110,6 @@ export interface DoctorProfileInput {
     experienceYears: number;
     languages: string[];
     bio?: string;
-    photoUrl?: string;
     gender?: DoctorGender;
 }
 
@@ -379,6 +378,8 @@ export interface AttendanceReport {
     totals: { consultations: number; doctor: AttendanceCounts; patient: AttendanceCounts };
     doctors: (AttendanceCounts & { doctorId: string; name: string })[];
     patients: (AttendanceCounts & { patientId: string; name: string; mobile: string | null })[];
+    /** All problem consultations in the range; `issues` holds only the newest ones (the CSV has all). */
+    issuesTotal: number;
     issues: {
         consultationId: string;
         startsAt: string;

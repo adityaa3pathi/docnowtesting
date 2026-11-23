@@ -23,7 +23,7 @@ const button = (label: string) => Array.from(document.querySelectorAll('button')
 
 const side = (outcome: string, minutesLate: number | null = null) => ({ outcome, joinedAt: null, minutesLate });
 const report = (over: Partial<AttendanceReport> = {}): AttendanceReport => ({
-    from: '2026-10-25', to: '2026-11-23', lateAfterMinutes: 5, truncated: false,
+    from: '2026-10-25', to: '2026-11-23', lateAfterMinutes: 5, truncated: false, issuesTotal: 2,
     totals: {
         consultations: 5,
         doctor: { consultations: 5, noShows: 2, late: 1, avgMinutesLate: 8 },
@@ -119,6 +119,12 @@ describe('Consult no-shows report (manager portal)', () => {
         m.attendance.mockResolvedValue(report({ truncated: true }));
         await render();
         expect(text()).toContain('The numbers below are partial. Pick a shorter range.');
+    });
+
+    it('says when the problem list shows only the newest rows', async () => {
+        m.attendance.mockResolvedValue(report({ issuesTotal: 731 }));
+        await render();
+        expect(text()).toContain('newest 2 of 731; Export CSV for all');
     });
 
     it('shows the server error', async () => {

@@ -30,7 +30,7 @@ function mapUniqueError(e: unknown): never {
 
 export async function registerDoctor(userId: string, data: {
     displayName: string; specialtyId: string; qualification: string; registrationNumber: string;
-    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; photoUrl?: string; gender?: string;
+    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; gender?: string;
 }) {
     await assertActiveSpecialty(data.specialtyId);
     if (await prisma.doctorProfile.findUnique({ where: { userId } })) {
@@ -47,7 +47,7 @@ export async function registerDoctor(userId: string, data: {
 /** A rejected doctor fixes the application and sends it back for review. */
 export async function resubmitDoctor(userId: string, data: {
     displayName: string; specialtyId: string; qualification: string; registrationNumber: string;
-    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; photoUrl?: string; gender?: string;
+    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; gender?: string;
 }) {
     const current = await prisma.doctorProfile.findUnique({ where: { userId } });
     if (!current) throw new DoctorError(404, 'No doctor profile');

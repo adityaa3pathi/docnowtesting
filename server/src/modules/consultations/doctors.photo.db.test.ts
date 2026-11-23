@@ -128,6 +128,34 @@ describeDb('doctor photos (real Postgres)', () => {
         });
     });
 
+    describe('a photo only arrives as an uploaded file', () => {
+        const send = (method: string, url: string, token: string, body: unknown) =>
+            fetch(url, { method, headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
+        const link = 'https://example.com/someone-else.jpg';
+
+        it('ignores a photo link sent at sign-up, in a self-edit or in an admin edit, so approval still needs an upload', async () => {
+            const specialty = await testDb.specialty.upsert({ where: { name: 'Test Specialty' }, update: {}, create: { name: 'Test Specialty', slug: 'test-specialty' } });
+            const applicant = await makeUser();
+            const reg = await send('POST', `${doctorApp.url}/doctor/register`, tokenFor(applicant), {
+                displayName: 'Dr Link', specialtyId: specialty.id, qualification: 'MBBS', registrationNumber: `L-${randomUUID().slice(0, 8)}`,
+                registrationCouncil: 'Test Council', experienceYears: 3, languages: ['English'], gender: 'Female', photoUrl: link,
+            });
+            expect(reg.status).toBe(201);
+            const applied = await testDb.doctorProfile.findUniqueOrThrow({ where: { userId: applicant.id } });
+            expect(applied.photoUrl).toBeNull();
+
+            const admin = await makeUser('SUPER_ADMIN');
+            expect((await send('PATCH', `${adminApp.url}/admin/doctors/${applied.id}`, tokenFor(admin), { photoUrl: link, consultationFee: 400 })).status).toBe(200);
+            expect((await photoOf(applied.id)).photoUrl).toBeNull();
+            const approve = await fetch(`${adminApp.url}/admin/doctors/${applied.id}/approve`, { method: 'POST', headers: { authorization: `Bearer ${tokenFor(admin)}` } });
+            expect(approve.status).toBe(400);
+
+            const live = await makeDoctor();
+            expect((await send('PATCH', `${doctorApp.url}/doctor/me`, tokenFor(live.user), { photoUrl: link, bio: 'Hello' })).status).toBe(200);
+            expect((await photoOf(live.profile.id)).photoUrl).toBeNull();
+        });
+    });
+
     describe('stable photo link', () => {
         it('redirects to a fresh signed link and lets browsers cache the redirect', async () => {
             const d = await makeDoctor({ status: 'PENDING' });
@@ -137,6 +165,28 @@ describeDb('doctor photos (real Postgres)', () => {
             expect(res.status).toBe(302);
             expect(res.headers.get('location')).toBe(`https://s3.test/${key}?X-Amz-Signature=fresh`);
             expect(res.headers.get('cache-control')).toBe('public, max-age=3600');
+            // The site embeds these from the API's origin, so helmet's same-origin default must not apply.
+            expect(res.headers.get('cross-origin-resource-policy')).toBe('cross-origin');
+        });
+
+        it('stays embeddable from the site behind helmet, as in production', async () => {
+            const { default: express } = await import('express');
+            const { default: helmet } = await import('helmet');
+            const routes = await import('./doctors.routes');
+            const app = express();
+            app.use(helmet());
+            app.use('/consult', routes.consultPublicRoutes);
+            const server = await new Promise<import('http').Server>((r) => { const srv = app.listen(0, '127.0.0.1', () => r(srv)); });
+            try {
+                const d = await makeDoctor();
+                await upload(tokenFor(d.user), jpegBytes());
+                const { port } = server.address() as import('net').AddressInfo;
+                const res = await fetch(`http://127.0.0.1:${port}/consult/doctors/${d.profile.id}/photo`, { redirect: 'manual' });
+                expect(res.status).toBe(302);
+                expect(res.headers.get('cross-origin-resource-policy')).toBe('cross-origin');
+            } finally {
+                await new Promise((r) => server.close(r));
+            }
         });
 
         it('serves a pending doctor\'s photo too, because approval needs one first', async () => {

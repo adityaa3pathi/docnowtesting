@@ -18,19 +18,18 @@ const profileFields = {
     experienceYears: z.number().int().min(0).max(70).default(0),
     languages: z.array(z.string().trim().min(2)).min(1, 'At least one language is required'),
     bio: z.string().trim().max(1000).optional(),
-    photoUrl: z.string().url().optional(),
     gender: z.enum(DOCTOR_GENDERS).optional(),
 };
+// No photoUrl anywhere here: a photo arrives only as an uploaded file (POST /doctor/me/photo, or the
+// admin create and photo routes), so approval's photo check always means a real stored photo.
 
 export const SLOT_MINUTES = [10, 15, 20, 30, 45, 60] as const;
 
 // Self sign-up must give gender (patients filter by it); admin-created profiles may add it later.
 export const registerDoctorSchema = z.object({ ...profileFields, gender: z.enum(DOCTOR_GENDERS, 'Please choose your gender') });
 
-// The photo comes as an uploaded file with the request (see adminCreateDoctor), never as a link.
-const { photoUrl: _photoUrl, ...adminCreateFields } = profileFields;
 export const adminCreateDoctorSchema = z.object({
-    ...adminCreateFields,
+    ...profileFields,
     mobile,
     consultationFee: z.number().positive('Fee must be positive'),
     slotMinutes: z.number().refine((n) => (SLOT_MINUTES as readonly number[]).includes(n), 'Invalid slot length').default(15),
@@ -44,7 +43,6 @@ export const adminUpdateDoctorSchema = z.object({
 
 export const doctorSelfUpdateSchema = z.object({
     bio: profileFields.bio,
-    photoUrl: profileFields.photoUrl,
     languages: profileFields.languages,
     experienceYears: profileFields.experienceYears,
     gender: profileFields.gender,

@@ -91,10 +91,14 @@ describe('Add a doctor form: the photo is required', () => {
         expect(text()).toContain('Add the doctor’s photo.');
     });
 
-    it('refuses a file that is not a photo', async () => {
+    it('refuses a file that is not a photo, and drops an earlier pick so it is not sent instead', async () => {
         await render(<DoctorForm />);
+        await fillDetails();
+        await pickFile('photo', jpeg());
         await pickFile('photo', new File(['%PDF'], 'cv.pdf', { type: 'application/pdf' }));
         expect(text()).toContain('Choose a JPG, PNG or WebP photo.');
+        await submit();
+        expect(m.createDoctor).not.toHaveBeenCalled();
     });
 
     it('sends the details with the photo, then opens the new doctor', async () => {

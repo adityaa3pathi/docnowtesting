@@ -25,9 +25,16 @@ export const LATE_AFTER_MINUTES = DOCTOR_LATE_AFTER_MS / 60_000;
 export const MAX_RANGE_DAYS = 366;
 /** Consultations loaded per report; past this the counts would be partial, so the report says so. */
 export const MAX_CONSULTATIONS = 20_000;
+/** Problem rows sent to the page; the CSV export has them all. */
+export const MAX_ISSUES_SHOWN = 500;
 const DAY_MS = 24 * 3_600_000;
 
-const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Dates must be YYYY-MM-DD');
+// A real calendar day: 2026-02-31 would otherwise roll over to 3 March while the report still said 31 Feb.
+const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Dates must be YYYY-MM-DD')
+    .refine((d) => {
+        const t = Date.parse(`${d}T00:00:00Z`);
+        return !Number.isNaN(t) && new Date(t).toISOString().slice(0, 10) === d;
+    }, 'That date does not exist');
 export const attendanceQuery = z.object({ from: isoDay.optional(), to: isoDay.optional() });
 export type AttendanceQuery = z.infer<typeof attendanceQuery>;
 
