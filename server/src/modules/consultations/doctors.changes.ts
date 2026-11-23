@@ -138,14 +138,21 @@ export async function withdrawChange(doctorId: string, requestId: string) {
     });
 }
 
-/** The doctor's recent requests, newest first. Replaced and withdrawn ones are left out. */
-export function myChanges(doctorId: string) {
-    return prisma.doctorChangeRequest.findMany({
-        where: { doctorId, status: { in: ['PENDING', 'APPROVED', 'REJECTED'] } },
-        select: doctorChangeSelect,
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-    });
+/**
+ * The doctor's pending requests (always) plus their recent decided and withdrawn ones, newest first.
+ * Withdrawn ones are there so an old rejection is not shown as the latest news after a take-back.
+ */
+export async function myChanges(doctorId: string) {
+    const [pending, recent] = await Promise.all([
+        prisma.doctorChangeRequest.findMany({ where: { doctorId, status: 'PENDING' }, select: doctorChangeSelect }),
+        prisma.doctorChangeRequest.findMany({
+            where: { doctorId, status: { in: ['APPROVED', 'REJECTED', 'WITHDRAWN'] } },
+            select: doctorChangeSelect,
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+        }),
+    ]);
+    return [...pending, ...recent].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 // ── Super admin ─────────────────────────────────────────
@@ -231,9 +238,10 @@ export async function listChanges(status: 'PENDING' | 'APPROVED' | 'REJECTED' = 
         const live = r.kind === 'AVAILABILITY'
             ? { windows: sortWindows(availability), slotMinutes }
             : { bio, languages, experienceYears };
-        const keptOutside = r.status === 'PENDING' && r.kind === 'AVAILABILITY'
-            ? await bookedOutside(prisma, doctor.id, storedAvailability.parse(r.payload).windows)
-            : null;
+        // One unreadable payload must not take the whole queue down.
+        const hours = r.status === 'PENDING' && r.kind === 'AVAILABILITY' ? storedAvailability.safeParse(r.payload) : null;
+        if (hours && !hours.success) logger.warn({ requestId: r.id }, 'doctor_change_payload_unreadable');
+        const keptOutside = hours?.success ? await bookedOutside(prisma, doctor.id, hours.data.windows) : null;
         return { ...rest, doctor: who, live, bookedOutsideNewHours: keptOutside };
     }));
 
@@ -247,7 +255,7 @@ export async function listChanges(status: 'PENDING' | 'APPROVED' | 'REJECTED' = 
     const recentLeave = await Promise.all(leaves.map(async (l) => ({
         ...l,
         bookedInside: await prisma.slot.count({
-            where: { doctorId: l.doctorId, status: 'BOOKED', startsAt: { lt: l.endsAt }, endsAt: { gt: l.startsAt } },
+            where: { doctorId: l.doctorId, status: 'BOOKED', AND: [{ startsAt: { lt: l.endsAt } }, { startsAt: { gt: new Date() } }], endsAt: { gt: l.startsAt } },
         }),
     })));
     return { requests: items, recentLeave };

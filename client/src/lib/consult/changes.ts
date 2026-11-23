@@ -13,19 +13,22 @@ export function pendingChange(changes: DoctorChangeRequest[] | undefined, kind: 
     return changes?.find((c) => c.kind === kind && c.status === 'PENDING') ?? null;
 }
 
-/** The newest decided change of this kind, unless a newer one is waiting. */
+/** The newest decided change of this kind, unless a newer one is waiting or was taken back. */
 export function lastDecision(changes: DoctorChangeRequest[] | undefined, kind: DoctorChangeKind): DoctorChangeRequest | null {
     const newest = changes?.find((c) => c.kind === kind);
-    return newest && newest.status !== 'PENDING' ? newest : null;
+    return newest && (newest.status === 'APPROVED' || newest.status === 'REJECTED') ? newest : null;
 }
 
 /**
  * The doctor's list after sending a change: the new pending request goes first and replaces the old
- * pending one of its kind. `request` null means nothing is waiting any more (it matched the live values).
+ * pending one of its kind. `request` null means nothing is waiting any more (taken back, or it matched
+ * the live values): the old pending one is kept as withdrawn, so an older rejection is not news again.
  */
 export function withChange(changes: DoctorChangeRequest[] | undefined, kind: DoctorChangeKind, request: DoctorChangeRequest | null): DoctorChangeRequest[] {
-    const rest = (changes ?? []).filter((c) => !(c.kind === kind && c.status === 'PENDING'));
-    return request ? [request, ...rest] : rest;
+    const list = changes ?? [];
+    const isPending = (c: DoctorChangeRequest) => c.kind === kind && c.status === 'PENDING';
+    if (request) return [request, ...list.filter((c) => !isPending(c))];
+    return list.map((c) => (isPending(c) ? { ...c, status: 'WITHDRAWN' as const } : c));
 }
 
 export function dayHoursText(windows: AvailabilityWindow[], day: number): string {

@@ -20,10 +20,16 @@ describe('pending and last decision', () => {
         expect(lastDecision([req({ id: 'new' }), req({ id: 'old', status: 'REJECTED' })], 'AVAILABILITY')).toBeNull();
     });
 
-    it('a resend replaces the pending one; null removes it', () => {
+    it('a resend replaces the pending one; null marks it withdrawn', () => {
         const list = [req({ id: 'p' }), req({ id: 'x', kind: 'PROFILE' }), req({ id: 'done', status: 'APPROVED' })];
         expect(withChange(list, 'AVAILABILITY', req({ id: 'n' })).map((c) => c.id)).toEqual(['n', 'x', 'done']);
-        expect(withChange(list, 'AVAILABILITY', null).map((c) => c.id)).toEqual(['x', 'done']);
+        expect(withChange(list, 'AVAILABILITY', null).map((c) => [c.id, c.status])).toEqual([['p', 'WITHDRAWN'], ['x', 'PENDING'], ['done', 'APPROVED']]);
+    });
+
+    it('an old rejection is not shown again after the doctor takes back a newer change', () => {
+        const list = [req({ id: 'new' }), req({ id: 'old', status: 'REJECTED', reviewReason: 'No' })];
+        expect(lastDecision(withChange(list, 'AVAILABILITY', null), 'AVAILABILITY')).toBeNull();
+        expect(pendingChange(withChange(list, 'AVAILABILITY', null), 'AVAILABILITY')).toBeNull();
     });
 });
 

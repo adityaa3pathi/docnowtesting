@@ -215,8 +215,9 @@ doctorRoutes.patch('/me', ...mine, consultCsrfGuard, async (req: AuthRequest, re
         if (!parse.success) return bad(res, parse);
         const id = await myDoctorId(req);
         const { gender, ...reviewed } = parse.data;
-        if (gender) await prisma.doctorProfile.update({ where: { id }, data: { gender } });
+        // The reviewed part first: if it fails, nothing is saved and the error is the whole answer.
         const { request } = Object.keys(reviewed).length ? await submitProfileChange(id, reviewed) : { request: undefined };
+        if (gender) await prisma.doctorProfile.update({ where: { id }, data: { gender } });
         const doctor = await prisma.doctorProfile.findUniqueOrThrow({ where: { id }, include: { specialty: true, availability: true } });
         res.status(request ? 202 : 200).json({ doctor, request: request ?? null });
     } catch (e) { fail(res, e, 'update me'); }

@@ -35,17 +35,16 @@ export function DoctorChangeQueue() {
     const [outcomes, setOutcomes] = useState<string[]>([]);
     const note = (m: string) => setOutcomes((o) => [m, ...o].slice(0, 5));
 
+    // Refresh after every attempt: a 409 means the card on screen is out of date.
     async function approve(change: AdminDoctorChange) {
-        const r = await admin.approveChange(change.id);
+        const r = await admin.approveChange(change.id).finally(() => void refetch());
         const n = r.bookedKeptOutsideHours;
         const kept = n ? ` ${plural(n, 'booked appointment')} outside the new hours ${n === 1 ? 'stays' : 'stay'} booked.` : '';
         note(`${change.doctor.displayName}: ${CHANGE_KIND_LABEL[change.kind].toLowerCase()} approved.${kept}`);
-        void refetch();
     }
     async function reject(change: AdminDoctorChange, reason: string) {
-        await admin.rejectChange(change.id, reason);
+        await admin.rejectChange(change.id, reason).finally(() => void refetch());
         note(`${change.doctor.displayName}: ${CHANGE_KIND_LABEL[change.kind].toLowerCase()} not approved. The doctor sees your reason.`);
-        void refetch();
     }
 
     return (

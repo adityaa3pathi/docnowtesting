@@ -143,7 +143,8 @@ export interface ProfileChange {
 export interface DoctorChangeRequest {
     id: string;
     kind: DoctorChangeKind;
-    status: DoctorChangeStatus;
+    /** WITHDRAWN only in the doctor's own list: a change they took back. */
+    status: DoctorChangeStatus | 'WITHDRAWN';
     payload: HoursChange | ProfileChange;
     /** The live values when the doctor sent it. */
     previous: HoursChange | ProfileChange;

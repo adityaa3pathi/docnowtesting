@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { describeDb, makeDoctor, makeUser, resetConsultData, testDb } from './test/db';
+import { describeDb, makeConsultation, makeDoctor, makePatient, makeUser, resetConsultData, testDb } from './test/db';
 import { serve, tokenFor, useTestJwtSecret } from './test/http';
 
 useTestJwtSecret();
@@ -217,6 +217,91 @@ describeDb('doctor changes wait for super-admin approval (real Postgres)', () =>
             expect(res.status).toBe(200);
             expect((await res.json()).request).toBeNull();
             expect(await testDb.doctorChangeRequest.count({ where: { doctorId: w.doctor.profile.id } })).toBe(0);
+        });
+    });
+
+    describe('review findings', () => {
+        const noOverlaps = (rows: { startsAt: Date; endsAt: Date }[]) =>
+            rows.every((a, i) => rows.every((b, j) => i === j || !(a.startsAt < b.endsAt && a.endsAt > b.startsAt)));
+
+        it('saving only the gender leaves experience and a pending bio change alone', async () => {
+            const w = await world();
+            await testDb.doctorProfile.update({ where: { id: w.doctor.profile.id }, data: { experienceYears: 12 } });
+            const sent = await (await asDoctor(w.doctorToken, 'PATCH', '/me', { bio: 'Family doctor' })).json();
+            const res = await asDoctor(w.doctorToken, 'PATCH', '/me', { gender: 'Male' });
+            expect(res.status).toBe(200);
+            expect((await res.json()).request).toBeNull();
+            expect((await testDb.doctorChangeRequest.findUniqueOrThrow({ where: { id: sent.request.id } })).status).toBe('PENDING');
+            expect(await testDb.doctorChangeRequest.count({ where: { doctorId: w.doctor.profile.id } })).toBe(1);
+            expect(await testDb.doctorProfile.findUniqueOrThrow({ where: { id: w.doctor.profile.id } })).toMatchObject({ experienceYears: 12, gender: 'Male' });
+        });
+
+        it("an admin's slot-length edit keeps the doctor's experience", async () => {
+            const w = await world();
+            await testDb.doctorProfile.update({ where: { id: w.doctor.profile.id }, data: { experienceYears: 15 } });
+            expect((await asAdmin(w.adminToken, 'PATCH', `/doctors/${w.doctor.profile.id}`, { slotMinutes: 30 })).status).toBe(200);
+            expect((await testDb.doctorProfile.findUniqueOrThrow({ where: { id: w.doctor.profile.id } })).experienceYears).toBe(15);
+        });
+
+        it('a freed old-length slot never ends up overlapping new ones after the daily top-up', async () => {
+            const w = await world();
+            const held = await testDb.slot.findFirstOrThrow({ where: { doctorId: w.doctor.profile.id, startsAt: w.at(615) } });
+            await testDb.slot.update({ where: { id: held.id }, data: { status: 'BOOKED' } });
+            const { request } = await (await asDoctor(w.doctorToken, 'PUT', '/me/availability', {
+                windows: [{ dayOfWeek: w.dow, startMinute: 600, endMinute: 720 }], slotMinutes: 20,
+            })).json();
+            expect((await asAdmin(w.adminToken, 'POST', `/doctor-changes/${request.id}/approve`)).status).toBe(200);
+            // The hold expires: the 15-minute slot is free again.
+            await testDb.slot.update({ where: { id: held.id }, data: { status: 'AVAILABLE' } });
+            await service.extendAllDoctorSlots();
+            const live = (await daySlots(w.doctor.profile.id, w.at(0), w.at(1440))).filter((s) => s.status !== 'BLOCKED');
+            expect(noOverlaps(live)).toBe(true);
+            // The next rebuild tidies it into the 20-minute grid.
+            await service.setAvailability(w.doctor.profile.id, [{ dayOfWeek: w.dow, startMinute: 600, endMinute: 720 }]);
+            const tidy = (await daySlots(w.doctor.profile.id, w.at(0), w.at(1440))).filter((s) => s.status === 'AVAILABLE');
+            expect(tidy.map((s) => (s.startsAt.getTime() - w.at(0).getTime()) / 60_000)).toEqual([600, 620, 640, 660, 680, 700]);
+        });
+
+        it('a slot with booking history is resized, so its start time stays bookable after a length change', async () => {
+            const w = await world();
+            const slot = await testDb.slot.findFirstOrThrow({ where: { doctorId: w.doctor.profile.id, startsAt: w.at(600) } });
+            const patient = await makePatient(w.doctor.user.id);
+            await makeConsultation({ userId: w.doctor.user.id, patientId: patient.id, doctorId: w.doctor.profile.id, slotId: slot.id, startsAt: slot.startsAt, status: 'EXPIRED' });
+            const { request } = await (await asDoctor(w.doctorToken, 'PUT', '/me/availability', {
+                windows: [{ dayOfWeek: w.dow, startMinute: 600, endMinute: 720 }], slotMinutes: 20,
+            })).json();
+            expect((await asAdmin(w.adminToken, 'POST', `/doctor-changes/${request.id}/approve`)).status).toBe(200);
+            const after = await testDb.slot.findUniqueOrThrow({ where: { id: slot.id } });
+            expect(after).toMatchObject({ status: 'AVAILABLE', endsAt: w.at(620) });
+            const open = (await daySlots(w.doctor.profile.id, w.at(0), w.at(1440))).filter((s) => s.status === 'AVAILABLE');
+            expect(open.map((s) => (s.startsAt.getTime() - w.at(0).getTime()) / 60_000)).toEqual([600, 620, 640, 660, 680, 700]);
+            expect(noOverlaps(open)).toBe(true);
+        });
+
+        it('a doctor cannot reopen an old-length blocked slot across the new ones', async () => {
+            const w = await world();
+            const old = await testDb.slot.findFirstOrThrow({ where: { doctorId: w.doctor.profile.id, startsAt: w.at(615) } });
+            await testDb.slot.update({ where: { id: old.id }, data: { status: 'BLOCKED' } });
+            // A rebuild leaves the doctor's own block alone, so the 15-minute row survives the switch to 20.
+            await service.setAvailability(w.doctor.profile.id, [{ dayOfWeek: w.dow, startMinute: 600, endMinute: 720 }], 20);
+            expect((await testDb.slot.findUniqueOrThrow({ where: { id: old.id } })).endsAt).toEqual(w.at(630));
+            const res = await asDoctor(w.doctorToken, 'POST', `/me/slots/${old.id}/unblock`);
+            expect(res.status).toBe(409);
+            expect((await testDb.slot.findUniqueOrThrow({ where: { id: old.id } })).status).toBe('BLOCKED');
+        });
+
+        it('a pending change stays in the doctor list however many decided ones come after it', async () => {
+            const w = await world();
+            const { request } = await (await asDoctor(w.doctorToken, 'PUT', '/me/availability', { windows: [] })).json();
+            await testDb.doctorChangeRequest.createMany({
+                data: Array.from({ length: 12 }, (_, i) => ({
+                    doctorId: w.doctor.profile.id, kind: 'PROFILE' as const, status: 'APPROVED' as const, payload: { bio: `v${i}` }, previous: {},
+                    createdAt: new Date(Date.now() + (i + 1) * 1000),
+                })),
+            });
+            const me = await (await asDoctor(w.doctorToken, 'GET', '/me')).json();
+            expect(me.changeRequests.some((c: any) => c.id === request.id && c.status === 'PENDING')).toBe(true);
+            expect(me.changeRequests).toHaveLength(11);
         });
     });
 
