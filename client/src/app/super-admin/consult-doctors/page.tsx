@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { PageHeader, inputCls } from '@/components/admin/consult/shared';
-import { Badge } from '@/components/consult/Badge';
+import { Badge, Notice } from '@/components/ui';
 import { EmptyState, ErrorState, LoadingBlock } from '@/components/consult/States';
 import { useApi } from '@/hooks/useApi';
 import { admin } from '@/lib/consult/api';
@@ -22,6 +22,8 @@ const FILTERS = [
 export default function ConsultDoctorsPage() {
     const [status, setStatus] = useState('');
     const { data, error, loading, refetch } = useApi(() => admin.doctors(status || undefined), [status]);
+    // Live doctors without a photo show initials to patients. They stay live; an admin adds the photo.
+    const liveWithoutPhoto = (data ?? []).filter((d) => d.status === 'APPROVED' && !d.photoUrl).length;
 
     return (
         <div className="mx-auto max-w-[1100px]">
@@ -40,6 +42,11 @@ export default function ConsultDoctorsPage() {
                     {FILTERS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
                 </select>
             </div>
+            {!loading && liveWithoutPhoto > 0 && (
+                <Notice tone="warning" title={`${liveWithoutPhoto} live ${liveWithoutPhoto === 1 ? 'doctor has' : 'doctors have'} no photo`} className="mb-4">
+                    Patients see initials instead. Open the doctor and add a photo.
+                </Notice>
+            )}
             {loading ? <LoadingBlock label="Loading doctors" />
                 : error ? <ErrorState message={error} onRetry={refetch} />
                 : !data || data.length === 0 ? <EmptyState title="No doctors here" body="Doctors who match this filter will show up here." />
@@ -59,6 +66,7 @@ export default function ConsultDoctorsPage() {
                                                 <span className="block text-xs font-medium text-gray-500">No-shows (30 days)</span>
                                                 {d.noShows30d ?? 0}
                                             </p>
+                                            {!d.photoUrl && <Badge tone="danger">No photo</Badge>}
                                             <Badge tone={info.tone}>{info.label}</Badge>
                                         </div>
                                     </Link>

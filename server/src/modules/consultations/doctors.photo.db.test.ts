@@ -56,6 +56,11 @@ describeDb('doctor photos (real Postgres)', () => {
         form.append('photo', new Blob([bytes], { type }), filename);
         return fetch(`${doctorApp.url}/doctor/me/photo`, { method: 'POST', headers: { authorization: `Bearer ${token}` }, body: form });
     }
+    function adminUpload(token: string, doctorId: string, bytes: Uint8Array) {
+        const form = new FormData();
+        form.append('photo', new Blob([bytes], { type: 'image/jpeg' }), 'photo.jpg');
+        return fetch(`${adminApp.url}/admin/doctors/${doctorId}/photo`, { method: 'POST', headers: { authorization: `Bearer ${token}` }, body: form });
+    }
     const photoOf = (id: string) => testDb.doctorProfile.findUniqueOrThrow({ where: { id }, select: { photoKey: true, photoUrl: true } });
 
     describe('upload route', () => {
@@ -123,6 +128,34 @@ describeDb('doctor photos (real Postgres)', () => {
         });
     });
 
+    describe('a photo only arrives as an uploaded file', () => {
+        const send = (method: string, url: string, token: string, body: unknown) =>
+            fetch(url, { method, headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
+        const link = 'https://example.com/someone-else.jpg';
+
+        it('ignores a photo link sent at sign-up, in a self-edit or in an admin edit, so approval still needs an upload', async () => {
+            const specialty = await testDb.specialty.upsert({ where: { name: 'Test Specialty' }, update: {}, create: { name: 'Test Specialty', slug: 'test-specialty' } });
+            const applicant = await makeUser();
+            const reg = await send('POST', `${doctorApp.url}/doctor/register`, tokenFor(applicant), {
+                displayName: 'Dr Link', specialtyId: specialty.id, qualification: 'MBBS', registrationNumber: `L-${randomUUID().slice(0, 8)}`,
+                registrationCouncil: 'Test Council', experienceYears: 3, languages: ['English'], gender: 'Female', photoUrl: link,
+            });
+            expect(reg.status).toBe(201);
+            const applied = await testDb.doctorProfile.findUniqueOrThrow({ where: { userId: applicant.id } });
+            expect(applied.photoUrl).toBeNull();
+
+            const admin = await makeUser('SUPER_ADMIN');
+            expect((await send('PATCH', `${adminApp.url}/admin/doctors/${applied.id}`, tokenFor(admin), { photoUrl: link, consultationFee: 400 })).status).toBe(200);
+            expect((await photoOf(applied.id)).photoUrl).toBeNull();
+            const approve = await fetch(`${adminApp.url}/admin/doctors/${applied.id}/approve`, { method: 'POST', headers: { authorization: `Bearer ${tokenFor(admin)}` } });
+            expect(approve.status).toBe(400);
+
+            const live = await makeDoctor();
+            expect((await send('PATCH', `${doctorApp.url}/doctor/me`, tokenFor(live.user), { photoUrl: link, bio: 'Hello' })).status).toBe(200);
+            expect((await photoOf(live.profile.id)).photoUrl).toBeNull();
+        });
+    });
+
     describe('stable photo link', () => {
         it('redirects to a fresh signed link and lets browsers cache the redirect', async () => {
             const d = await makeDoctor({ status: 'PENDING' });
@@ -132,6 +165,28 @@ describeDb('doctor photos (real Postgres)', () => {
             expect(res.status).toBe(302);
             expect(res.headers.get('location')).toBe(`https://s3.test/${key}?X-Amz-Signature=fresh`);
             expect(res.headers.get('cache-control')).toBe('public, max-age=3600');
+            // The site embeds these from the API's origin, so helmet's same-origin default must not apply.
+            expect(res.headers.get('cross-origin-resource-policy')).toBe('cross-origin');
+        });
+
+        it('stays embeddable from the site behind helmet, as in production', async () => {
+            const { default: express } = await import('express');
+            const { default: helmet } = await import('helmet');
+            const routes = await import('./doctors.routes');
+            const app = express();
+            app.use(helmet());
+            app.use('/consult', routes.consultPublicRoutes);
+            const server = await new Promise<import('http').Server>((r) => { const srv = app.listen(0, '127.0.0.1', () => r(srv)); });
+            try {
+                const d = await makeDoctor();
+                await upload(tokenFor(d.user), jpegBytes());
+                const { port } = server.address() as import('net').AddressInfo;
+                const res = await fetch(`http://127.0.0.1:${port}/consult/doctors/${d.profile.id}/photo`, { redirect: 'manual' });
+                expect(res.status).toBe(302);
+                expect(res.headers.get('cross-origin-resource-policy')).toBe('cross-origin');
+            } finally {
+                await new Promise((r) => server.close(r));
+            }
         });
 
         it('serves a pending doctor\'s photo too, because approval needs one first', async () => {
@@ -165,7 +220,7 @@ describeDb('doctor photos (real Postgres)', () => {
             const d = await makeDoctor({ status: 'PENDING' });
             const res = await approve(a.token, d.profile.id);
             expect(res.status).toBe(400);
-            expect((await res.json()).error).toBe('The doctor must upload a photo before approval');
+            expect((await res.json()).error).toBe("Add the doctor's photo before approving");
             expect((await testDb.doctorProfile.findUniqueOrThrow({ where: { id: d.profile.id } })).status).toBe('PENDING');
         });
 
@@ -179,23 +234,17 @@ describeDb('doctor photos (real Postgres)', () => {
             expect(row.photoUrl).not.toBeNull();
         });
 
-        it('lets an admin-created doctor go live and come back from suspension with no photo', async () => {
+        it('refuses to bring back an admin-created doctor who went live without a photo, until one is added', async () => {
             const a = await admin();
-            const specialty = await testDb.specialty.upsert({ where: { name: 'Test Specialty' }, update: {}, create: { name: 'Test Specialty', slug: 'test-specialty' } });
-            const created = await post(a.token, '/doctors', {
-                mobile: `9${String(Date.now()).slice(-9)}`, displayName: 'Dr Admin Made', specialtyId: specialty.id,
-                qualification: 'MBBS', registrationNumber: `A-${randomUUID().slice(0, 8)}`, registrationCouncil: 'Test Council',
-                experienceYears: 4, languages: ['English'], consultationFee: 400, slotMinutes: 15,
-            });
-            expect(created.status).toBe(201);
-            const id = (await created.json()).id as string;
-            const row = await testDb.doctorProfile.findUniqueOrThrow({ where: { id } });
-            expect(row).toMatchObject({ status: 'APPROVED', photoUrl: null, createdByAdminId: a.user.id });
+            // Made before photos were required for admin-created doctors.
+            const d = await makeDoctor({ status: 'SUSPENDED' });
+            await testDb.doctorProfile.update({ where: { id: d.profile.id }, data: { createdByAdminId: a.user.id } });
 
-            expect((await post(a.token, `/doctors/${id}/suspend`, { reason: 'audit check' })).status).toBe(200);
-            expect((await approve(a.token, id)).status).toBe(200);
-            const back = await testDb.doctorProfile.findUniqueOrThrow({ where: { id } });
-            expect(back).toMatchObject({ status: 'APPROVED', photoUrl: null });
+            const refused = await approve(a.token, d.profile.id);
+            expect(refused.status).toBe(400);
+            expect((await refused.json()).error).toBe("Add the doctor's photo before approving");
+            expect((await adminUpload(a.token, d.profile.id, jpegBytes())).status).toBe(200);
+            expect((await approve(a.token, d.profile.id)).status).toBe(200);
         });
 
         it('still refuses approval without a fee, before the photo rule is reached', async () => {
@@ -205,6 +254,106 @@ describeDb('doctor photos (real Postgres)', () => {
             const res = await approve(a.token, d.profile.id);
             expect(res.status).toBe(400);
             expect((await res.json()).error).toBe('Set a consultation fee before approving');
+        });
+    });
+
+    describe('admin create needs a photo', () => {
+        async function admin() {
+            const user = await makeUser('SUPER_ADMIN');
+            return { user, token: tokenFor(user) };
+        }
+        async function fields(overrides: Record<string, unknown> = {}) {
+            const specialty = await testDb.specialty.upsert({ where: { name: 'Test Specialty' }, update: {}, create: { name: 'Test Specialty', slug: 'test-specialty' } });
+            return {
+                mobile: `9${String(Date.now()).slice(-9)}`, displayName: 'Dr Admin Made', specialtyId: specialty.id,
+                qualification: 'MBBS', registrationNumber: `A-${randomUUID().slice(0, 8)}`, registrationCouncil: 'Test Council',
+                experienceYears: 4, languages: ['English'], consultationFee: 400, slotMinutes: 15, ...overrides,
+            };
+        }
+        function create(token: string, body: unknown, photo?: Uint8Array) {
+            const form = new FormData();
+            form.append('data', JSON.stringify(body));
+            if (photo) form.append('photo', new Blob([photo], { type: 'image/jpeg' }), 'photo.jpg');
+            return fetch(`${adminApp.url}/admin/doctors`, { method: 'POST', headers: { authorization: `Bearer ${token}` }, body: form });
+        }
+
+        it('creates a live doctor with the photo stored and its stable link saved', async () => {
+            const a = await admin();
+            const res = await create(a.token, await fields(), jpegBytes());
+            expect(res.status).toBe(201);
+            const body = await res.json();
+            const row = await testDb.doctorProfile.findUniqueOrThrow({ where: { id: body.id } });
+            expect(row).toMatchObject({ status: 'APPROVED', createdByAdminId: a.user.id, photoKey: s3.uploaded[0].key });
+            expect(row.photoUrl).toContain(`/api/consult/doctors/${row.id}/photo?v=`);
+            expect(body.photoUrl).toBe(row.photoUrl);
+            expect((await fetch(`${publicApp.url}/consult/doctors/${row.id}/photo`, { redirect: 'manual' })).status).toBe(302);
+        });
+
+        it('refuses a request without a photo, or with a file that is not a photo, and creates nothing', async () => {
+            const a = await admin();
+            const body = await fields();
+            for (const [photo, error] of [[undefined, "Add the doctor's photo"], [new TextEncoder().encode('%PDF-1.7'), 'Upload a JPG, PNG or WebP photo']] as const) {
+                const res = await create(a.token, body, photo);
+                expect(res.status).toBe(400);
+                expect((await res.json()).error).toBe(error);
+            }
+            // A JSON body (the old form) has no photo either.
+            const json = await fetch(`${adminApp.url}/admin/doctors`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${a.token}` }, body: JSON.stringify(body) });
+            expect(json.status).toBe(400);
+            expect(s3.uploaded).toEqual([]);
+            expect(await testDb.user.findUnique({ where: { mobile: body.mobile } })).toBeNull();
+        });
+
+        it('checks the details before the photo, and ignores a photo link sent in the details', async () => {
+            const a = await admin();
+            const bad = await create(a.token, await fields({ mobile: '123' }), jpegBytes());
+            expect(bad.status).toBe(400);
+            expect((await bad.json()).error).toBe('Valid 10-digit mobile number required');
+            expect(s3.uploaded).toEqual([]);
+
+            const res = await create(a.token, await fields({ photoUrl: 'https://example.com/someone-else.jpg' }), jpegBytes());
+            expect(res.status).toBe(201);
+            expect((await res.json()).photoUrl).not.toContain('example.com');
+        });
+
+        it('removes the stored photo when the doctor cannot be created', async () => {
+            const a = await admin();
+            const existing = await makeDoctor();
+            const res = await create(a.token, await fields({ mobile: existing.user.mobile }), jpegBytes());
+            expect(res.status).toBe(409);
+            expect(s3.uploaded).toHaveLength(1);
+            await vi.waitFor(() => expect(s3.deleted).toEqual([s3.uploaded[0].key]));
+        });
+    });
+
+    describe('admin photo upload', () => {
+        it('adds a photo to a live doctor, drops the old file on replace, and is audit-logged', async () => {
+            const user = await makeUser('SUPER_ADMIN');
+            const d = await makeDoctor();
+            expect((await adminUpload(tokenFor(user), d.profile.id, jpegBytes())).status).toBe(200);
+            const first = (await photoOf(d.profile.id)).photoKey!;
+            expect(first).toBe(s3.uploaded[0].key);
+            const res = await adminUpload(tokenFor(user), d.profile.id, pngBytes());
+            expect(res.status).toBe(200);
+            const row = await photoOf(d.profile.id);
+            expect(row.photoKey).toBe(s3.uploaded[1].key);
+            expect((await res.json()).photoUrl).toBe(row.photoUrl);
+            expect(s3.deleted).toEqual([first]);
+            expect(await testDb.adminAuditLog.count({ where: { action: 'DOCTOR_PHOTO_UPDATE', targetId: d.profile.id, adminId: user.id } })).toBe(2);
+        });
+
+        it('is for super admins only, and answers 404 for an unknown doctor', async () => {
+            const d = await makeDoctor();
+            expect((await adminUpload(tokenFor(d.user), d.profile.id, jpegBytes())).status).toBe(403);
+            expect((await adminUpload(tokenFor(await makeUser()), d.profile.id, jpegBytes())).status).toBe(403);
+            const admin = await makeUser('SUPER_ADMIN');
+            for (const id of [randomUUID(), 'not-a-uuid']) {
+                const res = await adminUpload(tokenFor(admin), id, jpegBytes());
+                expect(res.status).toBe(404);
+                expect((await res.json()).error).toBe('Doctor not found');
+            }
+            expect(s3.uploaded).toEqual([]);
+            expect(await photoOf(d.profile.id)).toMatchObject({ photoKey: null, photoUrl: null });
         });
     });
 });

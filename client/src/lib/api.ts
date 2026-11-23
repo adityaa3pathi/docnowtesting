@@ -110,7 +110,13 @@ api.interceptors.request.use((config) => {
     if (accessToken) {
         config.headers.Authorization = `Bearer ${accessToken}`;
     }
-    
+
+    // Uploads: with the instance's JSON content type, axios would turn FormData into JSON and drop
+    // the file. Without it, the browser sends multipart with its own boundary.
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+        config.headers.delete('Content-Type');
+    }
+
     // CSRF protection for state-changing requests
     if (config.method !== 'get' && typeof document !== 'undefined') {
         const csrf = document.cookie.match(/docnow_csrf=([^;]+)/)?.[1];

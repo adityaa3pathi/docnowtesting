@@ -20,6 +20,7 @@ import {
     PhoneCall,
     Building2,
     FileText,
+    UserX,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -43,6 +44,7 @@ const navItems: NavItem[] = [
     { id: 'abandoned-carts', label: 'Abandoned Carts', icon: ShoppingBag, href: '/manager/abandoned-carts' },
     { id: 'callbacks', label: 'Callbacks', icon: PhoneCall, href: '/manager/callbacks' },
     { id: 'corporate-inquiries', label: 'Corporate Inquiries', icon: Building2, href: '/manager/corporate-inquiries' },
+    { id: 'consult-attendance', label: 'Consult No-shows', icon: UserX, href: '/manager/consult-attendance' },
     { id: 'settings', label: 'Settings', icon: Settings, href: '/manager/settings' },
 ];
 

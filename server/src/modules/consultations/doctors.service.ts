@@ -5,9 +5,11 @@
  * Roles follow status: DOCTOR is granted on approval and removed on suspend or reject.
  */
 import { Prisma } from '@prisma/client';
+import { randomUUID } from 'crypto';
 import { prisma } from '../../db';
 import { expireHold, Tx } from './consultations.transitions';
 import { assertDoctorTransition, DoctorError } from './doctors.status';
+import { discardDoctorPhoto, doctorPhotoUrl, storeDoctorPhoto } from './doctors.photo';
 import { assertNoOverlap, computeSlots, Window } from './slots';
 
 export const SLOT_HORIZON_DAYS = 14;
@@ -28,7 +30,7 @@ function mapUniqueError(e: unknown): never {
 
 export async function registerDoctor(userId: string, data: {
     displayName: string; specialtyId: string; qualification: string; registrationNumber: string;
-    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; photoUrl?: string; gender?: string;
+    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; gender?: string;
 }) {
     await assertActiveSpecialty(data.specialtyId);
     if (await prisma.doctorProfile.findUnique({ where: { userId } })) {
@@ -45,7 +47,7 @@ export async function registerDoctor(userId: string, data: {
 /** A rejected doctor fixes the application and sends it back for review. */
 export async function resubmitDoctor(userId: string, data: {
     displayName: string; specialtyId: string; qualification: string; registrationNumber: string;
-    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; photoUrl?: string; gender?: string;
+    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; gender?: string;
 }) {
     const current = await prisma.doctorProfile.findUnique({ where: { userId } });
     if (!current) throw new DoctorError(404, 'No doctor profile');
@@ -61,13 +63,19 @@ export async function resubmitDoctor(userId: string, data: {
     }
 }
 
+/**
+ * An admin-created doctor is live at once, and patients choose doctors by face, so the photo
+ * comes with the request. It is stored first and removed again if the doctor cannot be created.
+ */
 export async function adminCreateDoctor(adminId: string, data: {
     mobile: string; displayName: string; specialtyId: string; qualification: string; registrationNumber: string;
-    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; photoUrl?: string; gender?: string;
+    registrationCouncil: string; experienceYears: number; languages: string[]; bio?: string; gender?: string;
     consultationFee: number; slotMinutes: number;
-}) {
+}, photo: Buffer, publicBase: string) {
     await assertActiveSpecialty(data.specialtyId);
     const { mobile, ...profile } = data;
+    const photoKey = await storeDoctorPhoto(photo);
+    const id = randomUUID();
     try {
         return await prisma.$transaction(async (tx) => {
             let user = await tx.user.findUnique({ where: { mobile }, include: { doctorProfile: true } });
@@ -79,11 +87,15 @@ export async function adminCreateDoctor(adminId: string, data: {
                 await tx.user.update({ where: { id: user.id }, data: { role: 'DOCTOR' } });
             }
             return tx.doctorProfile.create({
-                data: { ...profile, userId: user.id, status: 'APPROVED', createdByAdminId: adminId, reviewedById: adminId, reviewedAt: new Date() },
+                data: {
+                    ...profile, id, photoKey, photoUrl: doctorPhotoUrl(publicBase, id),
+                    userId: user.id, status: 'APPROVED', createdByAdminId: adminId, reviewedById: adminId, reviewedAt: new Date(),
+                },
                 include: { specialty: true, availability: true, user: { select: { mobile: true, email: true } } },
             });
         });
     } catch (e) {
+        discardDoctorPhoto(photoKey);
         mapUniqueError(e);
     }
 }
@@ -102,9 +114,9 @@ export async function reviewDoctor(
     if (to === 'APPROVED' && doctor.consultationFee <= 0) {
         throw new DoctorError(400, 'Set a consultation fee before approving');
     }
-    // Patients choose doctors by face; a self-registered doctor goes live only with a real photo.
-    if (to === 'APPROVED' && !doctor.photoUrl && !doctor.createdByAdminId) {
-        throw new DoctorError(400, 'The doctor must upload a photo before approval');
+    // Patients choose doctors by face, so no doctor goes live (or back live) without a photo.
+    if (to === 'APPROVED' && !doctor.photoUrl) {
+        throw new DoctorError(400, "Add the doctor's photo before approving");
     }
 
     return prisma.$transaction(async (tx) => {

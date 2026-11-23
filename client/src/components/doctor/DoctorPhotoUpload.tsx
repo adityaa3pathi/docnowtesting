@@ -5,8 +5,19 @@ import { DoctorAvatar } from '@/components/consult/DoctorCard';
 import { doctor as doctorApi, errorMessage } from '@/lib/consult/api';
 import { PHOTO_TYPES, shrinkPhoto } from '@/lib/consult/photo';
 
-/** Pick, shrink and upload the signed-in doctor's photo; `onUploaded` gets the new stable link. */
-export function DoctorPhotoUpload({ name, photoUrl, onUploaded }: { name: string; photoUrl?: string | null; onUploaded: (url: string) => void }) {
+const OWN_PHOTO_HINT = 'A clear, recent photo of your face. Patients see it when booking.';
+
+/**
+ * Pick, shrink and upload a doctor's photo; `onUploaded` gets the new stable link. Uploads the
+ * signed-in doctor's own photo unless `upload` says otherwise (the super admin's doctor page).
+ */
+export function DoctorPhotoUpload({ name, photoUrl, onUploaded, upload = doctorApi.uploadPhoto, hint = OWN_PHOTO_HINT }: {
+    name: string;
+    photoUrl?: string | null;
+    onUploaded: (url: string) => void;
+    upload?: (photo: Blob) => Promise<{ photoUrl: string }>;
+    hint?: string;
+}) {
     const input = useRef<HTMLInputElement>(null);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -17,7 +28,7 @@ export function DoctorPhotoUpload({ name, photoUrl, onUploaded }: { name: string
         setBusy(true);
         setError(null);
         try {
-            const { photoUrl: url } = await doctorApi.uploadPhoto(await shrinkPhoto(file));
+            const { photoUrl: url } = await upload(await shrinkPhoto(file));
             onUploaded(url);
         } catch (e) {
             setError(errorMessage(e));
@@ -39,7 +50,7 @@ export function DoctorPhotoUpload({ name, photoUrl, onUploaded }: { name: string
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Camera className="h-4 w-4" aria-hidden />}
                     {busy ? 'Uploading…' : photoUrl ? 'Change photo' : 'Upload photo'}
                 </label>
-                <p className="text-xs text-ink-muted">A clear, recent photo of your face. Patients see it when booking.</p>
+                <p className="text-xs text-ink-muted">{hint}</p>
                 {error && <p role="alert" className="text-xs font-medium text-danger">{error}</p>}
             </div>
         </div>

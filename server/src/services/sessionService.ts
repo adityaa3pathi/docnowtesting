@@ -45,12 +45,23 @@ async function enforceMaxSessions(userId: string) {
     }
 }
 
+/** What a blocked (blacklisted) account sees on every sign-in route. */
+export const ACCOUNT_BLOCKED_MESSAGE = "This number can't sign in. Please contact support.";
+
+export class AccountBlockedError extends Error {
+    constructor() {
+        super(ACCOUNT_BLOCKED_MESSAGE);
+    }
+}
+
 /**
  * Creates a brand new session (Login / Signup)
  */
 export async function createSession(userId: string, mobile: string, ipAddress?: string, userAgent?: string, clientType: string = 'web') {
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { tokenVersion: true } });
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { tokenVersion: true, status: true } });
     if (!user) throw new Error('User not found');
+    // The sign-in routes refuse blocked accounts first; this catches any route that forgets to.
+    if (user.status === 'BLOCKED') throw new AccountBlockedError();
 
     await enforceMaxSessions(userId);
 
