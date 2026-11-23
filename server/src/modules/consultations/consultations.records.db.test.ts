@@ -415,7 +415,7 @@ describeDb('shared health record (real Postgres)', () => {
             const doctor = await makeDoctor();
             const patient = await makePatient(user.id);
             const slot = await makeSlot(doctor.profile.id, 30 * 60);
-            const input = { userId: user.id, patientId: patient.id, slotId: slot.id, idempotencyKey: 'key-rec-wallet-1234', useWallet: true };
+            const input = { userId: user.id, patientId: patient.id, slotId: slot.id, idempotencyKey: `key-rec-${++n}-wallet`, useWallet: true };
             const first = await booking.createBooking({ ...input, shareRecord: false }, { razorpay });
             expect(first.status).toBe('CONFIRMED');
             await records.setRecordSharing(user.id, first.consultationId, true, {});
