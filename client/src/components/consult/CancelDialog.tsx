@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { consult, errorMessage } from '@/lib/consult/api';
 import { cancelPolicyLines } from '@/lib/consult/cancelPolicy';
 import { formatPaise } from '@/lib/consult/format';
+import { formatIstDateTime } from '@/lib/consult/time';
 import type { CancelPreview, CancelResult } from '@/lib/consult/types';
 
 interface Props {
@@ -108,6 +109,11 @@ export function CancelDialog({ open, bookingId, unpaid, onClose, onCancelled }: 
                                 <ul className="mt-2 list-disc space-y-1 pl-5 text-ink">
                                     {cancelPolicyLines(preview.policy.refundTiers).map((line) => <li key={line}>{line}</li>)}
                                 </ul>
+                                {preview.refundBasisStartsAt && (
+                                    <p className="mt-2 text-ink-muted">
+                                        You changed the time of this booking, so the refund counts from the earliest time it had, {formatIstDateTime(preview.refundBasisStartsAt)}.
+                                    </p>
+                                )}
                                 {preview.policy.doctorNoShowFullRefund && (
                                     <p className="mt-2 text-ink-muted">If the doctor does not join, you get a full refund.</p>
                                 )}

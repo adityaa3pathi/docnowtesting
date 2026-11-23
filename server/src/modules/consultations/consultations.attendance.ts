@@ -10,8 +10,9 @@
  * - Patient no-show: NO_SHOW_PATIENT.
  * - Late: first joined more than LATE_AFTER_MINUTES after the start, the point where the app tells
  *   the patient their doctor is late.
- * - Not counted yet: a late doctor's booking that the patient moved to another time or doctor. The
- *   move repoints the consultation and keeps no record of the original time.
+ * - Moved because the doctor was late (a ConsultationMove of a DOCTOR_LATE kind): counted once
+ *   for the original doctor at the original time, the doctor late by the minutes until the move.
+ *   The consultation at its new time is counted again as its own appointment.
  */
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
@@ -90,6 +91,37 @@ const worstFirst = (a: Tally & { name: string }, b: Tally & { name: string }) =>
 /** A deleted account's mobile is a placeholder, not a number to call. */
 const contact = (mobile: string) => (/^\d{10}$/.test(mobile) ? mobile : null);
 
+const LATE_MOVES = ['DOCTOR_LATE_RESCHEDULE', 'DOCTOR_LATE_REASSIGN'] as const;
+
+const moveSelect = {
+    id: true, kind: true, fromStartsAt: true, fromPatientJoinedAt: true, toStartsAt: true, createdAt: true,
+    fromDoctor: { select: { id: true, displayName: true } },
+    toDoctor: { select: { displayName: true } },
+    consultation: { select: { id: true, status: true, patient: { select: { id: true, name: true } }, user: { select: { mobile: true } } } },
+} satisfies Prisma.ConsultationMoveSelect;
+
+type Moved = { moveId: string; kind: (typeof LATE_MOVES)[number]; toDoctorName: string; toStartsAt: Date };
+type Row = {
+    c: { id: string; status: ConsultationStatus | string; startsAt: Date; doctor: { id: string; displayName: string }; patient: { id: string; name: string }; user: { mobile: string } };
+    doctor: Side; patient: Side; moved: Moved | null;
+};
+type Issue = {
+    consultationId: string; startsAt: Date; status: ConsultationStatus | string; doctorId: string; doctorName: string;
+    patientId: string; patientName: string; mobile: string | null; doctor: Side; patient: Side; moved: Moved | null;
+};
+
+/** The appointment a late doctor lost: their original time, late until the patient moved. */
+function fromMove(m: Prisma.ConsultationMoveGetPayload<{ select: typeof moveSelect }>): Row {
+    const minutesLate = Math.max(0, Math.floor((m.createdAt.getTime() - m.fromStartsAt.getTime()) / 60_000));
+    return {
+        // The consultation's own status describes the new time; this row is the lost appointment.
+        c: { id: m.consultation.id, status: 'MOVED', startsAt: m.fromStartsAt, doctor: m.fromDoctor, patient: m.consultation.patient, user: m.consultation.user },
+        doctor: { outcome: 'LATE', joinedAt: null, minutesLate },
+        patient: joinOutcome(m.fromPatientJoinedAt, m.fromStartsAt),
+        moved: { moveId: m.id, kind: m.kind as Moved['kind'], toDoctorName: m.toDoctor.displayName, toStartsAt: m.toStartsAt },
+    };
+}
+
 export async function buildAttendanceReport(q: AttendanceQuery, now = new Date()) {
     const range = attendanceRange(q, now);
     const found = await prisma.consultation.findMany({
@@ -101,15 +133,24 @@ export async function buildAttendanceReport(q: AttendanceQuery, now = new Date()
         orderBy: [{ startsAt: 'desc' }, { id: 'asc' }],
         take: MAX_CONSULTATIONS + 1,
     });
-    const truncated = found.length > MAX_CONSULTATIONS;
+    const moves = await prisma.consultationMove.findMany({
+        where: { kind: { in: [...LATE_MOVES] }, fromStartsAt: { gte: range.start, lt: range.end } },
+        select: moveSelect,
+        orderBy: [{ fromStartsAt: 'desc' }, { id: 'asc' }],
+        take: MAX_CONSULTATIONS + 1,
+    });
+    const truncated = found.length + moves.length > MAX_CONSULTATIONS;
 
     const doctors = new Map<string, Tally & { doctorId: string; name: string }>();
     const patients = new Map<string, Tally & { patientId: string; name: string; mobile: string | null }>();
     const totals = { consultations: 0, doctor: tally(), patient: tally() };
-    const issues = [];
+    const issues: Issue[] = [];
+    const rows: Row[] = [
+        ...found.slice(0, MAX_CONSULTATIONS).map((c) => ({ c, ...classify({ ...c, doctorNoShowRefund: c.refunds.length > 0 }), moved: null })),
+        ...moves.slice(0, MAX_CONSULTATIONS).map(fromMove),
+    ].sort((a, b) => b.c.startsAt.getTime() - a.c.startsAt.getTime() || a.c.id.localeCompare(b.c.id)).slice(0, MAX_CONSULTATIONS);
 
-    for (const c of found.slice(0, MAX_CONSULTATIONS)) {
-        const { doctor, patient } = classify({ ...c, doctorNoShowRefund: c.refunds.length > 0 });
+    for (const { c, doctor, patient, moved } of rows) {
         totals.consultations++;
         count(totals.doctor, doctor);
         count(totals.patient, patient);
@@ -127,7 +168,7 @@ export async function buildAttendanceReport(q: AttendanceQuery, now = new Date()
                 consultationId: c.id, startsAt: c.startsAt, status: c.status,
                 doctorId: c.doctor.id, doctorName: c.doctor.displayName,
                 patientId: c.patient.id, patientName: c.patient.name, mobile: contact(c.user.mobile),
-                doctor, patient,
+                doctor, patient, moved,
             });
         }
     }
@@ -165,12 +206,14 @@ export function attendanceCsv(report: AttendanceReport): string {
     const headers = [
         'Date (IST)', 'Start (IST)', 'Doctor', 'Patient', 'Booked by (mobile)', 'Consultation status',
         'Doctor attendance', 'Doctor joined (IST)', 'Doctor minutes late', 'Patient attendance', 'Patient joined (IST)', 'Patient minutes late', 'Consultation ID',
+        'Moved because the doctor was late',
     ];
     const rows = report.issues.map((r) => [
         istDate.format(r.startsAt), istTime.format(r.startsAt), r.doctorName, r.patientName, r.mobile ?? 'Deleted account', r.status,
         OUTCOME_LABEL[r.doctor.outcome], r.doctor.joinedAt ? istTime.format(r.doctor.joinedAt) : '', r.doctor.minutesLate ?? '',
         OUTCOME_LABEL[r.patient.outcome], r.patient.joinedAt ? istTime.format(r.patient.joinedAt) : '', r.patient.minutesLate ?? '',
         r.consultationId,
+        r.moved ? `${r.moved.kind === 'DOCTOR_LATE_REASSIGN' ? 'To another doctor' : 'To another time'}: ${r.moved.toDoctorName}, ${istDate.format(r.moved.toStartsAt)} ${istTime.format(r.moved.toStartsAt)}` : '',
     ].map(csvCell).join(','));
     // BOM so Excel opens names in Hindi correctly.
     return '﻿' + [headers.map(csvCell).join(','), ...rows].join('\r\n');

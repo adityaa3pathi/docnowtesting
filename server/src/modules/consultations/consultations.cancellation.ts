@@ -41,10 +41,15 @@ async function view(db: PrismaClient, id: string) {
     return { status: c.status, refundPaise: refund?.amountPaise ?? 0, refundStatus: refund?.status ?? null };
 }
 
-/** The refund for cancelling now, from the rules copied at booking and the server clock. */
-export function estimateRefund(c: { startsAt: Date; policySnapshot: unknown }, paidPaise: number, now: Date) {
+/**
+ * The refund for cancelling now, from the rules copied at booking and the server clock. Hours count
+ * to the earliest start the booking had (refundBasisStartsAt), so moving it later never raises the
+ * refund (Aditya, 2026-11-23).
+ */
+export function estimateRefund(c: { startsAt: Date; refundBasisStartsAt?: Date | null; policySnapshot: unknown }, paidPaise: number, now: Date) {
     const rules = c.policySnapshot as Rules;
-    const hoursBefore = (c.startsAt.getTime() - now.getTime()) / 3_600_000;
+    const basis = c.refundBasisStartsAt && c.refundBasisStartsAt < c.startsAt ? c.refundBasisStartsAt : c.startsAt;
+    const hoursBefore = (basis.getTime() - now.getTime()) / 3_600_000;
     const percent = pickRefundPercent(rules.refundTiers, hoursBefore);
     return { percent, refundPaise: refundForPercent(paidPaise, percent) };
 }
@@ -65,6 +70,8 @@ export async function cancelPreview(userId: string, consultationId: string, deps
         ...estimateRefund(c, payment.amountPaise, now),
         paidPaise: payment.amountPaise,
         policy: { refundTiers: rules.refundTiers, doctorNoShowFullRefund: rules.doctorNoShowOutcome === 'FULL_REFUND' },
+        // Moved by the patient: the tiers count to this earlier time, and the box says so.
+        refundBasisStartsAt: c.refundBasisStartsAt && c.refundBasisStartsAt < c.startsAt ? c.refundBasisStartsAt : null,
     };
 }
 

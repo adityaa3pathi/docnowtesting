@@ -12,7 +12,7 @@ const START = new Date('2026-11-02T10:00:00Z');
 const at = (minutes: number) => new Date(START.getTime() + minutes * 60_000);
 
 const booking = (over: Record<string, unknown> = {}) => ({
-    id: 'c-1', status: 'CONFIRMED', startsAt: START, doctorJoinedAt: null, doctorId: 'doc-1', slotId: 'slot-old',
+    id: 'c-1', status: 'CONFIRMED', startsAt: START, doctorJoinedAt: null, patientJoinedAt: null, doctorId: 'doc-1', slotId: 'slot-old',
     feePaise: 50000, policySnapshot: {}, doctor: { specialtyId: 'sp-1' }, ...over,
 });
 
@@ -29,6 +29,7 @@ function fakeDb(opts: { booking?: Record<string, unknown> | null; slot?: Record<
             updateMany: vi.fn().mockResolvedValueOnce({ count: opts.holdCount ?? 1 }).mockResolvedValue({ count: 1 }),
         },
         consultationNotification: { deleteMany: vi.fn().mockResolvedValue({ count: 2 }) },
+        consultationMove: { create: vi.fn().mockResolvedValue({ id: 'move-1' }) },
         $transaction: vi.fn(),
     };
     db.$transaction.mockImplementation(async (fn: (tx: typeof db) => unknown) => fn(db));
@@ -66,11 +67,22 @@ describe('rescheduleBooking', () => {
         expect(db.slot.updateMany).toHaveBeenNthCalledWith(1, { where: { id: 'slot-new', status: 'AVAILABLE' }, data: { status: 'BOOKED' } });
         expect(db.consultation.updateMany).toHaveBeenCalledWith({
             where: { id: 'c-1', slotId: 'slot-old', status: { in: ['CONFIRMED', 'WAITING'] }, doctorJoinedAt: null },
-            data: { doctorId: 'doc-1', slotId: 'slot-new', startsAt: at(120), status: 'CONFIRMED', patientJoinedAt: null, startedAt: null, roomId: null },
+            data: {
+                doctorId: 'doc-1', slotId: 'slot-new', startsAt: at(120), status: 'CONFIRMED',
+                patientJoinedAt: null, familyJoinedAt: null, caregiverJoinedAt: null, roomId: null, startedAt: null, refundBasisStartsAt: null,
+            },
         });
         expect(db.slot.updateMany).toHaveBeenNthCalledWith(2, { where: { id: 'slot-old', status: 'BOOKED' }, data: { status: 'AVAILABLE' } });
         expect(db.consultationNotification.deleteMany).toHaveBeenCalledWith({
-            where: { consultationId: 'c-1', kind: { in: ['CONFIRMED', 'REMINDER', 'JOIN_NOW', 'PARTNER_WAITING'] } },
+            where: { consultationId: 'c-1', kind: { in: ['CONFIRMED', 'REMINDER', 'JOIN_NOW', 'PARTNER_WAITING', 'FAMILY_BOOKED', 'FAMILY_JOIN_NOW'] } },
+        });
+        // The move is kept, so the no-show report can count the late doctor at the original time.
+        expect(db.consultationMove.create).toHaveBeenCalledWith({
+            data: {
+                consultationId: 'c-1', kind: 'DOCTOR_LATE_RESCHEDULE', byUserId: 'u-1',
+                fromDoctorId: 'doc-1', fromSlotId: 'slot-old', fromStartsAt: START, fromPatientJoinedAt: null,
+                toDoctorId: 'doc-1', toSlotId: 'slot-new', toStartsAt: at(120),
+            },
         });
         expect(view).toMatchObject({ consultationId: 'c-1' });
     });

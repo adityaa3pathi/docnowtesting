@@ -8,6 +8,7 @@ import { prisma } from '../../db';
 import { logAlert } from '../../utils/logger';
 import { feeFromBps, toPaise } from './consultations.money';
 import { getActivePolicy } from './consultations.policy.service';
+import { selfRescheduleState } from './consultations.rescheduleRules';
 import { ConsultRazorpay, normalizeRazorpayError, realConsultRazorpay } from './consultations.razorpay';
 import { expireHold, holdSlot } from './consultations.transitions';
 import { DOCTOR_LATE_AFTER_MS, noShowDeadlines } from './consultations.room';
@@ -230,6 +231,8 @@ function toView(c: BookingRow) {
         cancelReason: c.cancelReason,
         isCaregiverJoined: c.isCaregiverJoined,
         isBookedForYou: false,
+        // Whether the booker can change the time now, and the rules behind it, for the button and the text.
+        selfReschedule: selfRescheduleState(c, new Date()),
         // Family bookings: the link the booker can forward, and whether the family member has
         // accepted the booking on their own phone (false + declined means the number may be wrong).
         ...(isSelf(c.patient.relation) ? {} : {

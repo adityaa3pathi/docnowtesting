@@ -5,7 +5,7 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { prisma } from '../../db';
 import { logAlert } from '../../utils/logger';
-import { DEFAULT_RULES, hasSharpRefundDrop, Rules, validateRules } from './consultations.policy';
+import { DEFAULT_RULES, hasSharpRefundDrop, Rules, rulesOf, validateRules } from './consultations.policy';
 import { DoctorError } from './doctors.status';
 
 type Db = PrismaClient;
@@ -13,7 +13,8 @@ type Db = PrismaClient;
 export async function getActivePolicy(db: Db = prisma) {
     const row = await db.consultPolicy.findFirst({ where: { isActive: true } });
     if (!row) throw new DoctorError(500, 'No active consultation rules');
-    return { id: row.id, version: row.version, rules: row.rules as unknown as Rules, reason: row.reason, createdAt: row.createdAt };
+    // Rules added after this version was saved show (and apply) with their defaults.
+    return { id: row.id, version: row.version, rules: rulesOf(row.rules), reason: row.reason, createdAt: row.createdAt };
 }
 
 export async function listPolicyVersions(db: Db = prisma, limit = 20) {
@@ -42,7 +43,7 @@ export async function updatePolicy(
                 createdById: input.adminId,
             },
         });
-        const before = (current?.rules as unknown as Rules | undefined) ?? DEFAULT_RULES;
+        const before = current ? rulesOf(current.rules) : DEFAULT_RULES;
         await tx.adminAuditLog.create({
             data: {
                 adminId: input.adminId,

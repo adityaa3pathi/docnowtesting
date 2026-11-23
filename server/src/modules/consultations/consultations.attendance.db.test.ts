@@ -163,4 +163,47 @@ describeDb('manager report: consultation no-shows and late joins (real Postgres)
         expect((await getJson(url, tokenFor(await makeUser('SUPER_ADMIN')))).status).toBe(200);
         expect((await getJson(`${app.url}/manager/consult/attendance.csv`, tokenFor(await makeUser()))).status).toBe(403);
     });
+
+    it('counts a booking moved away from a late doctor for that doctor at the original time', async () => {
+        const late = await makeDoctor();
+        await testDb.doctorProfile.update({ where: { id: late.profile.id }, data: { displayName: 'Dr Late' } });
+        const other = await makeDoctor();
+        await testDb.doctorProfile.update({ where: { id: other.profile.id }, data: { displayName: 'Dr Next' } });
+        const p = await person('Moved Patient');
+        // Now with Dr Next (completed on time); it was Dr Late's 2 days ago, moved after 12 minutes.
+        const c = await booking({ doctor: other, patient: p, daysAgo: 1, status: 'COMPLETED', doctorJoinMin: 0, patientJoinMin: 0 });
+        const fromStartsAt = new Date(Math.floor((Date.now() - 2 * DAY) / MIN) * MIN);
+        await testDb.consultationMove.create({
+            data: {
+                consultationId: c.id, kind: 'DOCTOR_LATE_REASSIGN', fromDoctorId: late.profile.id, fromSlotId: randomUUID(), fromStartsAt,
+                fromPatientJoinedAt: new Date(fromStartsAt.getTime() + 1 * MIN), toDoctorId: other.profile.id, toSlotId: c.slotId,
+                toStartsAt: c.startsAt, createdAt: new Date(fromStartsAt.getTime() + 12 * MIN),
+            },
+        });
+        // A patient's own reschedule is not an attendance problem.
+        await testDb.consultationMove.create({
+            data: {
+                consultationId: c.id, kind: 'PATIENT_RESCHEDULE', fromDoctorId: other.profile.id, fromSlotId: randomUUID(),
+                fromStartsAt: new Date(fromStartsAt.getTime() - DAY), toDoctorId: other.profile.id, toSlotId: c.slotId, toStartsAt: c.startsAt,
+            },
+        });
+
+        const { status, body } = await getJson(`${app.url}/manager/consult/attendance?from=${istDay(5)}&to=${istDay(0)}`, managerToken);
+        expect(status).toBe(200);
+        const drLate = body.doctors.find((d: any) => d.name === 'Dr Late');
+        expect(drLate).toMatchObject({ consultations: 1, late: 1, noShows: 0, avgMinutesLate: 12 });
+        expect(body.doctors.find((d: any) => d.name === 'Dr Next')).toMatchObject({ consultations: 1, late: 0 });
+        expect(body.issues).toHaveLength(1);
+        expect(body.issues[0]).toMatchObject({
+            doctorName: 'Dr Late', patientName: 'Moved Patient',
+            doctor: { outcome: 'LATE', minutesLate: 12 }, patient: { outcome: 'ON_TIME' },
+            moved: { kind: 'DOCTOR_LATE_REASSIGN', toDoctorName: 'Dr Next' },
+        });
+        expect(Date.parse(body.issues[0].startsAt)).toBe(fromStartsAt.getTime());
+
+        const csv = await (await fetch(`${app.url}/manager/consult/attendance.csv?from=${istDay(5)}&to=${istDay(0)}`, { headers: { authorization: `Bearer ${managerToken}` } })).text();
+        expect(csv).toContain('Moved because the doctor was late');
+        expect(csv).toContain('To another doctor: Dr Next');
+    });
 });
+

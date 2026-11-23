@@ -3,16 +3,19 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { ChevronLeft, Clock } from 'lucide-react';
+import { CalendarClock, ChevronLeft, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthGate } from '@/contexts/AuthGateContext';
 import { useBookingFlow } from '@/hooks/useBookingFlow';
 import { consult } from '@/lib/consult/api';
 import { formatPaise } from '@/lib/consult/format';
 import { formatCountdown } from '@/lib/consult/bookingFlow';
+import { changeTimeRules } from '@/lib/consult/changeTime';
+import { formatIstDateTime } from '@/lib/consult/time';
 import { statusInfo } from '@/lib/consult/status';
 import { BookingSummary } from '@/components/consult/BookingSummary';
 import { CancelDialog } from '@/components/consult/CancelDialog';
+import { ChangeTimeDialog } from '@/components/consult/ChangeTimeDialog';
 import { JoinPanel } from '@/components/consult/JoinPanel';
 import { PatientPrescription } from '@/components/consult/PatientPrescription';
 import { ConfirmingNotice, PaymentStatus } from '@/components/consult/PaymentStatus';
@@ -39,12 +42,18 @@ function RefundLine({ booking }: { booking: BookingView }) {
 
 function BookingDetail() {
     const { id } = useParams<{ id: string }>();
-    const autoPay = useSearchParams().get('pay') === '1';
+    const params = useSearchParams();
+    const autoPay = params.get('pay') === '1';
+    // From My consultations: open the change-time box straight away.
+    const autoChange = params.get('change') === '1';
     const { isAuthenticated, isInitialized } = useAuth();
     const { openAuthDialog } = useAuthGate();
     const flow = useBookingFlow(id, isInitialized && isAuthenticated);
     const [cancelOpen, setCancelOpen] = useState(false);
+    const [changeOpen, setChangeOpen] = useState(false);
+    const [movedTo, setMovedTo] = useState<string | null>(null);
     const autoOpened = useRef(false);
+    const autoChangeOpened = useRef(false);
     const { booking, decision, pay } = flow;
 
     // Opens the payment window once, right after the booking is created.
@@ -54,6 +63,13 @@ function BookingDetail() {
             void pay();
         }
     }, [autoPay, decision?.kind, pay]);
+
+    useEffect(() => {
+        if (autoChange && !autoChangeOpened.current && booking?.selfReschedule?.allowed) {
+            autoChangeOpened.current = true;
+            setChangeOpen(true);
+        }
+    }, [autoChange, booking?.selfReschedule?.allowed]);
 
     if (!isInitialized) return <LoadingBlock />;
     if (!isAuthenticated) {
@@ -183,6 +199,20 @@ function BookingDetail() {
                             <PaymentStatus result={decision.result} fresh={fresh} statusLabel={info.label} doctorId={booking.doctorId} />
                             <Card>{summary}</Card>
                             <RefundLine booking={booking} />
+                            {movedTo && <Notice tone="success">Moved to {formatIstDateTime(movedTo)}. {booking.doctorName} has the new time.</Notice>}
+                            {booking.status === 'CONFIRMED' && booking.selfReschedule && (
+                                <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="flex items-center gap-2 text-sm font-semibold text-ink"><CalendarClock className="h-4 w-4 text-primary" aria-hidden /> Need another time?</p>
+                                        <p className="text-sm text-ink-muted">
+                                            {booking.selfReschedule.allowed ? changeTimeRules(booking.selfReschedule) : booking.selfReschedule.reason}
+                                        </p>
+                                    </div>
+                                    {booking.selfReschedule.allowed && (
+                                        <Button variant="outline" size="sm" onClick={() => setChangeOpen(true)}>Change time</Button>
+                                    )}
+                                </Card>
+                            )}
                             <JoinPanel
                                 status={booking.status}
                                 type={booking.type}
@@ -210,6 +240,22 @@ function BookingDetail() {
                         </Button>
                     )}
                 </div>
+                {booking.selfReschedule && (
+                    <ChangeTimeDialog
+                        open={changeOpen}
+                        booking={{ ...booking, selfReschedule: booking.selfReschedule }}
+                        onClose={() => setChangeOpen(false)}
+                        onStale={() => {
+                            setChangeOpen(false);
+                            void flow.refetch();
+                        }}
+                        onChanged={(b) => {
+                            setChangeOpen(false);
+                            setMovedTo(b.startsAt);
+                            void flow.refetch();
+                        }}
+                    />
+                )}
                 <CancelDialog
                     open={cancelOpen}
                     bookingId={booking.consultationId}

@@ -70,6 +70,22 @@ export interface BookingView extends CreateBookingResponse {
     refundStatus: 'PENDING' | 'PROCESSED' | 'FAILED' | null;
     type: ConsultationType;
     hasPrescription: boolean;
+    /** The booker's own bookings: whether the time can be changed now (older servers leave it out). */
+    selfReschedule?: SelfReschedule;
+}
+
+/** Self-serve reschedule: same doctor, until the cutoff before the start, a limited number of times. */
+export interface SelfReschedule {
+    allowed: boolean;
+    /** Why not, in words for the patient; null when allowed. */
+    reason: string | null;
+    used: number;
+    max: number;
+    cutoffMinutes: number;
+    /** How soon a new time may start, from the booking's rules (older servers leave it out). */
+    minLeadMinutes?: number;
+    /** Last moment a change is accepted. */
+    deadline: string;
 }
 
 export type VerifyOutcome = 'confirmed' | 'reclaimed' | 'already' | 'refund_created' | 'flagged' | 'unknown_order';
@@ -85,6 +101,8 @@ export interface CancelPreview {
     paidPaise: number;
     /** The cancellation policy saved with this booking (older servers leave it out). */
     policy?: { refundTiers: { minHoursBefore: number; percent: number }[]; doctorNoShowFullRefund: boolean };
+    /** Set when the patient moved the booking: the tiers count to this earlier time. */
+    refundBasisStartsAt?: string | null;
 }
 
 export interface CancelResult {
@@ -207,6 +225,10 @@ export interface ConsultRules {
     holdMinutes: number;
     minLeadMinutes: number;
     uploadLimitMb: number;
+    /** A patient can change the time until this long before the start. */
+    rescheduleCutoffMinutes: number;
+    /** Changes allowed per booking; 0 turns self-serve reschedule off. */
+    maxReschedules: number;
 }
 
 export interface PolicyVersion {
@@ -454,7 +476,8 @@ export interface AttendanceReport {
     issues: {
         consultationId: string;
         startsAt: string;
-        status: ConsultationStatus;
+        /** MOVED: the appointment a late doctor lost (see `moved`). */
+        status: ConsultationStatus | 'MOVED';
         doctorId: string;
         doctorName: string;
         patientId: string;
@@ -462,5 +485,7 @@ export interface AttendanceReport {
         mobile: string | null;
         doctor: AttendanceSide;
         patient: AttendanceSide;
+        /** The patient moved away because this doctor was late; startsAt is the original time. */
+        moved?: { moveId: string; kind: 'DOCTOR_LATE_RESCHEDULE' | 'DOCTOR_LATE_REASSIGN'; toDoctorName: string; toStartsAt: string } | null;
     }[];
 }

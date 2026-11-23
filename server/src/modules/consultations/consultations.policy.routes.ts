@@ -23,6 +23,8 @@ const updateSchema = z.object({
         holdMinutes: z.number(),
         minLeadMinutes: z.number(),
         uploadLimitMb: z.number(),
+        rescheduleCutoffMinutes: z.number(),
+        maxReschedules: z.number(),
     }),
 });
 

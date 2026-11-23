@@ -112,9 +112,16 @@ function Report({ report }: { report: AttendanceReport }) {
                     head={['When (IST)', 'Doctor', 'Patient', 'Doctor joined', 'Patient joined']}
                 >
                     {report.issues.map((r) => (
-                        <tr key={r.consultationId}>
+                        <tr key={`${r.consultationId}-${r.moved?.moveId ?? ''}`}>
                             <td className={cn(td, 'whitespace-nowrap')}>{formatIstDateTime(r.startsAt)}</td>
-                            <td className={td}>{r.doctorName}</td>
+                            <td className={td}>
+                                {r.doctorName}
+                                {r.moved && (
+                                    <span className="block text-xs text-gray-500">
+                                        Patient moved {r.moved.kind === 'DOCTOR_LATE_REASSIGN' ? `to ${r.moved.toDoctorName}` : 'to another time'}, {formatIstDateTime(r.moved.toStartsAt)}
+                                    </span>
+                                )}
+                            </td>
                             <td className={td}>{r.patientName}</td>
                             <td className={td}><Outcome side={r.doctor} /></td>
                             <td className={td}><Outcome side={r.patient} /></td>
@@ -171,8 +178,8 @@ export function ConsultAttendance() {
                 : report.data ? <Report report={report.data} />
                 : null}
             <p className="mt-6 text-xs text-gray-500">
-                A doctor no-show includes a patient who cancelled for a full refund because the doctor was late. Not counted yet: a late doctor&apos;s
-                consultation that the patient moved to another time or another doctor.
+                A doctor no-show includes a patient who cancelled for a full refund because the doctor was late. When a patient moved to another
+                time or doctor because the doctor was late, the original doctor is counted late at the original time (until the move).
             </p>
         </div>
     );
