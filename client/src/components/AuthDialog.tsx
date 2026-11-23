@@ -12,6 +12,7 @@ import { Loader2, ArrowLeft, ShieldCheck, Mail, Smartphone, Lock, User as UserIc
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { SUPPORT_PHONE_DISPLAY } from '@/lib/supportConfig';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -172,7 +173,12 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
     }, [isOpen]);
 
     const handleError = (err: any) => {
-        setError(err.response?.data?.error || 'Something went wrong. Please try again.');
+        const data = err.response?.data;
+        // A blocked account is told who to contact, with the number to call.
+        const message = data?.code === 'ACCOUNT_BLOCKED'
+            ? `${data.error} Call ${SUPPORT_PHONE_DISPLAY}.`
+            : data?.error;
+        setError(message || 'Something went wrong. Please try again.');
         setLoading(false);
     };
 
