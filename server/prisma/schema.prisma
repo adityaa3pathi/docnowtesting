@@ -134,6 +134,7 @@ model User {
   consultations Consultation[]
   familyLinkedPatients Patient[] @relation("FamilyLinkedPatients")
   consultationAttachments ConsultationAttachment[]
+  patientDocuments PatientDocument[]
 
   // Mobile push notifications
   pushTokens    PushToken[]
@@ -200,6 +201,7 @@ model Patient {
   bookingItems BookingItem[]
   cartItems    CartItem[]
   consultations Consultation[]
+  documents    PatientDocument[]
   user         User          @relation(fields: [userId], references: [id])
   linkedUser   User?         @relation("FamilyLinkedPatients", fields: [linkedUserId], references: [id])
 
@@ -1099,6 +1101,9 @@ model Consultation {
   // The earliest start this booking had before the patient moved it. Cancellation refund tiers use
   // it, so moving a booking can never raise its refund. Null: never moved by the patient.
   refundBasisStartsAt DateTime?
+  // Set while the patient lets this booking's doctor see their whole DocNow health record (until
+  // 7 days after the visit). Null: the doctor sees only what was attached. History: RecordShareConsent.
+  recordSharedAt      DateTime?
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
@@ -1115,6 +1120,7 @@ model Consultation {
   attachments     ConsultationAttachment[]
   consents        ConsultationConsent[]
   moves           ConsultationMove[]
+  recordShareConsents RecordShareConsent[]
   promoCode       PromoCode?           @relation(fields: [promoCodeId], references: [id])
   promoRedemption PromoRedemption?
 
@@ -1302,6 +1308,58 @@ model ConsultationAttachment {
   @@index([userId, consultationId])
 }
 
+
+// A photo or PDF the patient keeps in their DocNow health record (Profile → Medical records), per
+// person (self or a family member). Not tied to a booking. The doctor of a booking the patient
+// shared their record with can open it until 7 days after the visit; every open is logged.
+model PatientDocument {
+  id         String   @id @default(uuid())
+  userId     String // the account that uploaded it and owns the person
+  patientId  String
+  storageKey String   @unique
+  name       String
+  mimeType   String
+  sizeBytes  Int
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, createdAt])
+  @@index([userId])
+}
+
+// Every switch of "let the doctor see my health record" on a booking, newest last. Append-only:
+// Consultation.recordSharedAt is the current state, this is the proof of what was agreed and when.
+model RecordShareConsent {
+  id             String       @id @default(uuid())
+  consultationId String
+  userId         String? // who switched it (booker or accepted family member)
+  granted        Boolean
+  version        String // which wording was shown
+  channel        String // web | app
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime     @default(now())
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+
+  @@index([consultationId, createdAt])
+}
+
+// One row per time a doctor opened a patient's shared health record or a file in it. Plain ids (no
+// relations), so the trail outlives a deleted file or family profile.
+model HealthRecordAccess {
+  id             String   @id @default(uuid())
+  consultationId String
+  doctorId       String
+  patientId      String
+  action         String // RECORD | DOCUMENT | REPORT | ATTACHMENT
+  targetId       String?
+  ipAddress      String?
+  createdAt      DateTime @default(now())
+
+  @@index([patientId, createdAt])
+  @@index([consultationId, createdAt])
+}
 
 // Telemedicine consent (NMC Telemedicine Practice Guidelines, 2020): recorded once per person on
 // the patient's side, before the server lets them into the call. `userId` is deliberately not a

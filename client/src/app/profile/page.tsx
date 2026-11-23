@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut, ChevronRight, IndianRupee, Stethoscope, HeartPulse } from 'lucide-react';
+import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut, ChevronRight, IndianRupee, Stethoscope, HeartPulse, FolderHeart } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -70,6 +70,9 @@ const ReferralTab = dynamic(() => import('@/components/profile/ReferralTab').the
     loading: () => <ProfileSkeleton />,
 });
 const ReportsTab = dynamic(() => import('@/components/profile/ReportsTab').then(m => ({ default: m.ReportsTab })), {
+    loading: () => <ListSkeleton />,
+});
+const MedicalRecordsTab = dynamic(() => import('@/components/profile/MedicalRecordsTab').then(m => ({ default: m.MedicalRecordsTab })), {
     loading: () => <ListSkeleton />,
 });
 const HealthTab = dynamic(() => import('@/components/profile/HealthTab').then(m => ({ default: m.HealthTab })), {
@@ -403,6 +406,19 @@ function ProfilePageContent() {
                         onOpenChange={(open) => handleTabChange('health', open)}
                     >
                         <HealthTab />
+                    </BentoCard>
+
+                    {/* Medical records vault: files per person, shared with a doctor only when the patient ticks it */}
+                    <BentoCard
+                        className="col-span-2 min-h-[120px] border-none shadow-lg sm:min-h-[140px]"
+                        gradient="from-sky-600 to-cyan-500"
+                        title="Medical Records"
+                        icon={<FolderHeart className="h-4 w-4" />}
+                        subtitle="Old prescriptions and reports"
+                        isOpen={activeTab === 'records'}
+                        onOpenChange={(open) => handleTabChange('records', open)}
+                    >
+                        <MedicalRecordsTab />
                     </BentoCard>
 
                     {/* Manager/Admin Area */}

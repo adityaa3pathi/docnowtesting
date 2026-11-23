@@ -1,0 +1,3 @@
+# Reviewed false positives (gitleaks fingerprints). Keep each with a reason.
+# 2026-11-23: a test idempotency key ('key-rec-wallet-…') in the P7 records test, not a credential; the literal was replaced in the next commit.
+320794b3f82e800fbf051b83586cb3d1e7cb810f:server/src/modules/consultations/consultations.records.db.test.ts:generic-api-key:418

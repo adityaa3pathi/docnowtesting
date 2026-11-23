@@ -2,6 +2,7 @@ import express, { Response } from 'express';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { z } from 'zod';
 import { prisma } from '../db';
+import { s3AttachmentStorage } from '../modules/consultations/consultations.attachments';
 
 const router = express.Router();
 
@@ -167,9 +168,12 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
             });
         }
 
+        // Their medical records vault goes with them (the rows cascade; the files are removed here).
+        const files = await prisma.patientDocument.findMany({ where: { patientId: id }, select: { storageKey: true } });
         await prisma.patient.delete({
             where: { id }
         });
+        await Promise.all(files.map((f) => s3AttachmentStorage.remove(f.storageKey).catch(() => {})));
 
         res.status(200).json({ message: 'Family member removed successfully' });
     } catch (error) {

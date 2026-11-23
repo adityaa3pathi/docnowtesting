@@ -32,6 +32,7 @@ import { doctorJoin, endConsultation } from './consultations.room';
 import { kickConsultPushes } from './consultations.push';
 import { getDoctorRecord, issuePrescription, noteSchema, prescriptionSchema, reissuePrescription, reissueSchema, saveNotes } from './consultations.prescription';
 import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
+import { getSharedRecord, openSharedFile } from './consultations.records';
 import { appointmentsQuery, getAppointment, listAppointments } from './consultations.appointments';
 import {
     addLeave, adminCreateDoctor, adminUpdateDoctor, registerDoctor, removeLeave, resubmitDoctor, reviewDoctor, setSlotBlocked,
@@ -313,6 +314,25 @@ doctorRoutes.get('/me/consultations/:id', ...mine, async (req: AuthRequest, res:
     try {
         res.json(await getDoctorRecord(await myDoctorId(req), consultId(req)));
     } catch (e) { fail(res, e, 'get consultation'); }
+});
+
+// The patient's whole DocNow record, when they shared it for this booking (until 7 days after). Logged.
+doctorRoutes.get('/me/consultations/:id/record', ...mine, rateLimiter(60, 60, 'doctor_record'), async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await getSharedRecord(await myDoctorId(req), consultId(req), { ipAddress: req.ip ?? null }));
+    } catch (e) { fail(res, e, 'get shared record'); }
+});
+
+const SHARED_KINDS = { documents: 'document', attachments: 'attachment', reports: 'report' } as const;
+
+// One file or report from the shared record: a short link, and a log row per open.
+doctorRoutes.get('/me/consultations/:id/record/:kind/:targetId', ...mine, rateLimiter(60, 60, 'doctor_record_open'), async (req: AuthRequest, res: Response) => {
+    try {
+        const kind = SHARED_KINDS[req.params.kind as keyof typeof SHARED_KINDS];
+        const target = z.string().uuid().safeParse(req.params.targetId);
+        if (!kind || !target.success) return res.status(404).json({ error: 'Not found' });
+        res.json(await openSharedFile(await myDoctorId(req), consultId(req), kind, target.data, { ipAddress: req.ip ?? null }));
+    } catch (e) { fail(res, e, 'open shared record'); }
 });
 
 doctorRoutes.post('/me/consultations/:id/join', ...mineWrite, rateLimiter(20, 60, 'doctor_join'), async (req: AuthRequest, res: Response) => {

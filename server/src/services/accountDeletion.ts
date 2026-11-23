@@ -3,7 +3,8 @@
  *
  * What goes: the person's contact details and login (name, mobile, email, password, sessions, push
  * tokens, OTPs), saved addresses, cart, family profiles never used for a booking, phone links to
- * family profiles, and uploads never attached to a booking. The account is blocked, so every
+ * family profiles, uploads never attached to a booking, and the medical records vault (Profile →
+ * Medical records: the patient's own files, not a doctor's record). The account is blocked, so every
  * existing token stops working at once.
  *
  * What stays, de-identified: consultation records and prescriptions (doctors must keep them under
@@ -13,6 +14,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { prisma } from '../db';
 import { s3AttachmentStorage, type AttachmentStorage } from '../modules/consultations/consultations.attachments';
+import { writeRecordSharing } from '../modules/consultations/consultations.records';
 
 export const ACTIVE_CONSULTATION_MESSAGE = 'Please complete or cancel your upcoming consultation before deleting your account';
 export const STAFF_ACCOUNT_MESSAGE = 'Doctor and staff accounts are closed by DocNow support. Please contact support to close this account.';
@@ -54,13 +56,21 @@ export async function deleteAccount(userId: string, deps: Deps = {}) {
         });
         if (active > 0) throw new AccountDeletionError(400, ACTIVE_CONSULTATION_MESSAGE);
 
-        const files = await tx.consultationAttachment.findMany({ where: { userId, consultationId: null }, select: { storageKey: true } });
+        const files = [
+            ...(await tx.consultationAttachment.findMany({ where: { userId, consultationId: null }, select: { storageKey: true } })),
+            ...(await tx.patientDocument.findMany({ where: { userId }, select: { storageKey: true } })),
+        ];
 
         await tx.pushToken.deleteMany({ where: { userId } });
         await tx.session.deleteMany({ where: { userId } });
         await tx.oTP.deleteMany({ where: { identifier: user.mobile } });
         await tx.cart.deleteMany({ where: { userId } });
         await tx.consultationAttachment.deleteMany({ where: { userId, consultationId: null } });
+        await tx.patientDocument.deleteMany({ where: { userId } });
+        // Doctors lose access to a deleted account's record at once, even inside a 7-day window.
+        for (const shared of await tx.consultation.findMany({ where: { userId, recordSharedAt: { not: null } }, select: { id: true } })) {
+            await writeRecordSharing(tx, shared.id, null, false, { channel: 'system' }, now);
+        }
         await tx.address.updateMany({ where: { userId }, data: { isDeleted: true, line1: 'Removed (account deleted)', lat: null, long: null } });
 
         // Someone else's family profile that pointed at this account stops showing up here.

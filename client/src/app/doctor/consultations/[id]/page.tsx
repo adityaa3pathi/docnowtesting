@@ -11,6 +11,7 @@ import { ErrorState, LoadingBlock } from '@/components/consult/States';
 import { AllergyAlert } from '@/components/doctor/AllergyAlert';
 import { NotesForm } from '@/components/doctor/NotesForm';
 import { PatientDossier } from '@/components/doctor/PatientDossier';
+import { SharedRecordPanel } from '@/components/doctor/SharedRecordPanel';
 import { PrescriptionBuilder } from '@/components/doctor/PrescriptionBuilder';
 import { useApi } from '@/hooks/useApi';
 import { doctor as doctorApi, errorMessage } from '@/lib/consult/api';
@@ -127,6 +128,8 @@ export default function DoctorConsultationRoomPage({ params }: { params: Promise
                         </p>
                     </Card>
                     <PatientDossier record={record} />
+                    {/* Loads only when the doctor asks: each look is logged and shown to the patient. */}
+                    <SharedRecordPanel key={record.id} consultationId={record.id} />
                     <JoinPanel
                         key={callKey}
                         status={record.status}

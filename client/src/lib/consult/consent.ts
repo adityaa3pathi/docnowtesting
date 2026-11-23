@@ -17,6 +17,19 @@ export const SIGNUP_CONSENT_TEXT =
 export const GUEST_CONSENT_TEXT =
     'मैं राष्ट्रीय चिकित्सा आयोग (NMC) के दिशा-निर्देशों के तहत टेलीकंसल्टेशन के लिए सहमति देता/देती हूँ (I consent to online teleconsultation under NMC guidelines)';
 
+/**
+ * "Let the doctor see my health record": unticked on review-and-pay (DPDP Act consent needs a clear
+ * yes), switchable on the booking page. The server stores the version, so change it with the wording.
+ */
+export const RECORD_SHARE_VERSION = 'record-share-v1';
+export const RECORD_ACCESS_DAYS = 7;
+
+export const recordShareText = (doctorName: string, forName?: string) => {
+    const dr = doctorName.startsWith('Dr') ? doctorName : `Dr. ${doctorName}`;
+    const whose = forName ? `${forName}'s` : 'my';
+    return `Let ${dr} see ${whose} DocNow health record (lab reports, past consultations, prescriptions and uploaded medical files) from payment until ${RECORD_ACCESS_DAYS} days after this consultation. I can switch this off at any time.`;
+};
+
 export const CONSENT_REQUIRED_HINT = 'Please accept teleconsultation consent to join';
 export const GUEST_CONSENT_REQUIRED_HINT = 'कॉल शुरू करने के लिए ऊपर सहमति दें / Please accept teleconsultation consent to join';
 

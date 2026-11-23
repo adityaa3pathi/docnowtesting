@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle2, Lock, ChevronLeft, Users, Wallet } from 'lucide-react';
+import { CheckCircle2, FolderHeart, Lock, ChevronLeft, Users, Wallet } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthGate } from '@/contexts/AuthGateContext';
@@ -10,6 +10,7 @@ import { consult, errorMessage, errorStatus } from '@/lib/consult/api';
 import { attemptKey, forgetAttemptKey } from '@/lib/consult/idempotency';
 import { loadSavedBooking, mapCreateError, saveBooking } from '@/lib/consult/bookingFlow';
 import { formatPaise } from '@/lib/consult/format';
+import { recordShareText } from '@/lib/consult/consent';
 import { consultPrice, priceLines, walletRupeesToPaise } from '@/lib/consult/price';
 import { PromoBox } from '@/components/consult/PromoBox';
 import { serverNow } from '@/lib/consult/time';
@@ -55,6 +56,13 @@ function BookPage() {
     const [walletBalancePaise, setWalletBalancePaise] = useState<number | null>(null);
     const [useWallet, setUseWallet] = useState(false);
     const [promo, setPromo] = useState<ConsultPromoQuote | null>(null);
+    // "Let the doctor see my health record": unticked until the patient ticks it (DPDP Act consent).
+    const [shareRecord, setShareRecord] = useState(false);
+    /** Another person: their record needs its own yes, so the box goes back to unticked. */
+    const choosePerson = (id: string) => {
+        if (id !== personId) setShareRecord(false);
+        setPersonId(id);
+    };
 
     const loadWallet = useCallback(async () => {
         try {
@@ -143,6 +151,7 @@ function BookPage() {
                 slotId: slot.id, patientId: personId, idempotencyKey: attemptKey(slot.id, personId, variant),
                 ...(withWallet ? { useWallet: true, expectedWalletPaise: shown.walletPaise } : {}),
                 ...(promo ? { promoCode: promo.code, expectedDiscountPaise: shown.discountPaise } : {}),
+                shareRecord,
             });
             saveBooking({ id: res.consultationId, slotId: slot.id, patientId: personId });
             // Paid in full from the wallet: already confirmed, nothing to open.
@@ -312,7 +321,7 @@ function BookPage() {
                     <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-ink">
                         <Users className="h-5 w-5 text-ink-subtle" aria-hidden /> Who is this consultation for?
                     </h2>
-                    <PersonPicker people={people} value={personId} onChange={setPersonId} onAdd={() => setAddOpen(true)} />
+                    <PersonPicker people={people} value={personId} onChange={choosePerson} onAdd={() => setAddOpen(true)} />
                 </Card>
 
                 {/* Never-answered allergies: ask once here (skippable), so the doctor isn't left guessing. */}
@@ -332,6 +341,31 @@ function BookPage() {
                                 onDirtyChange={setAllergyDraft}
                                 onSaved={(saved) => { setAllergyDraft(false); setPeople((cur) => cur && cur.map((p) => (p.id === saved.id ? { ...p, ...saved } : p))); }}
                             />
+                        </Card>
+                    );
+                })()}
+
+                {/* Opt-in: the doctor sees the whole DocNow record (not only what is attached) until 7 days after. */}
+                {(() => {
+                    const chosen = people.find((p) => p.id === personId);
+                    if (!chosen) return null;
+                    return (
+                        <Card className="mt-6 p-4" aria-label="Share health record">
+                            <label className="flex cursor-pointer items-start gap-3">
+                                <input
+                                    type="checkbox"
+                                    className="mt-1 h-5 w-5 shrink-0 accent-[var(--color-primary)]"
+                                    checked={shareRecord}
+                                    onChange={(e) => setShareRecord(e.target.checked)}
+                                />
+                                <span className="min-w-0">
+                                    <span className="flex items-center gap-2 font-semibold text-ink">
+                                        <FolderHeart className="h-4 w-4 text-ink-subtle" aria-hidden /> Share {isSelfPerson(chosen) ? 'my' : `${chosen.name}'s`} health record with the doctor
+                                    </span>
+                                    <span className="mt-0.5 block text-sm text-ink-muted">{recordShareText(doctor.displayName, isSelfPerson(chosen) ? undefined : chosen.name)}</span>
+                                    <span className="mt-1 block text-xs text-ink-subtle">Optional. Without it the doctor sees only the details on this booking. Add old reports in Profile → Medical records.</span>
+                                </span>
+                            </label>
                         </Card>
                     );
                 })()}
@@ -366,7 +400,7 @@ function BookPage() {
                     onOpenChange={setAddOpen}
                     onMemberAdded={(p) => {
                         setPeople((cur) => sortPeople([...(cur ?? []), p as BookPerson]));
-                        setPersonId(p.id);
+                        choosePerson(p.id);
                     }}
                 />
             </main>

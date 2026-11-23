@@ -1,7 +1,7 @@
 /** One typed call per consultation route, so screens never write raw URLs. */
 import type { AxiosResponse } from 'axios';
 import api, { downloadAuthenticatedFile } from '@/lib/api';
-import { CONSENT_VERSION } from './consent';
+import { CONSENT_VERSION, RECORD_SHARE_VERSION } from './consent';
 import { recordServerDate } from './time';
 import type { GuestInfo } from './guest';
 import type {
@@ -10,6 +10,7 @@ import type {
     CartAddResult, ConsultNote, ConsultRules, ConsultationStatus, CreateBookingResponse, DoctorConsultationPage,
     DoctorConsultationRecord, DoctorMe, DoctorProfileInput, DoctorPublicProfile, DoctorSummary, JoinResponse, LeaveEntry,
     NoteInput, PolicyResponse, Prescription, PrescriptionInput, ReviewQueue, Slot, Specialty, VerifyResponse,
+    PatientDocument, RecordSharing, SharedItemKind, SharedItemLink, SharedRecord,
 } from './types';
 
 /** Reads the server's clock from every response, so hold countdowns do not depend on the device clock. */
@@ -66,8 +67,14 @@ export const consult = {
     checkPromo: (code: string, slotId: string) => api.post<ConsultPromoQuote>('/consult/promos/check', { code, slotId }).then(data),
     /** Codes this patient can use with this doctor now. */
     promos: (doctorId: string) => api.get<ConsultPromoQuote[]>('/consult/promos', { params: { doctorId } }).then(data),
-    createBooking: (body: { slotId: string; patientId: string; idempotencyKey: string; useWallet?: boolean; expectedWalletPaise?: number; promoCode?: string; expectedDiscountPaise?: number }) =>
-        api.post<CreateBookingResponse>('/consult/bookings', body).then(data),
+    createBooking: (body: { slotId: string; patientId: string; idempotencyKey: string; useWallet?: boolean; expectedWalletPaise?: number; promoCode?: string; expectedDiscountPaise?: number; shareRecord?: boolean }) =>
+        api.post<CreateBookingResponse>('/consult/bookings', {
+            ...body,
+            ...(body.shareRecord !== undefined ? { shareConsentVersion: RECORD_SHARE_VERSION, channel: 'web' } : {}),
+        }).then(data),
+    /** "Let the doctor see my health record" on this booking, on or off. */
+    setRecordSharing: (id: string, share: boolean) =>
+        api.put<RecordSharing>(`/consult/bookings/${id}/record-sharing`, { share, consentVersion: RECORD_SHARE_VERSION, channel: 'web' }).then(data),
     bookings: () => api.get<BookingView[]>('/consult/bookings').then(data),
     booking: (id: string) => api.get<BookingView>(`/consult/bookings/${id}`, { timeout: 10_000 }).then(data),
     verify: (id: string, body: { razorpay_order_id?: string; razorpay_payment_id: string; razorpay_signature: string }) =>
@@ -83,6 +90,18 @@ export const consult = {
     downloadPrescription: (id: string) =>
         downloadAuthenticatedFile(`/consult/bookings/${id}/prescription.pdf`, 'docnow-prescription.pdf'),
     addTestsToCart: (id: string) => api.post<CartAddResult>(`/consult/bookings/${id}/recommended-tests/cart`).then(data),
+};
+
+// ── Medical records vault (per person) ──────────────────
+
+export const records = {
+    list: (patientId: string) => api.get<{ documents: PatientDocument[]; max: number }>(`/consult/records/${patientId}/documents`).then(data),
+    upload: (patientId: string, file: File) => {
+        const form = new FormData();
+        form.append('file', file, file.name);
+        return api.post<PatientDocument>(`/consult/records/${patientId}/documents`, form, { timeout: 60_000 }).then(data);
+    },
+    remove: (id: string) => api.delete<{ id: string; removed: boolean }>(`/consult/records/documents/${id}`).then(data),
 };
 
 // ── Doctor ──────────────────────────────────────────────
@@ -113,6 +132,11 @@ export const doctor = {
             params: { scope, cursor, q: filters.q?.trim() || undefined, from: filters.from || undefined, to: filters.to || undefined },
         }).then(data),
     consultation: (id: string) => api.get<DoctorConsultationRecord>(`/doctor/me/consultations/${id}`).then(data),
+    /** The patient's whole record, when they shared it for this booking. Every call is logged. */
+    sharedRecord: (id: string) => api.get<SharedRecord>(`/doctor/me/consultations/${id}/record`).then(data),
+    /** A short link to one file or report of the shared record; each open is logged. */
+    openSharedItem: (id: string, kind: SharedItemKind, targetId: string) =>
+        api.get<SharedItemLink>(`/doctor/me/consultations/${id}/record/${kind}/${targetId}`).then(data),
     join: (id: string) => api.post<JoinResponse>(`/doctor/me/consultations/${id}/join`).then(data),
     end: (id: string) => api.post<{ status: ConsultationStatus }>(`/doctor/me/consultations/${id}/end`).then(data),
     saveNotes: (id: string, body: NoteInput) => api.put<ConsultNote>(`/doctor/me/consultations/${id}/notes`, body).then(data),

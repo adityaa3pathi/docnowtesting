@@ -14,6 +14,7 @@ import { ConsultationMoveKind, PrismaClient } from '@prisma/client';
 import { prisma } from '../../db';
 import { logAlert } from '../../utils/logger';
 import { getBooking } from './consultations.booking';
+import { writeRecordSharing } from './consultations.records';
 import { toPaise } from './consultations.money';
 import { rulesOf } from './consultations.policy';
 import { selfRescheduleState } from './consultations.rescheduleRules';
@@ -90,6 +91,8 @@ async function moveBooking(db: PrismaClient, c: LateBooking, slot: { id: string;
             },
         });
         if (moved.count !== 1) throw new DoctorError(409, 'Your consultation changed meanwhile. Your doctor may have just joined; please refresh.');
+        // The patient let one named doctor see their record; a new doctor does not inherit that.
+        if (slot.doctorId !== c.doctorId) await writeRecordSharing(tx, c.id, null, false, { channel: 'system' }, new Date());
         await finishMove(tx, c, slot, kind, byUserId);
     });
 }
