@@ -144,7 +144,8 @@ export function Header() {
     // Close mobile menu on resize
     useEffect(() => {
         const handleResize = () => {
-            if (window.innerWidth >= 768) setIsMobileMenuOpen(false);
+            // The desktop header starts at Tailwind's xl (1280 px); below it the menu is in use.
+            if (window.innerWidth >= 1280) setIsMobileMenuOpen(false);
         };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
@@ -222,13 +223,13 @@ export function Header() {
 
                     {/* Desktop Global Search — hidden on pages with their own search */}
                     {!hideSearch && (
-                        <div className="hidden md:flex flex-1 min-w-[300px] max-w-2xl mx-6 relative">
+                        <div className="hidden xl:flex flex-1 min-w-[300px] max-w-2xl mx-6 relative">
                             <GlobalSearch />
                         </div>
                     )}
 
                     {/* Desktop Nav Links */}
-                    <div className="hidden md:flex items-center gap-6 lg:gap-8">
+                    <div className="hidden xl:flex items-center gap-6 lg:gap-8">
                         {desktopNavLinks.map((link) => (
                             <Link
                                 key={link.href}
@@ -249,7 +250,7 @@ export function Header() {
                     </div>
 
                     {/* Desktop Right Controls */}
-                    <div className="hidden md:flex items-center gap-3">
+                    <div className="hidden xl:flex items-center gap-3">
 
                         {/* Select City */}
                         <Dialog open={isLocationDialogOpen} onOpenChange={setIsLocationDialogOpen}>
@@ -399,7 +400,7 @@ export function Header() {
                     </div>
 
                     {/* ─── Mobile: Hamburger Only ─── */}
-                    <div className="flex md:hidden items-center">
+                    <div className="flex xl:hidden items-center">
                         <button
                             className="p-2 text-gray-700 hover:text-primary transition-colors"
                             onClick={() => setIsMobileMenuOpen(true)}
@@ -413,7 +414,7 @@ export function Header() {
                 {/* Mobile Global Search — hidden on search/profile/cart pages */}
                 {!hideSearch && (
                     <div
-                        className="md:hidden grid transition-[grid-template-rows,opacity] duration-300 ease-in-out"
+                        className="xl:hidden grid transition-[grid-template-rows,opacity] duration-300 ease-in-out"
                         style={{
                             gridTemplateRows: isSearchHidden ? '0fr' : '1fr',
                             opacity: isSearchHidden ? 0 : 1,
@@ -475,13 +476,13 @@ export function Header() {
             {/* ─── Mobile Navigation Drawer ─── */}
             {/* Backdrop */}
             <div
-                className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 md:hidden ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 xl:hidden ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 onClick={() => setIsMobileMenuOpen(false)}
             />
 
             {/* Drawer Panel — white bg so icons stay readable */}
             <div
-                className={`fixed top-0 left-0 h-full w-[280px] bg-white z-[70] shadow-2xl transform transition-transform duration-300 ease-out md:hidden flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+                className={`fixed top-0 left-0 h-full w-[280px] bg-white z-[70] shadow-2xl transform transition-transform duration-300 ease-out xl:hidden flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
                 {/* Drawer Header */}
                 <div className="flex items-center justify-end px-5 h-16 border-b border-gray-100 flex-shrink-0 overflow-hidden bg-white">
