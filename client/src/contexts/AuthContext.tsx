@@ -97,7 +97,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(cached);
         }
 
-        api.get('/auth/me')
+        // A guest gets 401 here on every page load. That is an answer, not an expired session:
+        // without the flag a guest landing on any page but "/" was sent to the login page.
+        api.get('/auth/me', { skipLoginRedirect: true })
             .then(res => {
                 const serverUser = res.data.user;
                 setUser(serverUser);
