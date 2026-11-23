@@ -14,6 +14,7 @@ import { attachmentsFor } from './consultations.attachments';
 import { createSignedToken, verifySignedToken } from '../../services/signedToken';
 import { resolveOrCreateSelfPatient } from '../../utils/patientValidation';
 import type { ConsultationStatus } from './consultations.types';
+import { medicineSchema } from './consultations.medicine';
 
 const WRITABLE: ConsultationStatus[] = ['IN_PROGRESS', 'COMPLETED'];
 
@@ -25,14 +26,6 @@ export const noteSchema = z.object({
     diagnosis: text(1000),
     advice: text(2000),
     followUpDays: z.number().int().min(1).max(365).nullable().optional(),
-});
-
-const medicineSchema = z.object({
-    name: z.string().trim().min(1, 'Medicine name is required').max(120),
-    dose: z.string().trim().max(60).default(''),
-    frequency: z.string().trim().max(60).default(''),
-    duration: z.string().trim().max(60).default(''),
-    instructions: z.string().trim().max(200).default(''),
 });
 
 export const prescriptionSchema = z.object({
@@ -71,7 +64,7 @@ export async function getDoctorRecord(doctorId: string, consultationId: string) 
             patient: {
                 select: {
                     name: true, age: true, gender: true, relation: true, preferredLanguage: true,
-                    bloodGroup: true, allergies: true, chronicConditions: true, currentMedications: true,
+                    bloodGroup: true, allergies: true, allergiesConfirmedAt: true, chronicConditions: true, currentMedications: true,
                 },
             },
             user: { select: { name: true } },

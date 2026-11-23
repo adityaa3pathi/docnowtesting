@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthDialog } from '@/components/AuthDialog';
+import { AllergyPromptDialog } from '@/components/health/AllergyPromptDialog';
 import toast from 'react-hot-toast';
 
 interface AuthGateContextType {
@@ -22,6 +23,7 @@ export function AuthGateProvider({ children }: { children: React.ReactNode }) {
     const { isAuthenticated } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const pendingActionRef = useRef<(() => void) | null>(null);
+    const [allergyPrompt, setAllergyPrompt] = useState(false);
 
     const requireAuth = useCallback(
         (action: () => void) => {
@@ -59,6 +61,15 @@ export function AuthGateProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
+    // A new account is asked about allergies once, after any resumed action has started. The consult
+    // booking page asks on its own, so the dialog is skipped there.
+    const handleSignedUp = useCallback(() => {
+        setTimeout(() => {
+            if (!window.location.pathname.startsWith('/consult/book')) setAllergyPrompt(true);
+        }, 800);
+    }, []);
+    const closeAllergyPrompt = useCallback(() => setAllergyPrompt(false), []);
+
     return (
         <AuthGateContext.Provider
             value={{ requireAuth, openAuthDialog, closeAuthDialog, isAuthDialogOpen: isOpen }}
@@ -68,7 +79,9 @@ export function AuthGateProvider({ children }: { children: React.ReactNode }) {
                 isOpen={isOpen}
                 onClose={closeAuthDialog}
                 onLoginSuccess={handleLoginSuccess}
+                onSignedUp={handleSignedUp}
             />
+            <AllergyPromptDialog open={allergyPrompt} onClose={closeAllergyPrompt} />
         </AuthGateContext.Provider>
     );
 }

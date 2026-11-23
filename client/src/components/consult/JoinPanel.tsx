@@ -25,10 +25,12 @@ interface Props {
     onCallChange?: (inCall: boolean) => void;
     /** Patient side: the NMC teleconsultation consent must be ticked before Join works. */
     consentDoctorName?: string;
+    /** Doctor side: the allergy banner, on top of the video in the call and above Join before it. */
+    alert?: React.ReactNode;
 }
 
 /** Shows when the call opens, the Join button inside the window, then the call itself. */
-export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, onChange, onCallChange, consentDoctorName }: Props) {
+export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, onChange, onCallChange, consentDoctorName, alert }: Props) {
     const now = useServerNow();
     const [call, setCall] = useState<JoinResponse | null>(null);
     const [showDeviceCheck, setShowDeviceCheck] = useState(false);
@@ -47,6 +49,7 @@ export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, on
                 otherParty={otherParty}
                 audioDeviceId={devices.audioDeviceId}
                 videoDeviceId={devices.videoDeviceId}
+                alert={alert}
                 onLeave={() => {
                     setCall(null);
                     setShowDeviceCheck(false);
@@ -90,6 +93,7 @@ export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, on
     return (
         <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
             <p className="font-semibold text-ink">{type === 'AUDIO' ? 'Audio call' : 'Video call'}</p>
+            {alert}
             {win.kind === 'early' && (
                 <p className="text-sm text-ink-muted">Join from {formatIstDateTime(win.opensAt)} (Indian time).</p>
             )}

@@ -2,13 +2,13 @@
 import PDFDocument from 'pdfkit';
 import path from 'path';
 import { doctorTitle } from './doctors.types';
+import { medicineParts, type StoredMedicine } from './consultations.medicine';
 
 const PURPLE = '#4b2192';
 const TEXT = '#1F2937';
 const MUTED = '#4B5563';
 const LINE = '#E5E7EB';
 
-type Medicine = { name: string; dose: string; frequency: string; duration: string; instructions: string };
 type Doctor = { displayName: string; qualification: string; specialty: string; registrationNumber: string; registrationCouncil: string };
 type Patient = { name: string; age: number | null; gender: string | null };
 
@@ -31,7 +31,7 @@ const istDateTime = (d: Date) =>
 export function renderPrescriptionPdf(p: PrescriptionForPdf): Promise<Buffer> {
     const doctor = p.doctorSnapshot as Doctor;
     const patient = p.patientSnapshot as Patient;
-    const medicines = p.medicines as Medicine[];
+    const medicines = p.medicines as StoredMedicine[];
     const tests = p.recommendedTests as { code: string; name: string }[];
 
     const doc = new PDFDocument({ size: 'A4', margin: 48, info: { Title: `Prescription ${p.id}` } });
@@ -75,10 +75,11 @@ export function renderPrescriptionPdf(p: PrescriptionForPdf): Promise<Buffer> {
         heading('Medicines');
         doc.moveDown(0.3);
         medicines.forEach((m, i) => {
-            doc.fillColor(TEXT).font('Helvetica-Bold').fontSize(11).text(`${i + 1}. ${m.name}`, left);
-            const plan = [m.dose, m.frequency, m.duration].filter(Boolean).join(' · ');
+            const parts = medicineParts(m);
+            doc.fillColor(TEXT).font('Helvetica-Bold').fontSize(11).text(`${i + 1}. ${parts.title}`, left);
+            const plan = [parts.dose, parts.when, parts.food, parts.duration].filter(Boolean).join(' · ');
             if (plan) doc.fillColor(TEXT).font('Helvetica').fontSize(10).text(plan, left + 14);
-            if (m.instructions) doc.fillColor(MUTED).font('Helvetica-Oblique').fontSize(10).text(m.instructions, left + 14);
+            if (parts.instructions) doc.fillColor(MUTED).font('Helvetica-Oblique').fontSize(10).text(parts.instructions, left + 14);
             doc.moveDown(0.4);
         });
         rule();

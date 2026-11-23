@@ -5,7 +5,7 @@
  */
 export type FamilyLanguage = 'hi' | 'en';
 
-type Medicine = { name: string; dose?: string; frequency?: string; duration?: string; instructions?: string };
+import { medicineParts, type StoredMedicine } from './consultations.medicine';
 
 const HINDI: [RegExp, string][] = [
     [/\bmorning\b/gi, 'सुबह'],
@@ -15,6 +15,7 @@ const HINDI: [RegExp, string][] = [
     [/\bafter food\b/gi, 'खाने के बाद'],
     [/\bbefore food\b/gi, 'खाने से पहले'],
     [/\bwith food\b/gi, 'खाने के साथ'],
+    [/\bempty stomach\b/gi, 'खाली पेट'],
     [/\bdays?\b/gi, 'दिन'],
     [/\bweeks?\b/gi, 'हफ़्ते'],
     [/\bmonths?\b/gi, 'महीने'],
@@ -29,13 +30,14 @@ export function localizeDosage(text: string, lang: FamilyLanguage): string {
 export const SUMMARY_MAX = 600;
 
 /** "1. Paracetamol 650mg: 1-0-1 (सुबह, रात), खाने के बाद, 5 दिन" — one line per medicine. */
-export function dosageSummary(medicines: Medicine[], lang: FamilyLanguage): string {
+export function dosageSummary(medicines: StoredMedicine[], lang: FamilyLanguage): string {
     if (!medicines.length) return lang === 'hi' ? 'कोई दवा नहीं लिखी गई।' : 'No medicines prescribed.';
     const lines: string[] = [];
     let used = 0;
     for (const [i, m] of medicines.entries()) {
-        const how = [m.dose, m.frequency, m.instructions, m.duration].filter(Boolean).map((p) => localizeDosage(p!, lang)).join(', ');
-        const line = `${i + 1}. ${m.name}${how ? `: ${how}` : ''}`;
+        const p = medicineParts(m);
+        const how = [p.dose, p.when, p.food, p.instructions, p.duration].filter(Boolean).map((x) => localizeDosage(x, lang)).join(', ');
+        const line = `${i + 1}. ${p.title}${how ? `: ${how}` : ''}`;
         if (used + line.length > SUMMARY_MAX) {
             const rest = medicines.length - i;
             lines.push(lang === 'hi' ? `+${rest} और` : `+${rest} more`);

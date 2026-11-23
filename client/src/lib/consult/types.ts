@@ -259,10 +259,24 @@ export interface JoinResponse {
     token: string;
 }
 
+export type DoseTime = 'MORNING' | 'AFTERNOON' | 'NIGHT';
+export type FoodTiming = 'BEFORE_FOOD' | 'AFTER_FOOD' | 'WITH_FOOD' | 'EMPTY_STOMACH';
+
+/**
+ * One prescribed medicine. Prescriptions issued before the structured fields (strength, doseTimes,
+ * foodTiming, durationDays) have only the free-text ones, so those are optional when reading.
+ */
 export interface Medicine {
     name: string;
+    strength?: string;
+    /** How much each time, e.g. "1 tablet". */
     dose: string;
+    /** Free text for what the times can't say: "Only when needed". */
     frequency: string;
+    doseTimes?: DoseTime[];
+    foodTiming?: FoodTiming | null;
+    durationDays?: number | null;
+    /** Old free-text duration. */
     duration: string;
     instructions: string;
 }
@@ -342,6 +356,8 @@ export interface DoctorConsultationRecord {
         preferredLanguage?: string;
         bloodGroup?: string | null;
         allergies?: string[];
+        /** With an empty list: set means "no known allergies", null means nobody asked. */
+        allergiesConfirmedAt?: string | null;
         chronicConditions?: string[];
         currentMedications?: string[];
     };

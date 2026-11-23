@@ -137,4 +137,61 @@ describeDb('doctor consultation list (real Postgres)', () => {
         expect((await get('?scope=upcoming&limit=0', t)).status).toBe(400);
         expect((await get('?scope=upcoming&cursor=garbage', t)).status).toBe(400);
     });
+
+    describe('history search (screen 47)', () => {
+        /** A past booking at an exact time, so IST day edges can be tested. */
+        async function bookAt(doctorId: string, startsAt: Date, patientName: string) {
+            const user = await makeUser();
+            const patient = await makePatient(user.id);
+            await testDb.patient.update({ where: { id: patient.id }, data: { name: patientName } });
+            const slot = await testDb.slot.create({ data: { doctorId, startsAt, endsAt: new Date(startsAt.getTime() + 15 * 60_000), status: 'BOOKED' } });
+            return makeConsultation({ userId: user.id, patientId: patient.id, doctorId, slotId: slot.id, startsAt, status: 'COMPLETED' });
+        }
+        const ids = async (qs: string, token: string) => (await (await get(qs, token)).json()).items.map((i: any) => i.id);
+
+        it('finds patients by part of the name, any case, only among the doctor\'s own bookings', async () => {
+            const d = await makeDoctor();
+            const other = await makeDoctor();
+            const asha = await book(d.profile.id, 'COMPLETED', -3000, 'Asha Rao');
+            await book(d.profile.id, 'COMPLETED', -2000, 'Ravi Kumar');
+            await book(other.profile.id, 'COMPLETED', -1000, 'Asha Mehta');
+            const t = tokenFor(d.user);
+            expect(await ids('?scope=past&q=aSH', t)).toEqual([asha.id]);
+            expect(await ids('?scope=past&q=%20%20', t)).toHaveLength(2);
+            expect(await ids('?scope=past&q=nobody', t)).toEqual([]);
+        });
+
+        it('filters by IST calendar days, both ends included', async () => {
+            const d = await makeDoctor();
+            // 23:50 IST on 10 Nov and 00:10 IST on 11 Nov are 20 minutes apart but on different days.
+            const late = await bookAt(d.profile.id, new Date('2026-11-10T18:20:00Z'), 'Late Night');
+            const early = await bookAt(d.profile.id, new Date('2026-11-10T18:40:00Z'), 'Early Morning');
+            const t = tokenFor(d.user);
+            expect(await ids('?scope=past&from=2026-11-10&to=2026-11-10', t)).toEqual([late.id]);
+            expect(await ids('?scope=past&from=2026-11-11', t)).toEqual([early.id]);
+            expect(await ids('?scope=past&to=2026-11-11', t)).toEqual([early.id, late.id]);
+            expect(await ids('?scope=past&from=2026-11-10&to=2026-11-11&q=late', t)).toEqual([late.id]);
+        });
+
+        it('pages through search results with the same filters', async () => {
+            const d = await makeDoctor();
+            const a = await book(d.profile.id, 'COMPLETED', -3000, 'Meena A');
+            await book(d.profile.id, 'COMPLETED', -2500, 'Someone Else');
+            const b = await book(d.profile.id, 'COMPLETED', -2000, 'Meena B');
+            const c = await book(d.profile.id, 'COMPLETED', -1000, 'Meena C');
+            const t = tokenFor(d.user);
+            const p1 = await (await get('?scope=past&q=meena&limit=2', t)).json();
+            const p2 = await (await get(`?scope=past&q=meena&limit=2&cursor=${p1.nextCursor}`, t)).json();
+            expect([...p1.items, ...p2.items].map((i: any) => i.id)).toEqual([c.id, b.id, a.id]);
+            expect(p2.nextCursor).toBeNull();
+        });
+
+        it('rejects dates that do not exist, a reversed range and a very long search', async () => {
+            const t = tokenFor((await makeDoctor()).user);
+            expect((await get('?scope=past&from=2026-02-31', t)).status).toBe(400);
+            expect((await get('?scope=past&to=24-11-2026', t)).status).toBe(400);
+            expect((await get('?scope=past&from=2026-11-12&to=2026-11-11', t)).status).toBe(400);
+            expect((await get(`?scope=past&q=${'a'.repeat(81)}`, t)).status).toBe(400);
+        });
+    });
 });

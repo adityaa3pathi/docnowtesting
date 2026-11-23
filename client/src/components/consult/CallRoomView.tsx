@@ -30,11 +30,13 @@ export interface ConsultCallRoomProps {
     /** Camera and microphone picked on the device check; browser default when absent. */
     audioDeviceId?: string;
     videoDeviceId?: string;
+    /** Shown on top of the video the whole call, full screen included (the doctor's allergy banner). */
+    alert?: React.ReactNode;
 }
 
 const PARTY_LABEL = { doctor: 'Doctor', patient: 'Patient', caretaker: 'Family' } as const;
 
-export default function CallRoomView({ url, token, role, otherParty, onLeave, onDoctorJoined, senior = false, language = 'en', audioDeviceId, videoDeviceId }: ConsultCallRoomProps) {
+export default function CallRoomView({ url, token, role, otherParty, onLeave, onDoctorJoined, senior = false, language = 'en', audioDeviceId, videoDeviceId, alert }: ConsultCallRoomProps) {
     const copy = callCopy(language);
     const videoAllowed = !role.endsWith('-audio');
     const viewer = partyOfRole(role);
@@ -131,7 +133,7 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                 )}
                 {/* Three-way calls: the caregiver (or patient, for the doctor) as small tiles. */}
                 {connected && others.length > 0 && (
-                    <div className="absolute left-3 top-14 flex flex-col gap-2">
+                    <div className={cn('absolute left-3 flex flex-col gap-2', alert ? 'top-40' : 'top-14')}>
                         {others.map((p) => (
                             <VideoTile key={p.identity} participant={p} label={labelOf(p)} mutedLabel={copy.muted} className="aspect-video w-28 border-2 border-white/70 sm:w-36" />
                         ))}
@@ -148,10 +150,12 @@ export default function CallRoomView({ url, token, role, otherParty, onLeave, on
                         <QualityBadge quality={quality} copy={copy} />
                     </div>
                 )}
+                {/* The overlay alert is at most 6rem tall (it scrolls), so tiles and notices move below it. */}
+                {alert && <div className="absolute inset-x-3 top-12 z-10">{alert}</div>}
             </div>
 
             {/* In fullscreen these float over the video; otherwise they sit under it. */}
-            <div className={cn('space-y-2', fullscreen && 'absolute inset-x-3 top-14 z-10')}>
+            <div className={cn('space-y-2', fullscreen && 'absolute inset-x-3 z-10', fullscreen && (alert ? 'top-40' : 'top-14'))}>
                 {connected && room && !room.canPlaybackAudio && (
                     <Button className="w-full" onClick={() => void room.startAudio().then(redraw)}>
                         <Volume2 className="mr-2 h-4 w-4" aria-hidden /> {copy.enableSound}

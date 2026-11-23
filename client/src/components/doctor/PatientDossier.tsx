@@ -107,8 +107,6 @@ export function PatientDossier({ record }: { record: DoctorConsultationRecord })
     const medicines = p.currentMedications ?? [];
     const reports = record.attachedReports ?? [];
     const documents = record.attachments ?? [];
-    const empty = !conditions.length && !allergies.length && !medicines.length && !reports.length && !documents.length && !p.bloodGroup && !record.caregiver;
-    if (empty) return null;
 
     return (
         <Card className="space-y-4 p-5">
@@ -131,7 +129,9 @@ export function PatientDossier({ record }: { record: DoctorConsultationRecord })
                 </div>
                 <div className="space-y-1.5">
                     <p className="flex items-center gap-1.5 text-xs font-bold uppercase text-red-700"><AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Allergies</p>
-                    {allergies.length ? <Chips items={allergies} tone="warn" /> : <p className="text-sm text-muted-foreground">None recorded. Confirm verbally before prescribing.</p>}
+                    {allergies.length ? <Chips items={allergies} tone="warn" />
+                        : p.allergiesConfirmedAt ? <p className="text-sm text-foreground">No known allergies (told by the patient on {formatIstDay(p.allergiesConfirmedAt)})</p>
+                        : <p className="text-sm font-semibold text-amber-800">Not confirmed. Ask before prescribing.</p>}
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                     <p className="flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground"><Pill className="h-3.5 w-3.5" aria-hidden /> Current medicines</p>

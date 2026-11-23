@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { prisma } from '../../db';
 import { DoctorError } from './doctors.status';
 import type { ConsultationStatus } from './consultations.types';
+import { isoDay, istDayRange } from './consultations.appointments';
 
 const LIVE: ConsultationStatus[] = ['CONFIRMED', 'RESCHEDULED', 'WAITING', 'IN_PROGRESS'];
 const ENDED: ConsultationStatus[] = ['COMPLETED', 'CANCELLED', 'NO_SHOW_PATIENT', 'NO_SHOW_DOCTOR', 'REFUNDED'];
@@ -13,7 +14,12 @@ export const doctorListQuery = z.object({
     scope: z.enum(['upcoming', 'past'], { message: 'Scope must be upcoming or past' }),
     cursor: z.string().max(200).optional(),
     limit: z.coerce.number().int().min(1).optional().default(30),
-});
+    /** Part of the patient's name, any case. */
+    q: z.string().trim().max(80, 'Search for at most 80 characters').optional().transform((v) => v || undefined),
+    /** IST calendar days, both included. */
+    from: isoDay.optional(),
+    to: isoDay.optional(),
+}).refine((v) => !v.from || !v.to || v.from <= v.to, { message: 'The start date must be on or before the end date', path: ['from'] });
 
 export const encodeCursor = (startsAt: Date, id: string) => Buffer.from(`${startsAt.toISOString()}|${id}`).toString('base64url');
 
@@ -32,6 +38,9 @@ export async function listDoctorConsultations(doctorId: string, q: z.infer<typeo
         ? { status: { in: LIVE }, slot: { endsAt: { gt: now } } }
         : { OR: [{ status: { in: ENDED } }, { status: { in: LIVE }, slot: { endsAt: { lte: now } } }] };
     const conds: Prisma.ConsultationWhereInput[] = [{ doctorId }, base];
+    if (q.q) conds.push({ patient: { name: { contains: q.q, mode: 'insensitive' } } });
+    if (q.from) conds.push({ startsAt: { gte: istDayRange(q.from).start } });
+    if (q.to) conds.push({ startsAt: { lt: istDayRange(q.to).end } });
     if (q.cursor) {
         const c = decodeCursor(q.cursor);
         const op = upcoming ? 'gt' : 'lt';

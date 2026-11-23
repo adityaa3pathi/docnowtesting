@@ -5,7 +5,7 @@ import { prisma } from '../db';
 
 const router = express.Router();
 
-import { patientHealthSchema, patientSchema, relinkFields, resolveOrCreateSelfPatient } from '../utils/patientValidation';
+import { patientHealthSchema, patientSchema, patientWriteData, relinkFields, resolveOrCreateSelfPatient } from '../utils/patientValidation';
 
 // POST /api/profile/patients/ensure-self — Auto-create Self patient if missing
 // Called by camp checkout page on mount to guarantee the user appears in the patient list
@@ -46,7 +46,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
         const patient = await prisma.patient.create({
             data: {
                 userId: req.userId!,
-                ...data
+                ...patientWriteData(data)
             }
         });
 
@@ -89,7 +89,7 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
 
         const updatedPatient = await prisma.patient.update({
             where: { id },
-            data: { ...updateData, ...relinkFields(patient, updateData) }
+            data: { ...patientWriteData(updateData), ...relinkFields(patient, updateData) }
         });
 
         res.status(200).json({
@@ -122,7 +122,7 @@ router.patch('/:id', authMiddleware, async (req: AuthRequest, res: Response) => 
         }
         const updatedPatient = await prisma.patient.update({
             where: { id },
-            data: { ...data, ...relinkFields(patient, data) },
+            data: { ...patientWriteData(data), ...relinkFields(patient, data) },
         });
         res.status(200).json({ message: 'Family member updated successfully', patient: updatedPatient });
     } catch (error: any) {

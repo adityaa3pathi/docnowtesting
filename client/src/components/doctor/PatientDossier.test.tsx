@@ -95,8 +95,15 @@ describe('PatientDossier attached documents', () => {
         expect(preview()).toBeNull();
     });
 
-    it('stays hidden when nothing was shared', async () => {
+    it('with nothing shared, still says the allergies were never confirmed', async () => {
         await mount({ ...record([]), patient: { name: 'Ravi', age: 40, gender: 'Male' } });
-        expect(container!.textContent).toBe('');
+        expect(container!.textContent).toContain('Not confirmed. Ask before prescribing.');
+        expect(container!.textContent).not.toContain('Attached documents');
+    });
+
+    it('tells a confirmed "no known allergies" apart from never asked', async () => {
+        await mount({ ...record([]), patient: { name: 'Ravi', age: 40, gender: 'Male', allergies: [], allergiesConfirmedAt: '2026-11-20T06:00:00Z' } });
+        expect(container!.textContent).toContain('No known allergies (told by the patient on');
+        expect(container!.textContent).not.toContain('Not confirmed');
     });
 });

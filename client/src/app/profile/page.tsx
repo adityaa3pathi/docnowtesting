@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut, ChevronRight, IndianRupee, Stethoscope } from 'lucide-react';
+import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut, ChevronRight, IndianRupee, Stethoscope, HeartPulse } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -70,6 +70,9 @@ const ReferralTab = dynamic(() => import('@/components/profile/ReferralTab').the
     loading: () => <ProfileSkeleton />,
 });
 const ReportsTab = dynamic(() => import('@/components/profile/ReportsTab').then(m => ({ default: m.ReportsTab })), {
+    loading: () => <ListSkeleton />,
+});
+const HealthTab = dynamic(() => import('@/components/profile/HealthTab').then(m => ({ default: m.HealthTab })), {
     loading: () => <ListSkeleton />,
 });
 
@@ -387,6 +390,19 @@ function ProfilePageContent() {
                         onOpenChange={(open) => handleTabChange('referrals', open)}
                     >
                         <ReferralTab />
+                    </BentoCard>
+
+                    {/* Health details: allergies, conditions, medicines, blood group (self and family) */}
+                    <BentoCard
+                        className="col-span-2 min-h-[120px] border-none shadow-lg sm:min-h-[140px]"
+                        gradient="from-red-600 to-rose-500"
+                        title="Health Details"
+                        icon={<HeartPulse className="h-4 w-4" />}
+                        subtitle="Allergies, conditions and medicines"
+                        isOpen={activeTab === 'health'}
+                        onOpenChange={(open) => handleTabChange('health', open)}
+                    >
+                        <HealthTab />
                     </BentoCard>
 
                     {/* Manager/Admin Area */}

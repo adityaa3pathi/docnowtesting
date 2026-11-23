@@ -4,7 +4,7 @@ import { requireManager } from '../middleware/requireManager';
 import { prisma } from '../db';
 import { z } from 'zod';
 import { HealthiansAdapter } from '../adapters/healthians';
-import { resolveOrCreateSelfPatient, patientSchema } from '../utils/patientValidation';
+import { resolveOrCreateSelfPatient, patientSchema, patientWriteData } from '../utils/patientValidation';
 import { getRazorpay } from '../services/razorpay';
 import { finalizeBooking } from '../services/bookingFinalization';
 import { cancelGlobalBookingAsManager, cancelManagerOrder, PARTNER_CANCELABLE_STATUSES } from '../services/bookingCancellation';
@@ -475,7 +475,7 @@ router.post('/users/:userId/patients', ...mgr, async (req: AuthRequest, res: Res
     try {
         const validated = patientSchema.parse(req.body);
         const patient = await prisma.patient.create({
-            data: { ...validated, userId }
+            data: { ...patientWriteData(validated), userId }
         });
         res.status(201).json(patient);
     } catch (error: any) {
@@ -490,7 +490,7 @@ router.put('/users/:userId/patients/:id', ...mgr, async (req: AuthRequest, res: 
         const validated = patientSchema.parse(req.body);
         const patient = await prisma.patient.update({
             where: { id, userId },
-            data: validated
+            data: patientWriteData(validated)
         });
         res.json(patient);
     } catch (error: any) {

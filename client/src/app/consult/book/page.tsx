@@ -12,6 +12,8 @@ import { loadSavedBooking, mapCreateError, saveBooking } from '@/lib/consult/boo
 import { formatRupees } from '@/lib/consult/format';
 import { serverNow } from '@/lib/consult/time';
 import { AddFamilyMemberDialog } from '@/components/profile/AddFamilyMemberDialog';
+import { HealthDetailsForm } from '@/components/health/HealthDetailsForm';
+import { allergyState, isSelfPerson, type HealthPerson } from '@/lib/health';
 import { BookingSummary } from '@/components/consult/BookingSummary';
 import { PersonPicker, type Person } from '@/components/consult/PersonPicker';
 import { ErrorState, LoadingBlock } from '@/components/consult/States';
@@ -19,7 +21,10 @@ import { Button, Card, Notice } from '@/components/ui';
 import { Footer } from '@/components/Footer';
 import type { DoctorPublicProfile, Slot } from '@/lib/consult/types';
 
-function sortPeople(list: Person[]): Person[] {
+/** The people list carries the health snapshot too; the picker only needs the basics. */
+type BookPerson = Person & HealthPerson;
+
+function sortPeople(list: BookPerson[]): BookPerson[] {
     const isSelf = (p: Person) => p.relation?.toLowerCase() === 'self';
     return [...list].sort((a, b) => (isSelf(a) === isSelf(b) ? a.name.localeCompare(b.name) : isSelf(a) ? -1 : 1));
 }
@@ -34,7 +39,11 @@ function BookPage() {
 
     const [doctor, setDoctor] = useState<DoctorPublicProfile | null>(null);
     const [slot, setSlot] = useState<Slot | null>(null);
-    const [people, setPeople] = useState<Person[] | null>(null);
+    const [people, setPeople] = useState<BookPerson[] | null>(null);
+    // People whose allergy question was skipped on this page; asked again next booking.
+    const [skippedAllergies, setSkippedAllergies] = useState<string[]>([]);
+    // Something typed in the allergy card but not saved: Pay waits, so it isn't lost.
+    const [allergyDraft, setAllergyDraft] = useState(false);
     const [personId, setPersonId] = useState('');
     const [loadError, setLoadError] = useState<string | null>(null);
     const [addOpen, setAddOpen] = useState(false);
@@ -70,7 +79,7 @@ function BookPage() {
                     backToDoctor('slot_gone');
                     return;
                 }
-                const list = sortPeople((ppl.data as Person[]) || []);
+                const list = sortPeople((ppl.data as BookPerson[]) || []);
                 setDoctor(d);
                 setSlot(found);
                 setPeople(list);
@@ -88,6 +97,10 @@ function BookPage() {
 
     async function pay() {
         if (!slot || !personId || busy) return;
+        if (allergyDraft && !skippedAllergies.includes(personId)) {
+            setProblem({ message: 'Save the allergies you entered, or press Skip for now, before paying.' });
+            return;
+        }
         setBusy(true);
         setProblem(null);
         try {
@@ -216,6 +229,27 @@ function BookPage() {
                     <PersonPicker people={people} value={personId} onChange={setPersonId} onAdd={() => setAddOpen(true)} />
                 </Card>
 
+                {/* Never-answered allergies: ask once here (skippable), so the doctor isn't left guessing. */}
+                {(() => {
+                    const chosen = people.find((p) => p.id === personId);
+                    if (!chosen || allergyState(chosen) !== 'unknown' || skippedAllergies.includes(chosen.id)) return null;
+                    return (
+                        <Card className="mt-6 p-6" aria-label="Allergies">
+                            <h2 className="text-lg font-bold text-ink">{isSelfPerson(chosen) ? 'Do you have any allergies?' : `Does ${chosen.name} have any allergies?`}</h2>
+                            <p className="mb-4 mt-1 text-sm text-ink-muted">The doctor checks this before prescribing.</p>
+                            <HealthDetailsForm
+                                key={chosen.id}
+                                person={chosen}
+                                mode="allergies"
+                                saveLabel="Save allergies"
+                                onSkip={() => { setAllergyDraft(false); setSkippedAllergies((cur) => [...cur, chosen.id]); }}
+                                onDirtyChange={setAllergyDraft}
+                                onSaved={(saved) => { setAllergyDraft(false); setPeople((cur) => cur && cur.map((p) => (p.id === saved.id ? { ...p, ...saved } : p))); }}
+                            />
+                        </Card>
+                    );
+                })()}
+
                 {/* Error Message */}
                 {problem && (
                     <Notice tone="danger" className="mt-6">
@@ -239,7 +273,7 @@ function BookPage() {
                     open={addOpen}
                     onOpenChange={setAddOpen}
                     onMemberAdded={(p) => {
-                        setPeople((cur) => sortPeople([...(cur ?? []), p]));
+                        setPeople((cur) => sortPeople([...(cur ?? []), p as BookPerson]));
                         setPersonId(p.id);
                     }}
                 />
