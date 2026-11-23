@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { createSession, rotateRefreshToken, revokeSession, revokeAllUserSessions, RefreshRaceError } from '../services/sessionService';
+import { createSession, rotateRefreshToken, revokeSession, revokeAllUserSessions, RefreshRaceError, AccountBlockedError, ACCOUNT_BLOCKED_MESSAGE } from '../services/sessionService';
 import { setAuthResponse, clearAuthCookies, isWebClient } from '../utils/cookieHelpers';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { Redis } from '@upstash/redis';
@@ -34,6 +34,11 @@ const authRateLimiter = rateLimiter(5, 15 * 60, 'auth_otp');
 const verifyRateLimiter = rateLimiter(10, 15 * 60, 'auth_verify_otp');
 // Password guessing had no limit at all while every OTP route did.
 const passwordRateLimiter = rateLimiter(10, 15 * 60, 'auth_password');
+
+// A blocked (blacklisted) account gets one clear answer on every sign-in route, and no OTP is sent.
+// Deleted accounts are blocked too, but their mobile is replaced, so their number reads as "no account".
+const isBlocked = (user: { status: string }) => user.status === 'BLOCKED';
+const refuseBlocked = (res: Response) => res.status(403).json({ error: ACCOUNT_BLOCKED_MESSAGE, code: 'ACCOUNT_BLOCKED' });
 
 // --- SIGNUP FLOW ---
 
@@ -181,6 +186,7 @@ router.post('/login/password', passwordRateLimiter, async (req: Request, res: Re
         if (!isValid) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
+        if (isBlocked(user)) return refuseBlocked(res);
 
         const clientType = req.headers['x-client-type'] === 'mobile' ? 'mobile' : 'web';
         const session = await createSession(user.id, user.mobile, req.ip, req.headers['user-agent'], clientType);
@@ -188,6 +194,7 @@ router.post('/login/password', passwordRateLimiter, async (req: Request, res: Re
         setAuthResponse(req, res, session, { id: user.id, name: user.name, mobile: user.mobile, email: user.email, role: user.role });
 
     } catch (error) {
+        if (error instanceof AccountBlockedError) return refuseBlocked(res);
         console.error('Login Password Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
@@ -201,6 +208,7 @@ router.post('/login/send-otp', authRateLimiter, async (req: Request, res: Respon
 
         const user = await prisma.user.findUnique({ where: { mobile } });
         if (!user) return res.status(404).json({ error: 'User does not exist. Please Signup.' });
+        if (isBlocked(user)) return refuseBlocked(res);
 
         await persistAndSendOtp(mobile, 'login');
         res.status(200).json({ message: 'OTP sent successfully', expiry: OTP_EXPIRY_MINS });
@@ -223,6 +231,7 @@ router.post('/login/verify-otp', verifyRateLimiter, async (req: Request, res: Re
 
         const user = await prisma.user.findUnique({ where: { mobile } });
         if (!user) return res.status(404).json({ error: 'User not found' });
+        if (isBlocked(user)) return refuseBlocked(res);
 
         // Update verification status if needed
         if (!user.isVerified) {
@@ -237,6 +246,7 @@ router.post('/login/verify-otp', verifyRateLimiter, async (req: Request, res: Re
         setAuthResponse(req, res, session, { id: user.id, name: user.name, mobile: user.mobile, email: user.email, role: user.role });
 
     } catch (error) {
+        if (error instanceof AccountBlockedError) return refuseBlocked(res);
         console.error('Login Verify OTP Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
@@ -256,6 +266,7 @@ router.post('/forgot-password/send-otp', authRateLimiter, async (req: Request, r
 
         const user = await prisma.user.findUnique({ where: { mobile } });
         if (!user) return res.status(404).json({ error: 'No account found with this mobile number.' });
+        if (isBlocked(user)) return refuseBlocked(res);
 
         // Resend cooldown — prevent OTP spam
         const existing = await prisma.oTP.findUnique({ where: { identifier: mobile } });
@@ -294,6 +305,10 @@ router.post('/forgot-password/verify-reset', verifyRateLimiter, async (req: Requ
         if (!/[a-zA-Z]/.test(newPassword) || !/\d/.test(newPassword)) {
             return res.status(400).json({ error: 'Password must contain at least one letter and one number' });
         }
+
+        // A code sent before the account was blocked must not reset its password.
+        const account = await prisma.user.findUnique({ where: { mobile }, select: { status: true } });
+        if (account && isBlocked(account)) return refuseBlocked(res);
 
         const otpRecord = await prisma.oTP.findUnique({ where: { identifier: mobile } });
 
