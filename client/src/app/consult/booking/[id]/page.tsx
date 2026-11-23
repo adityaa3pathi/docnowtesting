@@ -19,6 +19,7 @@ import { CancelDialog } from '@/components/consult/CancelDialog';
 import { ChangeTimeDialog } from '@/components/consult/ChangeTimeDialog';
 import { JoinPanel } from '@/components/consult/JoinPanel';
 import { PatientPrescription } from '@/components/consult/PatientPrescription';
+import { RecordSharingCard } from '@/components/consult/RecordSharingCard';
 import { ConfirmingNotice, PaymentStatus } from '@/components/consult/PaymentStatus';
 import { ErrorState, LoadingBlock } from '@/components/consult/States';
 import { Button, Card, Notice } from '@/components/ui';
@@ -222,6 +223,15 @@ function BookingDetail() {
                                         <Button variant="outline" size="sm" onClick={() => setChangeOpen(true)}>Change time</Button>
                                     )}
                                 </Card>
+                            )}
+                            {booking.recordSharing && (
+                                <RecordSharingCard
+                                    key={`${booking.consultationId}-${booking.recordSharing.shared}-${booking.status}`}
+                                    bookingId={booking.consultationId}
+                                    doctorName={booking.doctorName}
+                                    patientName={booking.patientName}
+                                    sharing={booking.recordSharing}
+                                />
                             )}
                             <JoinPanel
                                 status={booking.status}

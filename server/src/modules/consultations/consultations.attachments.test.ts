@@ -142,7 +142,7 @@ describe('reading', () => {
             id: 'c-1', userId: 'booker', patientId: 'p-1', doctorId: 'd-1', slotId: 's-1', status: 'CONFIRMED', type: 'VIDEO',
             startsAt: new Date('2026-11-02T10:00:00Z'), createdAt: new Date('2026-11-01T10:00:00Z'), holdExpiresAt: new Date('2026-11-01T10:10:00Z'),
             feePaise: 50000, policySnapshot: {}, doctorJoinedAt: null, patientJoinedAt: null, cancelReason: null, reviewReason: null,
-            guestToken: 'g-1', isCaregiverJoined: true,
+            guestToken: 'g-1', isCaregiverJoined: true, recordSharedAt: null, endedAt: null,
             doctor: { displayName: 'Sharma', photoUrl: null, qualification: 'MBBS', specialty: { name: 'GP' } },
             patient: { name: 'Sunita', relation: 'Parent', phone: '9876543210', linkedUserId: null, linkDeclinedAt: null, ...patient },
             user: { name: 'Aditya' }, slot: { endsAt: new Date('2026-11-02T10:15:00Z') },
@@ -152,6 +152,7 @@ describe('reading', () => {
             consultation: { findFirst: vi.fn().mockResolvedValue(c) },
             user: { findUnique: vi.fn().mockResolvedValue(mobile ? { mobile } : null) },
             consultationAttachment: { findMany: vi.fn().mockResolvedValue([row]) },
+            healthRecordAccess: { findFirst: vi.fn().mockResolvedValue(null) },
         };
     }
 

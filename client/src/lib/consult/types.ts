@@ -80,7 +80,70 @@ export interface BookingView extends CreateBookingResponse {
     hasPrescription: boolean;
     /** The booker's own bookings: whether the time can be changed now (older servers leave it out). */
     selfReschedule?: SelfReschedule;
+    /** Whether the doctor may see the patient's whole DocNow record (detail view; older servers leave it out). */
+    recordSharing?: RecordSharing;
 }
+
+/** "Let the doctor see my health record" on one booking. */
+export interface RecordSharing {
+    shared: boolean;
+    sharedAt: string | null;
+    /** The doctor's access ends then: 7 days after the visit. */
+    until: string;
+    /** It can be switched on now (the booking is live and the window has not passed). */
+    canShare: boolean;
+    /** When the doctor last opened the record, if ever. */
+    lastViewedAt: string | null;
+    version: string;
+}
+
+/** A file in the patient's medical records vault (Profile → Medical records). */
+export interface PatientDocument {
+    id: string;
+    patientId: string;
+    name: string;
+    mimeType: string;
+    sizeBytes: number;
+    uploadedAt: string;
+    /** Signed, expires within the hour. */
+    url: string;
+}
+
+/** A file listed in the doctor's view of a shared record; opened one at a time (each open is logged). */
+export interface SharedFile {
+    id: string;
+    name: string;
+    mimeType: string;
+    sizeBytes: number;
+    uploadedAt: string;
+}
+
+export interface SharedPastConsultation {
+    id: string;
+    startsAt: string;
+    type: ConsultationType;
+    doctorName: string;
+    specialty: string;
+    note: Omit<ConsultNote, 'updatedAt'> | null;
+    prescription: Prescription | null;
+    attachments: SharedFile[];
+}
+
+/** GET /doctor/me/consultations/:id/record */
+export type SharedRecord =
+    | {
+        shared: true;
+        until: string;
+        reports: { id: string; label: string; isFullReport: boolean; date: string }[];
+        consultations: SharedPastConsultation[];
+        documents: SharedFile[];
+    }
+    | { shared: false; reason: 'NOT_SHARED' | 'NOT_ACTIVE' | 'ENDED'; until: string };
+
+export type SharedItemKind = 'documents' | 'attachments' | 'reports';
+export type SharedItemLink =
+    | { kind: 'report'; viewToken: string }
+    | { kind: 'document' | 'attachment'; name: string; mimeType: string; url: string };
 
 /** Self-serve reschedule: same doctor, until the cutoff before the start, a limited number of times. */
 export interface SelfReschedule {

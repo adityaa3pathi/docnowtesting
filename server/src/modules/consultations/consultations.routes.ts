@@ -21,6 +21,8 @@ import { reassignBooking, reassignOption, rescheduleBooking, rescheduleSlots, se
 import { kickConsultPushes } from './consultations.push';
 import { addRecommendedTestsToCart, getPatientPrescription, prescriptionFromLink, prescriptionLinkToken } from './consultations.prescription';
 import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
+import { RECORD_SHARE_VERSION, listDocuments, removeDocument, setRecordSharing, uploadDocument, type ShareMeta } from './consultations.records';
+import { DoctorError } from './doctors.status';
 
 const bookingSchema = z.object({
     slotId: z.string().uuid('Invalid slot'),
@@ -34,6 +36,22 @@ const bookingSchema = z.object({
     // Any code an admin can make (lab codes predate any format rule); control characters are refused.
     promoCode: z.string().trim().max(64, 'Invalid promo code').regex(/^[^\u0000-\u001f\u007f]*$/, 'Invalid promo code').optional(),
     expectedDiscountPaise: z.number().int().min(0).optional(),
+    // The unticked "let the doctor see my health record" box, and the wording version shown.
+    shareRecord: z.boolean().optional(),
+    shareConsentVersion: z.string().trim().min(1).max(40).optional(),
+    channel: z.enum(['app', 'web']).optional(),
+});
+
+const sharingSchema = z.object({
+    share: z.boolean(),
+    consentVersion: z.string().trim().min(1).max(40).optional(),
+    channel: z.enum(['app', 'web']).optional(),
+});
+const shareMetaOf = (req: { ip?: string; get(name: string): string | undefined }, version: string | undefined, channel: 'app' | 'web' | undefined): ShareMeta => ({
+    version: version ?? RECORD_SHARE_VERSION,
+    channel: channel ?? 'web',
+    ipAddress: req.ip ?? null,
+    userAgent: req.get('user-agent') ?? null,
 });
 
 // NMC telemedicine consent: the join screen's checkbox. Without it nobody on the patient's side gets a room token.
@@ -60,7 +78,8 @@ consultPatientRoutes.post('/bookings', ...patient, rateLimiter(5, 60, 'consult_b
     try {
         const parse = bookingSchema.safeParse(req.body);
         if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
-        res.status(201).json(await createBooking({ userId: req.userId!, ...parse.data }));
+        const { shareConsentVersion, channel, ...input } = parse.data;
+        res.status(201).json(await createBooking({ userId: req.userId!, ...input, shareMeta: shareMetaOf(req, shareConsentVersion, channel) }));
     } catch (e) { fail(res, e); }
 });
 
@@ -108,6 +127,50 @@ consultPatientRoutes.delete('/attachments/:id', ...patient, async (req: AuthRequ
         const id = z.string().uuid().safeParse(req.params.id);
         if (!id.success) return res.status(404).json({ error: 'Not found' });
         res.json(await removeAttachment(req.userId!, id.data));
+    } catch (e) { fail(res, e); }
+});
+
+// ── Medical records vault (per person, outside any booking) ──
+
+const uuidParam = (v: unknown) => {
+    const id = z.string().uuid().safeParse(v);
+    if (!id.success) throw new DoctorError(404, 'Not found');
+    return id.data;
+};
+
+consultPatientRoutes.get('/records/:patientId/documents', ...patient, async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await listDocuments(req.userId!, uuidParam(req.params.patientId)));
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.post('/records/:patientId/documents', ...patient, rateLimiter(30, 600, 'consult_record_upload'), (req: AuthRequest, res: Response) => {
+    attachmentUpload.single('file')(req, res, async (err: unknown) => {
+        try {
+            if (err instanceof multer.MulterError) {
+                return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'Files can be up to 10 MB' : 'Upload one file at a time' });
+            }
+            if (err) throw err;
+            const file = (req as AuthRequest & { file?: { buffer: Buffer; originalname: string } }).file;
+            if (!file) return res.status(400).json({ error: 'Choose a photo or PDF to upload' });
+            res.status(201).json(await uploadDocument(req.userId!, uuidParam(req.params.patientId), file));
+        } catch (e) { fail(res, e); }
+    });
+});
+
+consultPatientRoutes.delete('/records/documents/:id', ...patient, async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await removeDocument(req.userId!, uuidParam(req.params.id)));
+    } catch (e) { fail(res, e); }
+});
+
+// "Let the doctor see my health record" on one booking: switch on or off (booker or accepted family).
+consultPatientRoutes.put('/bookings/:id/record-sharing', ...patient, rateLimiter(20, 60, 'consult_record_sharing'), async (req: AuthRequest, res: Response) => {
+    try {
+        const parse = sharingSchema.safeParse(req.body);
+        if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
+        const meta = shareMetaOf(req, parse.data.consentVersion, parse.data.channel);
+        res.json(await setRecordSharing(req.userId!, uuidParam(req.params.id), parse.data.share, meta));
     } catch (e) { fail(res, e); }
 });
 

@@ -18,6 +18,7 @@ import { DOCTOR_LATE_AFTER_MS, noShowDeadlines } from './consultations.room';
 import { DoctorError } from './doctors.status';
 import { accessFor, familyWhere, isSelf, userMobile } from './consultations.family';
 import { attachmentsFor, claimAttachments, type AttachmentStorage } from './consultations.attachments';
+import { recordSharingView, writeRecordSharing, type ShareMeta } from './consultations.records';
 import { overallRefundStatus } from './consultations.refunds';
 
 export const MAX_OPEN_HOLDS_PER_USER = 3;
@@ -43,6 +44,13 @@ export type BookingInput = {
     promoCode?: string;
     /** The discount the patient was shown for it. A different discount now is refused. */
     expectedDiscountPaise?: number;
+    /**
+     * "Let the doctor see my DocNow health record": the unticked box on review-and-pay. Not part of
+     * the payment attempt (left out of the request hash); a repeat with another choice updates it.
+     */
+    shareRecord?: boolean;
+    /** Where the consent came from, kept with it. */
+    shareMeta?: ShareMeta;
 };
 
 /** The wallet balance changed between showing it and booking (another tab spent it). */
@@ -70,6 +78,20 @@ function response(c: { id: string; holdExpiresAt: Date; status: string; feePaise
         keyId: process.env.RAZORPAY_KEY_ID ?? null,
         holdExpiresAt: c.holdExpiresAt,
     };
+}
+
+/**
+ * A repeated booking call while the hold is still open (the patient changed the box and pressed Pay
+ * again): the latest choice wins. Once the booking is paid or ended, a repeat never changes sharing;
+ * the booking page is the place for that.
+ */
+async function syncSharing<T extends { consultationId: string }>(db: PrismaClient, input: BookingInput, booked: T, now: Date): Promise<T> {
+    if (input.shareRecord === undefined) return booked;
+    await db.$transaction(async (tx) => {
+        const open = await tx.consultation.count({ where: { id: booked.consultationId, status: 'PENDING_PAYMENT', holdExpiresAt: { gt: now } } });
+        if (open) await writeRecordSharing(tx, booked.consultationId, input.userId, input.shareRecord!, input.shareMeta ?? {}, now);
+    });
+    return booked;
 }
 
 async function existingBooking(db: PrismaClient, input: BookingInput, requestHash: string) {
@@ -116,7 +138,7 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
     const requestHash = createHash('sha256').update(`${input.slotId}|${input.patientId}${input.useWallet ? '|wallet' : ''}${promoCode ? `|promo:${promoCode}` : ''}`).digest('hex');
 
     const repeated = await existingBooking(db, input, requestHash);
-    if (repeated) return repeated;
+    if (repeated) return syncSharing(db, input, repeated, now);
 
     const patient = await db.patient.findFirst({ where: { id: input.patientId, userId: input.userId }, select: { id: true, relation: true } });
     if (!patient) throw new DoctorError(404, 'Not found');
@@ -192,6 +214,7 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
                 },
             });
             await claimAttachments(tx, input.userId, created.id, input.attachmentIds ?? [], now);
+            if (input.shareRecord) await writeRecordSharing(tx, created.id, input.userId, true, input.shareMeta ?? {}, now);
             if (promo) await recordPromoUse(tx, input.userId, promo.promoCodeId, created.id);
             if (walletPaise === 0) {
                 if (cardDuePaise(created) > 0) return created;
@@ -215,7 +238,7 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
     } catch (e) {
         if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
             const again = await existingBooking(db, input, requestHash);
-            if (again) return again;
+            if (again) return syncSharing(db, input, again, now);
             throw new DoctorError(409, SLOT_TAKEN);
         }
         throw e;
@@ -370,10 +393,10 @@ export async function getBooking(userId: string, consultationId: string, db: Pri
     const access = accessFor(c, userId, c.userId === userId ? null : await userMobile(db, userId));
     if (!access) throw new DoctorError(404, 'Not found');
     const documents = () => attachmentsFor(c.id, { db, storage });
-    if (access.kind === 'booker') return { ...toView(c), attachments: await documents() };
+    if (access.kind === 'booker') return { ...toView(c), attachments: await documents(), recordSharing: await recordSharingView(c, db) };
     if (c.status === 'PENDING_PAYMENT' || c.status === 'EXPIRED') throw new DoctorError(404, 'Not found');
     if (access.kind === 'family-pending') return familyView(c, false);
-    return { ...familyView(c, true), attachments: await documents() };
+    return { ...familyView(c, true), attachments: await documents(), recordSharing: await recordSharingView(c, db) };
 }
 
 /** The booker's own consultations plus those booked for them by family, newest first. */

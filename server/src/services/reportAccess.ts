@@ -35,10 +35,11 @@ function signPayload(encodedPayload: string) {
     );
 }
 
-export function createReportAccessToken(reportId: string) {
+/** `ttlMs` shortens the link (a doctor's view of a shared record); by default it lasts like WhatsApp links. */
+export function createReportAccessToken(reportId: string, ttlMs = REPORT_LINK_EXPIRY_HOURS * 60 * 60 * 1000) {
     const payload: ReportTokenPayload = {
         reportId,
-        exp: Date.now() + (REPORT_LINK_EXPIRY_HOURS * 60 * 60 * 1000),
+        exp: Date.now() + ttlMs,
     };
 
     const encodedPayload = toBase64Url(JSON.stringify(payload));
