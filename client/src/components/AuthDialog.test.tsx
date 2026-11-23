@@ -116,3 +116,38 @@ describe('AuthDialog WhatsApp wording', () => {
         expect(byPlaceholder('WhatsApp mobile number')).toBeTruthy();
     });
 });
+
+describe('AuthDialog blocked account', () => {
+    const blocked = { response: { status: 403, data: { error: "This number can't sign in. Please contact support.", code: 'ACCOUNT_BLOCKED' } } };
+
+    it('shows the blocked message with the support number and stays on the number step', async () => {
+        m.post.mockRejectedValueOnce(blocked);
+        await click(button('OTP'));
+        await type('Enter your WhatsApp number', '9876543210');
+        await click(button('Get OTP'));
+
+        expect(text()).toContain("This number can't sign in. Please contact support. Call +91 9649089089.");
+        expect(text()).not.toContain('OTP sent on WhatsApp to');
+        expect(m.login).not.toHaveBeenCalled();
+    });
+
+    it('shows the same message on password sign-in', async () => {
+        m.post.mockRejectedValueOnce(blocked);
+        await type('Enter your WhatsApp number', '9876543210');
+        await type('Password', 'secret1');
+        await click(buttons().find((b) => b.getAttribute('type') === 'submit'));
+
+        expect(text()).toContain("This number can't sign in. Please contact support. Call +91 9649089089.");
+        expect(m.login).not.toHaveBeenCalled();
+    });
+
+    it('other errors are shown as the server sends them', async () => {
+        m.post.mockRejectedValueOnce({ response: { status: 404, data: { error: 'User does not exist. Please Signup.' } } });
+        await click(button('OTP'));
+        await type('Enter your WhatsApp number', '9876543210');
+        await click(button('Get OTP'));
+
+        expect(text()).toContain('User does not exist. Please Signup.');
+        expect(text()).not.toContain('Call +91');
+    });
+});
