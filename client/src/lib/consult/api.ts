@@ -5,7 +5,7 @@ import { CONSENT_VERSION } from './consent';
 import { recordServerDate } from './time';
 import type { GuestInfo } from './guest';
 import type {
-    AdminAppointment, AdminAppointmentDetail, AdminDoctor, AvailabilityWindow, BookingView, CancelPreview, DoctorGender, CancelResult,
+    AdminAppointment, AdminAppointmentDetail, AdminDoctor, AttendanceReport, AvailabilityWindow, BookingView, CancelPreview, DoctorGender, CancelResult,
     CartAddResult, ConsultNote, ConsultRules, ConsultationStatus, CreateBookingResponse, DoctorConsultationPage,
     DoctorConsultationRecord, DoctorMe, DoctorProfileInput, DoctorPublicProfile, DoctorSummary, JoinResponse, LeaveEntry,
     NoteInput, PolicyResponse, Prescription, PrescriptionInput, ReviewQueue, Slot, Specialty, VerifyResponse,
@@ -108,6 +108,15 @@ export const doctor = {
         api.post<Prescription>(`/doctor/me/consultations/${id}/prescription/reissue`, body).then(data),
     downloadPrescription: (id: string) =>
         downloadAuthenticatedFile(`/doctor/me/consultations/${id}/prescription.pdf`, 'docnow-prescription.pdf'),
+};
+
+// ── Manager ─────────────────────────────────────────────
+
+export const manager = {
+    attendance: (range: { from: string; to: string }) =>
+        api.get<AttendanceReport>('/manager/consult/attendance', { params: range }).then(data),
+    downloadAttendanceCsv: (range: { from: string; to: string }) =>
+        downloadAuthenticatedFile(`/manager/consult/attendance.csv?${new URLSearchParams(range)}`, `consult-no-shows-${range.from}-to-${range.to}.csv`),
 };
 
 // ── Admin ───────────────────────────────────────────────

@@ -352,3 +352,43 @@ export interface AdminAppointmentDetail extends AdminAppointment {
     cancelledAt: string | null;
     createdAt: string;
 }
+
+// ── Manager: no-shows and late joins ───────────────────
+
+export type AttendanceOutcome = 'ON_TIME' | 'LATE' | 'NO_SHOW' | 'NOT_JOINED';
+
+export interface AttendanceSide {
+    outcome: AttendanceOutcome;
+    joinedAt: string | null;
+    minutesLate: number | null;
+}
+
+export interface AttendanceCounts {
+    consultations: number;
+    noShows: number;
+    late: number;
+    avgMinutesLate: number | null;
+}
+
+export interface AttendanceReport {
+    from: string;
+    to: string;
+    lateAfterMinutes: number;
+    /** More consultations than one report loads: counts are partial, pick a shorter range. */
+    truncated: boolean;
+    totals: { consultations: number; doctor: AttendanceCounts; patient: AttendanceCounts };
+    doctors: (AttendanceCounts & { doctorId: string; name: string })[];
+    patients: (AttendanceCounts & { patientId: string; name: string; mobile: string | null })[];
+    issues: {
+        consultationId: string;
+        startsAt: string;
+        status: ConsultationStatus;
+        doctorId: string;
+        doctorName: string;
+        patientId: string;
+        patientName: string;
+        mobile: string | null;
+        doctor: AttendanceSide;
+        patient: AttendanceSide;
+    }[];
+}
