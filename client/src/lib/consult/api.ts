@@ -115,8 +115,18 @@ export const doctor = {
 export const admin = {
     doctors: (status?: string) => api.get<AdminDoctor[]>('/admin/consult/doctors', { params: status ? { status } : undefined }).then(data),
     doctor: (id: string) => api.get<AdminDoctor>(`/admin/consult/doctors/${id}`).then(data),
-    createDoctor: (body: DoctorProfileInput & { mobile: string; consultationFee: number; slotMinutes: number }) =>
-        api.post<AdminDoctor>('/admin/consult/doctors', body).then(data),
+    /** The photo is required: an admin-created doctor is live at once. */
+    createDoctor: (body: DoctorProfileInput & { mobile: string; consultationFee: number; slotMinutes: number }, photo: Blob) => {
+        const form = new FormData();
+        form.append('data', JSON.stringify(body));
+        form.append('photo', photo, 'photo.jpg');
+        return api.post<AdminDoctor>('/admin/consult/doctors', form).then(data);
+    },
+    uploadDoctorPhoto: (id: string, photo: Blob) => {
+        const form = new FormData();
+        form.append('photo', photo, 'photo.jpg');
+        return api.post<{ photoUrl: string }>(`/admin/consult/doctors/${id}/photo`, form).then(data);
+    },
     updateDoctor: (id: string, body: Partial<DoctorProfileInput> & { consultationFee?: number; slotMinutes?: number }) =>
         api.patch<AdminDoctor>(`/admin/consult/doctors/${id}`, body).then(data),
     approve: (id: string) => api.post<AdminDoctor>(`/admin/consult/doctors/${id}/approve`).then(data),

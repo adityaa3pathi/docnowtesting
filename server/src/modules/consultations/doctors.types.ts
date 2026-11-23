@@ -27,8 +27,10 @@ export const SLOT_MINUTES = [10, 15, 20, 30, 45, 60] as const;
 // Self sign-up must give gender (patients filter by it); admin-created profiles may add it later.
 export const registerDoctorSchema = z.object({ ...profileFields, gender: z.enum(DOCTOR_GENDERS, 'Please choose your gender') });
 
+// The photo comes as an uploaded file with the request (see adminCreateDoctor), never as a link.
+const { photoUrl: _photoUrl, ...adminCreateFields } = profileFields;
 export const adminCreateDoctorSchema = z.object({
-    ...profileFields,
+    ...adminCreateFields,
     mobile,
     consultationFee: z.number().positive('Fee must be positive'),
     slotMinutes: z.number().refine((n) => (SLOT_MINUTES as readonly number[]).includes(n), 'Invalid slot length').default(15),

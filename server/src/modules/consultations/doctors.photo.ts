@@ -17,21 +17,44 @@ export function sniffImageType(buf: Buffer): 'image/jpeg' | 'image/png' | 'image
     return null;
 }
 
-/** Saves a new photo for the signed-in doctor (any status, so applicants can add one) and drops the old file. */
-export async function saveDoctorPhoto(userId: string, buffer: Buffer, publicBase: string) {
-    const doctor = await prisma.doctorProfile.findUnique({ where: { userId }, select: { id: true, photoKey: true } });
-    if (!doctor) throw new DoctorError(404, 'No doctor profile');
+/** Checks the bytes are a real photo, then stores them; returns the storage key. */
+export async function storeDoctorPhoto(buffer: Buffer): Promise<string> {
     const type = sniffImageType(buffer);
     if (!type) throw new DoctorError(400, 'Upload a JPG, PNG or WebP photo');
     if (buffer.length > MAX_PHOTO_BYTES) throw new DoctorError(413, 'Photos can be up to 3 MB');
     const ext = type.split('/')[1].replace('jpeg', 'jpg');
     const { key } = await uploadImage(buffer, `photo.${ext}`, type, 'doctor-photos', MAX_PHOTO_BYTES);
-    const photoUrl = `${publicBase}/api/consult/doctors/${doctor.id}/photo?v=${Date.now()}`;
+    return key;
+}
+
+/** The stable DocNow link saved as photoUrl; `v` makes browsers fetch a replaced photo afresh. */
+export const doctorPhotoUrl = (publicBase: string, doctorId: string) => `${publicBase}/api/consult/doctors/${doctorId}/photo?v=${Date.now()}`;
+
+/** Drops a stored photo file without failing the request that replaced or abandoned it. */
+export function discardDoctorPhoto(key: string) {
+    deleteImage(key).catch((err) => logger.warn({ error: err }, 'doctor_photo_old_delete_failed'));
+}
+
+async function replacePhoto(doctor: { id: string; photoKey: string | null }, buffer: Buffer, publicBase: string) {
+    const key = await storeDoctorPhoto(buffer);
+    const photoUrl = doctorPhotoUrl(publicBase, doctor.id);
     await prisma.doctorProfile.update({ where: { id: doctor.id }, data: { photoKey: key, photoUrl } });
-    if (doctor.photoKey && doctor.photoKey !== key) {
-        deleteImage(doctor.photoKey).catch((err) => logger.warn({ error: err }, 'doctor_photo_old_delete_failed'));
-    }
+    if (doctor.photoKey && doctor.photoKey !== key) discardDoctorPhoto(doctor.photoKey);
     return { photoUrl };
+}
+
+/** Saves a new photo for the signed-in doctor (any status, so applicants can add one) and drops the old file. */
+export async function saveDoctorPhoto(userId: string, buffer: Buffer, publicBase: string) {
+    const doctor = await prisma.doctorProfile.findUnique({ where: { userId }, select: { id: true, photoKey: true } });
+    if (!doctor) throw new DoctorError(404, 'No doctor profile');
+    return replacePhoto(doctor, buffer, publicBase);
+}
+
+/** A super admin adds or replaces a doctor's photo, e.g. for a doctor who went live without one. */
+export async function adminSaveDoctorPhoto(doctorId: string, buffer: Buffer, publicBase: string) {
+    const doctor = await prisma.doctorProfile.findUnique({ where: { id: doctorId }, select: { id: true, photoKey: true } });
+    if (!doctor) throw new DoctorError(404, 'Doctor not found');
+    return replacePhoto(doctor, buffer, publicBase);
 }
 
 /** A fresh signed link for the doctor's stored photo, or null when there is none. */

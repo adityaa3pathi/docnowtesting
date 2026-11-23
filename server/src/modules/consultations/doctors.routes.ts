@@ -6,7 +6,7 @@
  * Doctor (approved): own profile, hours, leave, slot blocking.
  * Super admin: create doctors, edit, approve, reject, suspend, specialties.
  */
-import { Router, Response } from 'express';
+import { Request, Router, Response } from 'express';
 import { z } from 'zod';
 import { prisma } from '../../db';
 import { authMiddleware, AuthRequest } from '../../middleware/auth';
@@ -21,7 +21,7 @@ import {
     leaveSchema, registerDoctorSchema, reviewReasonSchema, specialtySchema,
 } from './doctors.types';
 import { DoctorError } from './doctors.status';
-import { doctorPhotoLink, MAX_PHOTO_BYTES, saveDoctorPhoto } from './doctors.photo';
+import { adminSaveDoctorPhoto, doctorPhotoLink, MAX_PHOTO_BYTES, saveDoctorPhoto } from './doctors.photo';
 import multer from 'multer';
 import { withNextSlot } from './doctors.nextSlot';
 import { doctorListQuery, listDoctorConsultations } from './doctors.consultations';
@@ -167,21 +167,29 @@ doctorRoutes.get('/me', authMiddleware, async (req: AuthRequest, res: Response) 
 });
 
 const photoUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_PHOTO_BYTES, files: 1 } });
+type PhotoRequest = AuthRequest & { file?: { buffer: Buffer } };
+const publicBase = (req: Request) => `${req.protocol}://${req.get('host')}`;
+
+/** Runs the one-photo multipart parser, answering 400/413 itself for a bad upload. */
+function withPhoto(handler: (req: PhotoRequest, res: Response) => Promise<unknown>, what: string) {
+    return (req: AuthRequest, res: Response) => {
+        photoUpload.single('photo')(req, res, async (err: unknown) => {
+            try {
+                if (err instanceof multer.MulterError) {
+                    return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'Photos can be up to 3 MB' : 'Upload one photo' });
+                }
+                if (err) throw err;
+                await handler(req as PhotoRequest, res);
+            } catch (e) { fail(res, e, what); }
+        });
+    };
+}
 
 // Any profile owner, approved or not: applicants need a photo before they can be approved.
-doctorRoutes.post('/me/photo', authMiddleware, consultCsrfGuard, rateLimiter(10, 3600, 'doctor_photo'), (req: AuthRequest, res: Response) => {
-    photoUpload.single('photo')(req, res, async (err: unknown) => {
-        try {
-            if (err instanceof multer.MulterError) {
-                return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ error: err.code === 'LIMIT_FILE_SIZE' ? 'Photos can be up to 3 MB' : 'Upload one photo' });
-            }
-            if (err) throw err;
-            const file = (req as AuthRequest & { file?: { buffer: Buffer } }).file;
-            if (!file) return res.status(400).json({ error: 'Choose a photo to upload' });
-            res.json(await saveDoctorPhoto(req.userId!, file.buffer, `${req.protocol}://${req.get('host')}`));
-        } catch (e) { fail(res, e, 'upload photo'); }
-    });
-});
+doctorRoutes.post('/me/photo', authMiddleware, consultCsrfGuard, rateLimiter(10, 3600, 'doctor_photo'), withPhoto(async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'Choose a photo to upload' });
+    res.json(await saveDoctorPhoto(req.userId!, req.file.buffer, publicBase(req)));
+}, 'upload photo'));
 
 const mine = [authMiddleware, requireDoctor] as const;
 
@@ -382,15 +390,30 @@ consultAdminRoutes.get('/doctors/:id', ...admin, async (req: AuthRequest, res: R
     } catch (e) { fail(res, e, 'admin get'); }
 });
 
-consultAdminRoutes.post('/doctors', ...admin, async (req: AuthRequest, res: Response) => {
-    try {
-        const parse = adminCreateDoctorSchema.safeParse(req.body);
-        if (!parse.success) return bad(res, parse);
-        const doctor = await adminCreateDoctor(req.adminId!, parse.data);
-        await audit(req, 'DOCTOR_CREATE', doctor!.id);
-        res.status(201).json(doctor);
-    } catch (e) { fail(res, e, 'admin create'); }
-});
+/** Multipart: the profile as JSON in `data`, plus the required `photo` file. */
+function createFields(body: unknown): unknown {
+    const raw = (body as { data?: unknown } | undefined)?.data;
+    if (typeof raw !== 'string') return body;
+    try { return JSON.parse(raw); } catch { return null; }
+}
+
+consultAdminRoutes.post('/doctors', ...admin, consultCsrfGuard, withPhoto(async (req, res) => {
+    const parse = adminCreateDoctorSchema.safeParse(createFields(req.body));
+    if (!parse.success) return bad(res, parse);
+    if (!req.file) return res.status(400).json({ error: "Add the doctor's photo" });
+    const doctor = await adminCreateDoctor(req.adminId!, parse.data, req.file.buffer, publicBase(req));
+    await audit(req, 'DOCTOR_CREATE', doctor!.id);
+    res.status(201).json(doctor);
+}, 'admin create'));
+
+consultAdminRoutes.post('/doctors/:id/photo', ...admin, consultCsrfGuard, rateLimiter(30, 3600, 'admin_doctor_photo'), withPhoto(async (req, res) => {
+    const id = z.string().uuid().safeParse(req.params.id);
+    if (!id.success) return res.status(404).json({ error: 'Doctor not found' });
+    if (!req.file) return res.status(400).json({ error: 'Choose a photo to upload' });
+    const saved = await adminSaveDoctorPhoto(id.data, req.file.buffer, publicBase(req));
+    await audit(req, 'DOCTOR_PHOTO_UPDATE', id.data);
+    res.json(saved);
+}, 'admin upload photo'));
 
 consultAdminRoutes.patch('/doctors/:id', ...admin, async (req: AuthRequest, res: Response) => {
     try {

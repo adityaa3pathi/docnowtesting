@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { DoctorAvatar } from '@/components/consult/DoctorCard';
+import { DoctorPhotoUpload } from '@/components/doctor/DoctorPhotoUpload';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui';
 import { Badge } from '@/components/consult/Badge';
@@ -65,7 +65,7 @@ export function DoctorDetail({ id }: { id: string }) {
         }
     }
 
-    const canApprove = doc.status !== 'APPROVED' && hasFee;
+    const canApprove = doc.status !== 'APPROVED' && hasFee && !!doc.photoUrl;
 
     return (
         <div className="space-y-6">
@@ -80,9 +80,21 @@ export function DoctorDetail({ id }: { id: string }) {
                     <div><dt className="text-gray-500">Mobile</dt><dd className="font-medium">{doc.user?.mobile ?? 'Not shown'}</dd></div>
                     <div><dt className="text-gray-500">Languages</dt><dd className="font-medium">{doc.languages.join(', ')}</dd></div>
                     <div><dt className="text-gray-500">Gender</dt><dd className="font-medium">{doc.gender ?? 'Not given'}</dd></div>
-                    <div>
+                    <div className="sm:col-span-2">
                         <dt className="text-gray-500">Photo</dt>
-                        <dd className="mt-1">{doc.photoUrl ? <DoctorAvatar doctor={doc} className="h-20 w-20 text-xl" /> : <span className="font-medium text-danger">Not uploaded (needed before approval)</span>}</dd>
+                        {!doc.photoUrl && (
+                            <dd className="mt-1 font-medium text-danger">
+                                {doc.status === 'APPROVED' ? 'No photo. Patients see initials instead.' : 'Not uploaded. Needed before approval.'}
+                            </dd>
+                        )}
+                        <dd className="mt-2">
+                            <DoctorPhotoUpload
+                                name={doc.displayName} photoUrl={doc.photoUrl}
+                                upload={(photo) => admin.uploadDoctorPhoto(id, photo)}
+                                hint="A clear, recent photo of the doctor’s face. Patients see it when booking."
+                                onUploaded={(photoUrl) => { setData((prev) => (prev ? { ...prev, photoUrl } : prev)); toast.success('Photo saved'); }}
+                            />
+                        </dd>
                     </div>
                     <div><dt className="text-gray-500">Current fee</dt><dd className="font-medium">{doc.consultationFee > 0 ? formatRupees(doc.consultationFee) : 'Not set'}</dd></div>
                 </dl>
@@ -110,6 +122,9 @@ export function DoctorDetail({ id }: { id: string }) {
                 <h2 id="status-h" className="mb-3 text-lg font-semibold text-gray-900">Approval</h2>
                 {!hasFee && doc.status !== 'APPROVED' && (
                     <p className="mb-3 text-sm text-gray-600">Set and save a fee above zero before approving.</p>
+                )}
+                {!doc.photoUrl && doc.status !== 'APPROVED' && (
+                    <p className="mb-3 text-sm text-gray-600">Add the doctor’s photo above before approving.</p>
                 )}
                 <div className="flex flex-wrap gap-2">
                     {doc.status !== 'APPROVED' && <Button onClick={approve} disabled={!canApprove || busy}>Approve</Button>}
