@@ -303,10 +303,6 @@ router.post('/forgot-password/verify-reset', verifyRateLimiter, async (req: Requ
             return res.status(400).json({ error: 'Password must contain at least one letter and one number' });
         }
 
-        // A code sent before the account was blocked must not reset its password.
-        const account = await prisma.user.findUnique({ where: { mobile }, select: { status: true } });
-        if (account && isBlocked(account)) return refuseBlocked(res);
-
         const otpRecord = await prisma.oTP.findUnique({ where: { identifier: mobile } });
 
         if (!otpRecord) {
@@ -335,6 +331,11 @@ router.post('/forgot-password/verify-reset', verifyRateLimiter, async (req: Requ
                 error: `Invalid code. ${remaining > 0 ? `${remaining} attempt${remaining > 1 ? 's' : ''} remaining.` : 'Please request a new code.'}`
             });
         }
+
+        // A code sent before the account was blocked must not reset its password. Checked only once
+        // the code is right, so this route never tells a stranger which numbers are blocked.
+        const account = await prisma.user.findUnique({ where: { mobile }, select: { status: true } });
+        if (account && isBlocked(account)) return refuseBlocked(res);
 
         // OTP valid — reset password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
