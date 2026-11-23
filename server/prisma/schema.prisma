@@ -538,10 +538,42 @@ model PromoCode {
   expiresAt       DateTime?
   isActive        Boolean  @default(true)
   
+  // Where the code can be used. Codes made before consultations had promos are LAB.
+  appliesTo       PromoAppliesTo @default(LAB)
+  // Consultations only: limited to these doctors / specialties (none = any doctor).
+  scopes          PromoCodeScope[]
+
   redemptions     PromoRedemption[]
   bookings        Booking[]
+  consultations   Consultation[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+enum PromoAppliesTo {
+  LAB
+  CONSULT
+  BOTH
+}
+
+// One row per doctor or specialty a consultation promo is limited to (exactly one of the two is set,
+// a raw-SQL CHECK). A consultation matches when its doctor or the doctor's specialty is listed.
+// The consult-home concern tiles each map to a specialty, so a specialty also covers a "symptom".
+model PromoCodeScope {
+  id          String         @id @default(uuid())
+  promoCodeId String
+  doctorId    String?
+  specialtyId String?
+  createdAt   DateTime       @default(now())
+
+  promoCode PromoCode      @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  doctor    DoctorProfile? @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  specialty Specialty?     @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  @@unique([promoCodeId, doctorId])
+  @@unique([promoCodeId, specialtyId])
+  @@index([doctorId])
+  @@index([specialtyId])
 }
 
 model PromoRedemption {
@@ -549,11 +581,13 @@ model PromoRedemption {
   userId      String
   promoCodeId String
   bookingId   String?   @unique // Optional if redemption happens before booking creation, but usually locked to booking
+  consultationId String? @unique // a consultation's use of the code (a redemption has a booking or a consultation)
   redeemedAt  DateTime  @default(now())
   
   user        User      @relation(fields: [userId], references: [id])
   promoCode   PromoCode @relation(fields: [promoCodeId], references: [id])
   booking     Booking?  @relation(fields: [bookingId], references: [id])
+  consultation Consultation? @relation(fields: [consultationId], references: [id])
   
   @@index([userId, promoCodeId])
 }
@@ -835,6 +869,7 @@ model Specialty {
   isActive    Boolean         @default(true)
   createdAt   DateTime        @default(now())
   doctors     DoctorProfile[]
+  promoScopes PromoCodeScope[]
 }
 
 model DoctorProfile {
@@ -871,6 +906,7 @@ model DoctorProfile {
   changeRequests DoctorChangeRequest[]
   movesFrom      ConsultationMove[] @relation("ConsultationMoveFrom")
   movesTo        ConsultationMove[] @relation("ConsultationMoveTo")
+  promoScopes    PromoCodeScope[]
 
   @@unique([registrationNumber, registrationCouncil])
   @@index([status, specialtyId])
@@ -1056,6 +1092,10 @@ model Consultation {
   // Paid from the DocNow wallet (taken when the slot is held). The card/UPI part is feePaise
   // minus this; a booking the wallet covers in full confirms without Razorpay.
   walletPaise         Int                @default(0)
+  // Promo code used, and its discount. feePaise stays the full fee: DocNow bears the discount and
+  // the doctor's share is worked out on the full fee (Aditya, 2026-11-23). Card part: fee - discount - wallet.
+  promoCodeId         String?
+  discountPaise       Int                @default(0)
   // The earliest start this booking had before the patient moved it. Cancellation refund tiers use
   // it, so moving a booking can never raise its refund. Null: never moved by the patient.
   refundBasisStartsAt DateTime?
@@ -1075,6 +1115,8 @@ model Consultation {
   attachments     ConsultationAttachment[]
   consents        ConsultationConsent[]
   moves           ConsultationMove[]
+  promoCode       PromoCode?           @relation(fields: [promoCodeId], references: [id])
+  promoRedemption PromoRedemption?
 
   @@unique([userId, idempotencyKey])
   @@index([slotId])

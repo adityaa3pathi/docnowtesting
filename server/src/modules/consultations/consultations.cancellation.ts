@@ -12,6 +12,7 @@ import { createRefundRecord, overallRefundStatus, runRefunds, type RefundReason 
 import { isDoctorLate } from './consultations.room';
 import { releaseSlot } from './consultations.transitions';
 import { releaseWalletHold } from './consultations.wallet';
+import { releasePromo } from './consultations.promo';
 import { DoctorError } from './doctors.status';
 
 export type CancelActor = { kind: 'booker'; userId: string } | { kind: 'admin'; adminId: string };
@@ -86,7 +87,8 @@ export function estimateRefund(c: { startsAt: Date; refundBasisStartsAt?: Date |
 
 function confirmedParts(c: { confirmingPaymentId: string | null; payments: PaidPayment[] }) {
     const parts = paidParts(c);
-    if (parts.length === 0) throw new DoctorError(409, 'No confirmed payment found for this consultation');
+    // A booking a promo made free has nothing to refund, but can still be cancelled.
+    if (parts.length === 0 && !c.confirmingPaymentId?.startsWith('free:')) throw new DoctorError(409, 'No confirmed payment found for this consultation');
     return parts;
 }
 
@@ -132,6 +134,7 @@ export async function cancelConsultation(consultationId: string, actor: CancelAc
             if (res.count === 1) {
                 await releaseSlot(tx, c.slotId);
                 await releaseWalletHold(tx, c.id);
+                await releasePromo(tx, c.id);
             }
         });
         return view(db, c.id);
@@ -148,7 +151,8 @@ export async function cancelConsultation(consultationId: string, actor: CancelAc
     const parts = confirmedParts(c);
 
     // The doctor's delay is not the patient's fault: everything paid comes back, whatever the tiers say.
-    const split = splitRefund(parts, doctorFault ? 100 : estimateRefund(c, parts, now).percent);
+    const percent = doctorFault ? 100 : estimateRefund(c, parts, now).percent;
+    const split = splitRefund(parts, percent);
     const refundReason: RefundReason = doctorFault ? 'DOCTOR_NO_SHOW' : actor.kind === 'admin' ? 'ADMIN' : 'PATIENT_CANCEL';
 
     const records = await db.$transaction(async (tx) => {
@@ -159,6 +163,8 @@ export async function cancelConsultation(consultationId: string, actor: CancelAc
         });
         if (res.count !== 1) return null;
         await releaseSlot(tx, c.slotId);
+        // A full refund gives the promo use back; a partial one keeps it used (Aditya, 2026-11-23).
+        if (percent === 100) await releasePromo(tx, c.id);
         const created = [];
         for (const { part, refundPaise } of split) {
             if (refundPaise <= 0) continue;

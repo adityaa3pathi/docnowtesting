@@ -94,7 +94,10 @@ export function CancelDialog({ open, bookingId, unpaid, onClose, onCancelled }: 
                         </DialogHeader>
                         {!unpaid && (
                             <div aria-live="polite" className="rounded-xl bg-primary-soft p-3 text-sm">
-                                {preview && (
+                                {preview && preview.paidPaise === 0 && (
+                                    <p>Nothing was paid for this booking (your promo code covered it), so there is nothing to refund.</p>
+                                )}
+                                {preview && preview.paidPaise > 0 && (
                                     <p>
                                         About <b>{formatPaise(preview.refundPaise)}</b> will be refunded ({preview.percent}% of {formatPaise(preview.paidPaise)}). This is an estimate. You will see the final amount after cancelling.
                                         {(preview.walletPaidPaise ?? 0) > 0 && preview.refundPaise > 0 && (

@@ -10,7 +10,8 @@ import { consult, errorMessage, errorStatus } from '@/lib/consult/api';
 import { attemptKey, forgetAttemptKey } from '@/lib/consult/idempotency';
 import { loadSavedBooking, mapCreateError, saveBooking } from '@/lib/consult/bookingFlow';
 import { formatPaise } from '@/lib/consult/format';
-import { consultPrice, walletRupeesToPaise } from '@/lib/consult/price';
+import { consultPrice, priceLines, walletRupeesToPaise } from '@/lib/consult/price';
+import { PromoBox } from '@/components/consult/PromoBox';
 import { serverNow } from '@/lib/consult/time';
 import { AddFamilyMemberDialog } from '@/components/profile/AddFamilyMemberDialog';
 import { HealthDetailsForm } from '@/components/health/HealthDetailsForm';
@@ -20,7 +21,7 @@ import { PersonPicker, type Person } from '@/components/consult/PersonPicker';
 import { ErrorState, LoadingBlock } from '@/components/consult/States';
 import { Button, Card, Notice } from '@/components/ui';
 import { Footer } from '@/components/Footer';
-import type { DoctorPublicProfile, Slot } from '@/lib/consult/types';
+import type { ConsultPromoQuote, DoctorPublicProfile, Slot } from '@/lib/consult/types';
 
 /** The people list carries the health snapshot too; the picker only needs the basics. */
 type BookPerson = Person & HealthPerson;
@@ -53,6 +54,7 @@ function BookPage() {
     // DocNow wallet: the balance in paise (null until loaded or when it can't be read) and the switch.
     const [walletBalancePaise, setWalletBalancePaise] = useState<number | null>(null);
     const [useWallet, setUseWallet] = useState(false);
+    const [promo, setPromo] = useState<ConsultPromoQuote | null>(null);
 
     const loadWallet = useCallback(async () => {
         try {
@@ -132,12 +134,15 @@ function BookPage() {
         setBusy(true);
         setProblem(null);
         const fee = Math.round((doctor?.consultationFee ?? 0) * 100);
-        const shown = consultPrice(fee, walletBalancePaise ?? 0, useWallet);
+        const shown = consultPrice(fee, walletBalancePaise ?? 0, useWallet, promo?.discountPaise);
         const withWallet = shown.walletPaise > 0;
-        const variant = withWallet ? 'wallet' : '';
+        // How it is paid is part of the attempt: a different wallet choice or code is a new booking key.
+        const variant = [withWallet ? 'wallet' : '', promo ? `promo-${promo.code}` : ''].filter(Boolean).join('-');
         try {
             const res = await consult.createBooking({
-                slotId: slot.id, patientId: personId, idempotencyKey: attemptKey(slot.id, personId, variant), ...(withWallet ? { useWallet: true, expectedWalletPaise: shown.walletPaise } : {}),
+                slotId: slot.id, patientId: personId, idempotencyKey: attemptKey(slot.id, personId, variant),
+                ...(withWallet ? { useWallet: true, expectedWalletPaise: shown.walletPaise } : {}),
+                ...(promo ? { promoCode: promo.code, expectedDiscountPaise: shown.discountPaise } : {}),
             });
             saveBooking({ id: res.consultationId, slotId: slot.id, patientId: personId });
             // Paid in full from the wallet: already confirmed, nothing to open.
@@ -146,7 +151,12 @@ function BookPage() {
             const action = mapCreateError(errorStatus(e), (e as { response?: { data?: { error?: string } } })?.response?.data?.error);
             if (action.forgetKey) forgetAttemptKey(slot.id, personId, variant);
             const message = errorMessage(e);
-            if (action.kind === 'wallet_changed') {
+            if (action.kind === 'promo_changed' && promo) {
+                // Ask again what the code takes off now, and show the new amount before trying again.
+                const code = promo.code;
+                consult.checkPromo(code, slot.id).then(setPromo).catch(() => setPromo(null));
+                setProblem({ message: `The discount for ${code} just changed. Check the new amount below and try again.` });
+            } else if (action.kind === 'wallet_changed') {
                 void loadWallet();
                 setProblem({ message: 'Your wallet balance just changed. Check the amount below and try again.' });
             } else if (action.kind === 'slot_taken') backToDoctor('slot_taken');
@@ -154,7 +164,11 @@ function BookPage() {
             else if (action.kind === 'too_many') setProblem({ message, myLink: true });
             else if (action.kind === 'busy') setProblem({ message: 'The payment service is busy. Please try again in a moment.' });
             else if (action.kind === 'ended') setProblem({ message: 'That booking ended. Press Pay to start a fresh one.' });
-            else setProblem({ message });
+            else if (promo && /promo code/i.test(message)) {
+                // The code stopped working (used up, expired) since it was applied: take it off, say why.
+                setPromo(null);
+                setProblem({ message: `${message}. The code was removed; check the new amount.` });
+            } else setProblem({ message });
             setBusy(false);
         }
     }
@@ -227,7 +241,8 @@ function BookPage() {
         );
     }
 
-    const price = consultPrice(Math.round(doctor.consultationFee * 100), walletBalancePaise ?? 0, useWallet);
+    const price = consultPrice(Math.round(doctor.consultationFee * 100), walletBalancePaise ?? 0, useWallet, promo?.discountPaise);
+    const reduced = price.discountPaise > 0 || price.walletPaise > 0;
 
     return (
         <>
@@ -257,14 +272,13 @@ function BookPage() {
                         specialty={doctor.specialty.name}
                         startsAt={slot.startsAt}
                         endsAt={slot.endsAt}
-                        lines={price.walletPaise > 0 ? [
-                            { label: 'Consultation fee', value: formatPaise(price.feePaise) },
-                            { label: 'From DocNow wallet', value: `− ${formatPaise(price.walletPaise)}` },
-                        ] : undefined}
-                        amountLabel={price.walletPaise > 0 ? 'To pay now' : 'Fee'}
+                        lines={priceLines(price, formatPaise, promo?.code)}
+                        amountLabel={reduced ? 'To pay now' : 'Fee'}
                         amount={formatPaise(price.payPaise)}
                     />
                 </Card>
+
+                <PromoBox doctorId={doctor.id} slotId={slot.id} applied={promo} onChange={setPromo} />
 
                 {/* DocNow wallet: shown only when there is money in it */}
                 {(walletBalancePaise ?? 0) > 0 && (
@@ -284,7 +298,7 @@ function BookPage() {
                                     Balance {formatPaise(walletBalancePaise ?? 0)}.{' '}
                                     {useWallet
                                         ? price.payPaise === 0
-                                            ? 'Your wallet covers the whole fee.'
+                                            ? price.walletPaise === 0 ? 'Nothing left to pay.' : price.discountPaise > 0 ? 'Your wallet covers the rest.' : 'Your wallet covers the whole fee.'
                                             : `${formatPaise(price.walletPaise)} from your wallet, the rest by card or UPI.`
                                         : 'Pay part or all of the fee from it.'}
                                 </span>
@@ -334,13 +348,17 @@ function BookPage() {
                 <Button size="lg" className="mt-6 w-full" disabled={!personId} loading={busy} onClick={pay}>
                     {busy
                         ? price.payPaise === 0 ? 'Booking' : 'Getting your payment ready'
-                        : price.payPaise === 0 ? `Book · ${formatPaise(price.walletPaise)} from wallet` : `Pay ${formatPaise(price.payPaise)}`}
+                        : price.payPaise > 0 ? `Pay ${formatPaise(price.payPaise)}`
+                        : price.walletPaise > 0 ? `Book · ${formatPaise(price.walletPaise)} from wallet` : 'Book · nothing to pay'}
                 </Button>
 
                 {/* Trust Line */}
                 <div className="mt-3 flex items-center justify-center gap-2 text-sm text-ink-muted">
                     <Lock className="h-4 w-4 text-ink-subtle" aria-hidden />
-                    <span>{price.payPaise === 0 ? 'Paid from your DocNow wallet · Confirmed at once' : 'Secured by Razorpay · Your time is held while you pay'}</span>
+                    <span>
+                        {price.payPaise > 0 ? 'Secured by Razorpay · Your time is held while you pay'
+                            : price.walletPaise > 0 ? 'Paid from your DocNow wallet · Confirmed at once' : 'Covered by your promo code · Confirmed at once'}
+                    </span>
                 </div>
 
                 <AddFamilyMemberDialog

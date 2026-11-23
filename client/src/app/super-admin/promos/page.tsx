@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Search, Tag, Loader2, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import api from '@/lib/api';
+import { promoScopeSummary, type PromoAppliesTo } from '@/lib/promoScope';
 
 interface PromoCode {
     id: string;
@@ -17,6 +18,8 @@ interface PromoCode {
     maxRedemptions?: number;
     maxPerUser: number;
     expiresAt?: string;
+    appliesTo?: PromoAppliesTo;
+    scopes?: { doctor?: { displayName: string } | null; specialty?: { name: string } | null }[];
 }
 
 export default function PromosPage() {
@@ -122,6 +125,7 @@ export default function PromosPage() {
                                         <td className="px-6 py-4">
                                             <div className="font-bold text-gray-900">{promo.code}</div>
                                             <div className="text-xs text-gray-400 truncate max-w-[200px]">{promo.description}</div>
+                                            <div className="text-xs text-purple-700 mt-0.5 max-w-[260px]">{promoScopeSummary(promo)}</div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-medium text-sm">

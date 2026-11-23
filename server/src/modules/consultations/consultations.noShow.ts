@@ -8,6 +8,7 @@ import { logAlert } from '../../utils/logger';
 import { ConsultRazorpay } from './consultations.razorpay';
 import { paidParts } from './consultations.money';
 import { createRefundRecord, runRefunds } from './consultations.refunds';
+import { releasePromo } from './consultations.promo';
 import { noShowDeadlines } from './consultations.room';
 import { CEILINGS } from './consultations.policy';
 
@@ -39,6 +40,8 @@ export async function settleNoShows(deps: Deps = {}) {
                 data: { status: 'NO_SHOW_DOCTOR' },
             });
             const made = [];
+            // A doctor no-show is refunded in full, so the promo use comes back too.
+            if (res.count === 1) await releasePromo(tx, c.id);
             if (res.count === 1) {
                 for (const part of parts) {
                     const r = await createRefundRecord(tx, { consultationId: c.id, paymentId: part.id, reason: 'DOCTOR_NO_SHOW' });
@@ -52,7 +55,8 @@ export async function settleNoShows(deps: Deps = {}) {
             // Staff follow up with the doctor; repeat offenders show on the admin doctor list.
             logAlert('consult_doctor_no_show', { consultationId: c.id, doctorId: c.doctorId });
         }
-        if (changed && parts.length === 0) logAlert('consult_doctor_no_show_without_payment', { consultationId: c.id });
+        // A booking a promo made free has no payment by design.
+        if (changed && parts.length === 0 && !c.confirmingPaymentId?.startsWith('free:')) logAlert('consult_doctor_no_show_without_payment', { consultationId: c.id });
         // The reconciler retries a refund that fails here.
         await runRefunds(refunds, { db, razorpay: deps.razorpay });
     }

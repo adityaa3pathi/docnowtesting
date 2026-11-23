@@ -4,7 +4,7 @@ import { prisma } from '../../db';
 import { getRazorpay } from '../../services/razorpay';
 import { createHealthiansBooking } from '../../services/partnerBooking';
 import { rollbackInitiatedBooking } from '../../services/rollback';
-import { calculateDiscount } from '../../utils/promoHelper';
+import { calculateDiscount, CONSULT_ONLY_PROMO, lockPromo } from '../../utils/promoHelper';
 import { assertTransition } from '../../utils/paymentStateMachine';
 import { tryAwardFirstOrderBonus } from '../../utils/referralService';
 import { resolveOrCreateSelfPatient } from '../../utils/patientValidation';
@@ -122,15 +122,17 @@ export const initiatePayment = async (req: AuthRequest, res: Response) => {
                 const promo = await tx.promoCode.findUnique({ where: { code: promoCode } });
 
                 if (!promo || !promo.isActive) throw new Error('Invalid or inactive promo code');
+                if (promo.appliesTo === 'CONSULT') throw new Error(CONSULT_ONLY_PROMO);
                 if (promo.expiresAt && new Date() > promo.expiresAt) throw new Error('Promo code expired');
                 if (new Date() < promo.startsAt) throw new Error('Promo code not yet active');
                 if (itemsTotal < promo.minOrderValue) throw new Error(`Minimum order value of ₹${promo.minOrderValue} required`);
 
-                // Per-user limit check
-                const existingRedemption = await tx.promoRedemption.findFirst({
-                    where: { userId, promoCodeId: promo.id }
-                });
-                if (existingRedemption) throw new Error('You have already used this promo code');
+                // Per-user limit check, under a lock on the code so a consultation booking (or another
+                // checkout) can't take the same last use at once. Lab and consultation uses count together.
+                await lockPromo(tx, promo.id);
+                if ((await tx.promoRedemption.count({ where: { userId, promoCodeId: promo.id } })) >= promo.maxPerUser) {
+                    throw new Error('You have already used this promo code');
+                }
 
                 // Atomic Increment & Check Limit
                 if (promo.maxRedemptions !== null) {

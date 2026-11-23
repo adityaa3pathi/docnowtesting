@@ -98,6 +98,8 @@ describe('applyVerifyHint', () => {
 describe('mapCreateError', () => {
     it('409 slot taken goes back to the picker and forgets the key', () => {
         expect(mapCreateError(409, 'That slot was just taken')).toEqual({ kind: 'slot_taken', forgetKey: true });
+        expect(mapCreateError(409, 'Your wallet balance just changed. Please check the amount and try again')).toEqual({ kind: 'wallet_changed', forgetKey: true });
+        expect(mapCreateError(409, 'Your promo code discount just changed. Please check the amount and try again')).toEqual({ kind: 'promo_changed', forgetKey: true });
     });
     it('409 booking ended mints a new key', () => {
         expect(mapCreateError(409, 'This booking has ended. Start a new booking with a new idempotency key')).toEqual({ kind: 'ended', forgetKey: true });

@@ -5,6 +5,7 @@ import { CONSENT_VERSION } from './consent';
 import { recordServerDate } from './time';
 import type { GuestInfo } from './guest';
 import type {
+    ConsultPromoQuote,
     AdminAppointment, AdminAppointmentDetail, AdminDoctor, DoctorChangeQueue, DoctorChangeRequest, DoctorChangeStatus, AttendanceReport, AvailabilityWindow, BookingView, CancelPreview, DoctorGender, CancelResult,
     CartAddResult, ConsultNote, ConsultRules, ConsultationStatus, CreateBookingResponse, DoctorConsultationPage,
     DoctorConsultationRecord, DoctorMe, DoctorProfileInput, DoctorPublicProfile, DoctorSummary, JoinResponse, LeaveEntry,
@@ -61,7 +62,11 @@ export const consult = {
         api.get<DoctorSummary[]>('/consult/doctors', { params: specialtyId ? { specialtyId } : undefined }).then(data),
     doctor: (id: string) => api.get<DoctorPublicProfile>(`/consult/doctors/${id}`).then(data),
     slots: (doctorId: string) => api.get<Slot[]>(`/consult/doctors/${doctorId}/slots`).then(data),
-    createBooking: (body: { slotId: string; patientId: string; idempotencyKey: string; useWallet?: boolean; expectedWalletPaise?: number }) =>
+    /** What a promo code takes off this slot's fee. Nothing is used up. */
+    checkPromo: (code: string, slotId: string) => api.post<ConsultPromoQuote>('/consult/promos/check', { code, slotId }).then(data),
+    /** Codes this patient can use with this doctor now. */
+    promos: (doctorId: string) => api.get<ConsultPromoQuote[]>('/consult/promos', { params: { doctorId } }).then(data),
+    createBooking: (body: { slotId: string; patientId: string; idempotencyKey: string; useWallet?: boolean; expectedWalletPaise?: number; promoCode?: string; expectedDiscountPaise?: number }) =>
         api.post<CreateBookingResponse>('/consult/bookings', body).then(data),
     bookings: () => api.get<BookingView[]>('/consult/bookings').then(data),
     booking: (id: string) => api.get<BookingView>(`/consult/bookings/${id}`, { timeout: 10_000 }).then(data),
