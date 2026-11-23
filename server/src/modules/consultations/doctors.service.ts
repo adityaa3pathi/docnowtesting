@@ -154,19 +154,46 @@ async function clearFreeSlots(tx: Tx, where: Prisma.SlotWhereInput) {
     await tx.slot.updateMany({ where: base, data: { status: 'BLOCKED' } });
 }
 
-async function wantedSlots(tx: Tx, doctorId: string) {
-    const doctor = await tx.doctorProfile.findUniqueOrThrow({ where: { id: doctorId } });
-    const [windows, leaves] = await Promise.all([
-        tx.doctorAvailability.findMany({ where: { doctorId } }),
-        tx.doctorLeave.findMany({ where: { doctorId, endsAt: { gt: new Date() } } }),
-    ]);
-    return computeSlots({ windows, leaves, slotMinutes: doctor.slotMinutes, from: new Date(), days: SLOT_HORIZON_DAYS });
+type Range = { startsAt: Date; endsAt: Date };
+const overlaps = (a: Range, b: Range) => a.startsAt < b.endsAt && a.endsAt > b.startsAt;
+const rangeKey = (r: Range) => `${r.startsAt.getTime()}/${r.endsAt.getTime()}`;
+
+/** Future slots that are on offer or taken. A new or reopened slot must never overlap one of them. */
+function liveSlots(tx: Tx, doctorId: string, exceptId?: string) {
+    return tx.slot.findMany({
+        where: { doctorId, status: { in: ['AVAILABLE', 'BOOKED'] }, endsAt: { gt: new Date() }, id: exceptId ? { not: exceptId } : undefined },
+        select: { startsAt: true, endsAt: true },
+    });
 }
 
-async function createMissingSlots(tx: Tx, doctorId: string, ranges: { startsAt: Date; endsAt: Date }[]) {
+/**
+ * The slots the doctor's hours and leave call for, leaving out any that overlap a booked slot: after a
+ * slot-length change a booked slot keeps its old length.
+ */
+async function wantedSlots(tx: Tx, doctorId: string) {
+    const now = new Date();
+    const doctor = await tx.doctorProfile.findUniqueOrThrow({ where: { id: doctorId } });
+    const [windows, leaves, booked] = await Promise.all([
+        tx.doctorAvailability.findMany({ where: { doctorId } }),
+        tx.doctorLeave.findMany({ where: { doctorId, endsAt: { gt: now } } }),
+        tx.slot.findMany({ where: { doctorId, status: 'BOOKED', endsAt: { gt: now } }, select: { startsAt: true, endsAt: true } }),
+    ]);
+    const ranges = computeSlots({ windows, leaves, slotMinutes: doctor.slotMinutes, from: now, days: SLOT_HORIZON_DAYS });
+    return ranges.filter((r) => !booked.some((b) => overlaps(r, b)));
+}
+
+/**
+ * Creates the wanted slots that do not exist yet. One is skipped if it overlaps a live slot that starts
+ * at another time: an old-length slot freed again (an expired hold, a cancellation) is still on offer,
+ * and a new slot across it would give the doctor two patients at once. Rebuilds clear such slots.
+ */
+async function createMissingSlots(tx: Tx, doctorId: string, ranges: Range[]) {
     if (ranges.length === 0) return 0;
+    const live = await liveSlots(tx, doctorId);
+    const fits = ranges.filter((r) => !live.some((s) => s.startsAt.getTime() !== r.startsAt.getTime() && overlaps(r, s)));
+    if (fits.length === 0) return 0;
     const res = await tx.slot.createMany({
-        data: ranges.map((r) => ({ doctorId, startsAt: r.startsAt, endsAt: r.endsAt })),
+        data: fits.map((r) => ({ doctorId, startsAt: r.startsAt, endsAt: r.endsAt })),
         skipDuplicates: true,
     });
     return res.count;
@@ -177,33 +204,92 @@ async function ensureSlots(tx: Tx, doctorId: string) {
 }
 
 /**
- * Brings free slots in line with the doctor's hours and leave. Slots still wanted are left alone;
- * blocked slots with booking history that are wanted again (after suspension or leave) are reopened.
+ * Brings free slots in line with the doctor's hours and leave. Booked slots are never touched.
+ * - A free slot is kept only if a wanted slot has exactly its start and end, so a slot-length change
+ *   replaces old-length slots instead of leaving them on offer.
+ * - A slot with booking history cannot be deleted, and its start is unique. If a wanted slot starts at
+ *   the same time with another length, the old row is resized to it (otherwise that time could never
+ *   be offered again); the old consultation keeps its own start time. If not, it is blocked.
+ * - Blocked slots with booking history that are wanted again (after suspension or leave) are reopened.
  */
 async function rebuildSlots(tx: Tx, doctorId: string) {
+    const now = new Date();
     const wanted = await wantedSlots(tx, doctorId);
-    const starts = wanted.map((r) => r.startsAt);
-    await clearFreeSlots(tx, { doctorId, startsAt: { notIn: starts } });
-    await tx.slot.updateMany({
-        where: { doctorId, status: 'BLOCKED', startsAt: { in: starts }, consultations: { some: {} } },
-        data: { status: 'AVAILABLE' },
-    });
+    const keys = new Set(wanted.map(rangeKey));
+    const byStart = new Map(wanted.map((r) => [r.startsAt.getTime(), r]));
+    const [free, blockedWithHistory] = await Promise.all([
+        tx.slot.findMany({
+            where: { doctorId, status: 'AVAILABLE', startsAt: { gt: now } },
+            select: { id: true, startsAt: true, endsAt: true, _count: { select: { consultations: true } } },
+        }),
+        tx.slot.findMany({
+            where: { doctorId, status: 'BLOCKED', startsAt: { gt: now }, consultations: { some: {} } },
+            select: { id: true, startsAt: true, endsAt: true },
+        }),
+    ]);
+    const offGrid = free.filter((s) => !keys.has(rangeKey(s)));
+    const resize = [
+        ...offGrid.filter((s) => s._count.consultations > 0 && byStart.has(s.startsAt.getTime())),
+        ...blockedWithHistory.filter((s) => !keys.has(rangeKey(s)) && byStart.has(s.startsAt.getTime())),
+    ];
+    const resizeIds = new Set(resize.map((s) => s.id));
+    const stale = offGrid.filter((s) => !resizeIds.has(s.id)).map((s) => s.id);
+    if (stale.length) await clearFreeSlots(tx, { id: { in: stale } });
+    // Park the rows to resize first, so the overlap check below sees only slots that stay live.
+    if (resize.length) await tx.slot.updateMany({ where: { id: { in: [...resizeIds] } }, data: { status: 'BLOCKED' } });
+
+    const live = await liveSlots(tx, doctorId);
+    const reopen = (r: Range) => !live.some((s) => s.startsAt.getTime() !== r.startsAt.getTime() && overlaps(r, s));
+    for (const s of resize) {
+        const target = byStart.get(s.startsAt.getTime())!;
+        if (!reopen(target)) continue;
+        await tx.slot.update({ where: { id: s.id }, data: { endsAt: target.endsAt, status: 'AVAILABLE' } });
+        live.push(target);
+    }
+    const exact = blockedWithHistory.filter((s) => keys.has(rangeKey(s)) && reopen(s)).map((s) => s.id);
+    if (exact.length) await tx.slot.updateMany({ where: { id: { in: exact } }, data: { status: 'AVAILABLE' } });
     await createMissingSlots(tx, doctorId, wanted);
 }
 
-export async function setAvailability(doctorId: string, windows: Window[], slotMinutes?: number) {
+/**
+ * Replaces the doctor's weekly hours (and slot length) and rebuilds free slots. Slots are rebuilt only
+ * for an approved doctor; approval rebuilds them for anyone else. Doctors do not call this directly:
+ * their changes wait for a super admin (doctors.changes.ts).
+ */
+export async function applyAvailability(tx: Tx, doctorId: string, windows: Window[], slotMinutes?: number) {
     try {
         assertNoOverlap(windows);
     } catch (e: any) {
         throw new DoctorError(400, e.message);
     }
+    await tx.doctorAvailability.deleteMany({ where: { doctorId } });
+    if (windows.length) await tx.doctorAvailability.createMany({ data: windows.map((w) => ({ ...w, doctorId })) });
+    const doctor = slotMinutes
+        ? await tx.doctorProfile.update({ where: { id: doctorId }, data: { slotMinutes }, select: { status: true } })
+        : await tx.doctorProfile.findUniqueOrThrow({ where: { id: doctorId }, select: { status: true } });
+    if (doctor.status === 'APPROVED') await rebuildSlots(tx, doctorId);
+    return tx.doctorAvailability.findMany({ where: { doctorId }, orderBy: [{ dayOfWeek: 'asc' }, { startMinute: 'asc' }] });
+}
+
+/** An admin's direct edit. A new slot length rebuilds free slots at once, so old- and new-length slots never mix. */
+export async function adminUpdateDoctor(doctorId: string, data: Prisma.DoctorProfileUpdateInput & { slotMinutes?: number }) {
     return prisma.$transaction(async (tx) => {
-        await tx.doctorAvailability.deleteMany({ where: { doctorId } });
-        if (windows.length) await tx.doctorAvailability.createMany({ data: windows.map((w) => ({ ...w, doctorId })) });
-        if (slotMinutes) await tx.doctorProfile.update({ where: { id: doctorId }, data: { slotMinutes } });
-        await rebuildSlots(tx, doctorId);
-        return tx.doctorAvailability.findMany({ where: { doctorId }, orderBy: [{ dayOfWeek: 'asc' }, { startMinute: 'asc' }] });
+        const before = await tx.doctorProfile.findUnique({ where: { id: doctorId }, select: { slotMinutes: true } });
+        if (!before) throw new DoctorError(404, 'Doctor not found');
+        const updated = await tx.doctorProfile.update({
+            where: { id: doctorId },
+            data,
+            include: { specialty: true, availability: true, user: { select: { mobile: true, email: true } } },
+        });
+        if (data.slotMinutes !== undefined && data.slotMinutes !== before.slotMinutes && updated.status === 'APPROVED') {
+            await rebuildSlots(tx, doctorId);
+        }
+        return updated;
     });
+}
+
+export async function setAvailability(doctorId: string, windows: Window[], slotMinutes?: number) {
+    return prisma.$transaction((tx) => applyAvailability(tx, doctorId, windows, slotMinutes));
 }
 
 export async function addLeave(doctorId: string, startsAt: Date, endsAt: Date, reason?: string) {
@@ -226,11 +312,20 @@ export async function removeLeave(doctorId: string, leaveId: string) {
 }
 
 export async function setSlotBlocked(doctorId: string, slotId: string, blocked: boolean) {
-    const res = await prisma.slot.updateMany({
-        where: { id: slotId, doctorId, status: blocked ? 'AVAILABLE' : 'BLOCKED', startsAt: { gt: new Date() } },
-        data: { status: blocked ? 'BLOCKED' : 'AVAILABLE' },
+    await prisma.$transaction(async (tx) => {
+        if (!blocked) {
+            // An old-length slot from before a slot-length change would overlap the new ones.
+            const slot = await tx.slot.findFirst({ where: { id: slotId, doctorId }, select: { startsAt: true, endsAt: true } });
+            if (slot && (await liveSlots(tx, doctorId, slotId)).some((s) => overlaps(s, slot))) {
+                throw new DoctorError(409, 'This time overlaps another appointment slot, so it cannot be reopened');
+            }
+        }
+        const res = await tx.slot.updateMany({
+            where: { id: slotId, doctorId, status: blocked ? 'AVAILABLE' : 'BLOCKED', startsAt: { gt: new Date() } },
+            data: { status: blocked ? 'BLOCKED' : 'AVAILABLE' },
+        });
+        if (res.count === 0) throw new DoctorError(409, blocked ? 'Slot is not available to block' : 'Slot is not blocked');
     });
-    if (res.count === 0) throw new DoctorError(409, blocked ? 'Slot is not available to block' : 'Slot is not blocked');
 }
 
 /** Daily job: keep the rolling slot window full for every approved doctor. */

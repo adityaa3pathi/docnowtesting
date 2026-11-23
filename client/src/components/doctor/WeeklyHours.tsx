@@ -5,18 +5,23 @@ import { Button, Card } from '@/components/ui';
 import { doctor as doctorApi, errorMessage } from '@/lib/consult/api';
 import { SLOT_OPTIONS, validateWeek, windowsToForm, type WeekForm } from '@/lib/consult/availability';
 import { WEEKDAYS } from '@/lib/consult/time';
-import type { DoctorMe } from '@/lib/consult/types';
+import { pendingChange, withChange } from '@/lib/consult/changes';
+import type { HoursChange } from '@/lib/consult/types';
+import { ChangeNotice } from './ChangeNotice';
 import { useDoctor } from './DoctorContext';
 
 const timeClass = 'h-11 w-24 rounded-xl border border-border bg-white px-3 text-center text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20';
 
 export function WeeklyHours() {
     const { doctor, setDoctor } = useDoctor();
-    const [week, setWeek] = useState<WeekForm>(() => windowsToForm(doctor.availability));
-    const [slotMinutes, setSlotMinutes] = useState(doctor.slotMinutes);
+    // A change waiting for approval is what the doctor last asked for, so the form starts from it.
+    const startFrom = (): HoursChange => (pendingChange(doctor.changeRequests, 'AVAILABILITY')?.payload as HoursChange | undefined)
+        ?? { windows: doctor.availability, slotMinutes: doctor.slotMinutes };
+    const [week, setWeek] = useState<WeekForm>(() => windowsToForm(startFrom().windows));
+    const [slotMinutes, setSlotMinutes] = useState(() => startFrom().slotMinutes);
     const [dayErrors, setDayErrors] = useState<Record<number, string>>({});
     const [formError, setFormError] = useState<string | null>(null);
-    const [saved, setSaved] = useState(false);
+    const [saved, setSaved] = useState<null | 'sent' | 'unchanged'>(null);
     const [busy, setBusy] = useState(false);
 
     const edit = (fn: (draft: WeekForm) => void) => {
@@ -25,21 +30,26 @@ export function WeeklyHours() {
             fn(next);
             return next;
         });
-        setSaved(false);
+        setSaved(null);
+    };
+
+    const resetToLive = () => {
+        setWeek(windowsToForm(doctor.availability));
+        setSlotMinutes(doctor.slotMinutes);
+        setSaved(null);
     };
 
     const save = async () => {
         setFormError(null);
-        setSaved(false);
+        setSaved(null);
         const { errors, windows } = validateWeek(week);
         setDayErrors(errors);
         if (Object.keys(errors).length) return;
         setBusy(true);
         try {
-            const result = await doctorApi.setAvailability(windows, slotMinutes);
-            setDoctor({ ...doctor, availability: result, slotMinutes } as DoctorMe);
-            setWeek(windowsToForm(result));
-            setSaved(true);
+            const { request } = await doctorApi.setAvailability(windows, slotMinutes);
+            setDoctor({ ...doctor, changeRequests: withChange(doctor.changeRequests, 'AVAILABILITY', request) });
+            setSaved(request ? 'sent' : 'unchanged');
         } catch (e) {
             setFormError(errorMessage(e));
         } finally {
@@ -49,9 +59,10 @@ export function WeeklyHours() {
 
     return (
         <div className="space-y-4">
+            <ChangeNotice kind="AVAILABILITY" onWithdrawn={resetToLive} />
             <Card className="p-5">
                 <label htmlFor="slotMinutes" className="mb-1 block text-sm font-semibold">Length of each appointment</label>
-                <select id="slotMinutes" value={slotMinutes} onChange={(e) => { setSlotMinutes(Number(e.target.value)); setSaved(false); }}
+                <select id="slotMinutes" value={slotMinutes} onChange={(e) => { setSlotMinutes(Number(e.target.value)); setSaved(null); }}
                     className="h-11 w-full max-w-xs rounded-xl border border-border bg-white px-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
                     {SLOT_OPTIONS.map((m) => <option key={m} value={m}>{m} minutes</option>)}
                 </select>
@@ -89,8 +100,18 @@ export function WeeklyHours() {
             ))}
 
             {formError && <div role="alert" className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-destructive">{formError}</div>}
-            {saved && <div role="status" className="rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700">Your hours are saved.</div>}
-            <Button size="lg" className="w-full sm:w-auto" onClick={save} disabled={busy}>{busy ? 'Saving...' : 'Save hours'}</Button>
+            {saved === 'sent' && (
+                <div role="status" className="rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+                    Sent for approval. Your new hours start once a DocNow admin approves them. Booked appointments are always kept.
+                </div>
+            )}
+            {saved === 'unchanged' && (
+                <div role="status" className="rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+                    These are already your hours, so there is nothing to approve.
+                </div>
+            )}
+            <p className="text-xs text-muted-foreground">Changes to your hours are checked by DocNow before patients see them. Appointments already booked always stay booked.</p>
+            <Button size="lg" className="w-full sm:w-auto" onClick={save} disabled={busy}>{busy ? 'Sending...' : 'Send for approval'}</Button>
         </div>
     );
 }

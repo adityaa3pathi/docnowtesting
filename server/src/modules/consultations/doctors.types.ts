@@ -35,8 +35,13 @@ export const adminCreateDoctorSchema = z.object({
     slotMinutes: z.number().refine((n) => (SLOT_MINUTES as readonly number[]).includes(n), 'Invalid slot length').default(15),
 });
 
+// Edits are partial: a field left out must stay as it is. Zod 4 applies a .default() even inside
+// .partial(), so experience would silently become 0 on every edit that does not mention it.
+const experienceEdit = z.number().int().min(0).max(70);
+
 export const adminUpdateDoctorSchema = z.object({
     ...profileFields,
+    experienceYears: experienceEdit,
     consultationFee: z.number().positive(),
     slotMinutes: z.number().refine((n) => (SLOT_MINUTES as readonly number[]).includes(n), 'Invalid slot length'),
 }).partial();
@@ -44,7 +49,7 @@ export const adminUpdateDoctorSchema = z.object({
 export const doctorSelfUpdateSchema = z.object({
     bio: profileFields.bio,
     languages: profileFields.languages,
-    experienceYears: profileFields.experienceYears,
+    experienceYears: experienceEdit,
     gender: profileFields.gender,
 }).partial();
 

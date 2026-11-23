@@ -64,6 +64,7 @@ const navItems = [
     { id: 'consult-specialties', label: 'Specialties', icon: Tags, href: '/super-admin/consult-specialties' },
     { id: 'consult-rules', label: 'Consult Rules', icon: Scale, href: '/super-admin/consult-rules' },
     { id: 'consult-review', label: 'Consult Review', icon: ClipboardCheck, href: '/super-admin/consult-review' },
+    { id: 'consult-changes', label: 'Doctor Changes', icon: ClipboardCheck, href: '/super-admin/consult-changes' },
     { id: 'consult-appointments', label: 'Consult Appointments', icon: CalendarClock, href: '/super-admin/consult-appointments' },
     { id: 'audit', label: 'Audit Logs', icon: FileText, href: '/super-admin/audit-logs' },
 ];
