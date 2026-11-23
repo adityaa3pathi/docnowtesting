@@ -7,6 +7,8 @@ export const CEILINGS = {
     waitMinutes: { min: 1, max: 60 },
     platformFeeBps: { min: 0, max: 5000 },
     uploadLimitMb: { min: 1, max: 50 },
+    rescheduleCutoffMinutes: { min: 30, max: 2880 },
+    maxReschedules: { min: 0, max: 5 },
 } as const;
 
 const inRange = (n: number, r: { min: number; max: number }) => Number.isInteger(n) && n >= r.min && n <= r.max;
@@ -43,6 +45,9 @@ export function validateRules(rules: ConsultRules): string[] {
     if (!inRange(rules.patientNoShowWaitMinutes, w)) problems.push(`Patient no-show wait must be a whole number from ${w.min} to ${w.max} minutes.`);
     if (!inRange(rules.platformFeeBps, f)) problems.push(`Platform fee must be a whole number of basis points, at most ${f.max} (${f.max / 100} percent).`);
     if (!inRange(rules.uploadLimitMb, u)) problems.push(`Upload limit must be a whole number from ${u.min} to ${u.max} MB.`);
+    const { rescheduleCutoffMinutes: rc, maxReschedules: mr } = CEILINGS;
+    if (!inRange(rules.rescheduleCutoffMinutes, rc)) problems.push(`Reschedule cutoff must be a whole number from ${rc.min} to ${rc.max} minutes.`);
+    if (!inRange(rules.maxReschedules, mr)) problems.push(`Changes per booking must be a whole number from ${mr.min} to ${mr.max}.`);
     return problems;
 }
 

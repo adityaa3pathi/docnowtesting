@@ -21,6 +21,8 @@ const NUMBER_FIELDS = [
     { name: 'patientNoShowWaitMinutes', label: 'Wait for patient (minutes)', range: CEILINGS.waitMinutes, hint: 'After this, a missing patient is marked as no-show.' },
     { name: 'platformFeeBps', label: 'Platform fee (basis points)', range: CEILINGS.platformFeeBps, hint: '100 basis points is 1 percent. At most 5000 (50 percent).' },
     { name: 'uploadLimitMb', label: 'Upload limit (MB)', range: CEILINGS.uploadLimitMb, hint: 'Largest file a patient can attach.' },
+    { name: 'rescheduleCutoffMinutes', label: 'Reschedule cutoff (minutes)', range: CEILINGS.rescheduleCutoffMinutes, hint: 'Patients can change the time until this long before the start. 120 is 2 hours.' },
+    { name: 'maxReschedules', label: 'Time changes per booking', range: CEILINGS.maxReschedules, hint: 'Same doctor, free. 0 turns self-serve time changes off.' },
 ] as const;
 
 export function RulesForm() {

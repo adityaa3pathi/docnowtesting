@@ -15,6 +15,8 @@ const base: ConsultRules = {
     holdMinutes: 10,
     minLeadMinutes: 15,
     uploadLimitMb: 10,
+    rescheduleCutoffMinutes: 120,
+    maxReschedules: 2,
 };
 const with_ = (p: Partial<ConsultRules>): ConsultRules => ({ ...base, ...p });
 
@@ -72,3 +74,13 @@ describe('versionChanged', () => {
         expect(versionChanged(3, 3)).toBe(false);
     });
 });
+
+describe('reschedule rules', () => {
+    it('accepts the defaults and 0 (turned off), and refuses values outside the ceilings', () => {
+        expect(validateRules(base)).toEqual([]);
+        expect(validateRules(with_({ maxReschedules: 0 }))).toEqual([]);
+        expect(validateRules(with_({ rescheduleCutoffMinutes: 15 }))).toEqual(['Reschedule cutoff must be a whole number from 30 to 2880 minutes.']);
+        expect(validateRules(with_({ maxReschedules: 9 }))).toEqual(['Changes per booking must be a whole number from 0 to 5.']);
+    });
+});
+

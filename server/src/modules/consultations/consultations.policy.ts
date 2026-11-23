@@ -13,6 +13,10 @@ export type Rules = {
     holdMinutes: number;
     minLeadMinutes: number;
     uploadLimitMb: number;
+    /** A patient can move their booking until this long before it starts. */
+    rescheduleCutoffMinutes: number;
+    /** How many times a patient can move one booking; 0 turns self-serve reschedule off. */
+    maxReschedules: number;
 };
 
 export const DEFAULT_RULES: Rules = {
@@ -28,6 +32,10 @@ export const DEFAULT_RULES: Rules = {
     holdMinutes: 10,
     minLeadMinutes: 15,
     uploadLimitMb: 10,
+    // Aditya, 2026-11-23, on the roadmap recommendation (owner to confirm): same doctor, up to 2 h
+    // before, at most 2 times, free.
+    rescheduleCutoffMinutes: 120,
+    maxReschedules: 2,
 };
 
 export const CEILINGS = {
@@ -36,7 +44,18 @@ export const CEILINGS = {
     waitMinutes: { min: 1, max: 60 },
     platformFeeBps: { min: 0, max: 5000 },
     uploadLimitMb: { min: 1, max: 50 },
+    rescheduleCutoffMinutes: { min: 30, max: 2880 },
+    maxReschedules: { min: 0, max: 5 },
 } as const;
+
+/**
+ * The rules a booking is held to. A snapshot copied before a rule existed gets that rule's
+ * default, so older bookings keep working when rules are added.
+ */
+export function rulesOf(snapshot: unknown): Rules {
+    const saved = snapshot && typeof snapshot === 'object' ? (snapshot as Partial<Rules>) : {};
+    return { ...DEFAULT_RULES, ...saved };
+}
 
 const inRange = (n: number, r: { min: number; max: number }) => Number.isInteger(n) && n >= r.min && n <= r.max;
 
@@ -61,6 +80,10 @@ export function validateRules(rules: Rules): string | null {
     }
     if (!inRange(rules.platformFeeBps, CEILINGS.platformFeeBps)) return `Fee must be at most ${CEILINGS.platformFeeBps.max / 100} percent`;
     if (!inRange(rules.uploadLimitMb, CEILINGS.uploadLimitMb)) return `Upload limit must be ${CEILINGS.uploadLimitMb.min} to ${CEILINGS.uploadLimitMb.max} MB`;
+    if (!inRange(rules.rescheduleCutoffMinutes, CEILINGS.rescheduleCutoffMinutes)) {
+        return `Reschedule cutoff must be ${CEILINGS.rescheduleCutoffMinutes.min} to ${CEILINGS.rescheduleCutoffMinutes.max} minutes`;
+    }
+    if (!inRange(rules.maxReschedules, CEILINGS.maxReschedules)) return `Reschedules per booking must be ${CEILINGS.maxReschedules.min} to ${CEILINGS.maxReschedules.max}`;
     return null;
 }
 

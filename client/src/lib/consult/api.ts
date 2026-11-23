@@ -69,6 +69,8 @@ export const consult = {
         api.post<VerifyResponse>(`/consult/bookings/${id}/verify`, body).then(data),
     cancelPreview: (id: string) => api.get<CancelPreview>(`/consult/bookings/${id}/cancel-preview`).then(data),
     cancel: (id: string, reason?: string) => api.post<CancelResult>(`/consult/bookings/${id}/cancel`, { reason }).then(data),
+    /** Moves the booking to another free time of the same doctor, within its rules. */
+    changeTime: (id: string, newSlotId: string) => api.post<BookingView>(`/consult/bookings/${id}/change-time`, { newSlotId }).then(data),
     /** `consent` false: no tick shown, because sign-up consent covers this join (the server re-checks). */
     join: (id: string, consent: boolean) =>
         api.post<JoinResponse>(`/consult/bookings/${id}/join`, consent ? { consent, consentVersion: CONSENT_VERSION, channel: 'web' } : {}).then(data),

@@ -869,6 +869,8 @@ model DoctorProfile {
   slots        Slot[]
   consultations Consultation[]
   changeRequests DoctorChangeRequest[]
+  movesFrom      ConsultationMove[] @relation("ConsultationMoveFrom")
+  movesTo        ConsultationMove[] @relation("ConsultationMoveTo")
 
   @@unique([registrationNumber, registrationCouncil])
   @@index([status, specialtyId])
@@ -1041,6 +1043,11 @@ model Consultation {
   familyJoinedAt      DateTime?
   startedAt           DateTime?
   endedAt             DateTime?
+  // Self-serve reschedules so far (the policy caps them; late-doctor moves don't count).
+  rescheduleCount     Int                @default(0)
+  // The earliest start this booking had before the patient moved it. Cancellation refund tiers use
+  // it, so moving a booking can never raise its refund. Null: never moved by the patient.
+  refundBasisStartsAt DateTime?
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
@@ -1056,12 +1063,44 @@ model Consultation {
   attachedReports ConsultationReport[]
   attachments     ConsultationAttachment[]
   consents        ConsultationConsent[]
+  moves           ConsultationMove[]
 
   @@unique([userId, idempotencyKey])
   @@index([slotId])
   @@index([status, holdExpiresAt])
   @@index([userId, createdAt])
   @@index([doctorId, startsAt])
+}
+
+enum ConsultationMoveKind {
+  PATIENT_RESCHEDULE // the patient picked another time with the same doctor, inside the policy
+  DOCTOR_LATE_RESCHEDULE // the doctor was late; the patient moved to another time, same doctor
+  DOCTOR_LATE_REASSIGN // the doctor was late; the patient moved to the next free doctor
+}
+
+// One row per move of a paid consultation to another slot. The consultation itself only keeps the
+// current time, so this is what the no-show report and staff use to see where it was before.
+model ConsultationMove {
+  id                  String               @id @default(uuid())
+  consultationId      String
+  kind                ConsultationMoveKind
+  fromDoctorId        String
+  fromSlotId          String
+  fromStartsAt        DateTime
+  // Whether the patient was waiting in the room when it moved (the move clears the join time).
+  fromPatientJoinedAt DateTime?
+  toDoctorId          String
+  toSlotId            String
+  toStartsAt          DateTime
+  byUserId            String?
+  createdAt           DateTime             @default(now())
+
+  consultation Consultation  @relation(fields: [consultationId], references: [id], onDelete: Restrict)
+  fromDoctor   DoctorProfile @relation("ConsultationMoveFrom", fields: [fromDoctorId], references: [id])
+  toDoctor     DoctorProfile @relation("ConsultationMoveTo", fields: [toDoctorId], references: [id])
+
+  @@index([consultationId, createdAt])
+  @@index([kind, fromStartsAt])
 }
 
 model ConsultationPayment {

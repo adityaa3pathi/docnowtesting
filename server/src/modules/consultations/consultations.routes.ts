@@ -16,7 +16,7 @@ import { sendConsultError } from './consultations.http';
 import { CONSENT_REQUIRED, CONSENT_VERSION, guestInfo, guestJoin, patientJoin, signupConsentFor } from './consultations.room';
 import { acceptFamilyLink, declineFamilyLink } from './consultations.family';
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_BOOKING, removeAttachment, uploadAttachment } from './consultations.attachments';
-import { reassignBooking, reassignOption, rescheduleBooking, rescheduleSlots } from './consultations.reschedule';
+import { reassignBooking, reassignOption, rescheduleBooking, rescheduleSlots, selfRescheduleBooking } from './consultations.reschedule';
 import { kickConsultPushes } from './consultations.push';
 import { addRecommendedTestsToCart, getPatientPrescription, prescriptionFromLink, prescriptionLinkToken } from './consultations.prescription';
 import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
@@ -148,6 +148,19 @@ consultPatientRoutes.post('/bookings/:id/cancel', ...patient, rateLimiter(5, 60,
         const parse = cancelSchema.safeParse(req.body ?? {});
         if (!parse.success) return res.status(400).json({ error: 'Invalid reason' });
         res.json(await cancelConsultation(id.data, { kind: 'booker', userId: req.userId! }, parse.data.reason));
+    } catch (e) { fail(res, e); }
+});
+
+// ── Patient changes the time (same doctor, within the booking's rules) ──
+
+consultPatientRoutes.post('/bookings/:id/change-time', ...patient, rateLimiter(5, 60, 'consult_change_time'), async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        const parse = z.object({ newSlotId: z.string().uuid({ message: 'Pick a time' }) }).safeParse(req.body ?? {});
+        if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
+        res.json(await selfRescheduleBooking(req.userId!, id.data, parse.data.newSlotId));
+        kickConsultPushes(id.data);
     } catch (e) { fail(res, e); }
 });
 
