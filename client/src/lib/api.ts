@@ -123,6 +123,21 @@ api.interceptors.request.use((config) => {
     return Promise.reject(error);
 });
 
+declare module 'axios' {
+    interface AxiosRequestConfig {
+        /**
+         * A 401 on this request means "not signed in", not "session expired", so a failed
+         * refresh must not send the visitor to the login page (the caller handles it).
+         */
+        skipLoginRedirect?: boolean;
+    }
+}
+
+/** Where an expired session is sent. An object so tests can spy on it (jsdom can't navigate). */
+export const loginRedirect = {
+    go: () => { window.location.href = '/?login=true'; },
+};
+
 // Response interceptor — graceful handling of network errors & silent refresh
 type RefreshOutcome = { kind: 'ok'; data: { accessToken?: string } | undefined } | { kind: 'race' } | { kind: 'offline' } | { kind: 'expired' };
 let refreshPromise: Promise<RefreshOutcome> | null = null;
@@ -169,8 +184,8 @@ api.interceptors.response.use(
             }
             if (outcome.kind === 'expired') {
                 accessToken = null;
-                if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-                    window.location.href = '/?login=true';
+                if (typeof window !== 'undefined' && window.location.pathname !== '/' && !error.config.skipLoginRedirect) {
+                    loginRedirect.go();
                 }
                 return Promise.reject(error);
             }

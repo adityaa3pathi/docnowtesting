@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AxiosAdapter, InternalAxiosRequestConfig } from 'axios';
-import api from './api';
+import api, { loginRedirect } from './api';
 
 type Reply = { status: number; data?: unknown } | 'offline';
 
@@ -21,7 +21,42 @@ function script(routes: Record<string, Reply[]>): string[] {
     return calls;
 }
 
-afterEach(() => window.history.replaceState(null, '', '/'));
+afterEach(() => {
+    window.history.replaceState(null, '', '/');
+    vi.restoreAllMocks();
+});
+
+describe('expired session', () => {
+    it('sends the visitor to the login page when a request fails and the refresh is refused', async () => {
+        const go = vi.spyOn(loginRedirect, 'go').mockImplementation(() => {});
+        window.history.replaceState(null, '', '/profile');
+        script({ '/profile/patients': [{ status: 401 }], '/auth/refresh': [{ status: 401 }] });
+        await expect(api.get('/profile/patients')).rejects.toMatchObject({ response: { status: 401 } });
+        expect(go).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps a guest on the page when a skipLoginRedirect request (the /auth/me probe) gets 401', async () => {
+        const go = vi.spyOn(loginRedirect, 'go').mockImplementation(() => {});
+        window.history.replaceState(null, '', '/search');
+        const calls = script({ '/auth/me': [{ status: 401 }], '/auth/refresh': [{ status: 401 }] });
+        await expect(api.get('/auth/me', { skipLoginRedirect: true })).rejects.toMatchObject({ response: { status: 401 } });
+        expect(calls).toEqual(['/auth/me', '/auth/refresh']);
+        expect(go).not.toHaveBeenCalled();
+    });
+
+    it('still refreshes a signed-in user on the probe and retries it', async () => {
+        const go = vi.spyOn(loginRedirect, 'go').mockImplementation(() => {});
+        window.history.replaceState(null, '', '/search');
+        const calls = script({
+            '/auth/me': [{ status: 401 }, { status: 200, data: { user: { id: 'u1' } } }],
+            '/auth/refresh': [{ status: 200, data: { accessToken: 'fresh' } }],
+        });
+        const res = await api.get('/auth/me', { skipLoginRedirect: true });
+        expect(res.data).toEqual({ user: { id: 'u1' } });
+        expect(calls).toEqual(['/auth/me', '/auth/refresh', '/auth/me']);
+        expect(go).not.toHaveBeenCalled();
+    });
+});
 
 describe('silent refresh', () => {
     it('treats a 409 (another tab already refreshed) as success and retries the request', async () => {
