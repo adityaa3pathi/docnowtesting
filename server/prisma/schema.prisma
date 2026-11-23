@@ -865,9 +865,47 @@ model DoctorProfile {
   leaves       DoctorLeave[]
   slots        Slot[]
   consultations Consultation[]
+  changeRequests DoctorChangeRequest[]
 
   @@unique([registrationNumber, registrationCouncil])
   @@index([status, specialtyId])
+}
+
+// A doctor's own change to weekly hours (with slot length) or profile text waits here for a super
+// admin; the live schedule and profile keep running until it is approved. At most one PENDING row per
+// (doctor, kind): a raw-SQL partial unique index in the migration, which Prisma cannot express.
+enum DoctorChangeKind {
+  AVAILABILITY
+  PROFILE
+}
+
+enum DoctorChangeStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUPERSEDED // the doctor sent a newer version before review
+  WITHDRAWN // the doctor took it back
+}
+
+model DoctorChangeRequest {
+  id           String             @id @default(uuid())
+  doctorId     String
+  kind         DoctorChangeKind
+  // AVAILABILITY: { windows: [{ dayOfWeek, startMinute, endMinute }], slotMinutes }
+  // PROFILE: only the changed fields of { bio, languages, experienceYears }
+  payload      Json
+  // The live values when the doctor sent it, so history shows what changed.
+  previous     Json
+  status       DoctorChangeStatus @default(PENDING)
+  reviewReason String?
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  doctor       DoctorProfile      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([doctorId, createdAt])
 }
 
 model DoctorAvailability {

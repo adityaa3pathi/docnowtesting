@@ -3,8 +3,9 @@
  *
  * Public: specialties and approved doctors.
  * Signed-in user: register as a doctor, see own application.
- * Doctor (approved): own profile, hours, leave, slot blocking.
- * Super admin: create doctors, edit, approve, reject, suspend, specialties.
+ * Doctor (approved): own profile, hours, leave, slot blocking. New hours and profile text wait for a
+ * super admin (doctors.changes.ts); gender, photo and leave apply at once.
+ * Super admin: create doctors, edit, approve, reject, suspend, specialties, review doctor changes.
  */
 import { Request, Router, Response } from 'express';
 import { z } from 'zod';
@@ -33,8 +34,9 @@ import { getDoctorRecord, issuePrescription, noteSchema, prescriptionSchema, rei
 import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
 import { appointmentsQuery, getAppointment, listAppointments } from './consultations.appointments';
 import {
-    addLeave, adminCreateDoctor, registerDoctor, removeLeave, resubmitDoctor, reviewDoctor, setAvailability, setSlotBlocked,
+    addLeave, adminCreateDoctor, adminUpdateDoctor, registerDoctor, removeLeave, resubmitDoctor, reviewDoctor, setSlotBlocked,
 } from './doctors.service';
+import { listChanges, myChanges, reviewChange, submitAvailabilityChange, submitProfileChange, withdrawChange } from './doctors.changes';
 
 function fail(res: Response, e: unknown, label: string) {
     if (e instanceof DoctorError) return res.status(e.status).json({ error: e.message });
@@ -165,7 +167,7 @@ doctorRoutes.get('/me', authMiddleware, async (req: AuthRequest, res: Response) 
             include: { specialty: true, availability: true },
         });
         if (!doctor) return res.status(404).json({ error: 'No doctor profile' });
-        res.json(doctor);
+        res.json({ ...doctor, changeRequests: await myChanges(doctor.id) });
     } catch (e) { fail(res, e, 'get me'); }
 });
 
@@ -202,22 +204,42 @@ async function myDoctorId(req: AuthRequest) {
     return d.id;
 }
 
-doctorRoutes.patch('/me', ...mine, async (req: AuthRequest, res: Response) => {
+/**
+ * Gender applies at once (patients filter by it; it is not a claim to check). Bio, languages and
+ * experience are shown to patients, so they wait for a super admin: `request` is the pending change,
+ * or null when nothing differs from the live profile.
+ */
+doctorRoutes.patch('/me', ...mine, consultCsrfGuard, async (req: AuthRequest, res: Response) => {
     try {
         const parse = doctorSelfUpdateSchema.safeParse(req.body);
         if (!parse.success) return bad(res, parse);
         const id = await myDoctorId(req);
-        res.json(await prisma.doctorProfile.update({ where: { id }, data: parse.data }));
+        const { gender, ...reviewed } = parse.data;
+        if (gender) await prisma.doctorProfile.update({ where: { id }, data: { gender } });
+        const { request } = Object.keys(reviewed).length ? await submitProfileChange(id, reviewed) : { request: undefined };
+        const doctor = await prisma.doctorProfile.findUniqueOrThrow({ where: { id }, include: { specialty: true, availability: true } });
+        res.status(request ? 202 : 200).json({ doctor, request: request ?? null });
     } catch (e) { fail(res, e, 'update me'); }
 });
 
-doctorRoutes.put('/me/availability', ...mine, async (req: AuthRequest, res: Response) => {
+/** New hours wait for a super admin; the live hours and slots keep running until then. */
+doctorRoutes.put('/me/availability', ...mine, consultCsrfGuard, rateLimiter(30, 3600, 'doctor_hours_change'), async (req: AuthRequest, res: Response) => {
     try {
         const parse = availabilitySchema.safeParse(req.body);
         if (!parse.success) return bad(res, parse);
         const id = await myDoctorId(req);
-        res.json(await setAvailability(id, parse.data.windows, parse.data.slotMinutes));
+        const { request } = await submitAvailabilityChange(id, parse.data);
+        res.status(request ? 202 : 200).json({ request });
     } catch (e) { fail(res, e, 'set availability'); }
+});
+
+doctorRoutes.delete('/me/changes/:id', ...mine, consultCsrfGuard, async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        await withdrawChange(await myDoctorId(req), id.data);
+        res.json({ success: true });
+    } catch (e) { fail(res, e, 'withdraw change'); }
 });
 
 doctorRoutes.get('/me/slots', ...mine, async (req: AuthRequest, res: Response) => {
@@ -386,10 +408,14 @@ consultAdminRoutes.get('/doctors/:id', ...admin, async (req: AuthRequest, res: R
     try {
         const doctor = await prisma.doctorProfile.findUnique({
             where: { id: req.params.id as string },
-            include: { specialty: true, availability: true, user: { select: { mobile: true, email: true } } },
+            include: {
+                specialty: true, availability: true, user: { select: { mobile: true, email: true } },
+                changeRequests: { where: { status: 'PENDING' }, select: { id: true, kind: true, createdAt: true } },
+            },
         });
         if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
-        res.json(doctor);
+        const { changeRequests, ...rest } = doctor;
+        res.json({ ...rest, pendingChanges: changeRequests });
     } catch (e) { fail(res, e, 'admin get'); }
 });
 
@@ -423,11 +449,7 @@ consultAdminRoutes.patch('/doctors/:id', ...admin, async (req: AuthRequest, res:
         const parse = adminUpdateDoctorSchema.safeParse(req.body);
         if (!parse.success) return bad(res, parse);
         const id = req.params.id as string;
-        const updated = await prisma.doctorProfile.update({
-            where: { id },
-            data: parse.data,
-            include: { specialty: true, availability: true, user: { select: { mobile: true, email: true } } },
-        });
+        const updated = await adminUpdateDoctor(id, parse.data);
         await audit(req, 'DOCTOR_UPDATE', id, parse.data);
         res.json(updated);
     } catch (e) { fail(res, e, 'admin update'); }
@@ -451,6 +473,35 @@ for (const [path, to, needsReason] of [
             await audit(req, `DOCTOR_${to}`, id, { reason });
             res.json(updated);
         } catch (e) { fail(res, e, `admin ${path}`); }
+    });
+}
+
+// ── Super admin: doctor change requests ─────────────────
+
+const changeStatus = z.enum(['PENDING', 'APPROVED', 'REJECTED']).default('PENDING');
+
+consultAdminRoutes.get('/doctor-changes', ...admin, async (req: AuthRequest, res: Response) => {
+    try {
+        const status = changeStatus.safeParse(req.query.status ?? undefined);
+        if (!status.success) return res.status(400).json({ error: 'Unknown status' });
+        res.json(await listChanges(status.data));
+    } catch (e) { fail(res, e, 'list doctor changes'); }
+});
+
+for (const [path, decision] of [['approve', 'APPROVED'], ['reject', 'REJECTED']] as const) {
+    consultAdminRoutes.post(`/doctor-changes/:id/${path}`, ...admin, consultCsrfGuard, rateLimiter(60, 60, 'doctor_change_review'), async (req: AuthRequest, res: Response) => {
+        try {
+            const id = z.string().uuid().safeParse(req.params.id);
+            if (!id.success) return res.status(404).json({ error: 'Change request not found' });
+            let reason: string | undefined;
+            if (decision === 'REJECTED') {
+                const parse = reviewReasonSchema.safeParse(req.body);
+                if (!parse.success) return bad(res, parse);
+                reason = parse.data.reason;
+            }
+            const reviewer = { adminId: req.adminId!, adminName: req.adminName || 'Admin', ip: getClientIP(req) };
+            res.json(await reviewChange(reviewer, id.data, decision, reason));
+        } catch (e) { fail(res, e, `doctor change ${path}`); }
     });
 }
 

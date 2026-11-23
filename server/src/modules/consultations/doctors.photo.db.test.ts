@@ -151,7 +151,8 @@ describeDb('doctor photos (real Postgres)', () => {
             expect(approve.status).toBe(400);
 
             const live = await makeDoctor();
-            expect((await send('PATCH', `${doctorApp.url}/doctor/me`, tokenFor(live.user), { photoUrl: link, bio: 'Hello' })).status).toBe(200);
+            // The bio waits for approval (202); the photo link is dropped either way.
+            expect((await send('PATCH', `${doctorApp.url}/doctor/me`, tokenFor(live.user), { photoUrl: link, bio: 'Hello' })).status).toBe(202);
             expect((await photoOf(live.profile.id)).photoUrl).toBeNull();
         });
     });

@@ -59,3 +59,19 @@ export function assertNoOverlap(windows: Window[]): void {
         }
     }
 }
+
+/** Windows in a fixed order, so two sets of hours can be compared. */
+export function sortWindows(windows: Window[]): Window[] {
+    return [...windows]
+        .map(({ dayOfWeek, startMinute, endMinute }) => ({ dayOfWeek, startMinute, endMinute }))
+        .sort((a, b) => a.dayOfWeek - b.dayOfWeek || a.startMinute - b.startMinute || a.endMinute - b.endMinute);
+}
+
+/** True if the whole range falls inside one weekly window (IST). */
+export function withinHours(windows: Window[], range: SlotRange): boolean {
+    const dayStart = istDayStart(range.startsAt);
+    const dow = istDayOfWeek(dayStart);
+    const start = (range.startsAt.getTime() - dayStart.getTime()) / MS_PER_MIN;
+    const end = (range.endsAt.getTime() - dayStart.getTime()) / MS_PER_MIN;
+    return windows.some((w) => w.dayOfWeek === dow && w.startMinute <= start && end <= w.endMinute);
+}

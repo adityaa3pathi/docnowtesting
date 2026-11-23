@@ -6,7 +6,7 @@ export default function AvailabilityPage() {
         <div className="space-y-4">
             <div>
                 <h1 className="text-2xl font-bold text-foreground">Your hours</h1>
-                <p className="text-sm text-muted-foreground">Set the times you see patients each week.</p>
+                <p className="text-sm text-muted-foreground">Set the times you see patients each week. A DocNow admin approves each change.</p>
             </div>
             <WeeklyHours />
         </div>

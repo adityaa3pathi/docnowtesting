@@ -1,5 +1,7 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
+import { CHANGE_KIND_LABEL } from '@/lib/consult/changes';
 import { DoctorPhotoUpload } from '@/components/doctor/DoctorPhotoUpload';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui';
@@ -75,6 +77,12 @@ export function DoctorDetail({ id }: { id: string }) {
                     <Badge tone={info.tone}>{info.label}</Badge>
                 </div>
                 <p className="mt-1 text-sm text-gray-500">{doc.specialty?.name ?? 'General'} · {doc.qualification} · {doc.experienceYears} years</p>
+                {!!doc.pendingChanges?.length && (
+                    <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                        {doc.pendingChanges.map((c) => CHANGE_KIND_LABEL[c.kind].toLowerCase()).join(' and ').replace(/^./, (m) => m.toUpperCase())} waiting for approval.{' '}
+                        <Link href="/super-admin/consult-changes" className="font-semibold underline">Review it</Link>
+                    </p>
+                )}
                 <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                     <div><dt className="text-gray-500">Registration</dt><dd className="font-medium">{doc.registrationNumber} ({doc.registrationCouncil})</dd></div>
                     <div><dt className="text-gray-500">Mobile</dt><dd className="font-medium">{doc.user?.mobile ?? 'Not shown'}</dd></div>

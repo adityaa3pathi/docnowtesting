@@ -5,7 +5,7 @@ import { CONSENT_VERSION } from './consent';
 import { recordServerDate } from './time';
 import type { GuestInfo } from './guest';
 import type {
-    AdminAppointment, AdminAppointmentDetail, AdminDoctor, AttendanceReport, AvailabilityWindow, BookingView, CancelPreview, DoctorGender, CancelResult,
+    AdminAppointment, AdminAppointmentDetail, AdminDoctor, DoctorChangeQueue, DoctorChangeRequest, DoctorChangeStatus, AttendanceReport, AvailabilityWindow, BookingView, CancelPreview, DoctorGender, CancelResult,
     CartAddResult, ConsultNote, ConsultRules, ConsultationStatus, CreateBookingResponse, DoctorConsultationPage,
     DoctorConsultationRecord, DoctorMe, DoctorProfileInput, DoctorPublicProfile, DoctorSummary, JoinResponse, LeaveEntry,
     NoteInput, PolicyResponse, Prescription, PrescriptionInput, ReviewQueue, Slot, Specialty, VerifyResponse,
@@ -84,14 +84,18 @@ export const doctor = {
     me: () => api.get<DoctorMe>('/doctor/me').then(data),
     register: (body: DoctorProfileInput) => api.post<DoctorMe>('/doctor/register', body).then(data),
     resubmit: (body: DoctorProfileInput) => api.post<DoctorMe>('/doctor/resubmit', body).then(data),
-    updateMe: (body: { gender?: DoctorGender }) => api.patch<DoctorMe>('/doctor/me', body).then(data),
+    /** Gender saves at once; bio, languages and experience come back as a pending `request` (null: nothing changed). */
+    updateMe: (body: { gender?: DoctorGender; bio?: string; languages?: string[]; experienceYears?: number }) =>
+        api.patch<{ doctor: DoctorMe; request: DoctorChangeRequest | null }>('/doctor/me', body).then(data),
     uploadPhoto: (photo: Blob) => {
         const form = new FormData();
         form.append('photo', photo, 'photo.jpg');
         return api.post<{ photoUrl: string }>('/doctor/me/photo', form).then(data);
     },
+    /** New hours wait for a super admin. `request` is null when they match the live hours (nothing to approve). */
     setAvailability: (windows: AvailabilityWindow[], slotMinutes?: number) =>
-        api.put<AvailabilityWindow[]>('/doctor/me/availability', { windows, slotMinutes }).then(data),
+        api.put<{ request: DoctorChangeRequest | null }>('/doctor/me/availability', { windows, slotMinutes }).then(data),
+    withdrawChange: (id: string) => api.delete(`/doctor/me/changes/${id}`).then(data),
     leave: () => api.get<LeaveEntry[]>('/doctor/me/leave').then(data),
     addLeave: (body: { startsAt: string; endsAt: string; reason?: string }) =>
         api.post<{ leave: LeaveEntry; bookedConflicts: number }>('/doctor/me/leave', body).then(data),
@@ -139,6 +143,12 @@ export const admin = {
     updateDoctor: (id: string, body: Partial<DoctorProfileInput> & { consultationFee?: number; slotMinutes?: number }) =>
         api.patch<AdminDoctor>(`/admin/consult/doctors/${id}`, body).then(data),
     approve: (id: string) => api.post<AdminDoctor>(`/admin/consult/doctors/${id}/approve`).then(data),
+    doctorChanges: (status: DoctorChangeStatus = 'PENDING') =>
+        api.get<DoctorChangeQueue>('/admin/consult/doctor-changes', { params: { status } }).then(data),
+    approveChange: (id: string) =>
+        api.post<{ id: string; status: DoctorChangeStatus; bookedKeptOutsideHours: number }>(`/admin/consult/doctor-changes/${id}/approve`).then(data),
+    rejectChange: (id: string, reason: string) =>
+        api.post<{ id: string; status: DoctorChangeStatus }>(`/admin/consult/doctor-changes/${id}/reject`, { reason }).then(data),
     reject: (id: string, reason: string) => api.post<AdminDoctor>(`/admin/consult/doctors/${id}/reject`, { reason }).then(data),
     suspend: (id: string, reason: string) => api.post<AdminDoctor>(`/admin/consult/doctors/${id}/suspend`, { reason }).then(data),
     specialties: () => api.get<Specialty[]>('/admin/consult/specialties').then(data),

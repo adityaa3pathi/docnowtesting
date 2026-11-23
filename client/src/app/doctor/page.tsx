@@ -5,6 +5,8 @@ import { Badge } from '@/components/consult/Badge';
 import { useState } from 'react';
 import { useDoctor } from '@/components/doctor/DoctorContext';
 import { DoctorPhotoUpload } from '@/components/doctor/DoctorPhotoUpload';
+import { ProfileDetails } from '@/components/doctor/ProfileDetails';
+import { pendingChange } from '@/lib/consult/changes';
 import { doctor as doctorApi, errorMessage } from '@/lib/consult/api';
 import type { DoctorGender } from '@/lib/consult/types';
 import { formatRupees } from '@/lib/consult/format';
@@ -18,7 +20,8 @@ export default function DoctorHomePage() {
     async function saveGender(gender: DoctorGender) {
         setGenderError(null);
         try {
-            setDoctor({ ...doctor, ...(await doctorApi.updateMe({ gender })) });
+            const { doctor: live } = await doctorApi.updateMe({ gender });
+            setDoctor({ ...doctor, gender: live.gender });
         } catch (e) {
             setGenderError(errorMessage(e));
         }
@@ -26,6 +29,7 @@ export default function DoctorHomePage() {
     const info = doctorStatusInfo(doctor.status);
     const week = windowsToForm(doctor.availability);
     const hasHours = week.some((d) => d.length > 0);
+    const hoursPending = !!pendingChange(doctor.changeRequests, 'AVAILABILITY');
 
     return (
         <div className="space-y-4">
@@ -56,11 +60,15 @@ export default function DoctorHomePage() {
                     {!doctor.gender && <p className="mt-1 text-xs text-ink-muted">Patients can filter doctors by gender. Please add yours.</p>}
                     {genderError && <p role="alert" className="mt-1 text-xs font-medium text-danger">{genderError}</p>}
                 </div>
+                <ProfileDetails />
             </Card>
 
             <Card className="p-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                    <h2 className="font-bold text-foreground">Your weekly hours</h2>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="font-bold text-foreground">Your weekly hours</h2>
+                        {hoursPending && <Badge tone="warning">Change waiting for approval</Badge>}
+                    </div>
                     <Link href="/doctor/availability"><Button variant="outline" size="sm" type="button">Change hours</Button></Link>
                 </div>
                 {!hasHours ? (

@@ -123,6 +123,58 @@ export interface DoctorMe extends DoctorSummary {
     statusReason: string | null;
     specialtyId: string;
     availability: AvailabilityWindow[];
+    /** Recent changes sent for approval, newest first. Only GET /doctor/me sends it. */
+    changeRequests?: DoctorChangeRequest[];
+}
+
+export type DoctorChangeKind = 'AVAILABILITY' | 'PROFILE';
+export type DoctorChangeStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export interface HoursChange {
+    windows: AvailabilityWindow[];
+    slotMinutes: number;
+}
+export interface ProfileChange {
+    bio?: string | null;
+    languages?: string[];
+    experienceYears?: number;
+}
+
+/** A doctor's new hours or profile text waiting for (or decided by) a super admin. */
+export interface DoctorChangeRequest {
+    id: string;
+    kind: DoctorChangeKind;
+    status: DoctorChangeStatus;
+    payload: HoursChange | ProfileChange;
+    /** The live values when the doctor sent it. */
+    previous: HoursChange | ProfileChange;
+    reviewReason: string | null;
+    createdAt: string;
+    reviewedAt: string | null;
+}
+
+export interface AdminDoctorChange extends DoctorChangeRequest {
+    doctorId: string;
+    doctor: { id: string; displayName: string; photoUrl: string | null; status: DoctorStatus; specialty: { name: string } | null };
+    /** The doctor's values now, to compare with the request. */
+    live: HoursChange | ProfileChange;
+    /** Pending hours only: booked appointments outside the new hours (they stay booked). */
+    bookedOutsideNewHours: number | null;
+}
+
+export interface RecentLeave {
+    id: string;
+    doctorId: string;
+    startsAt: string;
+    endsAt: string;
+    reason: string | null;
+    createdAt: string;
+    doctor: { id: string; displayName: string };
+    bookedInside: number;
+}
+
+export interface DoctorChangeQueue {
+    requests: AdminDoctorChange[];
+    recentLeave: RecentLeave[];
 }
 
 export interface LeaveEntry {
@@ -132,8 +184,10 @@ export interface LeaveEntry {
     reason: string | null;
 }
 
-export interface AdminDoctor extends DoctorMe {
+export interface AdminDoctor extends Omit<DoctorMe, 'changeRequests'> {
     user?: { mobile: string; email?: string | null };
+    /** Changes waiting for approval. Only the detail route sends it. */
+    pendingChanges?: { id: string; kind: DoctorChangeKind; createdAt: string }[];
     /** Doctor no-shows in the last 30 days. Only the list route sends it. */
     noShows30d?: number;
 }
