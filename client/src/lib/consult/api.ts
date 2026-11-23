@@ -100,8 +100,11 @@ export const doctor = {
     addLeave: (body: { startsAt: string; endsAt: string; reason?: string }) =>
         api.post<{ leave: LeaveEntry; bookedConflicts: number }>('/doctor/me/leave', body).then(data),
     removeLeave: (id: string) => api.delete(`/doctor/me/leave/${id}`).then(data),
-    consultations: (scope: 'upcoming' | 'past', cursor?: string) =>
-        api.get<DoctorConsultationPage>('/doctor/me/consultations', { params: { scope, cursor } }).then(data),
+    /** `q` is part of the patient's name; `from` and `to` are IST days (YYYY-MM-DD), both included. */
+    consultations: (scope: 'upcoming' | 'past', cursor?: string, filters: { q?: string; from?: string; to?: string } = {}) =>
+        api.get<DoctorConsultationPage>('/doctor/me/consultations', {
+            params: { scope, cursor, q: filters.q?.trim() || undefined, from: filters.from || undefined, to: filters.to || undefined },
+        }).then(data),
     consultation: (id: string) => api.get<DoctorConsultationRecord>(`/doctor/me/consultations/${id}`).then(data),
     join: (id: string) => api.post<JoinResponse>(`/doctor/me/consultations/${id}/join`).then(data),
     end: (id: string) => api.post<{ status: ConsultationStatus }>(`/doctor/me/consultations/${id}/end`).then(data),

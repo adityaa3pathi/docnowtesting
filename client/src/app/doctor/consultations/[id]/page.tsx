@@ -8,6 +8,7 @@ import { ConfirmDialog } from '@/components/consult/ConfirmDialog';
 import { JoinPanel } from '@/components/consult/JoinPanel';
 import { PrescriptionView } from '@/components/consult/PrescriptionView';
 import { ErrorState, LoadingBlock } from '@/components/consult/States';
+import { AllergyAlert } from '@/components/doctor/AllergyAlert';
 import { NotesForm } from '@/components/doctor/NotesForm';
 import { PatientDossier } from '@/components/doctor/PatientDossier';
 import { PrescriptionBuilder } from '@/components/doctor/PrescriptionBuilder';
@@ -136,6 +137,7 @@ export default function DoctorConsultationRoomPage({ params }: { params: Promise
                         join={() => doctorApi.join(record.id)}
                         onChange={() => void refetch()}
                         onCallChange={setInCall}
+                        alert={<AllergyAlert variant="overlay" allergies={patient.allergies} allergiesConfirmedAt={patient.allergiesConfirmedAt} />}
                     />
                     {record.status === 'IN_PROGRESS' && (
                         <Button variant="outline" className="w-full border-destructive text-destructive" onClick={() => setEnding(true)}>
@@ -150,6 +152,7 @@ export default function DoctorConsultationRoomPage({ params }: { params: Promise
                             key={record.prescription.id}
                             consultationId={record.id}
                             correcting={record.prescription}
+                            patient={patient}
                             onCancel={() => setCorrecting(false)}
                             onIssued={() => {
                                 setCorrecting(false);
@@ -159,7 +162,7 @@ export default function DoctorConsultationRoomPage({ params }: { params: Promise
                     ) : record.prescription ? (
                         <IssuedPrescription record={record} prescription={record.prescription} onCorrect={() => setCorrecting(true)} />
                     ) : WRITABLE.includes(record.status) && (
-                        <PrescriptionBuilder consultationId={record.id} onIssued={(p) => setData({ ...record, prescription: p })} />
+                        <PrescriptionBuilder consultationId={record.id} patient={patient} onIssued={(p) => setData({ ...record, prescription: p })} />
                     )}
                 </div>
             </div>

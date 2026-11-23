@@ -65,15 +65,40 @@ describe('correcting a prescription', () => {
     } as Prescription;
 
     it('pre-fills medicines, test codes and advice from the current version', () => {
-        expect(builderFromPrescription(issued)).toEqual({ rows: issued.medicines, codes: 'CBC, TSH', advice: 'Drink water' });
+        // Old prescriptions have only the free-text fields; the new ones start empty.
+        expect(builderFromPrescription(issued)).toEqual({ rows: issued.medicines.map((m) => ({ ...emptyMedicine(), ...m })), codes: 'CBC, TSH', advice: 'Drink water' });
     });
     it('round-trips through the builder check unchanged', () => {
         const b = builderFromPrescription(issued);
         expect(buildPrescription(b.rows, b.codes, b.advice)).toEqual({
-            ok: true, body: { medicines: issued.medicines, testCodes: ['CBC', 'TSH'], advice: 'Drink water' },
+            ok: true, body: { medicines: issued.medicines.map((m) => ({ ...emptyMedicine(), ...m })), testCodes: ['CBC', 'TSH'], advice: 'Drink water' },
         });
     });
     it('starts with one blank row when there were no medicines', () => {
         expect(builderFromPrescription({ ...issued, medicines: [], advice: null })).toEqual({ rows: [emptyMedicine()], codes: 'CBC, TSH', advice: '' });
     });
 });
+
+describe('buildPrescription with structured fields', () => {
+    it('keeps strength, times, food and days, trimmed', () => {
+        const row = { ...emptyMedicine(), name: ' Cetirizine ', strength: ' 10 mg ', doseTimes: ['NIGHT' as const], foodTiming: 'AFTER_FOOD' as const, durationDays: 5 };
+        const r = buildPrescription([row], '', '');
+        expect(r).toEqual({ ok: true, body: { medicines: [{ ...row, name: 'Cetirizine', strength: '10 mg' }], testCodes: [] } });
+    });
+    it('a row with only a time or days still needs a name', () => {
+        expect(buildPrescription([{ ...emptyMedicine(), doseTimes: ['MORNING'] }], '', '')).toEqual({ ok: false, error: 'Each medicine needs a name.' });
+        expect(buildPrescription([{ ...emptyMedicine(), durationDays: 3 }], '', '').ok).toBe(false);
+    });
+    it('rejects days outside 1 to 365 or not whole', () => {
+        for (const durationDays of [0, 366, 2.5]) {
+            const r = buildPrescription([{ ...emptyMedicine(), name: 'X', durationDays }], '', '');
+            expect(r).toEqual({ ok: false, error: 'X: the duration must be 1 to 365 days.' });
+        }
+    });
+    it('a correction of an old prescription starts with its free-text fields', () => {
+        const old = { name: 'Azithromycin', dose: '500 mg', frequency: 'Once a day', duration: '3 days', instructions: '' };
+        const b = builderFromPrescription({ id: 'p1', consultationId: 'c1', version: 1, issuedAt: '', medicines: [old], recommendedTests: [], advice: null } as unknown as Prescription);
+        expect(b.rows[0]).toEqual({ ...emptyMedicine(), ...old });
+    });
+});
+

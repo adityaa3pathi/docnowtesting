@@ -25,7 +25,11 @@ export function shouldWatchForPatient(status: ConsultationStatus, inCall: boolea
     return !inCall && (status === 'CONFIRMED' || status === 'WAITING');
 }
 
-export const emptyMedicine = (): Medicine => ({ name: '', dose: '', frequency: '', duration: '', instructions: '' });
+export const emptyMedicine = (): Medicine => ({
+    name: '', strength: '', dose: '', frequency: '', doseTimes: [], foodTiming: null, durationDays: null, duration: '', instructions: '',
+});
+
+export const DURATION_DAYS_MAX = 365;
 
 /** Splits typed test codes on commas, spaces or new lines, dropping blanks and repeats. */
 export function parseTestCodes(text: string): string[] {
@@ -36,11 +40,22 @@ export type BuildResult = { ok: true; body: PrescriptionInput } | { ok: false; e
 
 /** Checks the builder form the same way the server does, so the doctor sees problems before the confirm step. */
 export function buildPrescription(rows: Medicine[], codesText: string, advice: string): BuildResult {
-    const trimmed = rows.map((r) => ({
-        name: r.name.trim(), dose: r.dose.trim(), frequency: r.frequency.trim(), duration: r.duration.trim(), instructions: r.instructions.trim(),
+    const trimmed: Medicine[] = rows.map((r) => ({
+        name: r.name.trim(),
+        strength: (r.strength ?? '').trim(),
+        dose: r.dose.trim(),
+        frequency: r.frequency.trim(),
+        doseTimes: r.doseTimes ?? [],
+        foodTiming: r.foodTiming ?? null,
+        durationDays: r.durationDays ?? null,
+        duration: r.duration.trim(),
+        instructions: r.instructions.trim(),
     }));
-    const medicines = trimmed.filter((r) => Object.values(r).some(Boolean));
+    const filled = (m: Medicine) => !!(m.name || m.strength || m.dose || m.frequency || m.doseTimes?.length || m.foodTiming || m.durationDays || m.duration || m.instructions);
+    const medicines = trimmed.filter(filled);
     if (medicines.some((m) => !m.name)) return { ok: false, error: 'Each medicine needs a name.' };
+    const badDays = medicines.find((m) => m.durationDays != null && (!Number.isInteger(m.durationDays) || m.durationDays < 1 || m.durationDays > DURATION_DAYS_MAX));
+    if (badDays) return { ok: false, error: `${badDays.name}: the duration must be 1 to ${DURATION_DAYS_MAX} days.` };
     if (medicines.length > 20) return { ok: false, error: 'Add at most 20 medicines.' };
     const testCodes = parseTestCodes(codesText);
     if (testCodes.length > 10) return { ok: false, error: 'Add at most 10 tests.' };

@@ -16,7 +16,7 @@
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../../db';
-import { istDayRange } from './consultations.appointments';
+import { isoDay, istDayRange } from './consultations.appointments';
 import { DOCTOR_LATE_AFTER_MS } from './consultations.room';
 import { ConsultationStatus } from './consultations.types';
 import { DoctorError } from './doctors.status';
@@ -29,12 +29,6 @@ export const MAX_CONSULTATIONS = 20_000;
 export const MAX_ISSUES_SHOWN = 500;
 const DAY_MS = 24 * 3_600_000;
 
-// A real calendar day: 2026-02-31 would otherwise roll over to 3 March while the report still said 31 Feb.
-const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Dates must be YYYY-MM-DD')
-    .refine((d) => {
-        const t = Date.parse(`${d}T00:00:00Z`);
-        return !Number.isNaN(t) && new Date(t).toISOString().slice(0, 10) === d;
-    }, 'That date does not exist');
 export const attendanceQuery = z.object({ from: isoDay.optional(), to: isoDay.optional() });
 export type AttendanceQuery = z.infer<typeof attendanceQuery>;
 

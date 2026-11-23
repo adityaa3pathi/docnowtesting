@@ -80,6 +80,8 @@ interface AuthDialogProps {
     isOpen: boolean;
     onClose: () => void;
     onLoginSuccess?: () => void;
+    /** A new account was just created (after onLoginSuccess). */
+    onSignedUp?: () => void;
 }
 
 type AuthView = 'LOGIN' | 'SIGNUP' | 'FORGOT_PASSWORD';
@@ -88,7 +90,7 @@ type LoginMethod = 'PASSWORD' | 'OTP';
 /** Owner asked for a 10s resend; the server still caps sends at 5 per 15 minutes. */
 const RESEND_SECONDS = 10;
 
-export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps) {
+export function AuthDialog({ isOpen, onClose, onLoginSuccess, onSignedUp }: AuthDialogProps) {
     const { login } = useAuth();
 
     // Global State
@@ -262,6 +264,7 @@ export function AuthDialog({ isOpen, onClose, onLoginSuccess }: AuthDialogProps)
             });
             login(res.data.user);
             if (onLoginSuccess) { onLoginSuccess(); } else { onClose(); }
+            onSignedUp?.();
         } catch (err) {
             handleError(err);
         }

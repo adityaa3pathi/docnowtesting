@@ -13,6 +13,13 @@ export const appointmentsQuery = z.object({
     doctorId: z.string().uuid('Invalid doctor').optional(),
 });
 
+// A real calendar day: 2026-02-31 would otherwise roll over to 3 March while the report still said 31 Feb.
+export const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Dates must be YYYY-MM-DD')
+    .refine((d) => {
+        const t = Date.parse(`${d}T00:00:00Z`);
+        return !Number.isNaN(t) && new Date(t).toISOString().slice(0, 10) === d;
+    }, 'That date does not exist');
+
 /** Start and end of an IST calendar day, as UTC instants. */
 export function istDayRange(date?: string, now = new Date()) {
     const day = date ?? new Date(now.getTime() + IST_OFFSET_MS).toISOString().slice(0, 10);

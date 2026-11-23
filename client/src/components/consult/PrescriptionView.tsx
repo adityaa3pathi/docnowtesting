@@ -1,3 +1,4 @@
+import { medicineParts } from '@/lib/consult/medicine';
 import { formatIstDateTime } from '@/lib/consult/time';
 import type { Prescription } from '@/lib/consult/types';
 
@@ -15,12 +16,16 @@ export function PrescriptionView({ prescription }: { prescription: Prescription 
                     <p className="text-ink-muted">No medicines.</p>
                 ) : (
                     <ol className="space-y-2">
-                        {medicines.map((m, i) => (
-                            <li key={i} className="rounded-xl bg-primary-soft px-3 py-2">
-                                <p className="font-semibold text-ink">{m.name}{m.dose && ` · ${m.dose}`}</p>
-                                <p className="text-ink-muted">{[m.frequency, m.duration, m.instructions].filter(Boolean).join(' · ')}</p>
-                            </li>
-                        ))}
+                        {medicines.map((m, i) => {
+                            const parts = medicineParts(m);
+                            return (
+                                <li key={i} className="rounded-xl bg-primary-soft px-3 py-2">
+                                    <p className="font-semibold text-ink">{parts.title}</p>
+                                    {parts.plan.length > 0 && <p className="text-ink">{parts.plan.join(' · ')}</p>}
+                                    {parts.instructions && <p className="text-ink-muted">{parts.instructions}</p>}
+                                </li>
+                            );
+                        })}
                     </ol>
                 )}
             </section>

@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui';
 import { Badge } from '@/components/consult/Badge';
@@ -13,6 +14,8 @@ import { cn } from '@/lib/utils';
 
 type Scope = 'upcoming' | 'past';
 const TYPE_LABEL = { VIDEO: 'Video', AUDIO: 'Audio', CHAT: 'Chat' } as const;
+const filterLabel = 'mb-1 block text-xs font-semibold text-muted-foreground';
+const filterField = 'h-10 w-full rounded-xl border border-border bg-input px-3 text-sm outline-none focus:ring-2 focus:ring-ring';
 
 function Row({ item }: { item: DoctorConsultationItem }) {
     const info = statusInfo(item.status);
@@ -33,19 +36,42 @@ function Row({ item }: { item: DoctorConsultationItem }) {
 
 export default function DoctorConsultationsPage() {
     const [scope, setScope] = useState<Scope>('upcoming');
-    const { data, error, loading, refetch, setData } = useApi(() => doctorApi.consultations(scope), [scope]);
+    const [typed, setTyped] = useState('');
+    const [q, setQ] = useState('');
+    const [from, setFrom] = useState('');
+    const [to, setTo] = useState('');
+    const filters = { q, from, to };
+    const filtered = !!(q || from || to);
+    const badRange = !!from && !!to && from > to;
+    // Searches once typing pauses, not on every key.
+    useEffect(() => {
+        const t = setTimeout(() => setQ(typed.trim()), 300);
+        return () => clearTimeout(t);
+    }, [typed]);
+    const { data, error, loading, refetch, setData } = useApi(
+        () => (badRange ? Promise.resolve({ items: [], nextCursor: null }) : doctorApi.consultations(scope, undefined, filters)),
+        [scope, q, from, to],
+    );
     const [more, setMore] = useState(false);
     const [moreError, setMoreError] = useState<string | null>(null);
+    // The list a "Show more" belongs to; a page that arrives after the filters changed is dropped.
+    const listKey = `${scope}|${q}|${from}|${to}`;
+    const currentKey = useRef(listKey);
+    useEffect(() => {
+        currentKey.current = listKey;
+    }, [listKey]);
 
     async function loadMore() {
         if (!data?.nextCursor) return;
+        const key = listKey;
         setMore(true);
         setMoreError(null);
         try {
-            const next = await doctorApi.consultations(scope, data.nextCursor);
+            const next = await doctorApi.consultations(scope, data.nextCursor, filters);
+            if (currentKey.current !== key) return;
             setData({ items: [...data.items, ...next.items], nextCursor: next.nextCursor });
         } catch (e) {
-            setMoreError(errorMessage(e));
+            if (currentKey.current === key) setMoreError(errorMessage(e));
         } finally {
             setMore(false);
         }
@@ -71,13 +97,39 @@ export default function DoctorConsultationsPage() {
                     </button>
                 ))}
             </div>
+            <div className="grid gap-2 rounded-2xl bg-white p-3 shadow-sm sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+                <div>
+                    <label htmlFor="history-q" className={filterLabel}>Patient name</label>
+                    <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                        <input id="history-q" type="search" value={typed} maxLength={80} placeholder="Search by name"
+                            onChange={(e) => setTyped(e.target.value)} className={`${filterField} pl-9`} />
+                    </div>
+                </div>
+                <div>
+                    <label htmlFor="history-from" className={filterLabel}>From</label>
+                    <input id="history-from" type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} className={filterField} />
+                </div>
+                <div>
+                    <label htmlFor="history-to" className={filterLabel}>To</label>
+                    <input id="history-to" type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className={filterField} />
+                </div>
+                {filtered || typed ? (
+                    <Button variant="ghost" size="sm" onClick={() => { setTyped(''); setQ(''); setFrom(''); setTo(''); }}>
+                        <X className="h-4 w-4" aria-hidden /> Clear
+                    </Button>
+                ) : <span className="hidden sm:block" />}
+            </div>
+            {badRange && <p role="alert" className="text-sm font-semibold text-destructive">The From date must be on or before the To date.</p>}
             {loading ? <LoadingBlock label="Loading consultations" />
                 : error ? <ErrorState message={error} onRetry={refetch} />
                 : !data || data.items.length === 0 ? (
-                    <EmptyState
-                        title={scope === 'upcoming' ? 'No upcoming consultations' : 'No past consultations'}
-                        body={scope === 'upcoming' ? 'When a patient books you, it will show up here.' : undefined}
-                    />
+                    filtered ? <EmptyState title="No consultations match" body="Try another name or dates." /> : (
+                        <EmptyState
+                            title={scope === 'upcoming' ? 'No upcoming consultations' : 'No past consultations'}
+                            body={scope === 'upcoming' ? 'When a patient books you, it will show up here.' : undefined}
+                        />
+                    )
                 ) : (
                     <>
                         <ul className="space-y-3">

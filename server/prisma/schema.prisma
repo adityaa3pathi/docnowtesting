@@ -188,6 +188,9 @@ model Patient {
   preferredLanguage  String    @default("hi") // hi | en
   bloodGroup         String?
   allergies          String[]  @default([])
+  // Set when the allergies were confirmed (a list, or "no known allergies"). Null with an empty
+  // list means nobody has asked yet, which the doctor sees as "not confirmed".
+  allergiesConfirmedAt DateTime?
   chronicConditions  String[]  @default([])
   currentMedications String[]  @default([])
   linkedUserId       String?
