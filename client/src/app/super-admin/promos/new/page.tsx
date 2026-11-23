@@ -9,6 +9,8 @@ import api from '@/lib/api';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { PromoScopeFields } from '@/components/admin/promos/PromoScopeFields';
+import { promoScopePayload, type PromoAppliesTo } from '@/lib/promoScope';
 
 // --- Zod schema ---
 
@@ -50,6 +52,8 @@ type PromoFormData = z.input<typeof promoSchema>;
 export default function NewPromoPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    // Kept outside the form library: a select plus two tick lists.
+    const [scope, setScope] = useState<{ appliesTo: PromoAppliesTo; doctorIds: string[]; specialtyIds: string[] }>({ appliesTo: 'LAB', doctorIds: [], specialtyIds: [] });
 
     const {
         register,
@@ -79,7 +83,7 @@ export default function NewPromoPage() {
         setLoading(true);
 
         try {
-            await api.post('/admin/promos', data);
+            await api.post('/admin/promos', { ...data, ...promoScopePayload(scope.appliesTo, scope.doctorIds, scope.specialtyIds) });
             toast.success('Promo created successfully');
             router.push('/super-admin/promos');
         } catch (error: any) {
@@ -191,6 +195,12 @@ export default function NewPromoPage() {
                                 <p className="text-xs text-red-500 mt-1">{errors.minOrderValue.message}</p>
                             )}
                         </div>
+                    </div>
+
+                    {/* Where it works */}
+                    <div className="space-y-6">
+                        <h2 className="text-lg font-semibold text-gray-900 border-b pb-2">Where it works</h2>
+                        <PromoScopeFields {...scope} onChange={setScope} />
                     </div>
 
                     {/* Limits & Validity */}

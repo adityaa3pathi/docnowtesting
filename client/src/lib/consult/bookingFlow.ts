@@ -62,6 +62,7 @@ export type CreateErrorAction =
     | { kind: 'ended'; forgetKey: true }
     | { kind: 'busy'; forgetKey: true }
     | { kind: 'wallet_changed'; forgetKey: true }
+    | { kind: 'promo_changed'; forgetKey: true }
     | { kind: 'setting_up'; forgetKey: false }
     | { kind: 'too_many'; forgetKey: false }
     | { kind: 'login'; forgetKey: false }
@@ -73,6 +74,7 @@ export function mapCreateError(status: number | undefined, message?: string): Cr
         if (/has ended/i.test(message ?? '')) return { kind: 'ended', forgetKey: true };
         if (/being set up/i.test(message ?? '')) return { kind: 'setting_up', forgetKey: false };
         if (/wallet balance/i.test(message ?? '')) return { kind: 'wallet_changed', forgetKey: true };
+        if (/promo code discount/i.test(message ?? '')) return { kind: 'promo_changed', forgetKey: true };
         return { kind: 'slot_taken', forgetKey: true };
     }
     if (status === 429) return { kind: 'too_many', forgetKey: false };

@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { prisma } from '../db';
 import { AuthRequest, authMiddleware } from '../middleware/auth';
-import { calculateDiscount } from '../utils/promoHelper';
+import { calculateDiscount, CONSULT_ONLY_PROMO } from '../utils/promoHelper';
 
 const router = Router();
 
@@ -27,7 +27,9 @@ router.get('/available', authMiddleware, async (req: AuthRequest, res: Response)
                     { expiresAt: null },
                     { expiresAt: { gt: now } }
                 ],
-                id: { notIn: redeemedIds }
+                id: { notIn: redeemedIds },
+                // Consultation-only codes are offered on the consult page, not in the lab cart.
+                appliesTo: { in: ['LAB', 'BOTH'] }
             },
             select: {
                 id: true,
@@ -74,6 +76,9 @@ router.post('/validate', authMiddleware, async (req: AuthRequest, res: Response)
 
         if (!promo || !promo.isActive) {
             return res.status(400).json({ valid: false, error: 'Invalid or inactive promo code' });
+        }
+        if (promo.appliesTo === 'CONSULT') {
+            return res.status(400).json({ valid: false, error: CONSULT_ONLY_PROMO });
         }
 
         // Check expiry

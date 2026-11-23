@@ -29,7 +29,7 @@ export function istDayRange(date?: string, now = new Date()) {
 }
 
 const rowSelect = {
-    id: true, status: true, type: true, startsAt: true, feePaise: true, walletPaise: true, platformFeePaise: true,
+    id: true, status: true, type: true, startsAt: true, feePaise: true, walletPaise: true, discountPaise: true, promoCode: { select: { code: true } }, platformFeePaise: true,
     patientJoinedAt: true, doctorJoinedAt: true, startedAt: true, endedAt: true, reviewReason: true,
     slot: { select: { endsAt: true } },
     doctor: { select: { id: true, displayName: true, specialty: { select: { name: true } } } },

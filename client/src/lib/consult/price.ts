@@ -4,6 +4,8 @@
  */
 export interface ConsultPrice {
     feePaise: number;
+    /** Taken off by a promo code. */
+    discountPaise: number;
     walletPaise: number;
     /** Left for Razorpay. 0: the wallet pays it all and the booking confirms at once. */
     payPaise: number;
@@ -19,33 +21,52 @@ export function walletRupeesToPaise(balance: number | null | undefined): number 
 /** Razorpay's smallest payment (₹1). The card is never left a smaller share (same rule as the server). */
 const MIN_CARD_PAISE = 100;
 
-export function consultPrice(feePaise: number, walletBalancePaise: number, useWallet: boolean): ConsultPrice {
-    let walletPaise = useWallet ? Math.max(0, Math.min(walletBalancePaise, feePaise)) : 0;
-    const card = feePaise - walletPaise;
-    if (card > 0 && card < MIN_CARD_PAISE) walletPaise = Math.max(0, feePaise - MIN_CARD_PAISE);
-    return { feePaise, walletPaise, payPaise: feePaise - walletPaise };
+/** The promo discount comes off first; the wallet then covers what is left (same order as the server). */
+export function consultPrice(feePaise: number, walletBalancePaise: number, useWallet: boolean, discountPaise = 0): ConsultPrice {
+    const discount = Math.max(0, Math.min(discountPaise, feePaise));
+    const afterDiscount = feePaise - discount;
+    let walletPaise = useWallet ? Math.max(0, Math.min(walletBalancePaise, afterDiscount)) : 0;
+    const card = afterDiscount - walletPaise;
+    if (card > 0 && card < MIN_CARD_PAISE) walletPaise = Math.max(0, afterDiscount - MIN_CARD_PAISE);
+    return { feePaise, discountPaise: discount, walletPaise, payPaise: afterDiscount - walletPaise };
 }
 
-/** What the booking cost in all (card/UPI plus wallet). Older servers send only amountPaise. */
-export function bookingTotalPaise(b: { amountPaise: number; feePaise?: number }): number {
-    return b.feePaise ?? b.amountPaise;
+/** The lines above the total on the review-and-pay page. None when nothing comes off the fee. */
+export function priceLines(p: ConsultPrice, format: (paise: number) => string, promoCode?: string | null) {
+    if (p.discountPaise === 0 && p.walletPaise === 0) return undefined;
+    return [
+        { label: 'Consultation fee', value: format(p.feePaise) },
+        ...(p.discountPaise > 0 ? [{ label: promoCode ? `Promo ${promoCode}` : 'Promo discount', value: `− ${format(p.discountPaise)}` }] : []),
+        ...(p.walletPaise > 0 ? [{ label: 'From DocNow wallet', value: `− ${format(p.walletPaise)}` }] : []),
+    ];
+}
+
+/**
+ * What the booking costs in all (card/UPI plus wallet), after any promo. A hold that ended unpaid
+ * gave its promo use back, so it shows the full fee. Older servers send only amountPaise.
+ */
+export function bookingTotalPaise(b: { amountPaise: number; feePaise?: number; discountPaise?: number; status?: string; paymentCaptured?: boolean }): number {
+    if (b.feePaise === undefined) return b.amountPaise;
+    const endedUnpaid = b.paymentCaptured === false && b.amountPaise > 0 && b.status !== undefined && b.status !== 'PENDING_PAYMENT';
+    return endedUnpaid ? b.feePaise : b.feePaise - (b.discountPaise ?? 0);
 }
 
 /** The price lines for a booking already made, for BookingSummary. */
 export function bookedPriceLines(
-    b: { amountPaise: number; feePaise?: number; walletPaise?: number; status: string; paymentCaptured: boolean },
+    b: { amountPaise: number; feePaise?: number; walletPaise?: number; discountPaise?: number; promoCode?: string | null; status: string; paymentCaptured: boolean },
     format: (paise: number) => string,
 ) {
     const wallet = b.walletPaise ?? 0;
-    if (wallet === 0) return { lines: undefined, amountLabel: 'Amount', amount: format(b.amountPaise) };
-    const lines = [
-        { label: 'Consultation fee', value: format(bookingTotalPaise(b)) },
-        { label: 'From DocNow wallet', value: `− ${format(wallet)}` },
-    ];
+    const discount = b.discountPaise ?? 0;
+    if (wallet === 0 && discount === 0) return { lines: undefined, amountLabel: 'Amount', amount: format(b.amountPaise) };
+    const lines = priceLines({ feePaise: b.feePaise ?? b.amountPaise, discountPaise: discount, walletPaise: wallet, payPaise: b.amountPaise }, format, b.promoCode);
     if (b.status === 'PENDING_PAYMENT') return { lines, amountLabel: 'To pay now', amount: format(b.amountPaise) };
-    // A hold that ended unpaid: nothing was charged and the wallet part went back, so just the fee.
-    if (!b.paymentCaptured) return { lines: undefined, amountLabel: 'Amount', amount: format(bookingTotalPaise(b)) };
-    if (b.amountPaise === 0) return { lines: undefined, amountLabel: 'Paid from DocNow wallet', amount: format(wallet) };
+    // A hold that ended unpaid: nothing was charged and the wallet part went back, so just the price.
+    if (!b.paymentCaptured && b.amountPaise > 0) return { lines: undefined, amountLabel: 'Amount', amount: format(bookingTotalPaise(b)) };
+    if (b.amountPaise === 0) {
+        if (wallet > 0) return { lines: discount > 0 ? lines : undefined, amountLabel: 'Paid from DocNow wallet', amount: format(wallet) };
+        return { lines, amountLabel: 'You paid', amount: format(0) };
+    }
     return { lines, amountLabel: 'Paid by card/UPI', amount: format(b.amountPaise) };
 }
 

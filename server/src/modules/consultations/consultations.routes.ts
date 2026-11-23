@@ -10,6 +10,7 @@ import { authMiddleware, AuthRequest } from '../../middleware/auth';
 import { consultCsrfGuard } from '../../middleware/consultCsrf';
 import { rateLimiter } from '../../middleware/rateLimiter';
 import { createBooking, getBooking, listBookings } from './consultations.booking';
+import { availableConsultPromos, checkConsultPromo } from './consultations.promo';
 import { cancelConsultation, cancelPreview } from './consultations.cancellation';
 import { verifyAndConfirm } from './consultations.payments';
 import { sendConsultError } from './consultations.http';
@@ -30,6 +31,9 @@ const bookingSchema = z.object({
     attachmentIds: z.array(z.string().uuid('Invalid document')).max(MAX_ATTACHMENTS_PER_BOOKING, `Attach at most ${MAX_ATTACHMENTS_PER_BOOKING} documents`).optional(),
     useWallet: z.boolean().optional(),
     expectedWalletPaise: z.number().int().min(0).optional(),
+    // Any code an admin can make (lab codes predate any format rule); control characters are refused.
+    promoCode: z.string().trim().max(64, 'Invalid promo code').regex(/^[^\u0000-\u001f\u007f]*$/, 'Invalid promo code').optional(),
+    expectedDiscountPaise: z.number().int().min(0).optional(),
 });
 
 // NMC telemedicine consent: the join screen's checkbox. Without it nobody on the patient's side gets a room token.
@@ -61,6 +65,29 @@ consultPatientRoutes.post('/bookings', ...patient, rateLimiter(5, 60, 'consult_b
 });
 
 // ── Outside medical records (photos / PDFs) for the doctor ──
+
+const promoCheckSchema = z.object({
+    code: z.string().trim().min(1, 'Enter a promo code').max(64, 'Invalid promo code').regex(/^[^\u0000-\u001f\u007f]+$/, 'Invalid promo code'),
+    slotId: z.string().uuid('Invalid slot'),
+});
+
+// "Apply" on the review-and-pay page: what the code takes off this doctor's fee. Nothing is used up.
+consultPatientRoutes.post('/promos/check', ...patient, rateLimiter(20, 60, 'consult_promo_check'), async (req: AuthRequest, res: Response) => {
+    try {
+        const parse = promoCheckSchema.safeParse(req.body);
+        if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
+        res.json(await checkConsultPromo(req.userId!, parse.data.code, parse.data.slotId));
+    } catch (e) { fail(res, e); }
+});
+
+// Codes this patient can use with this doctor now.
+consultPatientRoutes.get('/promos', authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        const doctorId = z.string().uuid().safeParse(req.query.doctorId);
+        if (!doctorId.success) return res.status(400).json({ error: 'Invalid doctor' });
+        res.json(await availableConsultPromos(req.userId!, doctorId.data));
+    } catch (e) { fail(res, e); }
+});
 
 consultPatientRoutes.post('/attachments', ...patient, rateLimiter(20, 600, 'consult_attachment'), (req: AuthRequest, res: Response) => {
     attachmentUpload.single('file')(req, res, async (err: unknown) => {

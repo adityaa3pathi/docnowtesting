@@ -4,6 +4,7 @@
  */
 import { Prisma } from '@prisma/client';
 import { captureWalletHold, releaseWalletHold, retakeWalletHold } from './consultations.wallet';
+import { releasePromo, retakePromo } from './consultations.promo';
 
 export type Tx = Prisma.TransactionClient;
 
@@ -18,7 +19,7 @@ export async function holdSlot(tx: Tx, slotId: string): Promise<boolean> {
     return res.count === 1;
 }
 
-/** Expires an unpaid hold, frees its slot and gives back any wallet part. False when the consultation is no longer pending payment. */
+/** Expires an unpaid hold, frees its slot and gives back any wallet part and promo use. False when the consultation is no longer pending payment. */
 export async function expireHold(tx: Tx, consultationId: string): Promise<boolean> {
     const c = await tx.consultation.findUnique({ where: { id: consultationId }, select: { slotId: true } });
     if (!c) return false;
@@ -29,6 +30,7 @@ export async function expireHold(tx: Tx, consultationId: string): Promise<boolea
     if (res.count !== 1) return false;
     await releaseSlot(tx, c.slotId);
     await releaseWalletHold(tx, consultationId);
+    await releasePromo(tx, consultationId);
     return true;
 }
 
@@ -50,6 +52,10 @@ export async function confirmPending(tx: Tx, consultationId: string, paymentId: 
 
 /** confirmingPaymentId of a booking the wallet paid in full. Never a Razorpay id (those start "pay_"). */
 export const walletConfirmation = (walletPartId: string) => `wallet:${walletPartId}`;
+/** confirmingPaymentId of a booking a promo made free (nothing paid at all). */
+export const freeConfirmation = (consultationId: string) => `free:${consultationId}`;
+/** Confirmed in the booking call itself, with no Razorpay payment. */
+export const confirmedWithoutRazorpay = (confirmingPaymentId: string | null) => !!confirmingPaymentId && /^(wallet|free):/.test(confirmingPaymentId);
 
 /**
  * Late payment on an expired hold: take the slot back (and the wallet part, given back at expiry)
@@ -58,6 +64,7 @@ export const walletConfirmation = (walletPartId: string) => `wallet:${walletPart
 export async function reclaimExpired(tx: Tx, consultationId: string, slotId: string, paymentId: string, now = new Date()): Promise<void> {
     if (!(await holdSlot(tx, slotId))) throw new SlotLost();
     if (!(await retakeWalletHold(tx, consultationId, now))) throw new SlotLost('wallet');
+    await retakePromo(tx, consultationId);
     try {
         const res = await tx.consultation.updateMany({
             where: { id: consultationId, status: 'EXPIRED', confirmingPaymentId: null },

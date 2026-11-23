@@ -11,7 +11,8 @@ import { cardDuePaise, feeFromBps, toPaise, walletShare } from './consultations.
 import { getActivePolicy } from './consultations.policy.service';
 import { selfRescheduleState } from './consultations.rescheduleRules';
 import { ConsultRazorpay, normalizeRazorpayError, realConsultRazorpay } from './consultations.razorpay';
-import { confirmPending, expireHold, holdSlot, walletConfirmation } from './consultations.transitions';
+import { confirmedWithoutRazorpay, confirmPending, expireHold, freeConfirmation, holdSlot, walletConfirmation } from './consultations.transitions';
+import { normalizeCode, recordPromoUse, takePromo } from './consultations.promo';
 import { debitWallet, walletBalancePaise, walletText, WALLET_REF } from './consultations.wallet';
 import { DOCTOR_LATE_AFTER_MS, noShowDeadlines } from './consultations.room';
 import { DoctorError } from './doctors.status';
@@ -38,10 +39,16 @@ export type BookingInput = {
     useWallet?: boolean;
     /** The wallet amount the patient was shown. A different amount now is refused, never silently used. */
     expectedWalletPaise?: number;
+    /** A promo code; it must apply to consultations and to this doctor. */
+    promoCode?: string;
+    /** The discount the patient was shown for it. A different discount now is refused. */
+    expectedDiscountPaise?: number;
 };
 
 /** The wallet balance changed between showing it and booking (another tab spent it). */
 export const WALLET_CHANGED = 'Your wallet balance just changed. Please check the amount and try again';
+/** The promo code's discount changed between Apply and booking (the code was edited or limited). */
+export const PROMO_CHANGED = 'Your promo code discount just changed. Please check the amount and try again';
 
 export const MAX_ATTACHED_REPORTS = 5;
 /** Base of the zero-login web room link sent to family members. */
@@ -49,7 +56,7 @@ export const guestJoinUrl = (token: string) => `${(process.env.GUEST_CALL_BASE_U
 
 const SLOT_TAKEN = 'Slot is no longer available';
 
-function response(c: { id: string; holdExpiresAt: Date; status: string; feePaise: number; walletPaise: number }, orderId: string | null | undefined) {
+function response(c: { id: string; holdExpiresAt: Date; status: string; feePaise: number; walletPaise: number; discountPaise: number }, orderId: string | null | undefined) {
     return {
         consultationId: c.id,
         status: c.status,
@@ -58,6 +65,7 @@ function response(c: { id: string; holdExpiresAt: Date; status: string; feePaise
         amountPaise: cardDuePaise(c),
         feePaise: c.feePaise,
         walletPaise: c.walletPaise,
+        discountPaise: c.discountPaise,
         currency: 'INR',
         keyId: process.env.RAZORPAY_KEY_ID ?? null,
         holdExpiresAt: c.holdExpiresAt,
@@ -72,7 +80,7 @@ async function existingBooking(db: PrismaClient, input: BookingInput, requestHas
     if (!found) return null;
     if (found.requestHash !== requestHash) throw new DoctorError(409, 'This idempotency key was used for a different request');
     // Paid in full from the wallet: it confirmed in the booking call itself, so a repeat gets the same answer.
-    if (found.confirmingPaymentId?.startsWith('wallet:')) return response(found, null);
+    if (confirmedWithoutRazorpay(found.confirmingPaymentId)) return response(found, null);
     const orderId = found.payments[0]?.razorpayOrderId;
     if (found.status !== 'PENDING_PAYMENT') throw new DoctorError(409, 'This booking has ended. Start a new booking with a new idempotency key');
     if (!orderId) throw new DoctorError(409, 'This booking is still being set up. Try again in a moment');
@@ -103,8 +111,9 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
     const db = deps.db ?? prisma;
     const razorpay = deps.razorpay ?? realConsultRazorpay();
     const now = (deps.now ?? (() => new Date()))();
-    // The wallet choice is part of the request; left out when off, so older hashes still match.
-    const requestHash = createHash('sha256').update(`${input.slotId}|${input.patientId}${input.useWallet ? '|wallet' : ''}`).digest('hex');
+    // The wallet choice and promo code are part of the request; left out when unused, so older hashes still match.
+    const promoCode = normalizeCode(input.promoCode);
+    const requestHash = createHash('sha256').update(`${input.slotId}|${input.patientId}${input.useWallet ? '|wallet' : ''}${promoCode ? `|promo:${promoCode}` : ''}`).digest('hex');
 
     const repeated = await existingBooking(db, input, requestHash);
     if (repeated) return repeated;
@@ -148,7 +157,14 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
     try {
         consultation = await db.$transaction(async (tx) => {
             if (!(await holdSlot(tx, slot.id))) throw new DoctorError(409, SLOT_TAKEN);
-            const walletPaise = input.useWallet ? walletShare(feePaise, await walletBalancePaise(tx, input.userId)) : 0;
+            const promo = promoCode
+                ? await takePromo(tx, { userId: input.userId, code: promoCode, doctor: { id: slot.doctorId, specialtyId: slot.doctor.specialtyId }, feePaise, now })
+                : null;
+            const discountPaise = promo?.discountPaise ?? 0;
+            if (promo && input.expectedDiscountPaise !== undefined && input.expectedDiscountPaise !== discountPaise) {
+                throw new DoctorError(409, PROMO_CHANGED);
+            }
+            const walletPaise = input.useWallet ? walletShare(feePaise - discountPaise, await walletBalancePaise(tx, input.userId)) : 0;
             if (input.useWallet && input.expectedWalletPaise !== undefined && input.expectedWalletPaise !== walletPaise) {
                 throw new DoctorError(409, WALLET_CHANGED);
             }
@@ -161,6 +177,8 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
                     startsAt: slot.startsAt,
                     feePaise,
                     walletPaise,
+                    discountPaise,
+                    promoCodeId: promo?.promoCodeId ?? null,
                     platformFeePaise: feeFromBps(feePaise, rules.platformFeeBps),
                     policyId,
                     policySnapshot: rules as unknown as Prisma.InputJsonValue,
@@ -174,7 +192,13 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
                 },
             });
             await claimAttachments(tx, input.userId, created.id, input.attachmentIds ?? [], now);
-            if (walletPaise === 0) return created;
+            if (promo) await recordPromoUse(tx, input.userId, promo.promoCodeId, created.id);
+            if (walletPaise === 0) {
+                if (cardDuePaise(created) > 0) return created;
+                // The promo made it free: confirmed here, nothing to pay.
+                if (!(await confirmPending(tx, created.id, freeConfirmation(created.id), now))) throw new Error('Free booking could not be confirmed');
+                return tx.consultation.findUniqueOrThrow({ where: { id: created.id } });
+            }
 
             // The wallet part is taken now, with the hold; it goes back if the hold ends unpaid.
             const part = await tx.consultationPayment.create({
@@ -227,6 +251,7 @@ const viewInclude = {
     refunds: { orderBy: { createdAt: 'desc' as const } },
     prescriptions: { where: { voidedAt: null }, select: { id: true } },
     note: { select: { id: true, advice: true } },
+    promoCode: { select: { code: true } },
 } satisfies Prisma.ConsultationInclude;
 
 type BookingRow = Prisma.ConsultationGetPayload<{ include: typeof viewInclude }>;
@@ -252,6 +277,7 @@ function toView(c: BookingRow) {
         patientName: c.patient.name,
         paymentCaptured: c.payments.some((p) => p.status === 'CAPTURED'),
         underStaffCheck: c.reviewReason !== null,
+        promoCode: c.promoCode?.code ?? null,
         refundPaise: live.reduce((sum, r) => sum + r.amountPaise, 0),
         // The part of refundPaise that went back to the DocNow wallet (the rest goes to the card/UPI).
         walletRefundPaise,

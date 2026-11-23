@@ -45,7 +45,7 @@ reviewRoutes.get('/review', ...admin, async (_req: AuthRequest, res: Response) =
         const [flagged, refunds] = await Promise.all([
             prisma.consultation.findMany({
                 where: { reviewReason: { not: null }, status: { in: OPEN_PAYMENT_STATUSES } },
-                select: { id: true, status: true, reviewReason: true, feePaise: true, walletPaise: true, updatedAt: true },
+                select: { id: true, status: true, reviewReason: true, feePaise: true, walletPaise: true, discountPaise: true, updatedAt: true },
                 orderBy: { updatedAt: 'asc' },
                 take: 100,
             }),

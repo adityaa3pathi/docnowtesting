@@ -50,6 +50,8 @@ export default function ConsultAppointmentPage({ params }: { params: Promise<{ i
                                 ['Booked at', formatIstDateTime(a.createdAt)],
                                 ['Slot', `${formatIstDateTime(a.startsAt)} to ${formatIstDateTime(a.endsAt)}`],
                                 ['Fee', `${formatPaise(a.feePaise)} (platform ${formatPaise(a.platformFeePaise)})`],
+                                ...((a.discountPaise ?? 0) > 0 ? [['Promo', `${a.promoCode?.code ?? 'Code'}: ${formatPaise(a.discountPaise ?? 0)} off (borne by DocNow)`] as [string, string]] : []),
+                                ...((a.walletPaise ?? 0) > 0 ? [['From wallet', formatPaise(a.walletPaise ?? 0)] as [string, string]] : []),
                                 ['Prescription issued', a.prescriptionIssuedAt ? `Yes, ${formatIstDateTime(a.prescriptionIssuedAt)}` : 'No'],
                                 ...(a.reviewReason ? [['Staff check', a.reviewReason] as [string, string]] : []),
                             ]} />

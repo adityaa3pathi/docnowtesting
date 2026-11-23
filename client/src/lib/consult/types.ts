@@ -52,6 +52,9 @@ export interface CreateBookingResponse {
     /** Paise. Older servers leave these out (then the fee is amountPaise and nothing came from the wallet). */
     feePaise?: number;
     walletPaise?: number;
+    /** Paise taken off by a promo code, and the code (older servers leave these out). */
+    discountPaise?: number;
+    promoCode?: string | null;
     currency: string;
     keyId: string | null;
     holdExpiresAt: string;
@@ -259,8 +262,9 @@ export interface FlaggedPayment {
     status: ConsultationStatus;
     reviewReason: string | null;
     feePaise: number;
-    /** Paid from the wallet; Razorpay was due feePaise minus this (older servers leave it out). */
+    /** Paid from the wallet / taken off by a promo; Razorpay was due feePaise minus both (older servers leave them out). */
     walletPaise?: number;
+    discountPaise?: number;
     updatedAt: string;
 }
 
@@ -435,6 +439,10 @@ export interface AdminAppointment {
     endsAt: string;
     feePaise: number;
     platformFeePaise: number;
+    /** Older servers leave these out. */
+    walletPaise?: number;
+    discountPaise?: number;
+    promoCode?: { code: string } | null;
     patientJoinedAt: string | null;
     doctorJoinedAt: string | null;
     startedAt: string | null;
@@ -499,4 +507,11 @@ export interface AttendanceReport {
         /** The patient moved away because this doctor was late; startsAt is the original time. */
         moved?: { moveId: string; kind: 'DOCTOR_LATE_RESCHEDULE' | 'DOCTOR_LATE_REASSIGN'; toDoctorName: string; toStartsAt: string } | null;
     }[];
+}
+
+/** A promo code's effect on one doctor's fee (POST /consult/promos/check, GET /consult/promos). */
+export interface ConsultPromoQuote {
+    code: string;
+    description: string | null;
+    discountPaise: number;
 }

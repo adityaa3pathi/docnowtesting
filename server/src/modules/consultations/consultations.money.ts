@@ -35,9 +35,9 @@ export function walletShare(feePaise: number, balancePaise: number): number {
     return take;
 }
 
-/** What Razorpay collects: the fee less what the wallet covers. */
-export function cardDuePaise(c: { feePaise: number; walletPaise: number }): number {
-    return Math.max(0, c.feePaise - c.walletPaise);
+/** What Razorpay collects: the fee less the promo discount and what the wallet covers. */
+export function cardDuePaise(c: { feePaise: number; walletPaise: number; discountPaise: number }): number {
+    return Math.max(0, c.feePaise - c.discountPaise - c.walletPaise);
 }
 
 type PartRow = { source: 'RAZORPAY' | 'WALLET'; status: string; razorpayPaymentId: string | null };
