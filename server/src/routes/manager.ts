@@ -309,14 +309,22 @@ const managerUserCreateSchema = z.object({
 // MANAGER ORDER FLOW
 // ============================================
 
+// A blocked (blacklisted) customer gets no new booking from the panel either: no order, no payment
+// link, no offline confirmation. Cancelling stays possible, and so does confirming a link payment the
+// customer made before the block, so money is never left without a booking or a cancel.
+export const CUSTOMER_BLOCKED_MESSAGE = 'This customer is blocked, so they cannot be booked. A super admin can unblock them in Users.';
+const refuseBlockedCustomer = (res: Response) => res.status(403).json({ error: CUSTOMER_BLOCKED_MESSAGE, code: 'CUSTOMER_BLOCKED' });
+
 // A. User Search
 router.get('/users/search', ...mgr, async (req: AuthRequest, res: Response) => {
     const mobile = req.query.mobile as string;
     if (!mobile || typeof mobile !== 'string') return res.status(400).json({ error: 'mobile query param required' });
     try {
         const users = await prisma.user.findMany({
-            where: { mobile: { contains: mobile } },
-            select: { id: true, name: true, mobile: true },
+            // Deleted accounts keep a "deleted:<id>" placeholder, which digits can match; they are not customers.
+            where: { mobile: { contains: mobile }, NOT: { mobile: { startsWith: 'deleted:' } } },
+            // status lets the panel show a blocked customer as blocked instead of offering to book them.
+            select: { id: true, name: true, mobile: true, status: true },
             take: 10
         });
         res.json(users);
@@ -722,6 +730,10 @@ router.post('/orders', ...mgr, async (req: AuthRequest, res: Response) => {
     }
 
     try {
+        const customer = await prisma.user.findUnique({ where: { id: userId }, select: { status: true } });
+        if (!customer) return res.status(404).json({ error: 'User not found' });
+        if (customer.status === 'BLOCKED') return refuseBlockedCustomer(res);
+
         const address = await prisma.address.findUnique({ where: { id: addressId } });
         if (!address) return res.status(404).json({ error: 'Address not found' });
 
@@ -875,6 +887,8 @@ router.post('/camps/orders', ...mgr, async (req: AuthRequest, res: Response) => 
             prisma.user.findUnique({ where: { id: userId } }),
         ]);
 
+        if (user?.status === 'BLOCKED') return refuseBlockedCustomer(res);
+
         // Only look up patient if not 'self' — self is resolved inside tx
         const patient = isSelf ? null : await prisma.patient.findUnique({ where: { id: patientId } });
 
@@ -1008,6 +1022,7 @@ router.post('/orders/:id/payment-link', ...mgr, async (req: AuthRequest, res: Re
             include: { booking: { include: { user: true } }, customer: true }
         });
         if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (order.customer.status === 'BLOCKED') return refuseBlockedCustomer(res);
         if (order.status !== 'CREATED' && order.status !== 'SENT') {
             return res.status(400).json({ error: 'Order already processed or failed' });
         }
@@ -1052,6 +1067,7 @@ router.post('/orders/:id/send-whatsapp-link', ...mgr, async (req: AuthRequest, r
             include: { customer: true }
         });
         if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (order.customer.status === 'BLOCKED') return refuseBlockedCustomer(res);
 
         if (!order.razorpayLinkUrl) {
             return res.status(400).json({ error: 'Payment link has not been generated yet. Generate the link first.' });
@@ -1108,9 +1124,12 @@ router.post('/orders/:id/confirm-payment', ...mgr, async (req: AuthRequest, res:
     try {
         const order = await prisma.managerOrder.findUnique({
             where: { id },
-            include: { booking: true }
+            include: { booking: true, customer: { select: { status: true } } }
         });
         if (!order) return res.status(404).json({ error: 'Order not found' });
+        // A link payment already received (before the block) may still be confirmed; anything else is a new booking.
+        const paidBeforeBlock = collectionMode === 'RAZORPAY_LINK' && order.status === 'PAYMENT_RECEIVED';
+        if (order.customer.status === 'BLOCKED' && !paidBeforeBlock) return refuseBlockedCustomer(res);
 
         if (collectionMode === 'RAZORPAY_LINK') {
             if (order.status !== 'PAYMENT_RECEIVED') {
