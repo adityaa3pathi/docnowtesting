@@ -83,6 +83,10 @@ describeDb('a blocked (blacklisted) account cannot sign in', () => {
 
         await issueOtp(blocked.mobile);
         const before = (await testDb.user.findUniqueOrThrow({ where: { id: blocked.id } })).password;
+        // A wrong code gets the usual answer, so this route does not reveal which numbers are blocked.
+        const wrong = await call('/forgot-password/verify-reset', { mobile: blocked.mobile, code: '000000', newPassword: 'newpass1' });
+        expect(wrong.status).toBe(400);
+        expect(wrong.body.error).toMatch(/^Invalid code/);
         expectBlocked(await call('/forgot-password/verify-reset', { mobile: blocked.mobile, code: '123456', newPassword: 'newpass1' }));
         expect((await testDb.user.findUniqueOrThrow({ where: { id: blocked.id } })).password).toBe(before);
     });
