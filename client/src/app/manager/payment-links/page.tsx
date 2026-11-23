@@ -21,6 +21,8 @@ interface UserResult {
     id: string;
     name: string | null;
     mobile: string;
+    /** BLOCKED customers (blacklisted by a super admin) cannot be booked; the server refuses too. */
+    status?: 'ACTIVE' | 'BLOCKED';
 }
 
 interface CreateUserForm {
@@ -233,6 +235,7 @@ function StepCustomer({ onNext }: { onNext: () => void }) {
     const isValidMobile = /^\d{10}$/.test(query);
 
     const handleSelect = (user: UserResult) => {
+        if (user.status === 'BLOCKED') return;
         setShowDropdown(false);
         setValue('user', user);
         onNext();
@@ -355,7 +358,21 @@ function StepCustomer({ onNext }: { onNext: () => void }) {
                         {showDropdown && searched && (
                             <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden max-h-64 overflow-y-auto">
                                 {results.length > 0 ? (
-                                    results.map(u => (
+                                    results.map(u => u.status === 'BLOCKED' ? (
+                                        <div key={u.id} aria-disabled="true"
+                                            className="w-full px-4 py-3 flex items-center justify-between gap-3 border-b border-gray-100 last:border-b-0 bg-gray-50 cursor-not-allowed">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-xs">
+                                                    {(u.name || 'U')[0].toUpperCase()}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="font-medium text-gray-500 text-sm">{u.name || 'Unnamed'}</p>
+                                                    <p className="text-xs text-gray-400">{u.mobile} · Blocked, can&apos;t be booked</p>
+                                                </div>
+                                            </div>
+                                            <span className="flex-shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700">Blocked</span>
+                                        </div>
+                                    ) : (
                                         <button key={u.id} onClick={() => handleSelect(u)}
                                             className="w-full text-left px-4 py-3 hover:bg-purple-50 transition-colors flex items-center justify-between border-b border-gray-100 last:border-b-0">
                                             <div className="flex items-center gap-3">
