@@ -140,6 +140,7 @@ model User {
 
   // Mobile push notifications
   pushTokens    PushToken[]
+  instantRequests InstantRequest[]
 }
 
 model Session {
@@ -206,6 +207,7 @@ model Patient {
   documents    PatientDocument[]
   vitalReadings VitalReading[]
   periodLogs   PeriodLog[]
+  instantRequests InstantRequest[]
   user         User          @relation(fields: [userId], references: [id])
   linkedUser   User?         @relation("FamilyLinkedPatients", fields: [linkedUserId], references: [id])
 
@@ -913,6 +915,8 @@ model DoctorProfile {
   movesFrom      ConsultationMove[] @relation("ConsultationMoveFrom")
   movesTo        ConsultationMove[] @relation("ConsultationMoveTo")
   promoScopes    PromoCodeScope[]
+  presences      DoctorPresence[]
+  instantRequests InstantRequest[]
 
   @@unique([registrationNumber, registrationCouncil])
   @@index([status, specialtyId])
@@ -986,6 +990,7 @@ model Slot {
   status   SlotStatus    @default(AVAILABLE)
   doctor   DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   consultations Consultation[]
+  instantRequest InstantRequest?
 
   @@unique([doctorId, startsAt])
   @@index([doctorId, status, startsAt])
@@ -1108,6 +1113,9 @@ model Consultation {
   // Set while the patient lets this booking's doctor see their whole DocNow health record (until
   // 7 days after the visit). Null: the doctor sees only what was attached. History: RecordShareConsent.
   recordSharedAt      DateTime?
+  // "Consult a Doc now" (P10): booked from an instant request a doctor accepted, starting at once.
+  // Its policySnapshot carries the instant rules (full refund until the doctor joins, shorter doctor wait).
+  isInstant           Boolean            @default(false)
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
@@ -1126,6 +1134,7 @@ model Consultation {
   moves           ConsultationMove[]
   messages        ConsultationMessage[]
   recordShareConsents RecordShareConsent[]
+  instantRequest  InstantRequest?
   promoCode       PromoCode?           @relation(fields: [promoCodeId], references: [id])
   promoRedemption PromoRedemption?
 
@@ -1450,4 +1459,74 @@ model ConsultationConsent {
   consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
 
   @@unique([consultationId, identity])
+}
+
+
+// ============================================
+// DOCTOR CONSULTATION: INSTANT ("Consult a Doc now", P10)
+// ============================================
+// Partial unique indexes are raw SQL in the migration (Prisma cannot express them): one open
+// presence per doctor, one live request per user, and one ringing or accepted request per doctor.
+
+// One period a doctor was online for instant consults. The open row (endedAt null) is the current
+// one; it ends when the doctor switches off, stops checking in, or misses rings. P13 payroll reads these.
+model DoctorPresence {
+  id          String        @id @default(uuid())
+  doctorId    String
+  startedAt   DateTime      @default(now())
+  lastSeenAt  DateTime      @default(now())
+  endedAt     DateTime?
+  endReason   String? // OFF | TIMEOUT | MISSED_RINGS | NOT_APPROVED
+  // Rings in a row left unanswered in this period; reset by an accept or a decline.
+  missedRings Int           @default(0)
+  doctor      DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, startedAt])
+  @@index([endedAt, lastSeenAt])
+}
+
+enum InstantRequestStatus {
+  SEARCHING // waiting for a free doctor
+  RINGING // one doctor is being asked (doctorId, ringExpiresAt)
+  ACCEPTED // that doctor said yes; the patient pays by payBy (nothing charged before this)
+  BOOKED // paid: the consultation is the record from here
+  CANCELLED // the patient stopped it
+  NO_MATCH // nobody accepted before searchEndsAt
+  UNPAID // a doctor accepted but the patient did not pay in time
+}
+
+// A patient asking for a doctor now. Nothing is charged until a doctor accepts; the accept creates
+// a blocked slot at "now", and paying for it makes an ordinary consultation (isInstant).
+model InstantRequest {
+  id             String               @id @default(uuid())
+  userId         String
+  patientId      String
+  reason         String
+  shareRecord    Boolean              @default(false)
+  status         InstantRequestStatus @default(SEARCHING)
+  searchEndsAt   DateTime
+  doctorId       String?
+  ringExpiresAt  DateTime?
+  rings          Int                  @default(0)
+  // Doctors already asked (declined or timed out); not asked again for this request.
+  triedDoctorIds String[]             @default([])
+  // The doctor's free slots taken off sale under the paid instant call; reopened if it is cancelled.
+  blockedSlotIds String[]             @default([])
+  acceptedAt     DateTime?
+  payBy          DateTime?
+  slotId         String?              @unique
+  consultationId String?              @unique
+  endedAt        DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  user         User           @relation(fields: [userId], references: [id])
+  // A request that never became a consultation goes with the person it was for.
+  patient      Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor       DoctorProfile? @relation(fields: [doctorId], references: [id])
+  slot         Slot?          @relation(fields: [slotId], references: [id])
+  consultation Consultation?  @relation(fields: [consultationId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
 }

@@ -27,7 +27,7 @@ function Row({ item }: { item: DoctorConsultationItem }) {
             <div className="min-w-0">
                 <p className="truncate font-bold text-foreground">{item.patientName}</p>
                 <p className="text-sm font-semibold text-foreground">{formatIstDateTime(item.startsAt)} to {formatIstTime(item.endsAt)}</p>
-                <p className="text-xs text-muted-foreground">{TYPE_LABEL[item.type]} consultation</p>
+                <p className="text-xs text-muted-foreground">{item.isInstant ? `Instant ${TYPE_LABEL[item.type].toLowerCase()}` : TYPE_LABEL[item.type]} consultation</p>
             </div>
             <Badge tone={info.tone}>{info.label}</Badge>
         </Link>

@@ -13,6 +13,7 @@ import type {
     NoteInput, PolicyResponse, Prescription, PrescriptionInput, ReviewQueue, Slot, Specialty, VerifyResponse,
     PatientDocument, RecordSharing, SharedItemKind, SharedItemLink, SharedRecord,
     AdminAccountPerson, AdminPatientRecord, DoctorPatientDetail, DoctorPatientSummary,
+    DoctorInstantState, InstantAvailability, InstantView,
 } from './types';
 
 /** Reads the server's clock from every response, so hold countdowns do not depend on the device clock. */
@@ -78,7 +79,7 @@ export const consult = {
     checkPromo: (code: string, slotId: string) => api.post<ConsultPromoQuote>('/consult/promos/check', { code, slotId }).then(data),
     /** Codes this patient can use with this doctor now. */
     promos: (doctorId: string) => api.get<ConsultPromoQuote[]>('/consult/promos', { params: { doctorId } }).then(data),
-    createBooking: (body: { slotId: string; patientId: string; idempotencyKey: string; useWallet?: boolean; expectedWalletPaise?: number; promoCode?: string; expectedDiscountPaise?: number; shareRecord?: boolean }) =>
+    createBooking: (body: { slotId: string; patientId: string; idempotencyKey: string; useWallet?: boolean; expectedWalletPaise?: number; promoCode?: string; expectedDiscountPaise?: number; shareRecord?: boolean; instantRequestId?: string }) =>
         api.post<CreateBookingResponse>('/consult/bookings', {
             ...body,
             ...(body.shareRecord !== undefined ? { shareConsentVersion: RECORD_SHARE_VERSION, channel: 'web' } : {}),
@@ -118,8 +119,23 @@ export const records = {
 
 // ── Doctor ──────────────────────────────────────────────
 
+/** Consult a Doc now (P10): the patient's side. */
+export const instant = {
+    availability: () => api.get<InstantAvailability>('/consult/instant/availability').then(data),
+    active: () => api.get<{ request: InstantView | null }>('/consult/instant/active').then(data),
+    start: (body: { patientId: string; reason: string; shareRecord?: boolean }) => api.post<InstantView>('/consult/instant', body).then(data),
+    poll: (id: string) => api.get<InstantView>(`/consult/instant/${id}`, { timeout: 10_000 }).then(data),
+    cancel: (id: string) => api.post<InstantView>(`/consult/instant/${id}/cancel`).then(data),
+};
+
 export const doctor = {
     me: () => api.get<DoctorMe>('/doctor/me').then(data),
+    /** Instant consults: the online switch, the panel's check-in (also how a ring arrives), and answering a ring. */
+    instantState: () => api.get<DoctorInstantState>('/doctor/me/instant').then(data),
+    setOnline: (online: boolean) => api.put<DoctorInstantState>('/doctor/me/instant/online', { online }).then(data),
+    checkIn: () => api.post<DoctorInstantState>('/doctor/me/instant/check-in', undefined, { timeout: 10_000 }).then(data),
+    acceptInstant: (id: string) => api.post<DoctorInstantState>(`/doctor/me/instant/${id}/accept`).then(data),
+    declineInstant: (id: string) => api.post<DoctorInstantState>(`/doctor/me/instant/${id}/decline`).then(data),
     register: (body: DoctorProfileInput) => api.post<DoctorMe>('/doctor/register', body).then(data),
     resubmit: (body: DoctorProfileInput) => api.post<DoctorMe>('/doctor/resubmit', body).then(data),
     /** Gender saves at once; bio, languages and experience come back as a pending `request` (null: nothing changed). */

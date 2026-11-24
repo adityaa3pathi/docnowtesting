@@ -81,6 +81,8 @@ export interface BookingView extends CreateBookingResponse {
     walletRefundPaise?: number;
     refundStatus: 'PENDING' | 'PROCESSED' | 'FAILED' | null;
     type: ConsultationType;
+    /** "Consult a Doc now": started at once; no time changes, full refund until the doctor joins. */
+    isInstant?: boolean;
     hasPrescription: boolean;
     /** The booker's own bookings: whether the time can be changed now (older servers leave it out). */
     selfReschedule?: SelfReschedule;
@@ -238,6 +240,8 @@ export interface CancelPreview {
     policy?: { refundTiers: { minHoursBefore: number; percent: number }[]; doctorNoShowFullRefund: boolean };
     /** Set when the patient moved the booking: the tiers count to this earlier time. */
     refundBasisStartsAt?: string | null;
+    /** Instant consult: a full refund on any cancel before the doctor joins. */
+    instant?: boolean;
 }
 
 export interface CancelResult {
@@ -494,6 +498,7 @@ export interface DoctorConsultationItem {
     endsAt: string;
     status: ConsultationStatus;
     type: ConsultationType;
+    isInstant?: boolean;
     patientName: string;
 }
 
@@ -506,6 +511,9 @@ export interface DoctorConsultationRecord {
     id: string;
     status: ConsultationStatus;
     type: ConsultationType;
+    /** Instant consults: what the patient typed when asking for a doctor now. */
+    isInstant?: boolean;
+    instantReason?: string | null;
     startsAt: string;
     slot: { endsAt: string };
     patient: {
@@ -638,4 +646,87 @@ export interface ConsultPromoQuote {
     code: string;
     description: string | null;
     discountPaise: number;
+}
+
+// ── Consult a Doc now (P10) ──
+
+/** The patient's instant request. A ring in progress shows as SEARCHING: who is asked is never shown. */
+export type InstantStatus = 'SEARCHING' | 'ACCEPTED' | 'BOOKED' | 'CANCELLED' | 'NO_MATCH' | 'UNPAID';
+
+export interface InstantDoctor {
+    id: string;
+    displayName: string;
+    photoUrl: string | null;
+    qualification: string;
+    experienceYears: number;
+    languages: string[];
+    specialty: string;
+    feePaise: number;
+}
+
+export interface InstantView {
+    id: string;
+    status: InstantStatus;
+    reason: string;
+    shareRecord: boolean;
+    patient: { id: string; name: string; relation: string | null };
+    createdAt: string;
+    searchEndsAt: string;
+    serverTime: string;
+    /** 1 = next in line. Only while searching. */
+    position: number | null;
+    /** A Doc is being asked right now (which one is never shown). */
+    asking?: boolean;
+    doctorsOnline: number | null;
+    doctorsFree: number | null;
+    /** Only once a doctor accepted. */
+    doctor: InstantDoctor | null;
+    payBy: string | null;
+    slotId: string | null;
+    consultationId: string | null;
+    consultationStatus: ConsultationStatus | null;
+}
+
+export interface InstantAvailability {
+    specialty: { id: string; name: string; slug: string } | null;
+    online: number;
+    free: number;
+    feeMinPaise: number | null;
+    feeMaxPaise: number | null;
+    /** Only when nobody is online: the earliest bookable GP time. */
+    nextSlot: { slotId: string; startsAt: string; doctorId: string; doctorName: string; feePaise: number } | null;
+}
+
+export interface DoctorInstantState {
+    /** An approved General Physician: the only doctors who take instant consults. */
+    eligible: boolean;
+    online: boolean;
+    onlineSince: string | null;
+    /** Why the doctor went offline when they did not switch off themselves. */
+    offlineReason: 'TIMEOUT' | 'MISSED_RINGS' | string | null;
+    inConsult: boolean;
+    /** Not in a call, but a booked patient is due soon, so no rings come. */
+    bookedSoon?: boolean;
+    ring: {
+        id: string;
+        ringExpiresAt: string;
+        reason: string;
+        patientAge: number;
+        patientGender: string;
+        allergies: string[];
+        allergiesConfirmed: boolean;
+        feePaise: number | null;
+    } | null;
+    accepted: {
+        id: string;
+        reason: string;
+        patientName: string;
+        patientAge: number;
+        patientGender: string;
+        payBy: string | null;
+        consultationId: string | null;
+        paid: boolean;
+    } | null;
+    toJoin: { consultationId: string; patientName: string; reason: string } | null;
+    serverTime: string;
 }

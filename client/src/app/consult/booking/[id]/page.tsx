@@ -217,7 +217,8 @@ function BookingDetail() {
                             <Card>{summary}</Card>
                             <RefundLine booking={booking} />
                             {movedTo && <Notice tone="success">Moved to {formatIstDateTime(movedTo)}. {booking.doctorName} has the new time.</Notice>}
-                            {booking.status === 'CONFIRMED' && booking.selfReschedule && (
+                            {/* An instant consult has no time to move. */}
+                            {booking.status === 'CONFIRMED' && booking.selfReschedule && !booking.isInstant && (
                                 <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
                                     <div className="min-w-0 flex-1">
                                         <p className="flex items-center gap-2 text-sm font-semibold text-ink"><CalendarClock className="h-4 w-4 text-primary" aria-hidden /> Need another time?</p>

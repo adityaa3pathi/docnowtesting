@@ -109,7 +109,13 @@ export function CancelDialog({ open, bookingId, unpaid, onClose, onCancelled }: 
                                 {previewError && <p className="font-semibold text-destructive">{previewError}</p>}
                             </div>
                         )}
-                        {!unpaid && preview?.policy && (
+                        {!unpaid && preview?.instant && (
+                            <section aria-labelledby="cancel-policy" className="rounded-xl border border-border p-3 text-sm">
+                                <h3 id="cancel-policy" className="font-semibold text-ink">Cancellation policy</h3>
+                                <p className="mt-0.5 text-ink-muted">Instant consult: you get a full refund if you cancel before the doctor joins.</p>
+                            </section>
+                        )}
+                        {!unpaid && preview?.policy && !preview.instant && (
                             <section aria-labelledby="cancel-policy" className="rounded-xl border border-border p-3 text-sm">
                                 <h3 id="cancel-policy" className="font-semibold text-ink">Cancellation policy</h3>
                                 <p className="mt-0.5 text-ink-muted">Refund depends on how long before your consultation you cancel:</p>

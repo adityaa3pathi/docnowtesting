@@ -10,7 +10,7 @@ import { pickRefundPercent, Rules } from './consultations.policy';
 import { ConsultRazorpay } from './consultations.razorpay';
 import { createRefundRecord, overallRefundStatus, runRefunds, type RefundReason } from './consultations.refunds';
 import { isDoctorLate } from './consultations.room';
-import { releaseSlot } from './consultations.transitions';
+import { releaseSlot, reopenInstantSlots } from './consultations.transitions';
 import { releaseWalletHold } from './consultations.wallet';
 import { releasePromo } from './consultations.promo';
 import { DoctorError } from './doctors.status';
@@ -108,6 +108,8 @@ export async function cancelPreview(userId: string, consultationId: string, deps
         paidPaise: parts.reduce((sum, p) => sum + p.amountPaise, 0),
         walletPaidPaise: parts.filter((p) => p.source === 'WALLET').reduce((sum, p) => sum + p.amountPaise, 0),
         policy: { refundTiers: rules.refundTiers, doctorNoShowFullRefund: rules.doctorNoShowOutcome === 'FULL_REFUND' },
+        // Instant consults: a full refund on any cancel, which is possible until the doctor joins.
+        instant: c.isInstant,
         // Moved by the patient: the tiers count to this earlier time, and the box says so.
         refundBasisStartsAt: c.refundBasisStartsAt && c.refundBasisStartsAt < c.startsAt ? c.refundBasisStartsAt : null,
     };
@@ -135,6 +137,8 @@ export async function cancelConsultation(consultationId: string, actor: CancelAc
                 await releaseSlot(tx, c.slotId);
                 await releaseWalletHold(tx, c.id);
                 await releasePromo(tx, c.id);
+                // Instant: the doctor waiting for this payment is free again at once.
+                await tx.instantRequest.updateMany({ where: { consultationId: c.id, status: 'ACCEPTED' }, data: { status: 'CANCELLED', endedAt: now } });
             }
         });
         return view(db, c.id);
@@ -163,6 +167,7 @@ export async function cancelConsultation(consultationId: string, actor: CancelAc
         });
         if (res.count !== 1) return null;
         await releaseSlot(tx, c.slotId);
+        await reopenInstantSlots(tx, c.id, now);
         // A full refund gives the promo use back; a partial one keeps it used (Aditya, 2026-11-23).
         if (percent === 100) await releasePromo(tx, c.id);
         const created = [];

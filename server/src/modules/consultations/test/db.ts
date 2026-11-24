@@ -18,7 +18,7 @@ export const describeDb = url ? describe : describe.skip;
 export const DEFAULT_POLICY_ID = 'default-consult-policy-v1';
 
 export async function resetConsultData() {
-    await testDb.$executeRawUnsafe('TRUNCATE "ConsultationRefund", "ConsultationPayment", "Consultation", "Slot" CASCADE');
+    await testDb.$executeRawUnsafe('TRUNCATE "ConsultationRefund", "ConsultationPayment", "InstantRequest", "DoctorPresence", "Consultation", "Slot" CASCADE');
     await testDb.consultPolicy.deleteMany({ where: { id: { not: DEFAULT_POLICY_ID } } });
     await testDb.consultPolicy.update({ where: { id: DEFAULT_POLICY_ID }, data: { isActive: true } });
 }

@@ -20,6 +20,7 @@ import { accessFor, familyWhere, isSelf, userMobile } from './consultations.fami
 import { attachmentsFor, claimAttachments, type AttachmentStorage } from './consultations.attachments';
 import { recordSharingView, writeRecordSharing, type ShareMeta } from './consultations.records';
 import { overallRefundStatus } from './consultations.refunds';
+import { INSTANT, claimInstantSlot, instantForBooking, instantRules } from './consultations.instant';
 
 export const MAX_OPEN_HOLDS_PER_USER = 3;
 export const MAX_OPEN_HOLDS_PER_DOCTOR = 1;
@@ -51,6 +52,8 @@ export type BookingInput = {
     shareRecord?: boolean;
     /** Where the consent came from, kept with it. */
     shareMeta?: ShareMeta;
+    /** Paying for an instant consult a doctor accepted: the slot is that request's slot at "now". */
+    instantRequestId?: string;
 };
 
 /** The wallet balance changed between showing it and booking (another tab spent it). */
@@ -135,7 +138,7 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
     const now = (deps.now ?? (() => new Date()))();
     // The wallet choice and promo code are part of the request; left out when unused, so older hashes still match.
     const promoCode = normalizeCode(input.promoCode);
-    const requestHash = createHash('sha256').update(`${input.slotId}|${input.patientId}${input.useWallet ? '|wallet' : ''}${promoCode ? `|promo:${promoCode}` : ''}`).digest('hex');
+    const requestHash = createHash('sha256').update(`${input.slotId}|${input.patientId}${input.useWallet ? '|wallet' : ''}${promoCode ? `|promo:${promoCode}` : ''}${input.instantRequestId ? `|instant:${input.instantRequestId}` : ''}`).digest('hex');
 
     const repeated = await existingBooking(db, input, requestHash);
     if (repeated) return syncSharing(db, input, repeated, now);
@@ -152,11 +155,15 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
         if (owned !== reportIds.length) throw new DoctorError(404, 'Report not found');
     }
 
+    const instant = await instantForBooking(db, input, now);
     const slot = await db.slot.findUnique({ where: { id: input.slotId }, include: { doctor: true } });
     if (!slot || slot.doctor.status !== 'APPROVED') throw new DoctorError(404, 'Slot not available');
 
-    const { rules, id: policyId } = await getActivePolicy(db);
-    if (slot.startsAt.getTime() < now.getTime() + rules.minLeadMinutes * 60_000) throw new DoctorError(400, 'This slot starts too soon to book');
+    const active = await getActivePolicy(db);
+    const { id: policyId } = active;
+    // An instant consult starts now: no lead time, its own rules (full refund until the doctor joins).
+    const rules = instant ? instantRules(active.rules) : active.rules;
+    if (!instant && slot.startsAt.getTime() < now.getTime() + rules.minLeadMinutes * 60_000) throw new DoctorError(400, 'This slot starts too soon to book');
 
     const open = await db.consultation.findMany({
         where: { userId: input.userId, status: 'PENDING_PAYMENT', holdExpiresAt: { gt: now } },
@@ -167,18 +174,22 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
         throw new DoctorError(429, 'You already have an unpaid booking with this doctor');
     }
 
-    if (slot.status === 'BLOCKED') throw new DoctorError(409, SLOT_TAKEN);
-    if (slot.status === 'BOOKED') await releaseStaleHold(db, razorpay, slot.id, now);
+    if (!instant && slot.status === 'BLOCKED') throw new DoctorError(409, SLOT_TAKEN);
+    if (!instant && slot.status === 'BOOKED') await releaseStaleHold(db, razorpay, slot.id, now);
 
     const feePaise = toPaise(slot.doctor.consultationFee);
     if (feePaise <= 0) throw new DoctorError(400, 'This doctor has no fee set');
-    const holdExpiresAt = new Date(Math.min(now.getTime() + rules.holdMinutes * 60_000, slot.startsAt.getTime() - rules.minLeadMinutes * 60_000));
+    // Instant: held until the pay-by time the patient sees, plus the grace for a payment already under
+    // way (the matcher frees the doctor at the same moment, so the reconciler never expires it earlier).
+    const holdExpiresAt = instant
+        ? new Date(instant.payBy!.getTime() + INSTANT.payGraceMs)
+        : new Date(Math.min(now.getTime() + rules.holdMinutes * 60_000, slot.startsAt.getTime() - rules.minLeadMinutes * 60_000));
     if (holdExpiresAt <= now) throw new DoctorError(400, 'This slot starts too soon to book');
 
     let consultation;
     try {
         consultation = await db.$transaction(async (tx) => {
-            if (!(await holdSlot(tx, slot.id))) throw new DoctorError(409, SLOT_TAKEN);
+            if (!instant && !(await holdSlot(tx, slot.id))) throw new DoctorError(409, SLOT_TAKEN);
             const promo = promoCode
                 ? await takePromo(tx, { userId: input.userId, code: promoCode, doctor: { id: slot.doctorId, specialtyId: slot.doctor.specialtyId }, feePaise, now })
                 : null;
@@ -210,9 +221,12 @@ export async function createBooking(input: BookingInput, deps: BookingDeps = {})
                     orderReceipt: `c_${randomUUID().replace(/-/g, '')}`,
                     guestToken: randomUUID(),
                     isCaregiverJoined: forFamily && (input.isCaregiverJoined ?? true),
+                    isInstant: !!instant,
                     ...(reportIds.length ? { attachedReports: { create: reportIds.map((reportId) => ({ reportId })) } } : {}),
                 },
             });
+            // Instant: ties this booking to the request and books its slot, unless another attempt is live.
+            if (instant && !(await claimInstantSlot(tx, instant.id, slot.id, created.id, now))) throw new DoctorError(409, SLOT_TAKEN);
             await claimAttachments(tx, input.userId, created.id, input.attachmentIds ?? [], now);
             if (input.shareRecord) await writeRecordSharing(tx, created.id, input.userId, true, input.shareMeta ?? {}, now);
             if (promo) await recordPromoUse(tx, input.userId, promo.promoCodeId, created.id);
@@ -309,6 +323,7 @@ function toView(c: BookingRow) {
         prescriptionId: c.prescriptions[0]?.id ?? null,
         rxStatus,
         type: c.type,
+        isInstant: c.isInstant,
         // Waiting room: who the doctor is, whether they are in, and when the delay options and the
         // automatic doctor no-show refund begin (both from the rules saved with the booking).
         doctorPhotoUrl: c.doctor.photoUrl,
@@ -345,6 +360,7 @@ function familyView(c: BookingRow, linked: boolean) {
         startsAt: base.startsAt,
         endsAt: base.endsAt,
         type: base.type,
+        isInstant: base.isInstant,
         doctorId: base.doctorId,
         doctorName: base.doctorName,
         doctorPhotoUrl: base.doctorPhotoUrl,

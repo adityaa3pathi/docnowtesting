@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { DocnowLogo } from '@/components/DocnowLogo';
 import { ErrorState, LoadingBlock } from '@/components/consult/States';
 import { ApplicationForm } from '@/components/doctor/ApplicationForm';
+import { InstantDesk } from '@/components/doctor/InstantDesk';
 import { DoctorContext } from '@/components/doctor/DoctorContext';
 import { PendingScreen, RejectedNotice, SuspendedScreen } from '@/components/doctor/StatusScreens';
 import { doctor as doctorApi, errorMessage, errorStatus } from '@/lib/consult/api';
@@ -114,7 +115,11 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
                     <DocnowLogo href="/" width={116} height={28} imageClassName="max-h-7 w-auto" />
                 </header>
                 {/* The consultation room needs room for the call beside the notes. */}
-                <main className={cn('mx-auto w-full px-4 py-6 pb-28 md:px-8 md:pb-10', inRoom ? 'max-w-6xl' : 'max-w-3xl')}>{body}</main>
+                <main className={cn('mx-auto w-full px-4 py-6 pb-28 md:px-8 md:pb-10', inRoom ? 'max-w-6xl' : 'max-w-3xl')}>
+                    {/* Instant consults: the online switch and rings, on every page (approved GPs only). */}
+                    {approved && <InstantDesk />}
+                    {body}
+                </main>
             </div>
 
             <nav aria-label="Doctor menu" className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-white pb-[env(safe-area-inset-bottom)] md:hidden">

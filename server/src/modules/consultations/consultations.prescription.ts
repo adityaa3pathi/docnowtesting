@@ -61,6 +61,8 @@ export async function getDoctorRecord(doctorId: string, consultationId: string) 
         where: { id: consultationId, doctorId },
         select: {
             id: true, status: true, type: true, startsAt: true, patientJoinedAt: true, doctorJoinedAt: true, slot: { select: { endsAt: true } },
+            // Instant consults: what the patient typed when asking for a doctor now.
+            isInstant: true, instantRequest: { select: { reason: true } },
             patient: {
                 select: {
                     name: true, age: true, gender: true, relation: true, preferredLanguage: true,
@@ -87,8 +89,10 @@ export async function getDoctorRecord(doctorId: string, consultationId: string) 
     const documents = await attachmentsFor(c.id);
     const voided = prescriptions.filter((p) => p.voidedAt);
     const forFamily = !isSelf(c.patient.relation);
+    const { instantRequest, ...fields } = rest;
     return {
-        ...rest,
+        ...fields,
+        instantReason: instantRequest?.reason ?? null,
         // Family bookings: who booked and whether they are joining to assist (never their contact details).
         caregiver: forFamily ? { name: user.name || 'Family member', relation: c.patient.relation, coJoining: c.isCaregiverJoined, joinedAt: c.caregiverJoinedAt } : null,
         // Reports the booker shared; each opens through a signed link that expires like WhatsApp ones.

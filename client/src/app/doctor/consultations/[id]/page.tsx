@@ -130,6 +130,12 @@ export default function DoctorConsultationRoomPage({ params }: { params: Promise
                         <p className="text-sm font-semibold text-foreground">
                             {formatIstDateTime(record.startsAt)} to {formatIstTime(record.slot.endsAt)} (Indian time)
                         </p>
+                        {record.isInstant && (
+                            <p className="text-sm text-foreground">
+                                <Badge tone="info" className="mr-2">Instant</Badge>
+                                {record.instantReason ? <>Reason: {record.instantReason}</> : null}
+                            </p>
+                        )}
                     </Card>
                     <PatientDossier record={record} />
                     {/* Loads only when the doctor asks: each look is logged and shown to the patient. */}
