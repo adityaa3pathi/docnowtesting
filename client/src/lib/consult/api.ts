@@ -14,6 +14,7 @@ import type {
     PatientDocument, RecordSharing, SharedItemKind, SharedItemLink, SharedRecord,
     AdminAccountPerson, AdminPatientRecord, DoctorPatientDetail, DoctorPatientSummary,
     DoctorInstantState, InstantAvailability, InstantView,
+    AdminReview, DoctorReviewPage, OwnReview, ReviewKind, ReviewModeration, ReviewPage, ReviewStatus,
 } from './types';
 
 /** Reads the server's clock from every response, so hold countdowns do not depend on the device clock. */
@@ -105,6 +106,13 @@ export const consult = {
     downloadPrescription: (id: string) =>
         downloadAuthenticatedFile(`/consult/bookings/${id}/prescription.pdf`, 'docnow-prescription.pdf'),
     addTestsToCart: (id: string) => api.post<CartAddResult>(`/consult/bookings/${id}/recommended-tests/cart`).then(data),
+    /** Rate the doctor: once, within 48 h of the end. */
+    review: (id: string, body: { rating: number; text?: string }) => api.post<OwnReview>(`/consult/bookings/${id}/review`, body).then(data),
+    doctorReviews: (doctorId: string, page = 1) => api.get<ReviewPage>(`/consult/doctors/${doctorId}/reviews`, { params: { page } }).then(data),
+    appReviews: (page = 1) => api.get<ReviewPage>('/consult/app-reviews', { params: { page } }).then(data),
+    myAppReview: () => api.get<{ review: (OwnReview & { updatedAt: string }) | null }>('/consult/app-review').then(data),
+    saveAppReview: (body: { rating: number; text?: string }) =>
+        api.put<{ review: OwnReview & { updatedAt: string } }>('/consult/app-review', body).then(data),
 };
 
 // ── Medical records vault (per person) ──────────────────
@@ -132,6 +140,8 @@ export const instant = {
 
 export const doctor = {
     me: () => api.get<DoctorMe>('/doctor/me').then(data),
+    /** Their own visible reviews, read-only. */
+    reviews: (page = 1) => api.get<DoctorReviewPage>('/doctor/me/reviews', { params: { page } }).then(data),
     /** Instant consults: the online switch, the panel's check-in (also how a ring arrives), and answering a ring. */
     instantState: () => api.get<DoctorInstantState>('/doctor/me/instant').then(data),
     setOnline: (online: boolean) => api.put<DoctorInstantState>('/doctor/me/instant/online', { online }).then(data),
@@ -247,4 +257,11 @@ export const admin = {
     /** A short link to one file or report of that record; each open writes an audit row. */
     openPatientFile: (patientId: string, kind: SharedItemKind, targetId: string) =>
         api.get<SharedItemLink>(`/admin/consult/patients/${patientId}/record/${kind}/${targetId}`).then(data),
+    reviews: (q: { kind: ReviewKind; status?: ReviewStatus | ''; rating?: number | ''; page?: number }) =>
+        api.get<{ items: AdminReview[]; total: number; page: number; pageSize: number }>('/admin/consult/reviews', {
+            params: { kind: q.kind, status: q.status || undefined, rating: q.rating || undefined, page: q.page ?? 1 },
+        }).then(data),
+    /** hide/unhide/delete need `reason`; redact needs `text` (may be empty) and `reason`; reply needs `text` (empty removes it). */
+    moderateReview: (kind: ReviewKind, id: string, action: ReviewModeration, body: { reason?: string; text?: string | null }) =>
+        api.post<AdminReview>(`/admin/consult/reviews/${kind}/${id}/${action}`, body).then(data),
 };

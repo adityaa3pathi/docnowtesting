@@ -136,6 +136,8 @@ model User {
   consultationAttachments ConsultationAttachment[]
   patientDocuments PatientDocument[]
   vitalReadings    VitalReading[]
+  doctorReviews    DoctorReview[]
+  appReview        AppReview?
   periodLogs       PeriodLog[]
 
   // Mobile push notifications
@@ -917,6 +919,7 @@ model DoctorProfile {
   promoScopes    PromoCodeScope[]
   presences      DoctorPresence[]
   instantRequests InstantRequest[]
+  reviews        DoctorReview[]
 
   @@unique([registrationNumber, registrationCouncil])
   @@index([status, specialtyId])
@@ -1135,6 +1138,7 @@ model Consultation {
   messages        ConsultationMessage[]
   recordShareConsents RecordShareConsent[]
   instantRequest  InstantRequest?
+  review          DoctorReview?
   promoCode       PromoCode?           @relation(fields: [promoCodeId], references: [id])
   promoRedemption PromoRedemption?
 
@@ -1529,4 +1533,60 @@ model InstantRequest {
 
   @@index([status, createdAt])
   @@index([userId, createdAt])
+}
+
+// ============================================
+// REVIEWS (P11)
+// ============================================
+
+enum ReviewStatus {
+  VISIBLE
+  HIDDEN // a super admin took it off public pages; unhiding brings it back
+  DELETED // soft delete: kept for the record, never shown again, not even to its author for editing
+}
+
+// A patient's review of one completed consultation: the booker or an accepted family member, within
+// 48 h of the end. One per consultation, never edited afterwards (by the patient or the doctor). Only
+// VISIBLE reviews are shown and counted; the average shows once there are 3. A super admin may hide,
+// delete, reply, or redact personal data (text overwritten, redactedAt shown as "edited by DocNow").
+// DocNow never writes reviews itself (Aditya, 2026-11-24: fake-review rules).
+model DoctorReview {
+  id             String       @id @default(uuid())
+  consultationId String       @unique
+  doctorId       String
+  authorUserId   String
+  rating         Int // 1 to 5, CHECK in the migration
+  text           String?
+  status         ReviewStatus @default(VISIBLE)
+  redactedAt     DateTime?
+  replyText      String?
+  repliedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  consultation Consultation  @relation(fields: [consultationId], references: [id])
+  doctor       DoctorProfile @relation(fields: [doctorId], references: [id])
+  author       User          @relation(fields: [authorUserId], references: [id])
+
+  @@index([doctorId, status, createdAt])
+  @@index([status, createdAt])
+}
+
+// One review of DocNow itself per account, which its author may change (unless DocNow deleted it).
+// Moderated like doctor reviews.
+model AppReview {
+  id         String       @id @default(uuid())
+  userId     String       @unique
+  rating     Int // 1 to 5, CHECK in the migration
+  text       String?
+  status     ReviewStatus @default(VISIBLE)
+  redactedAt DateTime?
+  replyText  String?
+  repliedAt  DateTime?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([status, createdAt])
 }

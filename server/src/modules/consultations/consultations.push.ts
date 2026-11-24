@@ -50,7 +50,8 @@ const reachesFamily = (c: PushRow) => !isSelf(c.patient.relation) && !!c.patient
 
 /** The WhatsApp rules, plus a push once the prescription is ready, plus the family member's own pushes. */
 export function duePushes(c: PushRow, now: Date): [PushKind, AnyRecipient][] {
-    const due: [PushKind, AnyRecipient][] = dueNotices(c, now);
+    // The review ask is WhatsApp only: the mobile app has no review screen yet (P11).
+    const due: [PushKind, AnyRecipient][] = dueNotices(c, now).filter(([kind]) => kind !== 'REVIEW_REQUEST');
     const issued = c.prescriptions.length > 0 && (c.status === 'IN_PROGRESS' || c.status === 'COMPLETED');
     if (issued) due.push(['PRESCRIPTION_ISSUED', 'patient']);
     if (!reachesFamily(c)) return due;
@@ -154,6 +155,8 @@ export function pushMessage(kind: PushKind, to: AnyRecipient, c: PushRow): Consu
                 const rupees = (c.refunds.reduce((s, r) => s + r.amountPaise, 0) / 100).toFixed(2);
                 return { title: 'Your doctor could not join', body: `We are sorry. A refund of Rs. ${rupees} is on its way.`, channelId: 'reminders' };
             }
+            case 'REVIEW_REQUEST':
+                return { title: 'How was your consultation?', body: `Rate ${dr} in one tap.`, channelId: 'reminders' };
             case 'PATIENT_NO_SHOW':
                 return { title: 'You missed your consultation', body: `Tap to see your booking with ${dr}.`, channelId: 'reminders' };
             case 'PRESCRIPTION_ISSUED':

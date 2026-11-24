@@ -11,8 +11,9 @@ import { JOIN_EARLY_MS, JOIN_LATE_MS } from './consultations.room';
 import { dosageSummary, type FamilyLanguage } from './consultations.familyMessages';
 import { createSignedToken } from '../../services/signedToken';
 import { doctorTitle } from './doctors.types';
+import { REVIEW_WINDOW_MS } from './consultations.reviews';
 
-export type NoticeKind = 'CONFIRMED' | 'REMINDER' | 'JOIN_NOW' | 'PARTNER_WAITING' | 'DOCTOR_NO_SHOW' | 'PATIENT_NO_SHOW';
+export type NoticeKind = 'CONFIRMED' | 'REMINDER' | 'JOIN_NOW' | 'PARTNER_WAITING' | 'DOCTOR_NO_SHOW' | 'PATIENT_NO_SHOW' | 'REVIEW_REQUEST';
 export type Recipient = 'patient' | 'doctor';
 /** Family bookings add the family member (the patient's own phone) as a third recipient. */
 export type AnyRecipient = Recipient | 'family';
@@ -25,6 +26,8 @@ type Deps = { db?: PrismaClient; send?: Send; now?: Date; templates?: Templates 
 
 const MAX_ATTEMPTS = 3;
 const REMINDER_LEAD_MS = 60 * 60_000;
+/** The review ask waits a little, so a patient who rates on the summary screen never gets it. */
+export const REVIEW_ASK_DELAY_MS = 30 * 60_000;
 export const LOOKBACK_MS = 48 * 3_600_000;
 const LANGUAGE = process.env.CONSULT_WA_LANGUAGE || 'en';
 
@@ -41,6 +44,8 @@ function templatesFromEnv(): Templates {
         PARTNER_WAITING: process.env.CONSULT_WA_TEMPLATE_PARTNER_WAITING,
         DOCTOR_NO_SHOW: process.env.CONSULT_WA_TEMPLATE_DOCTOR_NO_SHOW,
         PATIENT_NO_SHOW: process.env.CONSULT_WA_TEMPLATE_PATIENT_NO_SHOW,
+        // Body {{1}} name, {{2}} doctor; link button opens the booking at its review form.
+        REVIEW_REQUEST: process.env.CONSULT_WA_TEMPLATE_REVIEW_REQUEST,
     };
 }
 
@@ -50,7 +55,8 @@ const istDateTime = (d: Date) =>
     }).format(d).replace(/\//g, '-').replace(',', '') + ' IST';
 
 const select = {
-    id: true, status: true, startsAt: true, createdAt: true, doctorId: true,
+    id: true, status: true, startsAt: true, createdAt: true, doctorId: true, endedAt: true,
+    review: { select: { id: true } },
     doctorJoinedAt: true, patientJoinedAt: true,
     slot: { select: { endsAt: true } },
     user: { select: { mobile: true, name: true } },
@@ -75,6 +81,7 @@ function message(kind: NoticeKind, to: Recipient, c: Row): { body: string[]; pat
         case 'PARTNER_WAITING': return { body: [name, other], path };
         // The link offers the same doctor again.
         case 'PATIENT_NO_SHOW': return { body: [name, other], path: `consult/doctors/${c.doctorId}` };
+        case 'REVIEW_REQUEST': return { body: [name, other], path: `${path}#review` };
         case 'DOCTOR_NO_SHOW': {
             const rupees = (c.refunds.reduce((s, r) => s + r.amountPaise, 0) / 100).toFixed(2);
             return { body: [name, other, `Rs. ${rupees}`], path };
@@ -84,7 +91,10 @@ function message(kind: NoticeKind, to: Recipient, c: Row): { body: string[]; pat
 
 /** Which messages are due for this consultation right now. */
 export function dueNotices(
-    c: { status: string; startsAt: Date; createdAt: Date; doctorJoinedAt: Date | null; patientJoinedAt: Date | null; slot: { endsAt: Date }; refunds: unknown[] },
+    c: {
+        status: string; startsAt: Date; createdAt: Date; doctorJoinedAt: Date | null; patientJoinedAt: Date | null; slot: { endsAt: Date }; refunds: unknown[];
+        endedAt?: Date | null; review?: unknown;
+    },
     now: Date,
 ): [NoticeKind, Recipient][] {
     const t = now.getTime();
@@ -107,6 +117,11 @@ export function dueNotices(
     const doctorMissed = c.status === 'NO_SHOW_DOCTOR' || (c.status === 'REFUNDED' && c.refunds.length > 0);
     if (doctorMissed) due.push(['DOCTOR_NO_SHOW', 'patient']);
     if (c.status === 'NO_SHOW_PATIENT') due.push(['PATIENT_NO_SHOW', 'patient']);
+    // P11: ask the booker to rate the doctor, once, while reviews are open and none is written yet.
+    if (c.status === 'COMPLETED' && c.endedAt && !c.review) {
+        const ended = c.endedAt.getTime();
+        if (t >= ended + REVIEW_ASK_DELAY_MS && t < ended + REVIEW_WINDOW_MS) due.push(['REVIEW_REQUEST', 'patient']);
+    }
     return due;
 }
 

@@ -3,6 +3,7 @@ import { ArrowRight, BadgeCheck, BriefcaseMedical, CalendarClock, Languages } fr
 import { formatRupees } from '@/lib/consult/format';
 import { nextFreeLabel } from '@/lib/consult/time';
 import type { DoctorSummary } from '@/lib/consult/types';
+import { RatingBadge } from './reviews';
 
 export function initials(name: string) {
     return name.replace(/^dr\.?\s+/i, '').split(' ').filter(Boolean).map((n) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -54,6 +55,7 @@ export function DoctorCard({ doctor }: { doctor: DoctorSummary }) {
                     )}
                     <p className="mt-0.5 text-sm font-semibold text-primary">{doctor.specialty.name}</p>
                     <p className="mt-0.5 truncate text-sm text-ink-muted">{doctor.qualification}</p>
+                    {doctor.rating && <p className="mt-1"><RatingBadge rating={doctor.rating} /></p>}
                     <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-muted">
                         <li className="flex items-center gap-1.5"><BriefcaseMedical className="h-4 w-4 shrink-0" aria-hidden />{years} experience</li>
                         {doctor.languages.length > 0 && (

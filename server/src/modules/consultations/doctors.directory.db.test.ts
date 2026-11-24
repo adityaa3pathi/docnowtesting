@@ -52,7 +52,7 @@ describeDb('public doctor list: filters, search, Online now, paging (real Postgr
         // Public: nothing that identifies the doctor's account or registration.
         expect(Object.keys(body[0]).sort()).toEqual([
             'bio', 'consultationFee', 'displayName', 'experienceYears', 'gender', 'id', 'languages',
-            'nextSlotAt', 'onlineNow', 'photoUrl', 'qualification', 'slotMinutes', 'specialty',
+            'nextSlotAt', 'onlineNow', 'photoUrl', 'qualification', 'rating', 'slotMinutes', 'specialty',
         ]);
     });
 

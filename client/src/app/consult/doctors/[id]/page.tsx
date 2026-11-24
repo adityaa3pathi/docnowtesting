@@ -1,8 +1,8 @@
 'use client';
 import Link from 'next/link';
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { BadgeCheck, Calendar, ChevronLeft, FileText, FlaskConical, Users, Video } from 'lucide-react';
+import { BadgeCheck, Calendar, ChevronLeft, FileText, FlaskConical, Star, Users, Video } from 'lucide-react';
 import { useApi } from '@/hooks/useApi';
 import { useAuthGate } from '@/contexts/AuthGateContext';
 import { consult } from '@/lib/consult/api';
@@ -16,6 +16,7 @@ import { Button, Card, Notice } from '@/components/ui';
 import { Footer } from '@/components/Footer';
 import type { Slot } from '@/lib/consult/types';
 import { StickyBottomBar } from '@/components/layout/StickyBottomBar';
+import { RatingBadge, ReviewList } from '@/components/consult/reviews';
 
 const NOTICES: Record<string, string> = {
     slot_gone: 'That time is no longer available. Please pick another.',
@@ -44,6 +45,7 @@ function DoctorPage() {
     const selected: Slot | undefined = slots.find((s) => s.id === selectedId);
 
     const dropped = Boolean(selectedId && !selected && !slotsApi.loading && slotsApi.data);
+    const loadReviews = useCallback((page: number) => consult.doctorReviews(id, page), [id]);
 
     if (doctor.loading) {
         return (
@@ -112,6 +114,15 @@ function DoctorPage() {
                         <dl className="mt-8 grid grid-cols-2 gap-3 lg:max-w-[calc(100%-424px)] lg:grid-cols-4">
                             {[
                                 { label: 'Next free', value: nextFree ?? (slotsApi.loading ? '…' : 'No times yet') },
+                                ...(d.rating ? [{
+                                    label: 'Patient rating',
+                                    value: (
+                                        <a href="#reviews" className="inline-flex items-center gap-1.5 hover:underline">
+                                            <Star className="h-4 w-4 fill-current" aria-hidden />
+                                            {d.rating.average.toFixed(1)} <span className="font-normal text-primary-soft">({d.rating.count})</span>
+                                        </a>
+                                    ),
+                                }] : []),
                                 { label: 'Fee', value: `${formatRupees(d.consultationFee)} · ${d.slotMinutes} min` },
                                 { label: 'Experience', value: `${d.experienceYears} ${d.experienceYears === 1 ? 'year' : 'years'}` },
                                 ...(d.languages.length > 0 ? [{ label: 'Speaks', value: d.languages.join(', ') }] : []),
@@ -169,6 +180,18 @@ function DoctorPage() {
                             <p className="mt-6 border-t border-border pt-4 text-sm text-ink-muted">
                                 Registration: {d.registrationNumber} ({d.registrationCouncil})
                             </p>
+                        </Card>
+
+                        {/* P11: visible reviews from patients who consulted; the average only from 3 reviews. */}
+                        <Card id="reviews" className="scroll-mt-24 p-6 md:p-8">
+                            <div className="flex flex-wrap items-baseline justify-between gap-2">
+                                <h2 className="text-lg font-bold text-ink">Patient reviews</h2>
+                                <RatingBadge rating={d.rating} />
+                            </div>
+                            <p className="mt-1 text-sm text-ink-muted">Only patients who consulted this doctor on DocNow can review, within 48 hours of the call.</p>
+                            <div className="mt-2">
+                                <ReviewList load={loadReviews} empty="No reviews yet." />
+                            </div>
                         </Card>
                     </div>
 

@@ -21,6 +21,7 @@ import { attachmentsFor, claimAttachments, type AttachmentStorage } from './cons
 import { recordSharingView, writeRecordSharing, type ShareMeta } from './consultations.records';
 import { overallRefundStatus } from './consultations.refunds';
 import { INSTANT, claimInstantSlot, instantForBooking, instantRules } from './consultations.instant';
+import { bookingReviewState } from './consultations.reviews';
 
 export const MAX_OPEN_HOLDS_PER_USER = 3;
 export const MAX_OPEN_HOLDS_PER_DOCTOR = 1;
@@ -409,10 +410,11 @@ export async function getBooking(userId: string, consultationId: string, db: Pri
     const access = accessFor(c, userId, c.userId === userId ? null : await userMobile(db, userId));
     if (!access) throw new DoctorError(404, 'Not found');
     const documents = () => attachmentsFor(c.id, { db, storage });
-    if (access.kind === 'booker') return { ...toView(c), attachments: await documents(), recordSharing: await recordSharingView(c, db) };
+    const review = () => bookingReviewState(c, { db });
+    if (access.kind === 'booker') return { ...toView(c), attachments: await documents(), recordSharing: await recordSharingView(c, db), review: await review() };
     if (c.status === 'PENDING_PAYMENT' || c.status === 'EXPIRED') throw new DoctorError(404, 'Not found');
     if (access.kind === 'family-pending') return familyView(c, false);
-    return { ...familyView(c, true), attachments: await documents(), recordSharing: await recordSharingView(c, db) };
+    return { ...familyView(c, true), attachments: await documents(), recordSharing: await recordSharingView(c, db), review: await review() };
 }
 
 /** The booker's own consultations plus those booked for them by family, newest first. */
