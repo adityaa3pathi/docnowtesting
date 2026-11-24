@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { AlertTriangle, ArrowLeft, ExternalLink, FileText, FlaskConical, Loader2, ShieldCheck } from 'lucide-react';
 import { PrescriptionView } from '@/components/consult/PrescriptionView';
+import { RecordVitalsSection } from '@/components/vitals/RecordVitalsSection';
 import { useApi } from '@/hooks/useApi';
 import { getApiUrl } from '@/lib/api';
 import { admin as adminApi, errorMessage } from '@/lib/consult/api';
@@ -149,6 +150,13 @@ export default function AdminPatientRecordPage() {
                     <div><dt className="font-medium text-gray-900">Blood group</dt><dd className="text-gray-800">{p.bloodGroup ?? 'Not recorded'}</dd></div>
                 </dl>
             </section>
+
+            {data.vitals && (
+                <section className={card} aria-label="Vitals">
+                    <h2 className={h2}>Vitals</h2>
+                    <RecordVitalsSection vitals={data.vitals} />
+                </section>
+            )}
 
             <section className={card} aria-label="Consultations">
                 <h2 className={h2}>Consultations ({data.consultations.length}){capped(data.consultations.length, data.totals.consultations)}</h2>

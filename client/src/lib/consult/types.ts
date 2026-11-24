@@ -1,3 +1,5 @@
+import type { RecordVitals } from '@/lib/vitals';
+
 export type ConsultationStatus =
     | 'PENDING_PAYMENT' | 'CONFIRMED' | 'RESCHEDULED' | 'WAITING' | 'IN_PROGRESS' | 'COMPLETED'
     | 'CANCELLED' | 'NO_SHOW_PATIENT' | 'NO_SHOW_DOCTOR' | 'EXPIRED' | 'REFUNDED';
@@ -178,6 +180,8 @@ export interface AdminPatientRecord {
     }[];
     reports: { id: string; bookingId: string; label: string; isFullReport: boolean; fetchStatus: string; date: string }[];
     documents: SharedFile[];
+    /** P8 vitals (older servers leave it out). */
+    vitals?: RecordVitals;
     consents: { id: string; consultationId: string; granted: boolean; version: string; channel: string; userId: string | null; createdAt: string }[];
     accessLog: { id: string; at: string; action: string; targetId: string | null; consultationId: string; doctorName: string }[];
 }
@@ -190,6 +194,8 @@ export type SharedRecord =
         reports: { id: string; label: string; isFullReport: boolean; date: string }[];
         consultations: SharedPastConsultation[];
         documents: SharedFile[];
+        /** P8 vitals (older servers leave it out). */
+        vitals?: RecordVitals;
     }
     | { shared: false; reason: 'NOT_SHARED' | 'NOT_ACTIVE' | 'ENDED'; until: string };
 

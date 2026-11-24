@@ -1,15 +1,16 @@
 'use client';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
-import { Eye, ExternalLink, FileText, FlaskConical, FolderOpen, History, Loader2, Lock, RefreshCw, Stethoscope } from 'lucide-react';
+import { Activity, Eye, ExternalLink, FileText, FlaskConical, FolderOpen, History, Loader2, Lock, RefreshCw, Stethoscope } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PrescriptionView } from '@/components/consult/PrescriptionView';
+import { RecordVitalsSection } from '@/components/vitals/RecordVitalsSection';
 import { getApiUrl } from '@/lib/api';
 import { doctor as doctorApi, errorMessage } from '@/lib/consult/api';
 import { formatIstDateTime, formatIstDay } from '@/lib/consult/time';
 import type { SharedFile, SharedItemKind, SharedPastConsultation, SharedRecord } from '@/lib/consult/types';
 
-type Tab = 'reports' | 'visits' | 'files';
+type Tab = 'reports' | 'visits' | 'files' | 'vitals';
 type Preview = { name: string; mimeType: string; url: string };
 
 const INLINE_IMAGE = ['image/jpeg', 'image/png', 'image/webp'];
@@ -135,7 +136,7 @@ export function SharedRecordPanel({ consultationId }: { consultationId: string }
         return (
             <Card className="space-y-3 p-5" data-testid="shared-record">
                 {header}
-                <p className="text-sm text-muted-foreground">Lab reports, earlier consultations and files, if the patient shared them for this booking. The patient can see when you opened it.</p>
+                <p className="text-sm text-muted-foreground">Lab reports, earlier consultations, files and vitals, if the patient shared them for this booking. The patient can see when you opened it.</p>
                 <button type="button" onClick={() => void refetch()} className="inline-flex items-center gap-2 rounded-xl border border-primary px-3 py-2 text-sm font-semibold text-primary hover:bg-gray-50">
                     <Eye className="h-4 w-4" aria-hidden /> Open health record
                 </button>
@@ -161,13 +162,17 @@ export function SharedRecordPanel({ consultationId }: { consultationId: string }
         { id: 'reports', label: 'Lab reports', count: record.reports.length, icon: <FlaskConical className="h-4 w-4" aria-hidden /> },
         { id: 'visits', label: 'Past visits', count: record.consultations.length, icon: <Stethoscope className="h-4 w-4" aria-hidden /> },
         { id: 'files', label: 'Files', count: record.documents.length, icon: <FolderOpen className="h-4 w-4" aria-hidden /> },
+        // P8: older servers leave vitals out.
+        ...(record.vitals
+            ? [{ id: 'vitals' as const, label: 'Vitals', count: record.vitals.bp.length + record.vitals.sugar.length + record.vitals.periods.length, icon: <Activity className="h-4 w-4" aria-hidden /> }]
+            : []),
     ];
 
     return (
         <Card className="space-y-3 p-5" data-testid="shared-record">
             {header}
             <p className="text-xs text-muted-foreground">Shared by the patient until {formatIstDateTime(record.until)}. Each file you open is recorded.</p>
-            <div role="tablist" aria-label="Health record" className="grid grid-cols-3 gap-1 rounded-xl bg-gray-100 p-1">
+            <div role="tablist" aria-label="Health record" className={`grid gap-1 rounded-xl bg-gray-100 p-1 ${tabs.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
                 {tabs.map((t) => (
                     <button
                         key={t.id}
@@ -203,6 +208,7 @@ export function SharedRecordPanel({ consultationId }: { consultationId: string }
                 {tab === 'files' && (record.documents.length === 0 ? <p className="text-sm text-muted-foreground">The patient has not uploaded any medical files.</p> : record.documents.map((f) => (
                     <FileButton key={f.id} file={f} busy={opening === f.id} onOpen={() => void open('documents', f.id)} />
                 )))}
+                {tab === 'vitals' && <RecordVitalsSection vitals={record.vitals} />}
             </div>
             <Dialog open={preview !== null} onOpenChange={(o) => !o && setPreview(null)}>
                 {preview && (

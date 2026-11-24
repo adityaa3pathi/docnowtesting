@@ -131,6 +131,48 @@ describe('SharedRecordPanel', () => {
     });
 });
 
+describe('SharedRecordPanel vitals (P8)', () => {
+    beforeAll(() => {
+        // jsdom has no ResizeObserver; the trend chart's container needs one.
+        (globalThis as { ResizeObserver?: unknown }).ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} };
+    });
+    const bp = (id: string, systolic: number, diastolic: number, at: string) => ({ id, kind: 'BP' as const, systolic, diastolic, pulse: 70, glucoseMgDl: null, sugarTiming: null, measuredAt: at, note: null });
+    const withVitals: SharedRecord = {
+        ...(shared as Extract<SharedRecord, { shared: true }>),
+        vitals: {
+            since: '2026-05-28T00:00:00.000Z',
+            bp: [bp('b2', 138, 88, '2026-11-20T03:00:00.000Z'), bp('b1', 130, 84, '2026-11-10T03:00:00.000Z')],
+            sugar: [{ id: 's1', kind: 'SUGAR', systolic: null, diastolic: null, pulse: null, glucoseMgDl: 126, sugarTiming: 'FASTING', measuredAt: '2026-11-19T02:00:00.000Z', note: 'before breakfast' }],
+            periods: [{ id: 'p1', startDate: '2026-11-02', endDate: '2026-11-06', flow: 'MEDIUM', symptoms: ['CRAMPS'] }],
+            periodEstimate: { nextStart: '2026-11-30', averageCycleDays: 28, cyclesUsed: 3, passed: false },
+        },
+    };
+
+    it('shows a Vitals tab with the latest readings, the trend and the periods, numbers only', async () => {
+        m.get.mockResolvedValue({ data: withVitals, headers: {} });
+        await openPanel();
+        const tab = byText(/Vitals/);
+        expect(tab.textContent).toContain('(4)');
+        await act(async () => tab.click());
+        const text = document.body.textContent ?? '';
+        expect(text).toContain('Latest 138/88 mmHg');
+        expect(text).toContain('Latest 126 mg/dL');
+        expect(text).toContain('Fasting · before breakfast');
+        expect(text).toContain('Typed in by the patient');
+        expect(text).toContain("Patient's estimated next start: 30 Nov 2026");
+        expect(text).toContain('Medium · Cramps');
+        expect(document.body.querySelector('[role="img"][aria-label^="Blood pressure trend, 2 readings"]')).not.toBeNull();
+        // No judging words next to the numbers.
+        expect(text).not.toMatch(/\b(high|low|normal|abnormal|elevated|diabetic|diabetes|hypertension)\b/i);
+    });
+
+    it('has no Vitals tab when an older server leaves vitals out', async () => {
+        m.get.mockResolvedValue({ data: shared, headers: {} });
+        await openPanel();
+        expect(buttons().some((b) => /Vitals/.test(b.textContent ?? ''))).toBe(false);
+    });
+});
+
 describe('RecordSharingCard', () => {
     const base = { shared: true, sharedAt: '2026-11-20T10:00:00.000Z', until: '2026-12-01T10:15:00.000Z', canShare: true, lastViewedAt: '2026-11-23T05:00:00.000Z', version: 'record-share-v1' };
 

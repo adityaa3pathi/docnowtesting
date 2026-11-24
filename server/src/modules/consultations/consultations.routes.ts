@@ -22,6 +22,7 @@ import { kickConsultPushes } from './consultations.push';
 import { addRecommendedTestsToCart, getPatientPrescription, prescriptionFromLink, prescriptionLinkToken } from './consultations.prescription';
 import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
 import { RECORD_SHARE_VERSION, listDocuments, removeDocument, setRecordSharing, uploadDocument, type ShareMeta } from './consultations.records';
+import { RANGE_DAYS, VITAL_KINDS, addPeriod, addReading, editPeriod, listPeriods, listReadings, periodEditSchema, periodSchema, readingSchema, removePeriod, removeReading } from './consultations.vitals';
 import { DoctorError } from './doctors.status';
 
 const bookingSchema = z.object({
@@ -161,6 +162,64 @@ consultPatientRoutes.post('/records/:patientId/documents', ...patient, rateLimit
 consultPatientRoutes.delete('/records/documents/:id', ...patient, async (req: AuthRequest, res: Response) => {
     try {
         res.json(await removeDocument(req.userId!, uuidParam(req.params.id)));
+    } catch (e) { fail(res, e); }
+});
+
+// ── Vitals tracker (per person): BP and sugar readings, period logs ──
+
+const vitalsQuery = z.object({
+    kind: z.enum(VITAL_KINDS, { error: 'Choose BP or SUGAR' }),
+    days: z.coerce.number().refine((d) => (RANGE_DAYS as readonly number[]).includes(d), 'Choose 30, 90 or 365 days').default(90),
+});
+const bad = (res: Response, e: z.ZodError) => res.status(400).json({ error: e.issues[0].message });
+
+consultPatientRoutes.get('/vitals/:patientId/readings', ...patient, async (req: AuthRequest, res: Response) => {
+    try {
+        const q = vitalsQuery.safeParse(req.query);
+        if (!q.success) return bad(res, q.error);
+        res.json(await listReadings(req.userId!, uuidParam(req.params.patientId), q.data.kind, q.data.days));
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.post('/vitals/:patientId/readings', ...patient, rateLimiter(60, 600, 'consult_vitals_write'), async (req: AuthRequest, res: Response) => {
+    try {
+        const body = readingSchema.safeParse(req.body);
+        if (!body.success) return bad(res, body.error);
+        res.status(201).json(await addReading(req.userId!, uuidParam(req.params.patientId), body.data));
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.delete('/vitals/readings/:id', ...patient, async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await removeReading(req.userId!, uuidParam(req.params.id)));
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.get('/vitals/:patientId/periods', ...patient, async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await listPeriods(req.userId!, uuidParam(req.params.patientId)));
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.post('/vitals/:patientId/periods', ...patient, rateLimiter(60, 600, 'consult_vitals_write'), async (req: AuthRequest, res: Response) => {
+    try {
+        const body = periodSchema.safeParse(req.body);
+        if (!body.success) return bad(res, body.error);
+        res.status(201).json(await addPeriod(req.userId!, uuidParam(req.params.patientId), body.data));
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.patch('/vitals/periods/:id', ...patient, rateLimiter(60, 600, 'consult_vitals_write'), async (req: AuthRequest, res: Response) => {
+    try {
+        const body = periodEditSchema.safeParse(req.body);
+        if (!body.success) return bad(res, body.error);
+        res.json(await editPeriod(req.userId!, uuidParam(req.params.id), body.data));
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.delete('/vitals/periods/:id', ...patient, async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await removePeriod(req.userId!, uuidParam(req.params.id)));
     } catch (e) { fail(res, e); }
 });
 

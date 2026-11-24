@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut, ChevronRight, IndianRupee, Stethoscope, HeartPulse, FolderHeart } from 'lucide-react';
+import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut, ChevronRight, IndianRupee, Stethoscope, HeartPulse, FolderHeart, Activity } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -73,6 +73,9 @@ const ReportsTab = dynamic(() => import('@/components/profile/ReportsTab').then(
     loading: () => <ListSkeleton />,
 });
 const MedicalRecordsTab = dynamic(() => import('@/components/profile/MedicalRecordsTab').then(m => ({ default: m.MedicalRecordsTab })), {
+    loading: () => <ListSkeleton />,
+});
+const VitalsTab = dynamic(() => import('@/components/profile/VitalsTab').then(m => ({ default: m.VitalsTab })), {
     loading: () => <ListSkeleton />,
 });
 const HealthTab = dynamic(() => import('@/components/profile/HealthTab').then(m => ({ default: m.HealthTab })), {
@@ -419,6 +422,19 @@ function ProfilePageContent() {
                         onOpenChange={(open) => handleTabChange('records', open)}
                     >
                         <MedicalRecordsTab />
+                    </BentoCard>
+
+                    {/* Vitals tracker (P8): BP, sugar and periods per person; doctors see it only through record sharing */}
+                    <BentoCard
+                        className="col-span-2 min-h-[120px] border-none shadow-lg sm:min-h-[140px]"
+                        gradient="from-emerald-600 to-teal-500"
+                        title="Vitals"
+                        icon={<Activity className="h-4 w-4" />}
+                        subtitle="Blood pressure, sugar and periods"
+                        isOpen={activeTab === 'vitals'}
+                        onOpenChange={(open) => handleTabChange('vitals', open)}
+                    >
+                        <VitalsTab />
                     </BentoCard>
 
                     {/* Manager/Admin Area */}

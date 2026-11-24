@@ -7,7 +7,7 @@
  *   default; DPDP Act consent needs a clear yes). The booker or the accepted family member can switch
  *   it off, or on, later. Every switch is kept in RecordShareConsent with the wording version.
  * - The doctor of a paid booking with sharing on sees the person's whole DocNow record (lab reports,
- *   past consultations with every doctor's notes and prescriptions, vault files) from payment until
+ *   past consultations with every doctor's notes and prescriptions, vault files, P8 vitals) from payment until
  *   7 days after the visit ends (Aditya, 2026-11-23). Every view and every file opened is logged in
  *   HealthRecordAccess. Outside the window, or without the tick, the doctor sees only what was
  *   attached to the booking, as before.
@@ -21,6 +21,7 @@ import { DoctorError } from './doctors.status';
 import { canSeeClinical, resolveAccess } from './consultations.family';
 import { MAX_ATTACHMENT_BYTES, cleanFileName, s3AttachmentStorage, sniffType, type AttachmentStorage } from './consultations.attachments';
 import type { ConsultationStatus } from './consultations.types';
+import { vitalsForRecord } from './consultations.vitals';
 
 /** Which consent wording the patient was shown. Bump it whenever the text changes. */
 export const RECORD_SHARE_VERSION = 'record-share-v1';
@@ -239,7 +240,7 @@ export async function getSharedRecord(doctorId: string, consultationId: string, 
     const w = recordWindow(c, now);
     if (!w.open) return { shared: false as const, reason: w.reason, until: w.until };
 
-    const [reports, past, documents] = await Promise.all([
+    const [reports, past, documents, vitals] = await Promise.all([
         db.report.findMany({
             where: reportsWhere(c.patient.userId, c.patientId),
             orderBy: { generatedAt: 'desc' },
@@ -266,6 +267,8 @@ export async function getSharedRecord(doctorId: string, consultationId: string, 
             orderBy: { createdAt: 'desc' },
             select: { id: true, name: true, mimeType: true, sizeBytes: true, createdAt: true },
         }),
+        // P8: BP, sugar and periods; covered by the same RECORD log row as the rest.
+        vitalsForRecord(db, c.patientId, now),
     ]);
     await logAccess(db, { consultationId: c.id, doctorId, patientId: c.patientId, action: 'RECORD', ipAddress: meta.ipAddress });
 
@@ -293,6 +296,7 @@ export async function getSharedRecord(doctorId: string, consultationId: string, 
             attachments: p.attachments.map(file),
         })),
         documents: documents.map(file),
+        vitals,
     };
 }
 

@@ -5,7 +5,7 @@
  *
  * Shows: health details, every consultation (doctor, status, notes, current prescription, attached
  * files, payments and refunds, sharing state), DocNow lab reports, vault files, the patient's
- * sharing consents and the doctors' access log.
+ * sharing consents, the doctors' access log, and vitals (P8: the last year of readings, recent periods).
  */
 import type { PrismaClient } from '@prisma/client';
 import { prisma } from '../../db';
@@ -13,6 +13,7 @@ import { createReportAccessToken } from '../../services/reportAccess';
 import { DoctorError } from './doctors.status';
 import { s3AttachmentStorage, type AttachmentStorage } from './consultations.attachments';
 import { DOCTOR_LINK_SECONDS, reportsWhere, type SharedFileKind } from './consultations.records';
+import { vitalsForRecord } from './consultations.vitals';
 
 export type AdminActor = { adminId: string; adminName: string; ipAddress?: string | null };
 type Deps = { db?: PrismaClient; storage?: AttachmentStorage };
@@ -59,7 +60,7 @@ export async function getPatientRecord(patientId: string, actor: AdminActor, dep
     });
     if (!person) throw new DoctorError(404, 'Not found');
 
-    const [consultations, reports, documents, consents, access, totals] = await Promise.all([
+    const [consultations, reports, documents, consents, access, vitals, totals] = await Promise.all([
         db.consultation.findMany({
             where: { patientId },
             orderBy: { startsAt: 'desc' },
@@ -90,6 +91,7 @@ export async function getPatientRecord(patientId: string, actor: AdminActor, dep
             select: { id: true, consultationId: true, granted: true, version: true, channel: true, userId: true, createdAt: true },
         }),
         db.healthRecordAccess.findMany({ where: { patientId }, orderBy: { createdAt: 'desc' }, take: RECENT }),
+        vitalsForRecord(db, patientId, new Date(), { days: 365, readings: RECENT, periods: 24 }),
         // The lists stop at the latest RECENT; the page says "latest 100 of N" when there are more.
         Promise.all([
             db.consultation.count({ where: { patientId } }),
@@ -127,6 +129,7 @@ export async function getPatientRecord(patientId: string, actor: AdminActor, dep
             };
         }),
         documents: documents.map(file),
+        vitals,
         consents,
         accessLog: access.map((a) => ({
             id: a.id, at: a.createdAt, action: a.action, targetId: a.targetId, consultationId: a.consultationId,
