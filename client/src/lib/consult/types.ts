@@ -129,6 +129,59 @@ export interface SharedPastConsultation {
     attachments: SharedFile[];
 }
 
+/** Doctor → Patients: someone this doctor saw or is booked to see. */
+export interface DoctorPatientSummary {
+    id: string;
+    name: string;
+    age: number;
+    gender: string;
+    visits: number;
+    lastVisitAt: string;
+}
+
+export interface DoctorPatientDetail {
+    patient: { id: string; name: string; age: number; gender: string };
+    /** This doctor's own visits only. */
+    visits: {
+        id: string; startsAt: string; endsAt: string; status: ConsultationStatus; type: ConsultationType;
+        complaints: string | null; diagnosis: string | null; followUpDays: number | null;
+        prescription: { id: string; version: number; issuedAt: string } | null;
+    }[];
+}
+
+/** Super admin: the people on one account. */
+export interface AdminAccountPerson {
+    id: string; name: string; relation: string; age: number; gender: string; consultations: number; documents: number;
+}
+
+/** Super admin: one person's whole record (GET /admin/consult/patients/:id/record). Each view is audit-logged. */
+export interface AdminPatientRecord {
+    /** How many exist in all; the lists hold at most `listLimit`, newest first. */
+    totals: { consultations: number; reports: number; consents: number; accessLog: number };
+    listLimit: number;
+    person: {
+        id: string; name: string; relation: string; age: number; gender: string; dob: string | null; bloodGroup: string | null;
+        allergies: string[]; allergiesConfirmedAt: string | null; chronicConditions: string[]; currentMedications: string[];
+    };
+    account: { id: string; name: string | null; mobile: string | null; status: string; deleted: boolean };
+    consultations: {
+        id: string; startsAt: string; status: ConsultationStatus; type: ConsultationType; feePaise: number; walletPaise: number; discountPaise: number;
+        cancelReason: string | null; cancelledBy: string | null; endedAt: string | null; recordSharedAt: string | null; createdAt: string;
+        promoCode: string | null;
+        doctor: { id: string; displayName: string; specialty: { name: string } };
+        note: Omit<ConsultNote, 'updatedAt'> | null;
+        prescription: Prescription | null;
+        voidedPrescriptions: { id: string; version: number; issuedAt: string; voidedAt: string; voidReason: string | null }[];
+        attachments: SharedFile[];
+        payments: { id: string; source: 'RAZORPAY' | 'WALLET'; amountPaise: number; status: string; razorpayPaymentId: string | null; capturedAt: string | null }[];
+        refunds: { id: string; paymentId: string; reason: string; amountPaise: number; status: string; createdAt: string }[];
+    }[];
+    reports: { id: string; bookingId: string; label: string; isFullReport: boolean; fetchStatus: string; date: string }[];
+    documents: SharedFile[];
+    consents: { id: string; consultationId: string; granted: boolean; version: string; channel: string; userId: string | null; createdAt: string }[];
+    accessLog: { id: string; at: string; action: string; targetId: string | null; consultationId: string; doctorName: string }[];
+}
+
 /** GET /doctor/me/consultations/:id/record */
 export type SharedRecord =
     | {

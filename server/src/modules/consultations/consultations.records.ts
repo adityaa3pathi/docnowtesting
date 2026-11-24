@@ -212,7 +212,7 @@ async function sharedConsultation(db: PrismaClient, doctorId: string, consultati
 }
 
 /** Lab reports for this person from the owning account's lab bookings. */
-function reportsWhere(ownerUserId: string, patientId: string): Prisma.ReportWhereInput {
+export function reportsWhere(ownerUserId: string, patientId: string): Prisma.ReportWhereInput {
     return {
         booking: { userId: ownerUserId },
         OR: [

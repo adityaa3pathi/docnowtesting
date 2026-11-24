@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ArrowLeft, CalendarOff, Clock, LayoutDashboard, Stethoscope } from 'lucide-react';
+import { ArrowLeft, CalendarOff, Clock, LayoutDashboard, Stethoscope, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { DocnowLogo } from '@/components/DocnowLogo';
 import { ErrorState, LoadingBlock } from '@/components/consult/States';
@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 const TOOLS = [
     { href: '/doctor', label: 'Home', icon: LayoutDashboard },
     { href: '/doctor/consultations', label: 'Consultations', icon: Stethoscope },
+    { href: '/doctor/patients', label: 'Patients', icon: Users },
     { href: '/doctor/availability', label: 'Hours', icon: Clock },
     { href: '/doctor/leave', label: 'Leave', icon: CalendarOff },
 ];
