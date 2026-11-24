@@ -180,7 +180,9 @@ describeDb('reviews (real Postgres)', () => {
             const { doctor } = await threeReviews();
             const res = await call(publicApp, 'GET', `/consult/doctors/${doctor.profile.id}/reviews`);
             expect(res.status).toBe(200);
-            for (const item of res.body.items) expect(Object.keys(item).sort()).toEqual(['createdAt', 'editedByDocNow', 'id', 'rating', 'reply', 'text']);
+            for (const item of res.body.items) expect(Object.keys(item).sort()).toEqual(['createdOn', 'editedByDocNow', 'id', 'rating', 'reply', 'text']);
+            // The day only: a time of day would point at one consultation.
+            for (const item of res.body.items) expect(item.createdOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
             expect(JSON.stringify(res.body)).not.toMatch(/Test Patient|authorUserId|consultationId/);
             // A doctor who is not approved has no public reviews page.
             await testDb.doctorProfile.update({ where: { id: doctor.profile.id }, data: { status: 'SUSPENDED' } });
@@ -233,13 +235,15 @@ describeDb('reviews (real Postgres)', () => {
             expect(audit[0].newValue).toMatchObject({ reason: 'Checking', status: 'HIDDEN' });
         });
 
-        it('delete is soft and final: the row stays, nothing brings it back', async () => {
+        it('delete is soft and final: the row stays, nothing brings it back, personal details can still go', async () => {
             const r = await oneReview();
             expect((await moderate(r, 'doctor', r.reviewId, 'delete', { reason: 'Spam' })).body.status).toBe('DELETED');
             expect(await testDb.doctorReview.findUnique({ where: { id: r.reviewId } })).not.toBeNull();
-            for (const [action, body] of [['unhide', { reason: 'undo' }], ['hide', { reason: 'x y z' }], ['reply', { text: 'Hi' }], ['redact', { text: 'x', reason: 'pii' }]] as const) {
+            for (const [action, body] of [['unhide', { reason: 'undo' }], ['hide', { reason: 'x y z' }], ['reply', { text: 'Hi' }]] as const) {
                 expect((await moderate(r, 'doctor', r.reviewId, action, body)).status).toBe(409);
             }
+            const redacted = await moderate(r, 'doctor', r.reviewId, 'redact', { text: 'Dr was late', reason: 'Data removal request' });
+            expect(redacted.body).toMatchObject({ status: 'DELETED', text: 'Dr was late' });
             const audit = await testDb.adminAuditLog.findFirstOrThrow({ where: { targetId: r.reviewId, action: 'REVIEW_DELETE' } });
             expect(audit.isDestructive).toBe(true);
         });

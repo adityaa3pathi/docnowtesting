@@ -63,13 +63,16 @@ export async function doctorRatings(doctorIds: string[], db: Db = prisma): Promi
 
 type ReviewRow = { id: string; rating: number; text: string | null; createdAt: Date; redactedAt: Date | null; replyText: string | null; repliedAt: Date | null };
 
-/** What anyone may see of a visible review: no author, no consultation. */
+/** The Indian calendar day, never the time: a review written within 48 h of one call would say which call. */
+export const istDay = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(d);
+
+/** What anyone may see of a visible review: no author, no consultation, no time of day. */
 function publicView(r: ReviewRow) {
     return {
         id: r.id,
         rating: r.rating,
         text: r.text,
-        createdAt: r.createdAt.toISOString(),
+        createdOn: istDay(r.createdAt),
         editedByDocNow: !!r.redactedAt,
         reply: r.replyText ? { text: r.replyText, at: r.repliedAt?.toISOString() ?? null } : null,
     };
@@ -173,8 +176,8 @@ export async function doctorOwnReviews(doctorProfileId: string, page: number, de
 // ── App reviews ─────────────────────────────────────────
 
 export async function myAppReview(userId: string, db: Db = prisma) {
-    const r = await db.appReview.findUnique({ where: { userId }, select: { ...publicSelect, status: true, updatedAt: true } });
-    return r ? { ...ownView(r), updatedAt: r.updatedAt.toISOString() } : null;
+    const r = await db.appReview.findUnique({ where: { userId }, select: { ...publicSelect, status: true } });
+    return r ? ownView(r) : null;
 }
 
 /** Writes or changes this account's review of DocNow. Hidden stays hidden; a deleted one is closed. */
@@ -280,7 +283,8 @@ const FROM: Record<Moderation, ReviewStatus[]> = {
     hide: ['VISIBLE'],
     unhide: ['HIDDEN'],
     delete: ['VISIBLE', 'HIDDEN'],
-    redact: ['VISIBLE', 'HIDDEN'],
+    // Personal details must be removable whatever the state, deleted included (the row is kept).
+    redact: ['VISIBLE', 'HIDDEN', 'DELETED'],
     reply: ['VISIBLE', 'HIDDEN'],
 };
 

@@ -110,9 +110,9 @@ export const consult = {
     review: (id: string, body: { rating: number; text?: string }) => api.post<OwnReview>(`/consult/bookings/${id}/review`, body).then(data),
     doctorReviews: (doctorId: string, page = 1) => api.get<ReviewPage>(`/consult/doctors/${doctorId}/reviews`, { params: { page } }).then(data),
     appReviews: (page = 1) => api.get<ReviewPage>('/consult/app-reviews', { params: { page } }).then(data),
-    myAppReview: () => api.get<{ review: (OwnReview & { updatedAt: string }) | null }>('/consult/app-review').then(data),
+    myAppReview: () => api.get<{ review: OwnReview | null }>('/consult/app-review').then(data),
     saveAppReview: (body: { rating: number; text?: string }) =>
-        api.put<{ review: OwnReview & { updatedAt: string } }>('/consult/app-review', body).then(data),
+        api.put<{ review: OwnReview }>('/consult/app-review', body).then(data),
 };
 
 // ── Medical records vault (per person) ──────────────────

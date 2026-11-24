@@ -53,7 +53,8 @@ export interface PublicReview {
     id: string;
     rating: number;
     text: string | null;
-    createdAt: string;
+    /** The Indian calendar day (YYYY-MM-DD) only: a time of day could say which consultation it was. */
+    createdOn: string;
     /** DocNow took personal details out of the text. */
     editedByDocNow: boolean;
     reply: { text: string; at: string | null } | null;

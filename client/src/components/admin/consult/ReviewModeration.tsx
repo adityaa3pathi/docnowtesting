@@ -115,6 +115,12 @@ function ReviewRow({ r, onAction }: { r: AdminReview; onAction: (p: Pending) => 
                     </>
                 )}
             </p>
+            {!live && r.text && (
+                <div className="pt-1">
+                    {/* Deleted rows keep their text: personal details must still be removable (e.g. a data request). */}
+                    <Button size="sm" variant="outline" onClick={() => onAction({ kind: 'redact', review: r })}>Remove personal details</Button>
+                </div>
+            )}
             {live && (
                 <div className="flex flex-wrap gap-2 pt-1">
                     {r.status === 'VISIBLE'

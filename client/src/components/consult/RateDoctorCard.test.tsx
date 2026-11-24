@@ -15,7 +15,7 @@ beforeAll(() => {
 
 const open: BookingReviewState = { review: null, canReview: true, closesAt: new Date(Date.now() + 40 * 3_600_000).toISOString() };
 const written: OwnReview = {
-    id: 'r1', rating: 4, text: 'Kind and clear', createdAt: new Date().toISOString(), editedByDocNow: false, reply: null, status: 'VISIBLE',
+    id: 'r1', rating: 4, text: 'Kind and clear', createdOn: '2026-11-24', editedByDocNow: false, reply: null, status: 'VISIBLE',
 };
 const flush = () => act(async () => { await new Promise((r) => setTimeout(r, 0)); });
 const byText = (re: RegExp) => Array.from(document.body.querySelectorAll('button')).find((b) => re.test(b.textContent ?? ''))!;
@@ -85,5 +85,21 @@ describe('Stars', () => {
         await mount(<Stars value={3.6} />);
         const widths = Array.from(host.querySelectorAll('span[style]')).map((s) => (s as HTMLElement).style.width);
         expect(widths).toEqual(['100%', '100%', '100%', '50%']);
+    });
+});
+
+describe('ReviewList', () => {
+    it('never shows a review twice when a new one shifts the next page, and shows only the day', async () => {
+        const { ReviewList } = await import('./reviews');
+        const r = (id: string) => ({ id, rating: 5, text: `Review ${id}`, createdOn: '2026-11-24', editedByDocNow: false, reply: null });
+        const load = vi.fn()
+            .mockResolvedValueOnce({ items: [r('a'), r('b')], total: 4, page: 1, pageSize: 2 })
+            .mockResolvedValueOnce({ items: [r('b'), r('c')], total: 4, page: 2, pageSize: 2 });
+        await mount(<ReviewList load={load} empty="none" />);
+        await flush();
+        await act(async () => byText(/Show more reviews/).click());
+        await flush();
+        expect(Array.from(host.querySelectorAll('li')).map((li) => li.textContent?.match(/Review (\w)/)?.[1])).toEqual(['a', 'b', 'c']);
+        expect(host.textContent).toContain('24 Nov 2026');
     });
 });

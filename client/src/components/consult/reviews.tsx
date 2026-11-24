@@ -12,8 +12,9 @@ import type { OwnReview, PublicReview, RatingSummary, ReviewPage } from '@/lib/c
 export const REVIEW_TEXT_MAX = 1000;
 const LABELS = ['', 'Poor', 'Below average', 'Okay', 'Good', 'Excellent'];
 
-const dateLabel = (iso: string) =>
-    new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }).format(new Date(iso));
+/** "24 Nov 2026" from the server's YYYY-MM-DD day (already Indian time). */
+export const dateLabel = (day: string) =>
+    new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${day}T00:00:00Z`));
 
 /** Read-only stars; fractions round to the nearest half visually, the number says the rest. */
 export function Stars({ value, className = 'h-4 w-4' }: { value: number; className?: string }) {
@@ -131,7 +132,7 @@ export function ReviewItem({ review, author = 'Verified patient' }: { review: Pu
                 <Stars value={review.rating} />
                 <span className="sr-only">{review.rating} out of 5</span>
                 <span className="text-sm font-semibold text-ink">{author}</span>
-                <span className="text-sm text-ink-muted">{dateLabel(review.createdAt)}</span>
+                <span className="text-sm text-ink-muted">{dateLabel(review.createdOn)}</span>
             </div>
             {review.text && <p className="mt-2 whitespace-pre-line break-words text-sm text-ink">{review.text}</p>}
             {review.editedByDocNow && <p className="mt-1 text-xs italic text-ink-muted">Edited by DocNow to remove personal details</p>}
@@ -173,7 +174,12 @@ export function ReviewList({ load, empty, onLoaded }: {
         setError(null);
         try {
             const res = await load(p);
-            setItems((prev) => (p === 1 ? res.items : [...(prev ?? []), ...res.items]));
+            // A review added between pages shifts the offsets: never show one twice.
+            setItems((prev) => {
+                if (p === 1) return res.items;
+                const seen = new Set((prev ?? []).map((r) => r.id));
+                return [...(prev ?? []), ...res.items.filter((r) => !seen.has(r.id))];
+            });
             setTotal(res.total);
             setPage(p);
             if (p === 1) onLoaded?.(res);

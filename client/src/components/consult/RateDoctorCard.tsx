@@ -1,7 +1,7 @@
 'use client';
 /**
  * "Rate your doctor" on the booking page (P11): open for 48 h after the consultation ends, once. The
- * WhatsApp ask links here with #review. Afterwards the card shows the review as written.
+ * WhatsApp ask links here with ?review=1. Afterwards the card shows the review as written.
  */
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui';
@@ -15,9 +15,11 @@ export function RateDoctorCard({ bookingId, doctorName, state }: { bookingId: st
     const review = written ?? state.review;
     const show = !!review || state.canReview;
 
-    // The WhatsApp link ends in #review: bring the card into view once it is on the page.
+    // The WhatsApp link ends in ?review=1 (a query survives sign-in): bring the card into view.
     useEffect(() => {
-        if (show && typeof window !== 'undefined' && window.location.hash === '#review') document.getElementById('review')?.scrollIntoView({ block: 'center' });
+        if (!show || typeof window === 'undefined') return;
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('review') === '1' || url.hash === '#review') document.getElementById('review')?.scrollIntoView({ block: 'center' });
     }, [show]);
 
     if (!show) return null;

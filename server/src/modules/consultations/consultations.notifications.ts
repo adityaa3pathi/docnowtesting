@@ -81,7 +81,9 @@ function message(kind: NoticeKind, to: Recipient, c: Row): { body: string[]; pat
         case 'PARTNER_WAITING': return { body: [name, other], path };
         // The link offers the same doctor again.
         case 'PATIENT_NO_SHOW': return { body: [name, other], path: `consult/doctors/${c.doctorId}` };
-        case 'REVIEW_REQUEST': return { body: [name, other], path: `${path}#review` };
+        // To the booker's phone: a family visit greets the booker, not the family member.
+        // A query, not a #fragment: WhatsApp encodes the button suffix, and sign-in keeps the query.
+        case 'REVIEW_REQUEST': return { body: [c.user.name?.trim() || name, other], path: `${path}?review=1` };
         case 'DOCTOR_NO_SHOW': {
             const rupees = (c.refunds.reduce((s, r) => s + r.amountPaise, 0) / 100).toFixed(2);
             return { body: [name, other, `Rs. ${rupees}`], path };
@@ -209,8 +211,14 @@ export async function sendDueNotices(deps: Deps = {}) {
 
     const rows = await db.consultation.findMany({
         where: {
-            status: { in: ['CONFIRMED', 'WAITING', 'IN_PROGRESS', 'COMPLETED', 'NO_SHOW_DOCTOR', 'NO_SHOW_PATIENT', 'REFUNDED'] },
-            startsAt: { gte: new Date(now.getTime() - LOOKBACK_MS) },
+            OR: [
+                {
+                    status: { in: ['CONFIRMED', 'WAITING', 'IN_PROGRESS', 'COMPLETED', 'NO_SHOW_DOCTOR', 'NO_SHOW_PATIENT', 'REFUNDED'] },
+                    startsAt: { gte: new Date(now.getTime() - LOOKBACK_MS) },
+                },
+                // The review ask stays due (and retryable) for the whole window after the end.
+                { status: 'COMPLETED', endedAt: { gte: new Date(now.getTime() - REVIEW_WINDOW_MS) }, review: { is: null } },
+            ],
         },
         select,
         orderBy: { startsAt: 'asc' },
