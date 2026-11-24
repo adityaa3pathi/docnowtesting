@@ -10,3 +10,4 @@ export { consultPublicRoutes, doctorRoutes, consultAdminRoutes } from './doctors
 export { consultGuestRoutes, consultPatientRoutes } from './consultations.routes';
 export { consultCallEventRoutes } from './consultations.callEvents';
 export { consultManagerRoutes } from './consultations.manager.routes';
+export { startInstantMatcher } from './consultations.instant';

@@ -227,6 +227,7 @@ import { startReconciler } from './workers/reconciler';
 import { startSlotGenerator } from './workers/slotGenerator';
 import { startConsultReconciler } from './workers/consultReconciler';
 import { startConsultTimers } from './workers/consultTimers';
+import { startInstantMatcher } from './modules/consultations';
 import { startReportPushRetry } from './workers/reportPushRetry';
 
 app.listen(PORT, () => {
@@ -235,5 +236,6 @@ app.listen(PORT, () => {
     startSlotGenerator();
     startConsultReconciler();
     startConsultTimers();
+    startInstantMatcher();
     startReportPushRetry();
 });

@@ -70,6 +70,8 @@ export async function deleteAccount(userId: string, deps: Deps = {}) {
         await tx.patientDocument.deleteMany({ where: { userId } });
         await tx.vitalReading.deleteMany({ where: { userId } });
         await tx.periodLog.deleteMany({ where: { userId } });
+        // Instant requests that never became a consultation hold only the reason typed for the doctor.
+        await tx.instantRequest.deleteMany({ where: { userId, consultationId: null } });
         // Doctors lose access to a deleted account's record at once, even inside a 7-day window.
         for (const shared of await tx.consultation.findMany({ where: { userId, recordSharedAt: { not: null } }, select: { id: true } })) {
             await writeRecordSharing(tx, shared.id, null, false, { channel: 'system' }, now);

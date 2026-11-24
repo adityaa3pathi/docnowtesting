@@ -4,6 +4,7 @@ import { DoctorAvatar } from '@/components/consult/DoctorCard';
 import { Skeleton } from '@/components/ui';
 import { formatRupees } from '@/lib/consult/format';
 import type { DoctorSummary } from '@/lib/consult/types';
+import { InstantCard } from './InstantCard';
 
 const PATH = [
     { icon: Calendar, text: 'Pick a time that suits you' },
@@ -85,6 +86,7 @@ export function ConsultHeader({ featured, loading }: { featured?: DoctorSummary;
                             My consultations
                         </Link>
                     </div>
+                    <InstantCard />
                     <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-primary-soft">
                         <li className="flex items-center gap-2"><BadgeCheck className="h-4 w-4" aria-hidden /> Verified registration</li>
                         <li className="flex items-center gap-2"><FileText className="h-4 w-4" aria-hidden /> Digital prescription</li>

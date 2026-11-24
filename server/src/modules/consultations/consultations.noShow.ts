@@ -9,6 +9,7 @@ import { ConsultRazorpay } from './consultations.razorpay';
 import { paidParts } from './consultations.money';
 import { createRefundRecord, runRefunds } from './consultations.refunds';
 import { releasePromo } from './consultations.promo';
+import { reopenInstantSlots } from './consultations.transitions';
 import { noShowDeadlines } from './consultations.room';
 import { CEILINGS } from './consultations.policy';
 
@@ -42,6 +43,7 @@ export async function settleNoShows(deps: Deps = {}) {
             const made = [];
             // A doctor no-show is refunded in full, so the promo use comes back too.
             if (res.count === 1) await releasePromo(tx, c.id);
+            if (res.count === 1) await reopenInstantSlots(tx, c.id, now);
             if (res.count === 1) {
                 for (const part of parts) {
                     const r = await createRefundRecord(tx, { consultationId: c.id, paymentId: part.id, reason: 'DOCTOR_NO_SHOW' });

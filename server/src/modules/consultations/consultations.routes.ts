@@ -25,6 +25,7 @@ import { listDocuments, removeDocument, setRecordSharing, uploadDocument, type S
 import { RANGE_DAYS, VITAL_KINDS, addPeriod, addReading, editPeriod, listPeriods, listReadings, periodEditSchema, periodSchema, readingSchema, removePeriod, removeReading } from './consultations.vitals';
 import { DoctorError } from './doctors.status';
 import { chatReadSchema, chatSendSchema, guestChat, patientChat } from './consultations.chat';
+import { INSTANT, activeInstant, cancelInstant, pollInstant, startInstant } from './consultations.instant';
 
 const bookingSchema = z.object({
     slotId: z.string().uuid('Invalid slot'),
@@ -42,6 +43,7 @@ const bookingSchema = z.object({
     shareRecord: z.boolean().optional(),
     shareConsentVersion: z.string().trim().min(1).max(40).optional(),
     channel: z.enum(['app', 'web']).optional(),
+    instantRequestId: z.string().uuid('Invalid request').optional(),
 });
 
 const sharingSchema = z.object({
@@ -83,6 +85,47 @@ consultPatientRoutes.post('/bookings', ...patient, rateLimiter(5, 60, 'consult_b
         if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
         const { shareConsentVersion, channel, ...input } = parse.data;
         res.status(201).json(await createBooking({ userId: req.userId!, ...input, shareMeta: shareMetaOf(req, shareConsentVersion, channel) }));
+    } catch (e) { fail(res, e); }
+});
+
+// ── Consult a Doc now (P10) ──
+
+const instantSchema = z.object({
+    patientId: z.string().uuid('Invalid patient'),
+    // Spaces are tidied before the 200-character check, so the raw text may be a little longer.
+    reason: z.string().max(INSTANT.reasonMax * 2, `Keep it under ${INSTANT.reasonMax} characters`),
+    shareRecord: z.boolean().optional(),
+});
+const requestId = (req: AuthRequest) => {
+    const id = z.string().uuid().safeParse(req.params.id);
+    if (!id.success) throw new DoctorError(404, 'Not found');
+    return id.data;
+};
+
+consultPatientRoutes.get('/instant/active', ...patient, async (req: AuthRequest, res: Response) => {
+    try {
+        res.json({ request: await activeInstant(req.userId!) });
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.post('/instant', ...patient, rateLimiter(10, 600, 'consult_instant_start'), async (req: AuthRequest, res: Response) => {
+    try {
+        const parse = instantSchema.safeParse(req.body);
+        if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
+        res.status(201).json(await startInstant({ userId: req.userId!, ...parse.data }));
+    } catch (e) { fail(res, e); }
+});
+
+// Polled every few seconds by the waiting screen; it also moves the queue along.
+consultPatientRoutes.get('/instant/:id', ...patient, rateLimiter(90, 60, 'consult_instant_poll'), async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await pollInstant(req.userId!, requestId(req)));
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.post('/instant/:id/cancel', ...patient, rateLimiter(10, 60, 'consult_instant_cancel'), async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await cancelInstant(req.userId!, requestId(req)));
     } catch (e) { fail(res, e); }
 });
 

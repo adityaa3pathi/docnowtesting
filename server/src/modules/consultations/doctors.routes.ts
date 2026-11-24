@@ -41,6 +41,7 @@ import {
     addLeave, adminCreateDoctor, adminUpdateDoctor, registerDoctor, removeLeave, resubmitDoctor, reviewDoctor, setSlotBlocked,
 } from './doctors.service';
 import { listChanges, myChanges, reviewChange, submitAvailabilityChange, submitProfileChange, withdrawChange } from './doctors.changes';
+import { acceptInstant, declineInstant, doctorCheckIn, doctorInstantState, goOffline, goOnline, instantAvailability } from './consultations.instant';
 
 function fail(res: Response, e: unknown, label: string) {
     if (e instanceof DoctorError) return res.status(e.status).json({ error: e.message });
@@ -127,6 +128,13 @@ consultPublicRoutes.get('/doctors/:id/photo', async (req, res) => {
         res.set('Cross-Origin-Resource-Policy', 'cross-origin');
         res.redirect(302, link);
     } catch (e) { fail(res, e, 'doctor photo'); }
+});
+
+// "Consult a Doc now": how many are online, the fee range, and the next GP time when nobody is.
+consultPublicRoutes.get('/instant/availability', rateLimiter(60, 60, 'consult_instant_availability'), async (_req, res) => {
+    try {
+        res.json(await instantAvailability());
+    } catch (e) { fail(res, e, 'instant availability'); }
 });
 
 consultPublicRoutes.get('/doctors/:id/slots', async (req, res) => {
@@ -379,6 +387,44 @@ doctorRoutes.post('/me/consultations/:id/chat', ...mineWrite, rateLimiter(30, 60
         if (!parse.success) return bad(res, parse);
         res.json(await doctorChat.send(await myDoctorId(req), consultId(req), parse.data));
     } catch (e) { fail(res, e, 'send chat'); }
+});
+
+// ── Instant consults (P10): online switch, check-ins, rings ──
+
+const onlineSchema = z.object({ online: z.boolean() });
+
+doctorRoutes.get('/me/instant', ...mine, async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await doctorInstantState(await myDoctorId(req)));
+    } catch (e) { fail(res, e, 'instant state'); }
+});
+
+doctorRoutes.put('/me/instant/online', ...mineWrite, rateLimiter(30, 60, 'doctor_instant_online'), async (req: AuthRequest, res: Response) => {
+    try {
+        const parse = onlineSchema.safeParse(req.body);
+        if (!parse.success) return bad(res, parse);
+        const id = await myDoctorId(req);
+        res.json(parse.data.online ? await goOnline(id) : await goOffline(id));
+    } catch (e) { fail(res, e, 'instant online'); }
+});
+
+// The open panel checks in every few seconds while online: it keeps the doctor online and is how a ring reaches the screen.
+doctorRoutes.post('/me/instant/check-in', ...mineWrite, rateLimiter(60, 60, 'doctor_instant_check_in'), async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await doctorCheckIn(await myDoctorId(req)));
+    } catch (e) { fail(res, e, 'instant check-in'); }
+});
+
+doctorRoutes.post('/me/instant/:id/accept', ...mineWrite, rateLimiter(20, 60, 'doctor_instant_answer'), async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await acceptInstant(await myDoctorId(req), consultId(req)));
+    } catch (e) { fail(res, e, 'instant accept'); }
+});
+
+doctorRoutes.post('/me/instant/:id/decline', ...mineWrite, rateLimiter(20, 60, 'doctor_instant_answer'), async (req: AuthRequest, res: Response) => {
+    try {
+        res.json(await declineInstant(await myDoctorId(req), consultId(req)));
+    } catch (e) { fail(res, e, 'instant decline'); }
 });
 
 doctorRoutes.post('/me/consultations/:id/end', ...mineWrite, async (req: AuthRequest, res: Response) => {

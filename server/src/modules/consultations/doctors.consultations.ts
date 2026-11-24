@@ -49,14 +49,14 @@ export async function listDoctorConsultations(doctorId: string, q: z.infer<typeo
     const dir = upcoming ? 'asc' : 'desc';
     const rows = await prisma.consultation.findMany({
         where: { AND: conds },
-        select: { id: true, startsAt: true, status: true, type: true, slot: { select: { endsAt: true } }, patient: { select: { name: true } } },
+        select: { id: true, startsAt: true, status: true, type: true, isInstant: true, slot: { select: { endsAt: true } }, patient: { select: { name: true } } },
         orderBy: [{ startsAt: dir }, { id: dir }],
         take: limit + 1,
     });
     const page = rows.slice(0, limit);
     const last = page[page.length - 1];
     return {
-        items: page.map((r) => ({ id: r.id, startsAt: r.startsAt, endsAt: r.slot.endsAt, status: r.status, type: r.type, patientName: r.patient.name })),
+        items: page.map((r) => ({ id: r.id, startsAt: r.startsAt, endsAt: r.slot.endsAt, status: r.status, type: r.type, isInstant: r.isInstant, patientName: r.patient.name })),
         nextCursor: rows.length > limit && last ? encodeCursor(last.startsAt, last.id) : null,
     };
 }

@@ -37,7 +37,7 @@ describeDb('doctor consultation list (real Postgres)', () => {
         const body = await res.json();
         expect(body.items).toHaveLength(1);
         expect(body.items[0]).toMatchObject({ id: c.id, status: 'CONFIRMED', type: 'VIDEO', patientName: 'Asha Rao' });
-        expect(Object.keys(body.items[0]).sort()).toEqual(['endsAt', 'id', 'patientName', 'startsAt', 'status', 'type']);
+        expect(Object.keys(body.items[0]).sort()).toEqual(['endsAt', 'id', 'isInstant', 'patientName', 'startsAt', 'status', 'type']);
         expect(JSON.stringify(body)).not.toMatch(/payment|refund|fee|mobile|user/i);
     });
 
