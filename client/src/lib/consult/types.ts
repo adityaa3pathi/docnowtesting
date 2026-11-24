@@ -32,6 +32,20 @@ export interface DoctorSummary {
     gender?: DoctorGender | null;
     /** Earliest bookable time (list endpoint only); null when nothing is open. */
     nextSlotAt?: string | null;
+    /** Online in the doctor panel and free for a Consult a Doc now call (list endpoint only). */
+    onlineNow?: boolean;
+}
+
+/** One page of the doctor list (`GET /consult/doctors?page=`). */
+export interface DoctorPage {
+    items: DoctorSummary[];
+    total: number;
+    page: number;
+    pageSize: number;
+    /** Languages offered in the chosen specialty, most common first. */
+    languages: string[];
+    /** The only specialty whose doctors can be Online now (General Physician); null if missing. */
+    onlineSpecialtyId: string | null;
 }
 
 export interface DoctorPublicProfile extends DoctorSummary {

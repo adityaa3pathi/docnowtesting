@@ -46,6 +46,12 @@ export function DoctorCard({ doctor }: { doctor: DoctorSummary }) {
                         {doctor.displayName}
                         <BadgeCheck className="h-5 w-5 shrink-0 text-primary" aria-label="Verified" />
                     </h3>
+                    {doctor.onlineNow && (
+                        <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-0.5 text-xs font-semibold text-success-ink">
+                            <span aria-hidden className="h-2 w-2 rounded-full bg-success" />
+                            Online now
+                        </p>
+                    )}
                     <p className="mt-0.5 text-sm font-semibold text-primary">{doctor.specialty.name}</p>
                     <p className="mt-0.5 truncate text-sm text-ink-muted">{doctor.qualification}</p>
                     <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-muted">

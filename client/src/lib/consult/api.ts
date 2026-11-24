@@ -9,7 +9,7 @@ import type {
     ConsultPromoQuote,
     AdminAppointment, AdminAppointmentDetail, AdminDoctor, DoctorChangeQueue, DoctorChangeRequest, DoctorChangeStatus, AttendanceReport, AvailabilityWindow, BookingView, CancelPreview, DoctorGender, CancelResult,
     CartAddResult, ConsultNote, ConsultRules, ConsultationStatus, CreateBookingResponse, DoctorConsultationPage,
-    DoctorConsultationRecord, DoctorMe, DoctorProfileInput, DoctorPublicProfile, DoctorSummary, JoinResponse, LeaveEntry,
+    DoctorConsultationRecord, DoctorMe, DoctorProfileInput, DoctorPage, DoctorPublicProfile, DoctorSummary, JoinResponse, LeaveEntry,
     NoteInput, PolicyResponse, Prescription, PrescriptionInput, ReviewQueue, Slot, Specialty, VerifyResponse,
     PatientDocument, RecordSharing, SharedItemKind, SharedItemLink, SharedRecord,
     AdminAccountPerson, AdminPatientRecord, DoctorPatientDetail, DoctorPatientSummary,
@@ -73,6 +73,8 @@ export const consult = {
     specialties: () => api.get<Specialty[]>('/consult/specialties').then(data),
     doctors: (specialtyId?: string) =>
         api.get<DoctorSummary[]>('/consult/doctors', { params: specialtyId ? { specialtyId } : undefined }).then(data),
+    /** One filtered, sorted page of the list; build `query` with directoryQuery(). */
+    directory: (query: Record<string, string | number>) => api.get<DoctorPage>('/consult/doctors', { params: query }).then(data),
     doctor: (id: string) => api.get<DoctorPublicProfile>(`/consult/doctors/${id}`).then(data),
     slots: (doctorId: string) => api.get<Slot[]>(`/consult/doctors/${doctorId}/slots`).then(data),
     /** What a promo code takes off this slot's fee. Nothing is used up. */
