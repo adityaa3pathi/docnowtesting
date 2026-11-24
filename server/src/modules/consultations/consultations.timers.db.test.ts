@@ -109,6 +109,69 @@ describeDb('consultation timers: no-shows and messages (real Postgres)', () => {
         });
     });
 
+    describe('calls the doctor never ended', () => {
+        let stale: typeof import('./consultations.staleCalls');
+        beforeAll(async () => { stale = await import('./consultations.staleCalls'); });
+
+        /** Both joined a call whose slot ended `endedMinutesAgo` ago; the doctor never pressed End. */
+        async function abandoned(endedMinutesAgo: number) {
+            const b = await paid(-(15 + endedMinutesAgo));
+            const start = b.c.startsAt.getTime();
+            await room.patientJoin(b.user.id, b.c.id, { video, now: new Date(start) });
+            await room.doctorJoin(b.doctor.profile.id, b.doctor.user.id, b.c.id, { video, now: new Date(start + MIN) });
+            const { roomId } = await row(b.c.id);
+            return { ...b, roomId: roomId! };
+        }
+
+        it('completes an empty call after the chat window and closes its room, once', async () => {
+            const b = await abandoned(61);
+            const now = new Date();
+            expect(await stale.closeStaleCalls({ video, now })).toEqual({ closed: 1, waiting: 0 });
+            const c = await row(b.c.id);
+            expect(c.status).toBe('COMPLETED');
+            expect(c.endedAt).toEqual(now);
+            expect(c.refunds).toEqual([]);
+            expect(video.roomsEnded).toContain(b.roomId);
+            expect(await stale.closeStaleCalls({ video })).toEqual({ closed: 0, waiting: 0 });
+        });
+
+        it('leaves a call alone inside the chat window', async () => {
+            const b = await abandoned(30);
+            expect(await stale.closeStaleCalls({ video })).toEqual({ closed: 0, waiting: 0 });
+            expect((await row(b.c.id)).status).toBe('IN_PROGRESS');
+        });
+
+        it('waits while someone is still in the room, then completes at the hard stop', async () => {
+            const b = await abandoned(90);
+            video.occupied.add(b.roomId);
+            expect(await stale.closeStaleCalls({ video })).toEqual({ closed: 0, waiting: 1 });
+            expect((await row(b.c.id)).status).toBe('IN_PROGRESS');
+            const later = new Date(Date.now() + stale.HARD_STOP_MS);
+            expect(await stale.closeStaleCalls({ video, now: later })).toEqual({ closed: 1, waiting: 0 });
+            expect((await row(b.c.id)).status).toBe('COMPLETED');
+        });
+
+        it('treats a failed room check as occupied', async () => {
+            const b = await abandoned(90);
+            video.roomOccupied = async () => { throw new Error('livekit down'); };
+            expect(await stale.closeStaleCalls({ video })).toEqual({ closed: 0, waiting: 1 });
+            expect((await row(b.c.id)).status).toBe('IN_PROGRESS');
+        });
+
+        it('closes calls older than the no-show lookback', async () => {
+            const b = await abandoned(3 * 24 * 60);
+            expect(await stale.closeStaleCalls({ video })).toEqual({ closed: 1, waiting: 0 });
+            expect((await row(b.c.id)).status).toBe('COMPLETED');
+        });
+
+        it('never completes a call the patient did not join', async () => {
+            const b = await paid(-90);
+            await room.doctorJoin(b.doctor.profile.id, b.doctor.user.id, b.c.id, { video, now: new Date(b.c.startsAt.getTime() + MIN) });
+            expect(await stale.closeStaleCalls({ video })).toEqual({ closed: 0, waiting: 0 });
+            expect((await row(b.c.id)).status).toBe('IN_PROGRESS');
+        });
+    });
+
     describe('messages', () => {
         it('confirms once, reminds both an hour before, and sends join links at 10 minutes', async () => {
             const b = await paid(120);

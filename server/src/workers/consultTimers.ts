@@ -1,23 +1,25 @@
 /**
- * Every-minute consultation timers: settle no-shows first, then send the WhatsApp messages and
+ * Every-minute consultation timers: settle no-shows and close calls the doctor never ended first, then send the WhatsApp messages and
  * push notifications that are due, so a doctor no-show notice can go out in the same run. Every
  * step is safe to run twice.
  */
 import cron from 'node-cron';
 import { Redis } from '@upstash/redis';
 import { settleNoShows } from '../modules/consultations/consultations.noShow';
+import { closeStaleCalls } from '../modules/consultations/consultations.staleCalls';
 import { sendDueNotices } from '../modules/consultations/consultations.notifications';
 import { sendDuePushes } from '../modules/consultations/consultations.push';
 import { logAlert, logger } from '../utils/logger';
 
 export async function runConsultTimers() {
     const noShows = await settleNoShows();
+    const staleCalls = await closeStaleCalls();
     const notices = await sendDueNotices();
     const pushes = await sendDuePushes();
-    if (noShows.doctors || noShows.patients || notices.sent || notices.failed || pushes.sent || pushes.failed) {
-        logger.info({ noShows, notices, pushes }, 'consult_timers_run');
+    if (noShows.doctors || noShows.patients || staleCalls.closed || notices.sent || notices.failed || pushes.sent || pushes.failed) {
+        logger.info({ noShows, staleCalls, notices, pushes }, 'consult_timers_run');
     }
-    return { noShows, notices, pushes };
+    return { noShows, staleCalls, notices, pushes };
 }
 
 const redis = process.env.UPSTASH_REDIS_REST_URL
