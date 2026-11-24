@@ -4,7 +4,8 @@
  * What goes: the person's contact details and login (name, mobile, email, password, sessions, push
  * tokens, OTPs), saved addresses, cart, family profiles never used for a booking, phone links to
  * family profiles, uploads never attached to a booking, and the medical records vault (Profile →
- * Medical records: the patient's own files, not a doctor's record). The account is blocked, so every
+ * Medical records: the patient's own files, not a doctor's record) and the vitals
+ * tracker (readings and period logs the patient typed in). The account is blocked, so every
  * existing token stops working at once.
  *
  * What stays, de-identified: consultation records and prescriptions (doctors must keep them under
@@ -67,6 +68,8 @@ export async function deleteAccount(userId: string, deps: Deps = {}) {
         await tx.cart.deleteMany({ where: { userId } });
         await tx.consultationAttachment.deleteMany({ where: { userId, consultationId: null } });
         await tx.patientDocument.deleteMany({ where: { userId } });
+        await tx.vitalReading.deleteMany({ where: { userId } });
+        await tx.periodLog.deleteMany({ where: { userId } });
         // Doctors lose access to a deleted account's record at once, even inside a 7-day window.
         for (const shared of await tx.consultation.findMany({ where: { userId, recordSharedAt: { not: null } }, select: { id: true } })) {
             await writeRecordSharing(tx, shared.id, null, false, { channel: 'system' }, now);

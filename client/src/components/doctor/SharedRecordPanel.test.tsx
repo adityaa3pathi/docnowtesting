@@ -131,6 +131,66 @@ describe('SharedRecordPanel', () => {
     });
 });
 
+describe('SharedRecordPanel vitals (P8)', () => {
+    beforeAll(() => {
+        // jsdom has no ResizeObserver; the trend chart's container needs one.
+        (globalThis as { ResizeObserver?: unknown }).ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} };
+    });
+    const bp = (id: string, systolic: number, diastolic: number, at: string) => ({ id, kind: 'BP' as const, systolic, diastolic, pulse: 70, glucoseMgDl: null, sugarTiming: null, measuredAt: at, note: null });
+    const withVitals: SharedRecord = {
+        ...(shared as Extract<SharedRecord, { shared: true }>),
+        vitals: {
+            since: '2026-05-28T00:00:00.000Z',
+            bp: [bp('b2', 138, 88, '2026-11-20T03:00:00.000Z'), bp('b1', 130, 84, '2026-11-10T03:00:00.000Z')],
+            sugar: [{ id: 's1', kind: 'SUGAR', systolic: null, diastolic: null, pulse: null, glucoseMgDl: 126, sugarTiming: 'FASTING', measuredAt: '2026-11-19T02:00:00.000Z', note: 'before breakfast' }],
+            periods: [{ id: 'p1', startDate: '2026-11-02', endDate: '2026-11-06', flow: 'MEDIUM', symptoms: ['CRAMPS'] }],
+            periodEstimate: { nextStart: '2026-11-30', averageCycleDays: 28, cyclesUsed: 3, passed: false },
+        },
+    };
+
+    it('shows a Vitals tab with the latest readings, the trend and the periods, numbers only', async () => {
+        m.get.mockResolvedValue({ data: withVitals, headers: {} });
+        await openPanel();
+        const tab = byText(/Vitals/);
+        expect(tab.textContent).toContain('(4)');
+        await act(async () => tab.click());
+        const text = document.body.textContent ?? '';
+        expect(text).toContain('Latest 138/88 mmHg');
+        expect(text).toContain('Latest 126 mg/dL');
+        expect(text).toContain('Fasting · before breakfast');
+        expect(text).toContain('Typed in by the patient');
+        expect(text).toContain("Patient's estimated next start: 30 Nov 2026");
+        expect(text).toContain('Medium · Cramps');
+        expect(document.body.querySelector('[role="img"][aria-label^="Blood pressure trend, 2 readings"]')).not.toBeNull();
+        // No judging words next to the numbers.
+        expect(text).not.toMatch(/\b(high|low|normal|abnormal|elevated|diabetic|diabetes|hypertension)\b/i);
+    });
+
+    it('says when the list is cut ("latest N of M"), and that readings start on an IST day', async () => {
+        const v = (withVitals as { vitals: NonNullable<Extract<SharedRecord, { shared: true }>['vitals']> }).vitals;
+        m.get.mockResolvedValue({ data: { ...withVitals, vitals: { ...v, since: '2026-05-28', totals: { bp: 75, sugar: 1, periods: 1 } } }, headers: {} });
+        await openPanel();
+        await act(async () => byText(/Vitals/).click());
+        const text = document.body.textContent ?? '';
+        expect(text).toContain('Showing the latest 2 of 75 readings in this period');
+        expect(text).toContain('Readings since 28 May 2026');
+        expect(text.match(/Showing the latest/g)).toHaveLength(1);
+    });
+
+    it('a consent from before vitals: no Vitals tab, and a line saying why', async () => {
+        m.get.mockResolvedValue({ data: { ...withVitals, vitals: null }, headers: {} });
+        await openPanel();
+        expect(buttons().some((b) => /Vitals/.test(b.textContent ?? ''))).toBe(false);
+        expect(document.body.textContent).toContain('Vitals are not included: the patient agreed to sharing before vitals were part of it.');
+    });
+
+    it('has no Vitals tab when an older server leaves vitals out', async () => {
+        m.get.mockResolvedValue({ data: shared, headers: {} });
+        await openPanel();
+        expect(buttons().some((b) => /Vitals/.test(b.textContent ?? ''))).toBe(false);
+    });
+});
+
 describe('RecordSharingCard', () => {
     const base = { shared: true, sharedAt: '2026-11-20T10:00:00.000Z', until: '2026-12-01T10:15:00.000Z', canShare: true, lastViewedAt: '2026-11-23T05:00:00.000Z', version: 'record-share-v1' };
 
@@ -141,7 +201,7 @@ describe('RecordSharingCard', () => {
         expect(document.body.textContent).toContain('Last opened by the doctor');
         await act(async () => byText(/Stop sharing/).click());
         await flush();
-        expect(m.put).toHaveBeenCalledWith('/consult/bookings/c1/record-sharing', { share: false, consentVersion: 'record-share-v1', channel: 'web' });
+        expect(m.put).toHaveBeenCalledWith('/consult/bookings/c1/record-sharing', { share: false, consentVersion: 'record-share-v2', channel: 'web' });
         expect(document.body.textContent).toContain('Dr Meera sees only the details on this booking');
     });
 
@@ -151,7 +211,7 @@ describe('RecordSharingCard', () => {
         expect(document.body.textContent).toContain("Let Dr Meera see Sunita's DocNow health record");
         await act(async () => byText(/I agree, share it/).click());
         await flush();
-        expect(m.put).toHaveBeenCalledWith('/consult/bookings/c1/record-sharing', { share: true, consentVersion: 'record-share-v1', channel: 'web' });
+        expect(m.put).toHaveBeenCalledWith('/consult/bookings/c1/record-sharing', { share: true, consentVersion: 'record-share-v2', channel: 'web' });
     });
 
     it('is hidden when the booking can no longer be shared and is not shared', async () => {

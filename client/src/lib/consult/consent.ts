@@ -21,13 +21,14 @@ export const GUEST_CONSENT_TEXT =
  * "Let the doctor see my health record": unticked on review-and-pay (DPDP Act consent needs a clear
  * yes), switchable on the booking page. The server stores the version, so change it with the wording.
  */
-export const RECORD_SHARE_VERSION = 'record-share-v1';
+/** v2 (P8) adds vitals: blood pressure, blood sugar and periods. Must match the server's VITALS_SHARE_VERSIONS. */
+export const RECORD_SHARE_VERSION = 'record-share-v2';
 export const RECORD_ACCESS_DAYS = 7;
 
 export const recordShareText = (doctorName: string, forName?: string) => {
     const dr = doctorName.startsWith('Dr') ? doctorName : `Dr. ${doctorName}`;
     const whose = forName ? `${forName}'s` : 'my';
-    return `Let ${dr} see ${whose} DocNow health record (lab reports, past consultations, prescriptions and uploaded medical files) from payment until ${RECORD_ACCESS_DAYS} days after this consultation. I can switch this off at any time.`;
+    return `Let ${dr} see ${whose} DocNow health record (lab reports, past consultations, prescriptions, uploaded medical files and vitals: blood pressure, blood sugar and periods) from payment until ${RECORD_ACCESS_DAYS} days after this consultation. I can switch this off at any time.`;
 };
 
 export const CONSENT_REQUIRED_HINT = 'Please accept teleconsultation consent to join';
