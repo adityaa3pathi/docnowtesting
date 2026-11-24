@@ -151,6 +151,7 @@ describeDb('instant consults: admin Online now (real Postgres)', () => {
         const text = JSON.stringify(live.body);
         expect(text).not.toContain('Kamla');
         expect(text).not.toContain('Fever');
+        expect(live.body.waitingTotal).toBe(1);
         expect(live.body.requests).toEqual([expect.objectContaining({ id: req.id, status: 'RINGING', doctorsTried: 1, doctor: { id: doc.profile.id, name: 'Dr Anil' } })]);
         expect(await testDb.adminAuditLog.count({ where: { action: 'INSTANT_REQUEST_VIEW' } })).toBe(0);
 
@@ -284,12 +285,14 @@ describeDb('instant consults: admin Online now (real Postgres)', () => {
             expect(() => hours.presenceRange('2026-11-23', '2026-11-22')).toThrow(hours.PresenceRangeError);
             expect(() => hours.presenceRange('2026-02-30', '2026-03-01')).toThrow(hours.PresenceRangeError);
             expect(() => hours.presenceRange('2026-01-01', '2026-12-31')).toThrow(hours.PresenceRangeError);
+            expect(() => hours.presenceRange('2026-13-01', '2026-13-05')).toThrow(hours.PresenceRangeError);
 
             const superAdmin = await makeUser('SUPER_ADMIN');
             const res = await call(`/presence?from=2026-11-22&to=2026-11-22&doctorId=${a.profile.id}`, superAdmin);
             expect(res.status).toBe(200);
             expect(res.body.doctors).toEqual([expect.objectContaining({ doctorId: a.profile.id, totalSeconds: 5400 })]);
             expect((await call('/presence?from=2026-11-23&to=2026-11-22', superAdmin)).status).toBe(400);
+            expect((await call('/presence?from=2026-13-01&to=2026-13-05', superAdmin)).status).toBe(400);
         });
     });
 });

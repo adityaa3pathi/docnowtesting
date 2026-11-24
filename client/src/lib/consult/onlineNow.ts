@@ -16,7 +16,7 @@ export const REQUEST_STATUS: Record<string, { label: string; tone: Tone }> = {
     RINGING: { label: 'Ringing a Doc', tone: 'warning' },
     ACCEPTED: { label: 'Accepted, waiting for payment', tone: 'info' },
     BOOKED: { label: 'Paid and booked', tone: 'success' },
-    CANCELLED: { label: 'Cancelled by patient', tone: 'muted' },
+    CANCELLED: { label: 'Cancelled', tone: 'muted' },
     NO_MATCH: { label: 'No Doc found', tone: 'danger' },
     UNPAID: { label: 'Not paid in time', tone: 'muted' },
 };
@@ -32,6 +32,12 @@ export function formatDuration(totalSeconds: number): string {
 
 /** Hours with one decimal, for payroll-style totals: 5400 s → "1.5". */
 export const formatHours = (seconds: number) => (Math.round(seconds / 360) / 10).toFixed(1);
+
+/** The hours endpoint's limit (PRESENCE_MAX_DAYS on the server). */
+export const PRESENCE_MAX_DAYS = 93;
+
+/** Days in an inclusive YYYY-MM-DD range. */
+export const daysInRange = (from: string, to: string) => Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000) + 1;
 
 /** YYYY-MM-DD of an instant in IST, and the day `days` before it. */
 export function istDay(d: Date, daysBack = 0): string {

@@ -29,6 +29,7 @@ export type PresenceSession = {
     endReason: string | null;
     seconds: number;
 };
+/** `sessions` counts sessions that touched this day: one crossing IST midnight counts on both days. */
 export type PresenceDay = { day: string; seconds: number; sessions: number };
 export type DoctorPresenceHours = {
     doctorId: string;
@@ -64,7 +65,7 @@ export class PresenceRangeError extends Error {}
 
 /** Checks a YYYY-MM-DD range (inclusive, IST days) and returns its instants. */
 export function presenceRange(fromDay: string, toDay: string) {
-    const ok = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d) && istDayOf(istDayStart(d)) === d;
+    const ok = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(`${d}T00:00:00Z`)) && istDayOf(istDayStart(d)) === d;
     if (!ok(fromDay) || !ok(toDay)) throw new PresenceRangeError('Dates must be YYYY-MM-DD');
     const from = istDayStart(fromDay);
     const to = new Date(istDayStart(toDay).getTime() + DAY_MS);

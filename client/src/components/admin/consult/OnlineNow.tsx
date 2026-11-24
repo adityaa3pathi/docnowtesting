@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Badge, Button } from '@/components/ui';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EmptyState, ErrorState, LoadingBlock } from '@/components/consult/States';
@@ -7,7 +7,7 @@ import { useApi } from '@/hooks/useApi';
 import { admin, errorMessage } from '@/lib/consult/api';
 import { formatPaise } from '@/lib/consult/format';
 import { formatIstDateTime, formatIstTime } from '@/lib/consult/time';
-import { ONLINE_STATE, REQUEST_STATUS, formatDuration, formatHours, istDay } from '@/lib/consult/onlineNow';
+import { ONLINE_STATE, PRESENCE_MAX_DAYS, REQUEST_STATUS, daysInRange, formatDuration, formatHours, istDay } from '@/lib/consult/onlineNow';
 import type { AdminInstantRequestDetail, InstantOutcomeWindow } from '@/lib/consult/types';
 import { inputCls } from './shared';
 
@@ -58,7 +58,7 @@ function LiveView({ onOpen }: { onOpen: (id: string) => void }) {
     if (loading && !data) return <LoadingBlock label="Loading who is online" />;
     if (error && !data) return <ErrorState message={error} onRetry={refetch} />;
     if (!data) return null;
-    const waiting = data.requests.length;
+    const waiting = data.waitingTotal;
 
     return (
         <div className="space-y-6">
@@ -94,6 +94,7 @@ function LiveView({ onOpen }: { onOpen: (id: string) => void }) {
             </Section>
 
             <Section title="Patients waiting" subtitle="Requests looking for a Doc, ringing, or waiting for payment. Open one to see who and why (logged).">
+                {waiting > data.requests.length && <p className="mb-2 text-sm text-amber-700">Showing the {data.requests.length} longest waiting of {waiting}.</p>}
                 {waiting === 0 ? (
                     <EmptyState title="Nobody is waiting" body="New requests show up here within a few seconds." />
                 ) : (
@@ -127,14 +128,10 @@ function LiveView({ onOpen }: { onOpen: (id: string) => void }) {
 
 // ── One request (opening it writes an audit row) ──
 
-function RequestDialog({ id, onClose }: { id: string; onClose: () => void }) {
-    const [detail, setDetail] = useState<AdminInstantRequestDetail | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    useEffect(() => {
-        let alive = true;
-        admin.instantRequest(id).then((d) => alive && setDetail(d), (e) => alive && setError(errorMessage(e)));
-        return () => { alive = false; };
-    }, [id]);
+type Opened = { id: string; detail: AdminInstantRequestDetail | null; error: string | null };
+
+function RequestDialog({ opened, onClose }: { opened: Opened; onClose: () => void }) {
+    const { detail, error } = opened;
     const s = detail ? REQUEST_STATUS[detail.status] : null;
 
     return (
@@ -192,15 +189,15 @@ function Outcomes() {
 
     return (
         <Section title="Recent outcomes" subtitle="How instant requests ended, and what needs a look." action={toggle}>
-            {loading && !data ? <LoadingBlock label="Loading outcomes" />
-                : error && !data ? <ErrorState message={error} onRetry={refetch} />
-                : data && (
+            {loading && data?.window !== period ? <LoadingBlock label="Loading outcomes" />
+                : error && data?.window !== period ? <ErrorState message={error} onRetry={refetch} />
+                : data && data.window === period && (
                     <div className="space-y-5">
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                             <Stat label="Paid and booked" value={data.counts.booked} />
                             <Stat label="No Doc found" value={data.counts.noDoctorFound} tone={data.counts.noDoctorFound ? 'bad' : 'default'} />
                             <Stat label="Not paid in time" value={data.counts.unpaid} />
-                            <Stat label="Cancelled by patient" value={data.counts.cancelled} />
+                            <Stat label="Cancelled" value={data.counts.cancelled} />
                             <Stat label="Late payments refunded" value={data.counts.latePaymentsRefunded} tone={data.counts.latePaymentsRefunded ? 'warn' : 'default'} />
                             <Stat label={`Docs switched offline (${data.rules.missedRingsLimit} missed rings)`} value={data.counts.switchedOfflineMissedRings} tone={data.counts.switchedOfflineMissedRings ? 'warn' : 'default'} />
                         </div>
@@ -232,7 +229,12 @@ function PresenceHours() {
     const [from, setFrom] = useState(() => istDay(new Date(), 6));
     const [to, setTo] = useState(() => istDay(new Date()));
     const [open, setOpen] = useState<string | null>(null);
-    const { data, error, loading, refetch } = useApi(() => admin.presenceHours({ from, to }), [from, to]);
+    const tooLong = daysInRange(from, to) > PRESENCE_MAX_DAYS;
+    const { data, error, loading, refetch } = useApi(
+        () => (tooLong ? Promise.resolve(null) : admin.presenceHours({ from, to })),
+        [from, to, tooLong],
+    );
+    const current = data && data.from === from && data.to === to ? data : null;
 
     return (
         <Section title="Hours online" subtitle="Time each Doc was online, per IST day. Up to 93 days at a time.">
@@ -246,12 +248,13 @@ function PresenceHours() {
                     <input id="hours-to" type="date" value={to} min={from} onChange={(e) => e.target.value && setTo(e.target.value)} className={inputCls} />
                 </div>
             </div>
-            {loading && !data ? <LoadingBlock label="Loading hours online" />
+            {tooLong ? <p role="alert" className="text-sm text-red-600">Pick at most {PRESENCE_MAX_DAYS} days.</p>
+                : loading && !current ? <LoadingBlock label="Loading hours online" />
                 : error ? <ErrorState message={error} onRetry={refetch} />
-                : !data || data.doctors.length === 0 ? <EmptyState title="No time online in these dates" />
+                : !current || current.doctors.length === 0 ? <EmptyState title="No time online in these dates" />
                 : (
                     <ul className="divide-y divide-gray-100">
-                        {data.doctors.map((d) => (
+                        {current.doctors.map((d) => (
                             <li key={d.doctorId} className="py-3">
                                 <button
                                     type="button"
@@ -285,13 +288,21 @@ function PresenceHours() {
 }
 
 export function OnlineNow() {
-    const [openId, setOpenId] = useState<string | null>(null);
+    const [opened, setOpened] = useState<Opened | null>(null);
+    // Fetched from the click, not an effect: each view writes one audit row, so it must run once per open.
+    const open = useCallback((id: string) => {
+        setOpened({ id, detail: null, error: null });
+        admin.instantRequest(id).then(
+            (detail) => setOpened((o) => (o?.id === id ? { ...o, detail } : o)),
+            (e) => setOpened((o) => (o?.id === id ? { ...o, error: errorMessage(e) } : o)),
+        );
+    }, []);
     return (
         <div className="space-y-6">
-            <LiveView onOpen={setOpenId} />
+            <LiveView onOpen={open} />
             <Outcomes />
             <PresenceHours />
-            {openId && <RequestDialog id={openId} onClose={() => setOpenId(null)} />}
+            {opened && <RequestDialog opened={opened} onClose={() => setOpened(null)} />}
         </div>
     );
 }

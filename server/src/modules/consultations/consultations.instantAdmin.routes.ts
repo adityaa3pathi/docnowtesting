@@ -19,7 +19,7 @@ instantAdminRoutes.get('/live', ...admin, async (_req: AuthRequest, res: Respons
     try {
         const now = new Date();
         const [online, requests] = await Promise.all([onlineNow({ now }), liveRequests({ now })]);
-        res.json({ ...online, requests });
+        res.json({ ...online, requests: requests.items, waitingTotal: requests.total });
     } catch (e) { fail(res, e); }
 });
 

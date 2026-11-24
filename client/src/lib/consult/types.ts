@@ -829,6 +829,8 @@ export interface AdminInstantLive {
     now: string;
     online: number;
     free: number;
+    /** Every live request; `requests` lists at most the 100 oldest. */
+    waitingTotal: number;
     doctors: { doctorId: string; doctorName: string; state: InstantOnlineState; onlineSince: string; onlineSeconds: number; missedRings: number }[];
     /** No patient name or reason here: open one request to see them (logged). */
     requests: {

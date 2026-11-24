@@ -6,7 +6,7 @@
  * can never disagree with who actually gets rung. The live list carries no patient name or reason;
  * opening one request shows them and writes an AdminAuditLog row (the reason is medical text).
  */
-import type { PrismaClient } from '@prisma/client';
+import type { InstantRequest, PrismaClient } from '@prisma/client';
 import { prisma } from '../../db';
 import { INSTANT, onlineInstantDoctors } from './consultations.instant';
 import { DoctorError } from './doctors.status';
@@ -14,6 +14,10 @@ import type { AdminActor } from './consultations.adminRecords';
 
 type Db = PrismaClient;
 type Deps = { db?: Db; now?: Date };
+const LIVE_LIST_MAX = 100;
+const OUTCOME_LIST_MAX = 20;
+/** A request ends within its search, pay and grace time of being made; an hour covers it with room, and lets the outcome query use the (status, createdAt) index. */
+const REQUEST_LIFETIME_MARGIN_MS = 60 * 60_000;
 
 export type OnlineState = 'FREE' | 'RINGING' | 'WAITING_PAYMENT' | 'IN_CALL' | 'SCHEDULED_SOON';
 
@@ -45,16 +49,17 @@ export async function onlineNow(deps: Deps = {}) {
 export async function liveRequests(deps: Deps = {}) {
     const db = deps.db ?? prisma;
     const now = deps.now ?? new Date();
-    const rows = await db.instantRequest.findMany({
-        where: { status: { in: ['SEARCHING', 'RINGING', 'ACCEPTED'] } },
+    const live = { status: { in: ['SEARCHING', 'RINGING', 'ACCEPTED'] as InstantRequest['status'][] } };
+    const [total, rows] = await Promise.all([db.instantRequest.count({ where: live }), db.instantRequest.findMany({
+        where: live,
         orderBy: { createdAt: 'asc' },
-        take: 100,
+        take: LIVE_LIST_MAX,
         select: {
             id: true, status: true, createdAt: true, searchEndsAt: true, ringExpiresAt: true, payBy: true, rings: true, triedDoctorIds: true,
             doctor: { select: { id: true, displayName: true } },
         },
-    });
-    return rows.map((r) => ({
+    })]);
+    const items = rows.map((r) => ({
         id: r.id,
         status: r.status,
         createdAt: r.createdAt,
@@ -66,6 +71,8 @@ export async function liveRequests(deps: Deps = {}) {
         doctorsTried: r.rings,
         doctor: r.status === 'SEARCHING' ? null : r.doctor ? { id: r.doctor.id, name: r.doctor.displayName } : null,
     }));
+    /** total counts every live request; items stops at the LIVE_LIST_MAX oldest. */
+    return { total, items };
 }
 
 const ageOn = (dob: Date | null, now: Date) => {
@@ -132,16 +139,30 @@ export async function instantOutcomes(window: OutcomeWindow, deps: Deps = {}) {
     const db = deps.db ?? prisma;
     const now = deps.now ?? new Date();
     const since = new Date(now.getTime() - OUTCOME_WINDOWS[window]);
-    const [ended, lateRefunds, missed] = await Promise.all([
-        db.instantRequest.groupBy({ by: ['status'], where: { endedAt: { gte: since } }, _count: { _all: true } }),
+    const lateWhere = { reason: 'LATE_PAYMENT_SLOT_LOST' as const, createdAt: { gte: since }, consultation: { isInstant: true } };
+    const missedWhere = { endReason: 'MISSED_RINGS', endedAt: { gte: since } };
+    const [ended, lateCount, lateRefunds, missedCount, missed] = await Promise.all([
+        db.instantRequest.groupBy({
+            by: ['status'],
+            where: {
+                status: { in: ['BOOKED', 'NO_MATCH', 'UNPAID', 'CANCELLED'] },
+                createdAt: { gte: new Date(since.getTime() - REQUEST_LIFETIME_MARGIN_MS) },
+                endedAt: { gte: since },
+            },
+            _count: { _all: true },
+        }),
+        db.consultationRefund.count({ where: lateWhere }),
         db.consultationRefund.findMany({
-            where: { reason: 'LATE_PAYMENT_SLOT_LOST', createdAt: { gte: since }, consultation: { isInstant: true } },
+            where: lateWhere,
             orderBy: { createdAt: 'desc' },
+            take: OUTCOME_LIST_MAX,
             select: { id: true, consultationId: true, amountPaise: true, status: true, createdAt: true },
         }),
+        db.doctorPresence.count({ where: missedWhere }),
         db.doctorPresence.findMany({
-            where: { endReason: 'MISSED_RINGS', endedAt: { gte: since } },
+            where: missedWhere,
             orderBy: { endedAt: 'desc' },
+            take: OUTCOME_LIST_MAX,
             select: { id: true, endedAt: true, doctor: { select: { id: true, displayName: true } } },
         }),
     ]);
@@ -154,11 +175,11 @@ export async function instantOutcomes(window: OutcomeWindow, deps: Deps = {}) {
             noDoctorFound: count('NO_MATCH'),
             unpaid: count('UNPAID'),
             cancelled: count('CANCELLED'),
-            latePaymentsRefunded: lateRefunds.length,
-            switchedOfflineMissedRings: missed.length,
+            latePaymentsRefunded: lateCount,
+            switchedOfflineMissedRings: missedCount,
         },
-        lateRefunds: lateRefunds.slice(0, 20),
-        switchedOffline: missed.slice(0, 20).map((m) => ({ id: m.id, at: m.endedAt, doctorId: m.doctor.id, doctorName: m.doctor.displayName })),
+        lateRefunds,
+        switchedOffline: missed.map((m) => ({ id: m.id, at: m.endedAt, doctorId: m.doctor.id, doctorName: m.doctor.displayName })),
         rules: { missedRingsLimit: INSTANT.missedRingsLimit, searchMinutes: INSTANT.searchMs / 60_000 },
     };
 }
