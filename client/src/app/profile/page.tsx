@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut, ChevronRight, IndianRupee, Stethoscope, HeartPulse, FolderHeart, Activity } from 'lucide-react';
+import { User, Users, FileText, Calendar, Loader2, Shield, Wallet, Gift, LogOut, ChevronRight, IndianRupee, Stethoscope, HeartPulse, FolderHeart, Activity, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -77,6 +77,9 @@ const MedicalRecordsTab = dynamic(() => import('@/components/profile/MedicalReco
 });
 const VitalsTab = dynamic(() => import('@/components/profile/VitalsTab').then(m => ({ default: m.VitalsTab })), {
     loading: () => <ListSkeleton />,
+});
+const AppReviewTab = dynamic(() => import('@/components/profile/AppReviewTab').then(m => ({ default: m.AppReviewTab })), {
+    loading: () => <ProfileSkeleton />,
 });
 const HealthTab = dynamic(() => import('@/components/profile/HealthTab').then(m => ({ default: m.HealthTab })), {
     loading: () => <ListSkeleton />,
@@ -435,6 +438,19 @@ function ProfilePageContent() {
                         onOpenChange={(open) => handleTabChange('vitals', open)}
                     >
                         <VitalsTab />
+                    </BentoCard>
+
+                    {/* P11: one review of DocNow per account, editable by its author */}
+                    <BentoCard
+                        className="col-span-2 min-h-[120px] border-none shadow-lg sm:min-h-[140px]"
+                        gradient="from-amber-500 to-orange-500"
+                        title="Rate DocNow"
+                        icon={<Star className="h-4 w-4" />}
+                        subtitle="Tell us how we are doing"
+                        isOpen={activeTab === 'rate'}
+                        onOpenChange={(open) => handleTabChange('rate', open)}
+                    >
+                        <AppReviewTab />
                     </BentoCard>
 
                     {/* Manager/Admin Area */}

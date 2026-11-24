@@ -34,6 +34,80 @@ export interface DoctorSummary {
     nextSlotAt?: string | null;
     /** Online in the doctor panel and free for a Consult a Doc now call (list endpoint only). */
     onlineNow?: boolean;
+    /** Average of visible reviews; null until the doctor has 3 (older servers leave it out). */
+    rating?: RatingSummary | null;
+}
+
+// ── Reviews (P11) ──────────────────────────────────────
+
+export interface RatingSummary {
+    /** One decimal, 1 to 5. */
+    average: number;
+    count: number;
+}
+
+export type ReviewStatus = 'VISIBLE' | 'HIDDEN' | 'DELETED';
+
+/** A review as anyone sees it: never the author's name. */
+export interface PublicReview {
+    id: string;
+    rating: number;
+    text: string | null;
+    /** The Indian calendar day (YYYY-MM-DD) only: a time of day could say which consultation it was. */
+    createdOn: string;
+    /** DocNow took personal details out of the text. */
+    editedByDocNow: boolean;
+    reply: { text: string; at: string | null } | null;
+}
+
+/** The author's own review adds whether DocNow took it down. */
+export interface OwnReview extends PublicReview {
+    status: ReviewStatus;
+}
+
+export interface ReviewPage {
+    items: PublicReview[];
+    total: number;
+    page: number;
+    pageSize: number;
+    rating: RatingSummary | null;
+}
+
+/** The doctor panel's own reviews: the average even below 3, and whether it is public yet. */
+export interface DoctorReviewPage extends Omit<ReviewPage, 'rating'> {
+    average: number | null;
+    shownPublicly: boolean;
+    minCountToShow: number;
+}
+
+/** The review block on a booking (booker or accepted family member). */
+export interface BookingReviewState {
+    review: OwnReview | null;
+    canReview: boolean;
+    /** 48 h after the consultation ended; null before it ends. */
+    closesAt: string | null;
+}
+
+export type ReviewKind = 'doctor' | 'app';
+export type ReviewModeration = 'hide' | 'unhide' | 'delete' | 'redact' | 'reply';
+
+export interface AdminReview {
+    id: string;
+    kind: ReviewKind;
+    rating: number;
+    text: string | null;
+    status: ReviewStatus;
+    createdAt: string;
+    updatedAt: string;
+    redactedAt: string | null;
+    replyText: string | null;
+    repliedAt: string | null;
+    author: { id: string; name: string | null; mobile: string };
+    /** Doctor reviews only. */
+    consultationId?: string;
+    consultationStartsAt?: string;
+    patientName?: string;
+    doctor?: { id: string; displayName: string };
 }
 
 /** One page of the doctor list (`GET /consult/doctors?page=`). */
@@ -102,6 +176,8 @@ export interface BookingView extends CreateBookingResponse {
     selfReschedule?: SelfReschedule;
     /** Whether the doctor may see the patient's whole DocNow record (detail view; older servers leave it out). */
     recordSharing?: RecordSharing;
+    /** Rating the doctor after the visit (detail view; not for a pending family link). */
+    review?: BookingReviewState;
 }
 
 /** "Let the doctor see my health record" on one booking. */

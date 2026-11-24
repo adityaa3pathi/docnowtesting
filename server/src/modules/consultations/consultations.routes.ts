@@ -26,6 +26,7 @@ import { RANGE_DAYS, VITAL_KINDS, addPeriod, addReading, editPeriod, listPeriods
 import { DoctorError } from './doctors.status';
 import { chatReadSchema, chatSendSchema, guestChat, patientChat } from './consultations.chat';
 import { INSTANT, activeInstant, cancelInstant, pollInstant, startInstant } from './consultations.instant';
+import { myAppReview, reviewSchema, saveAppReview, submitDoctorReview } from './consultations.reviews';
 
 const bookingSchema = z.object({
     slotId: z.string().uuid('Invalid slot'),
@@ -316,6 +317,32 @@ consultPatientRoutes.get('/bookings/:id', ...patient, async (req: AuthRequest, r
         if (!id.success) return res.status(404).json({ error: 'Not found' });
         const [booking, consentOnFile] = await Promise.all([getBooking(req.userId!, id.data), signupConsentFor(req.userId!, id.data)]);
         res.json({ ...booking, consentOnFile: consentOnFile !== null });
+    } catch (e) { fail(res, e); }
+});
+
+// P11: rate the doctor, once, within 48 h of the end (booker or accepted family member).
+consultPatientRoutes.post('/bookings/:id/review', ...patient, rateLimiter(10, 60, 'consult_review'), async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        const body = reviewSchema.safeParse(req.body);
+        if (!body.success) return res.status(400).json({ error: body.error.issues[0].message });
+        res.status(201).json(await submitDoctorReview(req.userId!, id.data, body.data));
+    } catch (e) { fail(res, e); }
+});
+
+// This account's review of DocNow itself: read, and write or change.
+consultPatientRoutes.get('/app-review', authMiddleware, async (req: AuthRequest, res: Response) => {
+    try {
+        res.json({ review: await myAppReview(req.userId!) });
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.put('/app-review', ...patient, rateLimiter(10, 600, 'consult_app_review'), async (req: AuthRequest, res: Response) => {
+    try {
+        const body = reviewSchema.safeParse(req.body);
+        if (!body.success) return res.status(400).json({ error: body.error.issues[0].message });
+        res.json({ review: await saveAppReview(req.userId!, body.data) });
     } catch (e) { fail(res, e); }
 });
 

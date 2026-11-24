@@ -41,6 +41,7 @@ import {
     addLeave, adminCreateDoctor, adminUpdateDoctor, registerDoctor, removeLeave, resubmitDoctor, reviewDoctor, setSlotBlocked,
 } from './doctors.service';
 import { listChanges, myChanges, reviewChange, submitAvailabilityChange, submitProfileChange, withdrawChange } from './doctors.changes';
+import { adminListQuery, adminListReviews, doctorOwnReviews, doctorRatings, publicRating, moderateReview, MODERATIONS, publicAppReviews, publicDoctorReviews, REVIEW_KINDS } from './consultations.reviews';
 import { acceptInstant, declineInstant, doctorCheckIn, doctorInstantState, goOffline, goOnline, instantAvailability } from './consultations.instant';
 
 function fail(res: Response, e: unknown, label: string) {
@@ -97,8 +98,29 @@ consultPublicRoutes.get('/doctors/:id', async (req, res) => {
             select: { ...publicDoctorSelect, registrationNumber: true, registrationCouncil: true },
         });
         if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
-        res.json(doctor);
+        res.json({ ...doctor, rating: publicRating((await doctorRatings([doctor.id])).get(doctor.id)) });
     } catch (e) { fail(res, e, 'get doctor'); }
+});
+
+const reviewPage = z.object({ page: z.coerce.number().int().min(1).max(1000).default(1) });
+
+// Visible reviews only, newest first, never naming the author.
+consultPublicRoutes.get('/doctors/:id/reviews', rateLimiter(120, 60, 'consult_reviews_read'), async (req, res) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Doctor not found' });
+        const q = reviewPage.safeParse(req.query);
+        if (!q.success) return bad(res, q);
+        res.json(await publicDoctorReviews(id.data, q.data.page));
+    } catch (e) { fail(res, e, 'doctor reviews'); }
+});
+
+consultPublicRoutes.get('/app-reviews', rateLimiter(120, 60, 'consult_reviews_read'), async (req, res) => {
+    try {
+        const q = reviewPage.safeParse(req.query);
+        if (!q.success) return bad(res, q);
+        res.json(await publicAppReviews(q.data.page));
+    } catch (e) { fail(res, e, 'app reviews'); }
 });
 
 // Stable photo link: redirects to a fresh signed link; browsers keep it for an hour.
@@ -248,6 +270,15 @@ doctorRoutes.get('/me/slots', ...mine, async (req: AuthRequest, res: Response) =
             orderBy: { startsAt: 'asc' },
         }));
     } catch (e) { fail(res, e, 'list my slots'); }
+});
+
+// Their own visible reviews, read-only: no author, no consultation (P11).
+doctorRoutes.get('/me/reviews', ...mine, async (req: AuthRequest, res: Response) => {
+    try {
+        const q = reviewPage.safeParse(req.query);
+        if (!q.success) return bad(res, q);
+        res.json(await doctorOwnReviews(await myDoctorId(req), q.data.page));
+    } catch (e) { fail(res, e, 'my reviews'); }
 });
 
 // "Patients": people this doctor has seen or is booked to see, and their own visits with each.
@@ -669,4 +700,25 @@ consultAdminRoutes.get('/appointments/:id', ...admin, async (req: AuthRequest, r
         if (!id.success) return res.status(404).json({ error: 'Not found' });
         res.json(await getAppointment(id.data));
     } catch (e) { fail(res, e, 'admin appointment'); }
+});
+
+// Review moderation (P11): hide, unhide, delete (soft), redact, reply. Each step is audit-logged.
+consultAdminRoutes.get('/reviews', ...admin, async (req: AuthRequest, res: Response) => {
+    try {
+        const q = adminListQuery.safeParse(req.query);
+        if (!q.success) return bad(res, q);
+        res.json(await adminListReviews(q.data));
+    } catch (e) { fail(res, e, 'list reviews'); }
+});
+
+consultAdminRoutes.post('/reviews/:kind/:id/:action', ...admin, consultCsrfGuard, rateLimiter(60, 60, 'review_moderation'), async (req: AuthRequest, res: Response) => {
+    try {
+        const kind = z.enum(REVIEW_KINDS).safeParse(req.params.kind);
+        const action = z.enum(MODERATIONS).safeParse(req.params.action);
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!kind.success || !action.success || !id.success) return res.status(404).json({ error: 'Not found' });
+        res.json(await moderateReview(kind.data, id.data, action.data, req.body, {
+            adminId: req.adminId!, adminName: req.adminName || 'Admin', ipAddress: getClientIP(req),
+        }));
+    } catch (e) { fail(res, e, 'moderate review'); }
 });

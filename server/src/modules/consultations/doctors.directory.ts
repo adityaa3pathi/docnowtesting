@@ -12,6 +12,7 @@ import { prisma } from '../../db';
 import { getActivePolicy } from './consultations.policy.service';
 import { freeOnlineDoctorIds, instantSpecialtySlug } from './consultations.instant';
 import { withNextSlot } from './doctors.nextSlot';
+import { doctorRatings, publicRating } from './consultations.reviews';
 
 export const DOCTOR_SORTS = ['recommended', 'soonest', 'fee_low', 'fee_high', 'experience'] as const;
 export type DoctorSort = (typeof DOCTOR_SORTS)[number];
@@ -81,7 +82,9 @@ export async function searchDoctors(query: DirectoryQuery, deps: Deps = {}) {
             _min: { startsAt: true },
         })
         : [];
-    const all = withNextSlot(found, next).map((d) => ({ ...d, onlineNow: online.has(d.id) }));
+    // Stars once a doctor has 3 visible reviews (P11); null until then.
+    const ratings = await doctorRatings(found.map((d) => d.id), db);
+    const all = withNextSlot(found, next).map((d) => ({ ...d, onlineNow: online.has(d.id), rating: publicRating(ratings.get(d.id)) }));
     const kept = query.now ? all.filter((d) => d.onlineNow) : all;
     const sort = query.sort ?? (query.page === undefined ? null : 'recommended');
     return sort ? sortDoctors(kept, sort) : kept;

@@ -66,6 +66,7 @@ const navItems = [
     { id: 'consult-review', label: 'Consult Review', icon: ClipboardCheck, href: '/super-admin/consult-review' },
     { id: 'consult-changes', label: 'Doctor Changes', icon: ClipboardCheck, href: '/super-admin/consult-changes' },
     { id: 'consult-appointments', label: 'Consult Appointments', icon: CalendarClock, href: '/super-admin/consult-appointments' },
+    { id: 'reviews', label: 'Reviews', icon: Star, href: '/super-admin/reviews' },
     { id: 'audit', label: 'Audit Logs', icon: FileText, href: '/super-admin/audit-logs' },
 ];
 

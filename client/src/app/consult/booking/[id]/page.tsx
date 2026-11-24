@@ -21,6 +21,7 @@ import { ChatPanel } from '@/components/consult/ChatPanel';
 import { JoinPanel } from '@/components/consult/JoinPanel';
 import { PatientPrescription } from '@/components/consult/PatientPrescription';
 import { RecordSharingCard } from '@/components/consult/RecordSharingCard';
+import { RateDoctorCard } from '@/components/consult/RateDoctorCard';
 import { ConfirmingNotice, PaymentStatus } from '@/components/consult/PaymentStatus';
 import { ErrorState, LoadingBlock } from '@/components/consult/States';
 import { Button, Card, Notice } from '@/components/ui';
@@ -262,6 +263,9 @@ function BookingDetail() {
                                     <p className="text-sm text-ink">Your prescription will show here once the doctor issues it.</p>
                                     <Button variant="outline" size="sm" onClick={() => void flow.refetch()}>Check again</Button>
                                 </Card>
+                            )}
+                            {booking.review && booking.familyAccess !== 'pending' && (
+                                <RateDoctorCard bookingId={booking.consultationId} doctorName={booking.doctorName} state={booking.review} />
                             )}
                         </>
                     )}

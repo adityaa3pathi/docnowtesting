@@ -153,6 +153,7 @@ describe('reading', () => {
             user: { findUnique: vi.fn().mockResolvedValue(mobile ? { mobile } : null) },
             consultationAttachment: { findMany: vi.fn().mockResolvedValue([row]) },
             healthRecordAccess: { findFirst: vi.fn().mockResolvedValue(null) },
+            doctorReview: { findUnique: vi.fn().mockResolvedValue(null) },
         };
     }
 
