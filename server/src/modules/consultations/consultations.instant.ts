@@ -283,6 +283,11 @@ async function onlineDoctors(db: Db, now: Date) {
     return { doctors, free: doctors.filter((d) => !busy.has(d.id) && !taken.has(d.id)) };
 }
 
+/** Doctors who could take an instant consult right now (online, not in a call, not ringing or held): the list's "Online now". */
+export async function freeOnlineDoctorIds(db: Db, now: Date): Promise<Set<string>> {
+    return new Set((await onlineDoctors(db, now)).free.map((d) => d.id));
+}
+
 /** For the "Consult a Doc now" card: how many are online, the fee range, and the next bookable GP time. */
 export async function instantAvailability(deps: InstantDeps = {}) {
     const db = deps.db ?? prisma;

@@ -24,7 +24,7 @@ import {
 import { DoctorError } from './doctors.status';
 import { adminSaveDoctorPhoto, doctorPhotoLink, MAX_PHOTO_BYTES, saveDoctorPhoto } from './doctors.photo';
 import multer from 'multer';
-import { withNextSlot } from './doctors.nextSlot';
+import { directoryQuery, listDirectory, publicDoctorSelect } from './doctors.directory';
 import { doctorListQuery, listDoctorConsultations } from './doctors.consultations';
 import { policyRoutes } from './consultations.policy.routes';
 import { reviewRoutes } from './consultations.review.routes';
@@ -67,11 +67,6 @@ async function audit(req: AuthRequest, action: string, targetId: string, newValu
     });
 }
 
-const publicDoctorSelect = {
-    id: true, displayName: true, photoUrl: true, qualification: true, experienceYears: true,
-    languages: true, bio: true, consultationFee: true, slotMinutes: true, gender: true,
-    specialty: { select: { id: true, name: true, slug: true } },
-} as const;
 
 // ── Public ──────────────────────────────────────────────
 
@@ -83,25 +78,15 @@ consultPublicRoutes.get('/specialties', async (_req, res) => {
     } catch (e) { fail(res, e, 'list specialties'); }
 });
 
-consultPublicRoutes.get('/doctors', async (req, res) => {
+// Filters, name search, "Online now" and sort in the query; `page` switches to a paged reply (doctors.directory.ts).
+// Only the paged list (each filter, search or page change) is limited, generously, since visitors can share an IP.
+// The plain array is one call per page load (homepage, mobile app) and stays unlimited as before.
+const doctorSearchLimit = rateLimiter(300, 60, 'consult_doctor_search');
+consultPublicRoutes.get('/doctors', (req, res, next) => (req.query.page === undefined ? next() : doctorSearchLimit(req, res, next)), async (req, res) => {
     try {
-        const specialtyId = typeof req.query.specialtyId === 'string' ? req.query.specialtyId : undefined;
-        const doctors = await prisma.doctorProfile.findMany({
-            where: { status: 'APPROVED', specialtyId },
-            select: publicDoctorSelect,
-            orderBy: { displayName: 'asc' },
-        });
-        // People pick a doctor by when they can be seen: one grouped query adds each doctor's next bookable time.
-        const { rules } = await getActivePolicy();
-        const earliest = new Date(Date.now() + rules.minLeadMinutes * 60_000);
-        const next = doctors.length
-            ? await prisma.slot.groupBy({
-                by: ['doctorId'],
-                where: { doctorId: { in: doctors.map((d) => d.id) }, status: 'AVAILABLE', startsAt: { gt: earliest } },
-                _min: { startsAt: true },
-            })
-            : [];
-        res.json(withNextSlot(doctors, next));
+        const query = directoryQuery.safeParse(req.query);
+        if (!query.success) return bad(res, query);
+        res.json(await listDirectory(query.data));
     } catch (e) { fail(res, e, 'list doctors'); }
 });
 
