@@ -29,6 +29,7 @@ import { doctorListQuery, listDoctorConsultations } from './doctors.consultation
 import { policyRoutes } from './consultations.policy.routes';
 import { reviewRoutes } from './consultations.review.routes';
 import { doctorJoin, endConsultation } from './consultations.room';
+import { chatReadSchema, chatSendSchema, doctorChat } from './consultations.chat';
 import { kickConsultPushes } from './consultations.push';
 import { getDoctorRecord, issuePrescription, noteSchema, prescriptionSchema, reissuePrescription, reissueSchema, saveNotes } from './consultations.prescription';
 import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
@@ -360,6 +361,24 @@ doctorRoutes.post('/me/consultations/:id/join', ...mineWrite, rateLimiter(20, 60
         res.json(await doctorJoin(await myDoctorId(req), req.userId!, id));
         kickConsultPushes(id);
     } catch (e) { fail(res, e, 'join'); }
+});
+
+// In-call chat: polled every few seconds while the call is open, read-only afterwards.
+doctorRoutes.get('/me/consultations/:id/chat', ...mine, rateLimiter(90, 60, 'doctor_chat_read'), async (req: AuthRequest, res: Response) => {
+    try {
+        const q = chatReadSchema.safeParse(req.query);
+        if (!q.success) return bad(res, q);
+        res.setHeader('Cache-Control', 'no-store');
+        res.json(await doctorChat.read(await myDoctorId(req), consultId(req), q.data.after));
+    } catch (e) { fail(res, e, 'read chat'); }
+});
+
+doctorRoutes.post('/me/consultations/:id/chat', ...mineWrite, rateLimiter(30, 60, 'doctor_chat_send'), async (req: AuthRequest, res: Response) => {
+    try {
+        const parse = chatSendSchema.safeParse(req.body ?? {});
+        if (!parse.success) return bad(res, parse);
+        res.json(await doctorChat.send(await myDoctorId(req), consultId(req), parse.data));
+    } catch (e) { fail(res, e, 'send chat'); }
 });
 
 doctorRoutes.post('/me/consultations/:id/end', ...mineWrite, async (req: AuthRequest, res: Response) => {

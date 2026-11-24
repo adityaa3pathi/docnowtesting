@@ -24,6 +24,7 @@ import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
 import { listDocuments, removeDocument, setRecordSharing, uploadDocument, type ShareMeta } from './consultations.records';
 import { RANGE_DAYS, VITAL_KINDS, addPeriod, addReading, editPeriod, listPeriods, listReadings, periodEditSchema, periodSchema, readingSchema, removePeriod, removeReading } from './consultations.vitals';
 import { DoctorError } from './doctors.status';
+import { chatReadSchema, chatSendSchema, guestChat, patientChat } from './consultations.chat';
 
 const bookingSchema = z.object({
     slotId: z.string().uuid('Invalid slot'),
@@ -373,6 +374,28 @@ consultPatientRoutes.post('/bookings/:id/join', ...patient, rateLimiter(20, 60, 
     } catch (e) { fail(res, e); }
 });
 
+// In-call chat: polled every few seconds while the call is open, read-only afterwards.
+consultPatientRoutes.get('/bookings/:id/chat', ...patient, rateLimiter(90, 60, 'consult_chat_read'), async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        const q = chatReadSchema.safeParse(req.query);
+        if (!q.success) return res.status(400).json({ error: q.error.issues[0].message });
+        res.setHeader('Cache-Control', 'no-store');
+        res.json(await patientChat.read(req.userId!, id.data, q.data.after));
+    } catch (e) { fail(res, e); }
+});
+
+consultPatientRoutes.post('/bookings/:id/chat', ...patient, rateLimiter(30, 60, 'consult_chat_send'), async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        const parse = chatSendSchema.safeParse(req.body ?? {});
+        if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
+        res.json(await patientChat.send(req.userId!, id.data, parse.data));
+    } catch (e) { fail(res, e); }
+});
+
 consultPatientRoutes.get('/bookings/:id/prescription', ...patient, async (req: AuthRequest, res: Response) => {
     try {
         const id = z.string().uuid().safeParse(req.params.id);
@@ -432,6 +455,24 @@ consultGuestRoutes.post('/guest/:token/join', rateLimiter(20, 60, 'consult_guest
         // The doctor hears "your patient is waiting" straight away.
         void prisma.consultation.findUnique({ where: { guestToken: String(req.params.token) }, select: { id: true } })
             .then((c) => c && kickConsultPushes(c.id)).catch(() => {});
+    } catch (e) { fail(res, e); }
+});
+
+// The family web room's chat: the guest token is the credential, and it stops at the end of the visit.
+consultGuestRoutes.get('/guest/:token/chat', rateLimiter(90, 60, 'consult_guest_chat_read'), async (req, res: Response) => {
+    try {
+        const q = chatReadSchema.safeParse(req.query);
+        if (!q.success) return res.status(400).json({ error: q.error.issues[0].message });
+        res.setHeader('Cache-Control', 'no-store');
+        res.json(await guestChat.read(String(req.params.token), q.data.after));
+    } catch (e) { fail(res, e); }
+});
+
+consultGuestRoutes.post('/guest/:token/chat', rateLimiter(30, 60, 'consult_guest_chat_send'), async (req, res: Response) => {
+    try {
+        const parse = chatSendSchema.safeParse(req.body ?? {});
+        if (!parse.success) return res.status(400).json({ error: parse.error.issues[0].message });
+        res.json(await guestChat.send(String(req.params.token), parse.data));
     } catch (e) { fail(res, e); }
 });
 

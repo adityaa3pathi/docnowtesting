@@ -1,10 +1,11 @@
 'use client';
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Download, Loader2 } from 'lucide-react';
 import { Button, Card } from '@/components/ui';
 import { Badge } from '@/components/consult/Badge';
 import { ConfirmDialog } from '@/components/consult/ConfirmDialog';
+import { ChatPanel } from '@/components/consult/ChatPanel';
 import { JoinPanel } from '@/components/consult/JoinPanel';
 import { PrescriptionView } from '@/components/consult/PrescriptionView';
 import { ErrorState, LoadingBlock } from '@/components/consult/States';
@@ -81,6 +82,8 @@ function IssuedPrescription({ record, prescription, onCorrect }: { record: Docto
     );
 }
 
+const LIVE_CHAT = ['WAITING', 'IN_PROGRESS'];
+
 export default function DoctorConsultationRoomPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const { data: record, error, loading, refetch, setData } = useApi(() => doctorApi.consultation(id), [id]);
@@ -89,6 +92,7 @@ export default function DoctorConsultationRoomPage({ params }: { params: Promise
     const [callKey, setCallKey] = useState(0);
     const [inCall, setInCall] = useState(false);
     const [correcting, setCorrecting] = useState(false);
+    const chat = useMemo(() => doctorApi.chat(id), [id]);
     const watching = !!record && shouldWatchForPatient(record.status, inCall);
 
     // Re-checks so the doctor sees the patient arrive; skips ticks while the tab is hidden.
@@ -140,8 +144,13 @@ export default function DoctorConsultationRoomPage({ params }: { params: Promise
                         join={() => doctorApi.join(record.id)}
                         onChange={() => void refetch()}
                         onCallChange={setInCall}
+                        chat={chat}
                         alert={<AllergyAlert variant="overlay" allergies={patient.allergies} allergiesConfirmedAt={patient.allergiesConfirmedAt} />}
                     />
+                    {/* Outside the call: messages sent while waiting, then the read-only transcript (part of the record). */}
+                    {!inCall && (
+                        <ChatPanel api={chat} live={LIVE_CHAT.includes(record.status)} hideWhenEmpty />
+                    )}
                     {record.status === 'IN_PROGRESS' && (
                         <Button variant="outline" className="w-full border-destructive text-destructive" onClick={() => setEnding(true)}>
                             End consultation
