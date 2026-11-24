@@ -33,6 +33,8 @@ import { kickConsultPushes } from './consultations.push';
 import { getDoctorRecord, issuePrescription, noteSchema, prescriptionSchema, reissuePrescription, reissueSchema, saveNotes } from './consultations.prescription';
 import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
 import { getSharedRecord, openSharedFile } from './consultations.records';
+import { accountPeople, getPatientRecord, openPatientFile } from './consultations.adminRecords';
+import { getDoctorPatient, listDoctorPatients, patientListQuery } from './doctors.patients';
 import { appointmentsQuery, getAppointment, listAppointments } from './consultations.appointments';
 import {
     addLeave, adminCreateDoctor, adminUpdateDoctor, registerDoctor, removeLeave, resubmitDoctor, reviewDoctor, setSlotBlocked,
@@ -254,6 +256,23 @@ doctorRoutes.get('/me/slots', ...mine, async (req: AuthRequest, res: Response) =
     } catch (e) { fail(res, e, 'list my slots'); }
 });
 
+// "Patients": people this doctor has seen or is booked to see, and their own visits with each.
+doctorRoutes.get('/me/patients', ...mine, async (req: AuthRequest, res: Response) => {
+    try {
+        const parse = patientListQuery.safeParse(req.query);
+        if (!parse.success) return bad(res, parse);
+        res.json(await listDoctorPatients(await myDoctorId(req), parse.data));
+    } catch (e) { fail(res, e, 'list my patients'); }
+});
+
+doctorRoutes.get('/me/patients/:patientId', ...mine, async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.patientId);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        res.json(await getDoctorPatient(await myDoctorId(req), id.data));
+    } catch (e) { fail(res, e, 'get my patient'); }
+});
+
 doctorRoutes.get('/me/consultations', ...mine, async (req: AuthRequest, res: Response) => {
     try {
         const parse = doctorListQuery.safeParse(req.query);
@@ -328,7 +347,7 @@ const SHARED_KINDS = { documents: 'document', attachments: 'attachment', reports
 // One file or report from the shared record: a short link, and a log row per open.
 doctorRoutes.get('/me/consultations/:id/record/:kind/:targetId', ...mine, rateLimiter(60, 60, 'doctor_record_open'), async (req: AuthRequest, res: Response) => {
     try {
-        const kind = SHARED_KINDS[req.params.kind as keyof typeof SHARED_KINDS];
+        const kind = Object.prototype.hasOwnProperty.call(SHARED_KINDS, String(req.params.kind)) ? SHARED_KINDS[req.params.kind as keyof typeof SHARED_KINDS] : undefined;
         const target = z.string().uuid().safeParse(req.params.targetId);
         if (!kind || !target.success) return res.status(404).json({ error: 'Not found' });
         res.json(await openSharedFile(await myDoctorId(req), consultId(req), kind, target.data, { ipAddress: req.ip ?? null }));
@@ -561,6 +580,37 @@ consultAdminRoutes.get('/appointments', ...admin, async (req: AuthRequest, res: 
         if (!parse.success) return bad(res, parse);
         res.json(await listAppointments(parse.data));
     } catch (e) { fail(res, e, 'admin appointments'); }
+});
+
+// ── Super admin: a person's whole health record (every view and file open is audit-logged) ──
+
+const actorOf = (req: AuthRequest) => ({ adminId: req.adminId!, adminName: req.adminName || 'Admin', ipAddress: getClientIP(req) });
+const ADMIN_FILE_KINDS = { documents: 'document', attachments: 'attachment', reports: 'report' } as const;
+
+consultAdminRoutes.get('/users/:id/people', ...admin, async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        res.json(await accountPeople(id.data));
+    } catch (e) { fail(res, e, 'admin account people'); }
+});
+
+consultAdminRoutes.get('/patients/:id/record', ...admin, rateLimiter(60, 60, 'admin_patient_record'), async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        if (!id.success) return res.status(404).json({ error: 'Not found' });
+        res.json(await getPatientRecord(id.data, actorOf(req)));
+    } catch (e) { fail(res, e, 'admin patient record'); }
+});
+
+consultAdminRoutes.get('/patients/:id/record/:kind/:targetId', ...admin, rateLimiter(60, 60, 'admin_patient_file'), async (req: AuthRequest, res: Response) => {
+    try {
+        const id = z.string().uuid().safeParse(req.params.id);
+        const target = z.string().uuid().safeParse(req.params.targetId);
+        const kind = Object.prototype.hasOwnProperty.call(ADMIN_FILE_KINDS, String(req.params.kind)) ? ADMIN_FILE_KINDS[req.params.kind as keyof typeof ADMIN_FILE_KINDS] : undefined;
+        if (!id.success || !target.success || !kind) return res.status(404).json({ error: 'Not found' });
+        res.json(await openPatientFile(id.data, kind, target.data, actorOf(req)));
+    } catch (e) { fail(res, e, 'admin patient file'); }
 });
 
 consultAdminRoutes.get('/appointments/:id', ...admin, async (req: AuthRequest, res: Response) => {

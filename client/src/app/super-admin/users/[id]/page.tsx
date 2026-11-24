@@ -7,6 +7,7 @@ import { useUserDetail } from '@/hooks/useUserDetail';
 import { UserInfoCards } from '@/components/admin/UserInfoCards';
 import { OrderHistory } from '@/components/admin/OrderHistory';
 import { WalletLedger } from '@/components/admin/WalletLedger';
+import { PatientRecordsCard } from '@/components/admin/PatientRecordsCard';
 
 export default function UserDetailPage() {
     const params = useParams();
@@ -100,6 +101,9 @@ export default function UserDetailPage() {
                 walletTransactionCount={walletLedger.length}
                 referralInfo={referralInfo}
             />
+
+            {/* People on the account and their health records (consultations, reports, files) */}
+            <PatientRecordsCard userId={user.id} />
 
             {/* Orders */}
             <OrderHistory

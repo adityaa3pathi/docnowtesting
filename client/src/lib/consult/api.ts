@@ -11,6 +11,7 @@ import type {
     DoctorConsultationRecord, DoctorMe, DoctorProfileInput, DoctorPublicProfile, DoctorSummary, JoinResponse, LeaveEntry,
     NoteInput, PolicyResponse, Prescription, PrescriptionInput, ReviewQueue, Slot, Specialty, VerifyResponse,
     PatientDocument, RecordSharing, SharedItemKind, SharedItemLink, SharedRecord,
+    AdminAccountPerson, AdminPatientRecord, DoctorPatientDetail, DoctorPatientSummary,
 } from './types';
 
 /** Reads the server's clock from every response, so hold countdowns do not depend on the device clock. */
@@ -132,6 +133,11 @@ export const doctor = {
             params: { scope, cursor, q: filters.q?.trim() || undefined, from: filters.from || undefined, to: filters.to || undefined },
         }).then(data),
     consultation: (id: string) => api.get<DoctorConsultationRecord>(`/doctor/me/consultations/${id}`).then(data),
+    /** People this doctor saw or is booked to see, newest visit first; `q` is part of the name. */
+    patients: (q?: string, page = 1) =>
+        api.get<{ items: DoctorPatientSummary[]; nextPage: number | null }>('/doctor/me/patients', { params: { q: q?.trim() || undefined, page } }).then(data),
+    /** This doctor's own visits with one patient. */
+    patient: (id: string) => api.get<DoctorPatientDetail>(`/doctor/me/patients/${id}`).then(data),
     /** The patient's whole record, when they shared it for this booking. Every call is logged. */
     sharedRecord: (id: string) => api.get<SharedRecord>(`/doctor/me/consultations/${id}/record`).then(data),
     /** A short link to one file or report of the shared record; each open is logged. */
@@ -204,4 +210,11 @@ export const admin = {
             params: { date: q.date, status: q.status || undefined, doctorId: q.doctorId || undefined },
         }).then(data),
     appointment: (id: string) => api.get<AdminAppointmentDetail>(`/admin/consult/appointments/${id}`).then(data),
+    /** The people (self and family) on one account. */
+    accountPeople: (userId: string) => api.get<AdminAccountPerson[]>(`/admin/consult/users/${userId}/people`).then(data),
+    /** One person's whole health record. Every call writes an audit row. */
+    patientRecord: (patientId: string) => api.get<AdminPatientRecord>(`/admin/consult/patients/${patientId}/record`).then(data),
+    /** A short link to one file or report of that record; each open writes an audit row. */
+    openPatientFile: (patientId: string, kind: SharedItemKind, targetId: string) =>
+        api.get<SharedItemLink>(`/admin/consult/patients/${patientId}/record/${kind}/${targetId}`).then(data),
 };
