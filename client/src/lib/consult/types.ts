@@ -820,3 +820,65 @@ export interface DoctorInstantState {
     toJoin: { consultationId: string; patientName: string; reason: string } | null;
     serverTime: string;
 }
+
+// ── Super admin "Online now" (P10c) ──
+
+export type InstantOnlineState = 'FREE' | 'RINGING' | 'WAITING_PAYMENT' | 'IN_CALL' | 'SCHEDULED_SOON';
+
+export interface AdminInstantLive {
+    now: string;
+    online: number;
+    free: number;
+    doctors: { doctorId: string; doctorName: string; state: InstantOnlineState; onlineSince: string; onlineSeconds: number; missedRings: number }[];
+    /** No patient name or reason here: open one request to see them (logged). */
+    requests: {
+        id: string;
+        status: 'SEARCHING' | 'RINGING' | 'ACCEPTED';
+        createdAt: string;
+        waitingSeconds: number;
+        searchEndsAt: string;
+        ringExpiresAt: string | null;
+        payBy: string | null;
+        doctorsTried: number;
+        doctor: { id: string; name: string } | null;
+    }[];
+}
+
+export interface AdminInstantRequestDetail {
+    id: string;
+    status: 'SEARCHING' | 'RINGING' | 'ACCEPTED' | 'BOOKED' | 'CANCELLED' | 'NO_MATCH' | 'UNPAID';
+    reason: string;
+    shareRecord: boolean;
+    createdAt: string;
+    searchEndsAt: string;
+    endedAt: string | null;
+    acceptedAt: string | null;
+    payBy: string | null;
+    doctorsTried: number;
+    patient: { name: string; gender: string; age: number | null };
+    doctor: { id: string; name: string } | null;
+    passedBy: { id: string; name: string }[];
+    consultationId: string | null;
+}
+
+export type InstantOutcomeWindow = '24h' | '7d';
+
+export interface AdminInstantOutcomes {
+    window: InstantOutcomeWindow;
+    since: string;
+    counts: { booked: number; noDoctorFound: number; unpaid: number; cancelled: number; latePaymentsRefunded: number; switchedOfflineMissedRings: number };
+    lateRefunds: { id: string; consultationId: string; amountPaise: number; status: string; createdAt: string }[];
+    switchedOffline: { id: string; at: string; doctorId: string; doctorName: string }[];
+    rules: { missedRingsLimit: number; searchMinutes: number };
+}
+
+export interface AdminPresenceHours {
+    from: string;
+    to: string;
+    doctors: {
+        doctorId: string;
+        doctorName: string;
+        totalSeconds: number;
+        days: { day: string; seconds: number; sessions: number }[];
+    }[];
+}

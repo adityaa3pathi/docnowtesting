@@ -235,12 +235,16 @@ export async function doctorInstantState(doctorId: string, deps: InstantDeps = {
 const ONGOING: Prisma.ConsultationWhereInput['status'] = { in: ['WAITING', 'IN_PROGRESS'] };
 const UPCOMING: Prisma.ConsultationWhereInput['status'] = { in: ['CONFIRMED', 'RESCHEDULED', 'PENDING_PAYMENT'] };
 
+/** Why an online doctor can't be rung now: in a call, or a booked consultation is due. */
+export type BusyReason = 'IN_CALL' | 'SCHEDULED_SOON';
+
 /**
- * Doctors who should not be rung now: in a call, or with a booked consultation due soon (within
- * their slot length plus a buffer) or just started without them.
+ * Doctors who should not be rung now, with the reason: in a call, or with a booked consultation due
+ * soon (within their slot length plus a buffer) or just started without them.
  */
-export async function busyDoctorIds(db: Db, doctors: { id: string; slotMinutes: number }[], now: Date): Promise<Set<string>> {
-    if (doctors.length === 0) return new Set();
+export async function doctorBusyReasons(db: Db, doctors: { id: string; slotMinutes: number }[], now: Date): Promise<Map<string, BusyReason>> {
+    const busy = new Map<string, BusyReason>();
+    if (doctors.length === 0) return busy;
     const t = now.getTime();
     const rows = await db.consultation.findMany({
         where: {
@@ -251,20 +255,26 @@ export async function busyDoctorIds(db: Db, doctors: { id: string; slotMinutes: 
         select: { doctorId: true, status: true, startsAt: true, holdExpiresAt: true },
     });
     const slotOf = new Map(doctors.map((d) => [d.id, d.slotMinutes]));
-    const busy = new Set<string>();
     for (const c of rows) {
-        if (c.status === 'WAITING' || c.status === 'IN_PROGRESS') { busy.add(c.doctorId); continue; }
+        if (c.status === 'WAITING' || c.status === 'IN_PROGRESS') { busy.set(c.doctorId, 'IN_CALL'); continue; }
         if (c.status === 'PENDING_PAYMENT' && c.holdExpiresAt <= now) continue;
         const lead = (slotOf.get(c.doctorId) ?? 15) * 60_000 + INSTANT.scheduledBufferMs;
         const start = c.startsAt.getTime();
         // Due soon, or started in the last 15 minutes and still waiting for the doctor.
-        if (start - lead <= t && t < start + 15 * 60_000) busy.add(c.doctorId);
+        if (start - lead <= t && t < start + 15 * 60_000 && !busy.has(c.doctorId)) busy.set(c.doctorId, 'SCHEDULED_SOON');
     }
     return busy;
 }
 
-/** Online instant doctors, longest online first, and which of them could take a ring now. */
-async function onlineDoctors(db: Db, now: Date) {
+export async function busyDoctorIds(db: Db, doctors: { id: string; slotMinutes: number }[], now: Date): Promise<Set<string>> {
+    return new Set((await doctorBusyReasons(db, doctors, now)).keys());
+}
+
+/**
+ * Online instant doctors, longest online first, and which of them could take a ring now. The one
+ * place these rules live: the matcher, the doctor list's "Online now" and the admin view all use it.
+ */
+export async function onlineInstantDoctors(db: Db, now: Date) {
     const presences = await db.doctorPresence.findMany({
         where: {
             endedAt: null,
@@ -272,16 +282,17 @@ async function onlineDoctors(db: Db, now: Date) {
             doctor: { status: 'APPROVED', specialty: { slug: instantSpecialtySlug() } },
         },
         orderBy: { startedAt: 'asc' },
-        select: { doctor: { select: { id: true, slotMinutes: true, consultationFee: true, userId: true } } },
+        select: { startedAt: true, missedRings: true, doctor: { select: { id: true, slotMinutes: true, consultationFee: true, userId: true, displayName: true } } },
     });
     const doctors = presences.map((p) => p.doctor);
-    const [busy, held] = await Promise.all([
-        busyDoctorIds(db, doctors, now),
-        db.instantRequest.findMany({ where: { status: { in: ['RINGING', 'ACCEPTED'] }, doctorId: { in: doctors.map((d) => d.id) } }, select: { doctorId: true } }),
+    const [busy, heldRows] = await Promise.all([
+        doctorBusyReasons(db, doctors, now),
+        db.instantRequest.findMany({ where: { status: { in: ['RINGING', 'ACCEPTED'] }, doctorId: { in: doctors.map((d) => d.id) } }, select: { doctorId: true, status: true } }),
     ]);
-    const taken = new Set(held.map((h) => h.doctorId!));
-    return { doctors, free: doctors.filter((d) => !busy.has(d.id) && !taken.has(d.id)) };
+    const held = new Map(heldRows.map((h) => [h.doctorId!, h.status as 'RINGING' | 'ACCEPTED']));
+    return { presences, doctors, busy, held, free: doctors.filter((d) => !busy.has(d.id) && !held.has(d.id)) };
 }
+const onlineDoctors = onlineInstantDoctors;
 
 /** Doctors who could take an instant consult right now (online, not in a call, not ringing or held): the list's "Online now". */
 export async function freeOnlineDoctorIds(db: Db, now: Date): Promise<Set<string>> {

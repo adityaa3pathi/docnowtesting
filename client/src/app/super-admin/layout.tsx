@@ -35,6 +35,7 @@ import {
     Scale,
     ClipboardCheck,
     CalendarClock,
+    Radio,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -65,6 +66,7 @@ const navItems = [
     { id: 'consult-rules', label: 'Consult Rules', icon: Scale, href: '/super-admin/consult-rules' },
     { id: 'consult-review', label: 'Consult Review', icon: ClipboardCheck, href: '/super-admin/consult-review' },
     { id: 'consult-changes', label: 'Doctor Changes', icon: ClipboardCheck, href: '/super-admin/consult-changes' },
+    { id: 'consult-online', label: 'Online Now', icon: Radio, href: '/super-admin/consult-online' },
     { id: 'consult-appointments', label: 'Consult Appointments', icon: CalendarClock, href: '/super-admin/consult-appointments' },
     { id: 'reviews', label: 'Reviews', icon: Star, href: '/super-admin/reviews' },
     { id: 'audit', label: 'Audit Logs', icon: FileText, href: '/super-admin/audit-logs' },

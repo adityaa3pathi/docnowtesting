@@ -28,6 +28,7 @@ import { directoryQuery, listDirectory, publicDoctorSelect } from './doctors.dir
 import { doctorListQuery, listDoctorConsultations } from './doctors.consultations';
 import { policyRoutes } from './consultations.policy.routes';
 import { reviewRoutes } from './consultations.review.routes';
+import { instantAdminRoutes } from './consultations.instantAdmin.routes';
 import { doctorJoin, endConsultation } from './consultations.room';
 import { chatReadSchema, chatSendSchema, doctorChat } from './consultations.chat';
 import { kickConsultPushes } from './consultations.push';
@@ -509,6 +510,7 @@ async function doctorNoShowCounts(doctorIds: string[]) {
 export const consultAdminRoutes = Router();
 consultAdminRoutes.use('/policy', policyRoutes);
 consultAdminRoutes.use(reviewRoutes);
+consultAdminRoutes.use('/instant', instantAdminRoutes);
 const admin = [authMiddleware, requireSuperAdmin] as const;
 
 consultAdminRoutes.get('/doctors', ...admin, async (req: AuthRequest, res: Response) => {
