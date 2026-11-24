@@ -11,6 +11,7 @@ import type { ConsultationStatus, ConsultationType, JoinResponse } from '@/lib/c
 import { ConsultCallRoom } from './ConsultCallRoom';
 import { TelemedicineConsent } from './TelemedicineConsent';
 import { DeviceCheckScreen, type ChosenDevices } from './DeviceCheckScreen';
+import type { ChatApi } from '@/lib/consult/chat';
 
 interface Props {
     status: ConsultationStatus;
@@ -27,10 +28,12 @@ interface Props {
     consentDoctorName?: string;
     /** Doctor side: the allergy banner, on top of the video in the call and above Join before it. */
     alert?: React.ReactNode;
+    /** The call's text chat. */
+    chat?: ChatApi;
 }
 
 /** Shows when the call opens, the Join button inside the window, then the call itself. */
-export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, onChange, onCallChange, consentDoctorName, alert }: Props) {
+export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, onChange, onCallChange, consentDoctorName, alert, chat }: Props) {
     const now = useServerNow();
     const [call, setCall] = useState<JoinResponse | null>(null);
     const [showDeviceCheck, setShowDeviceCheck] = useState(false);
@@ -50,6 +53,7 @@ export function JoinPanel({ status, type, startsAt, endsAt, otherParty, join, on
                 audioDeviceId={devices.audioDeviceId}
                 videoDeviceId={devices.videoDeviceId}
                 alert={alert}
+                chat={chat}
                 onLeave={() => {
                     setCall(null);
                     setShowDeviceCheck(false);

@@ -4,6 +4,7 @@ import api, { downloadAuthenticatedFile } from '@/lib/api';
 import { CONSENT_VERSION, RECORD_SHARE_VERSION } from './consent';
 import { recordServerDate } from './time';
 import type { GuestInfo } from './guest';
+import type { ChatApi, ChatMessage, ChatThread } from './chat';
 import type {
     ConsultPromoQuote,
     AdminAppointment, AdminAppointmentDetail, AdminDoctor, DoctorChangeQueue, DoctorChangeRequest, DoctorChangeStatus, AttendanceReport, AvailabilityWindow, BookingView, CancelPreview, DoctorGender, CancelResult,
@@ -39,7 +40,16 @@ export const guest = {
     /** `consent` is the NMC teleconsultation checkbox; the server refuses the join without it. */
     join: (token: string, consent: true) =>
         api.post<JoinResponse & { identity: string }>(`/consult/guest/${encodeURIComponent(token)}/join`, { consent, consentVersion: CONSENT_VERSION }).then(data),
+    chat: (token: string): ChatApi => chatApi(`/consult/guest/${encodeURIComponent(token)}/chat`),
 };
+
+/** In-call chat routes have the same shape on every side; only the base path differs. */
+function chatApi(path: string): ChatApi {
+    return {
+        read: (after) => api.get<ChatThread>(path, { params: { after } }).then(data),
+        send: (body, clientId) => api.post<ChatMessage>(path, { body, clientId }).then(data),
+    };
+}
 
 // ── Call failures, reported from the call screen ────────
 
@@ -87,6 +97,7 @@ export const consult = {
     /** `consent` false: no tick shown, because sign-up consent covers this join (the server re-checks). */
     join: (id: string, consent: boolean) =>
         api.post<JoinResponse>(`/consult/bookings/${id}/join`, consent ? { consent, consentVersion: CONSENT_VERSION, channel: 'web' } : {}).then(data),
+    chat: (id: string): ChatApi => chatApi(`/consult/bookings/${id}/chat`),
     prescription: (id: string) => api.get<Prescription>(`/consult/bookings/${id}/prescription`).then(data),
     downloadPrescription: (id: string) =>
         downloadAuthenticatedFile(`/consult/bookings/${id}/prescription.pdf`, 'docnow-prescription.pdf'),
@@ -144,6 +155,7 @@ export const doctor = {
     openSharedItem: (id: string, kind: SharedItemKind, targetId: string) =>
         api.get<SharedItemLink>(`/doctor/me/consultations/${id}/record/${kind}/${targetId}`).then(data),
     join: (id: string) => api.post<JoinResponse>(`/doctor/me/consultations/${id}/join`).then(data),
+    chat: (id: string): ChatApi => chatApi(`/doctor/me/consultations/${id}/chat`),
     end: (id: string) => api.post<{ status: ConsultationStatus }>(`/doctor/me/consultations/${id}/end`).then(data),
     saveNotes: (id: string, body: NoteInput) => api.put<ConsultNote>(`/doctor/me/consultations/${id}/notes`, body).then(data),
     issuePrescription: (id: string, body: PrescriptionInput) =>

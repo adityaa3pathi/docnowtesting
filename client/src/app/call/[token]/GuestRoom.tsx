@@ -1,6 +1,6 @@
 'use client';
 import Image from 'next/image';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, CheckCircle2, Hand, Mic, PhoneCall, Stethoscope } from 'lucide-react';
 import { ConsultCallRoom } from '@/components/consult/ConsultCallRoom';
 import { DeviceCheckScreen, type ChosenDevices } from '@/components/consult/DeviceCheckScreen';
@@ -74,6 +74,7 @@ export function GuestRoom({ token }: { token: string }) {
     const [consented, setConsented] = useState(false);
     const [checking, setChecking] = useState(false);
     const [devices, setDevices] = useState<ChosenDevices>({});
+    const chat = useMemo(() => guest.chat(token), [token]);
     const audio = useRef<AudioContext | null>(null);
     const chimed = useRef(false);
 
@@ -170,6 +171,7 @@ export function GuestRoom({ token }: { token: string }) {
                     audioDeviceId={devices.audioDeviceId}
                     videoDeviceId={devices.videoDeviceId}
                     onDoctorJoined={doctorArrived}
+                    chat={chat}
                     onLeave={() => {
                         setCall(null);
                         setEnded(true);

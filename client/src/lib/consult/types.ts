@@ -65,6 +65,8 @@ export interface CreateBookingResponse {
 export interface BookingView extends CreateBookingResponse {
     /** Consent ticked at sign-up covers this join (own consultation, current wording). */
     consentOnFile?: boolean;
+    /** Set when the visit was booked for this user by family; `pending` until they accept (no clinical details, no chat). */
+    familyAccess?: 'linked' | 'pending';
     startsAt: string;
     endsAt: string;
     doctorId: string;

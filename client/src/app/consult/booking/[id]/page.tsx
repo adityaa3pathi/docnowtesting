@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { CalendarClock, ChevronLeft, Clock } from 'lucide-react';
@@ -17,6 +17,7 @@ import { statusInfo } from '@/lib/consult/status';
 import { BookingSummary } from '@/components/consult/BookingSummary';
 import { CancelDialog } from '@/components/consult/CancelDialog';
 import { ChangeTimeDialog } from '@/components/consult/ChangeTimeDialog';
+import { ChatPanel } from '@/components/consult/ChatPanel';
 import { JoinPanel } from '@/components/consult/JoinPanel';
 import { PatientPrescription } from '@/components/consult/PatientPrescription';
 import { RecordSharingCard } from '@/components/consult/RecordSharingCard';
@@ -52,6 +53,9 @@ function RefundLine({ booking }: { booking: BookingView }) {
     );
 }
 
+// Statuses where a chat can exist: from the first join on (the transcript stays after the visit).
+const CHAT_STATUSES = ['WAITING', 'IN_PROGRESS', 'COMPLETED', 'NO_SHOW_PATIENT', 'NO_SHOW_DOCTOR', 'REFUNDED'];
+
 function BookingDetail() {
     const { id } = useParams<{ id: string }>();
     const params = useSearchParams();
@@ -64,6 +68,8 @@ function BookingDetail() {
     const [cancelOpen, setCancelOpen] = useState(false);
     const [changeOpen, setChangeOpen] = useState(false);
     const [movedTo, setMovedTo] = useState<string | null>(null);
+    const [inCall, setInCall] = useState(false);
+    const chat = useMemo(() => consult.chat(id), [id]);
     const autoOpened = useRef(false);
     const autoChangeOpened = useRef(false);
     const { booking, decision, pay } = flow;
@@ -242,7 +248,12 @@ function BookingDetail() {
                                 join={() => consult.join(booking.consultationId, !booking.consentOnFile)}
                                 consentDoctorName={booking.consentOnFile ? undefined : booking.doctorName}
                                 onChange={() => void flow.refetch()}
+                                onCallChange={setInCall}
+                                chat={booking.familyAccess === 'pending' ? undefined : chat}
                             />
+                            {!inCall && booking.familyAccess !== 'pending' && CHAT_STATUSES.includes(booking.status) && (
+                                <ChatPanel api={chat} live={booking.status === 'WAITING' || booking.status === 'IN_PROGRESS'} hideWhenEmpty />
+                            )}
                             {booking.hasPrescription ? (
                                 <PatientPrescription bookingId={booking.consultationId} />
                             ) : (booking.status === 'IN_PROGRESS' || booking.status === 'COMPLETED') && (

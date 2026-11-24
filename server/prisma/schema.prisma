@@ -1124,6 +1124,7 @@ model Consultation {
   attachments     ConsultationAttachment[]
   consents        ConsultationConsent[]
   moves           ConsultationMove[]
+  messages        ConsultationMessage[]
   recordShareConsents RecordShareConsent[]
   promoCode       PromoCode?           @relation(fields: [promoCodeId], references: [id])
   promoRedemption PromoRedemption?
@@ -1164,6 +1165,32 @@ model ConsultationMove {
 
   @@index([consultationId, createdAt])
   @@index([kind, fromStartsAt])
+}
+
+enum ConsultationChatRole {
+  DOCTOR
+  PATIENT
+  CARETAKER
+}
+
+// In-call text chat (P9). Names are not stored: they are read from the consultation, so account
+// deletion de-identifies the chat with the rest of the record. Ordered by seq, a database sequence.
+model ConsultationMessage {
+  id             String                 @id @default(uuid())
+  seq            Int                    @unique @default(autoincrement())
+  consultationId String
+  senderRole     ConsultationChatRole
+  // The call identity that sent it: doctor:<doctorId>, patient:<patientId> or caretaker:<userId>.
+  senderIdentity String
+  body           String                 @db.VarChar(1000)
+  // The sender's own id for this message, so a resend after a dropped reply is stored once.
+  clientId       String
+  createdAt      DateTime               @default(now())
+
+  consultation Consultation @relation(fields: [consultationId], references: [id], onDelete: Restrict)
+
+  @@unique([consultationId, senderIdentity, clientId])
+  @@index([consultationId, seq])
 }
 
 model ConsultationPayment {
