@@ -14,6 +14,12 @@ export class FakeVideo implements ConsultVideo {
         this.roomsEnded.push(roomId);
     }
 
+    /** Rooms someone is still connected to. */
+    occupied = new Set<string>();
+    async roomOccupied(roomId: string) {
+        return this.occupied.has(roomId);
+    }
+
     url() {
         return 'wss://fake.livekit.test';
     }

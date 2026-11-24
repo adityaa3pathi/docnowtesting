@@ -20,6 +20,8 @@ export interface ConsultVideo {
     joinToken(roomId: string, identity: string, displayName: string, role: VideoRole): Promise<string>;
     /** Removes everyone still in the room, so the other side's screen knows the call is over. */
     endRoom(roomId: string): Promise<void>;
+    /** True while anyone is connected to the room; false once it is empty or gone. */
+    roomOccupied?(roomId: string): Promise<boolean>;
     /** Broadcasts a reliable event to all participants currently in the room. */
     notifyRoom?(roomName: string, event: ConsultRoomEvent): Promise<void>;
 }
@@ -76,6 +78,15 @@ export function realConsultVideo(): ConsultVideo {
             } catch (e: any) {
                 // A room that is already gone is the goal.
                 if (e?.status !== 404 && !/not found/i.test(String(e?.message))) throw e;
+            }
+        },
+        async roomOccupied(roomId) {
+            try {
+                return (await rooms().listParticipants(roomId)).length > 0;
+            } catch (e: any) {
+                // LiveKit drops a room once it has been empty for a while.
+                if (e?.status === 404 || /not found/i.test(String(e?.message))) return false;
+                throw e;
             }
         },
         async notifyRoom(roomName, event) {
