@@ -107,8 +107,11 @@ export function checkPeriodDates(startDate: string, endDate: string | null | und
 
 // ── Next-period estimate (pure) ─────────────────────────
 
-/** Gaps outside this range are treated as a missed or doubled log, not a cycle. */
-export const CYCLE_DAYS = { min: 15, max: 60 } as const;
+/**
+ * Gaps outside this range are treated as a missed or doubled log, not a cycle. The upper bound sits
+ * below two short cycles (2 × 24 = 48 days), so one period left unlogged never doubles the average.
+ */
+export const CYCLE_DAYS = { min: 15, max: 45 } as const;
 export const ESTIMATE_CYCLES = 6;
 export const MIN_CYCLES_FOR_ESTIMATE = 2;
 
@@ -221,11 +224,26 @@ async function periodsOf(db: Pick<PrismaClient, 'periodLog'>, patientId: string,
  * Adds or edits a log under a lock on the person, so two saves at once cannot leave overlapping
  * logs. Returns the saved log.
  */
-async function savePeriod(db: PrismaClient, userId: string, patientId: string, next: { startDate: string; endDate: string | null; flow: string | null; symptoms: string[] }, now: Date, editingId?: string) {
-    checkPeriodDates(next.startDate, next.endDate, now);
+type PeriodFields = { startDate: string; endDate: string | null; flow: string | null; symptoms: string[] };
+
+/**
+ * `next` is the new log, or for an edit a function from the row as it stands under the lock (so a
+ * partial edit never writes back another edit's stale fields).
+ */
+async function savePeriod(db: PrismaClient, userId: string, patientId: string, nextOf: PeriodFields | ((cur: PeriodView) => PeriodFields), now: Date, editingId?: string) {
+    if (typeof nextOf !== 'function') checkPeriodDates(nextOf.startDate, nextOf.endDate, now);
     const today = istDay(now);
     return db.$transaction(async (tx) => {
         await tx.$queryRaw`SELECT id FROM "Patient" WHERE id = ${patientId} FOR UPDATE`;
+        let next: PeriodFields;
+        if (typeof nextOf === 'function') {
+            const fresh = await tx.periodLog.findFirst({ where: { id: editingId, userId }, select: periodSelect });
+            if (!fresh) throw new DoctorError(404, 'Not found');
+            next = nextOf(periodView(fresh));
+            checkPeriodDates(next.startDate, next.endDate, now);
+        } else {
+            next = nextOf;
+        }
         const others = (await tx.periodLog.findMany({ where: { patientId, ...(editingId ? { id: { not: editingId } } : {}) }, select: periodSelect })).map(periodView);
         const clash = others.find((o) => overlaps(o, next, today));
         if (clash) throw new DoctorError(409, `This overlaps the period logged from ${clash.startDate}. Edit that one instead.`);
@@ -248,15 +266,15 @@ export async function addPeriod(userId: string, patientId: string, input: Period
 export async function editPeriod(userId: string, id: string, input: PeriodEdit, deps: Deps = {}) {
     const db = deps.db ?? prisma;
     const now = (deps.now ?? (() => new Date()))();
-    const row = await db.periodLog.findFirst({ where: { id, userId }, select: { ...periodSelect, patientId: true } });
+    // Only the person is read here (for the lock); the fields are merged onto the row read under it.
+    const row = await db.periodLog.findFirst({ where: { id, userId }, select: { patientId: true } });
     if (!row) throw new DoctorError(404, 'Not found');
-    const cur = periodView(row);
-    return savePeriod(db, userId, row.patientId, {
+    return savePeriod(db, userId, row.patientId, (cur) => ({
         startDate: input.startDate ?? cur.startDate,
         endDate: input.endDate !== undefined ? input.endDate : cur.endDate,
         flow: input.flow !== undefined ? input.flow : cur.flow,
         symptoms: input.symptoms ?? cur.symptoms,
-    }, now, id);
+    }), now, id);
 }
 
 export async function removePeriod(userId: string, id: string, deps: Deps = {}) {
@@ -279,12 +297,12 @@ export const RECORD_PERIODS = 12;
 export async function vitalsForRecord(db: Pick<PrismaClient, 'vitalReading' | 'periodLog'>, patientId: string, now: Date, opts: { days?: number; readings?: number; periods?: number } = {}) {
     const since = new Date(now.getTime() - (opts.days ?? RECORD_VITALS_DAYS) * DAY_MS);
     const take = opts.readings ?? RECORD_READINGS;
-    const readings = (kind: VitalKind) => db.vitalReading.findMany({
-        where: { patientId, kind, measuredAt: { gte: since } },
-        orderBy: [{ measuredAt: 'desc' }, { createdAt: 'desc' }],
-        take,
-        select: readingSelect,
-    });
-    const [bp, sugar, periods] = await Promise.all([readings('BP'), readings('SUGAR'), periodsOf(db, patientId, now, opts.periods ?? RECORD_PERIODS)]);
-    return { since, bp, sugar, periods: periods.logs, periodEstimate: periods.estimate };
+    const where = (kind: VitalKind) => ({ patientId, kind, measuredAt: { gte: since } });
+    const readings = (kind: VitalKind) => db.vitalReading.findMany({ where: where(kind), orderBy: [{ measuredAt: 'desc' }, { createdAt: 'desc' }], take, select: readingSelect });
+    const [bp, sugar, bpTotal, sugarTotal, periods, periodTotal] = await Promise.all([
+        readings('BP'), readings('SUGAR'), db.vitalReading.count({ where: where('BP') }), db.vitalReading.count({ where: where('SUGAR') }),
+        periodsOf(db, patientId, now, opts.periods ?? RECORD_PERIODS), db.periodLog.count({ where: { patientId } }),
+    ]);
+    // The lists stop at the latest `take`; the screens say "latest N of M" when there are more.
+    return { since: istDay(since), bp, sugar, periods: periods.logs, periodEstimate: periods.estimate, totals: { bp: bpTotal, sugar: sugarTotal, periods: periodTotal } };
 }

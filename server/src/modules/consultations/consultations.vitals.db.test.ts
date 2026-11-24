@@ -53,11 +53,11 @@ describeDb('vitals tracker (real Postgres)', () => {
     const dayAgo = (days: number) => vitals.istDay(new Date(Date.now() - days * DAY));
 
     let n = 0;
-    async function paidBooking(opts: { shareRecord: boolean; user: { id: string }; patient: { id: string } }) {
+    async function paidBooking(opts: { shareRecord: boolean; user: { id: string }; patient: { id: string }; version?: string }) {
         const doctor = await makeDoctor();
         const slot = await makeSlot(doctor.profile.id, 30 * 60);
         const res = await booking.createBooking(
-            { userId: opts.user.id, patientId: opts.patient.id, slotId: slot.id, idempotencyKey: `key-vit-${++n}-12345`, shareRecord: opts.shareRecord, shareMeta: { channel: 'web' } },
+            { userId: opts.user.id, patientId: opts.patient.id, slotId: slot.id, idempotencyKey: `key-vit-${++n}-12345`, shareRecord: opts.shareRecord, shareMeta: { channel: 'web', version: opts.version ?? 'record-share-v2' } },
             { razorpay },
         );
         await payments.confirmPayment({ paymentId: `pay_vit${String(++n).padStart(9, '0')}`, orderId: res.razorpayOrderId!, amountPaise: res.amountPaise, currency: 'INR' });
@@ -106,6 +106,11 @@ describeDb('vitals tracker (real Postgres)', () => {
             await expect(testDb.vitalReading.create({ data: { ...base, kind: 'BP', systolic: 80, diastolic: 120 } })).rejects.toThrow();
             await expect(testDb.vitalReading.create({ data: { ...base, kind: 'SUGAR', glucoseMgDl: 100, sugarTiming: 'RANDOM', systolic: 120 } })).rejects.toThrow();
             await expect(testDb.vitalReading.create({ data: { ...base, kind: 'WEIGHT' } })).rejects.toThrow();
+            // Missing values: a CHECK that is NULL would pass, so each value is tested for presence.
+            await expect(testDb.vitalReading.create({ data: { ...base, kind: 'BP' } })).rejects.toThrow();
+            await expect(testDb.vitalReading.create({ data: { ...base, kind: 'BP', systolic: 120 } })).rejects.toThrow();
+            await expect(testDb.vitalReading.create({ data: { ...base, kind: 'SUGAR', glucoseMgDl: 100 } })).rejects.toThrow();
+            await expect(testDb.vitalReading.create({ data: { ...base, kind: 'SUGAR' } })).rejects.toThrow();
             await expect(testDb.periodLog.create({ data: { userId: user.id, patientId: self.id, startDate: new Date('2026-11-10'), endDate: new Date('2026-11-09') } })).rejects.toThrow();
         });
 
@@ -187,6 +192,21 @@ describeDb('vitals tracker (real Postgres)', () => {
             expect(await testDb.periodLog.count({ where: { patientId: self.id } })).toBe(1);
         });
 
+        it('two partial edits at once both stick; an edit of a deleted log is a 404, not a 500', async () => {
+            const user = await makeUser();
+            const self = await makePatient(user.id);
+            const log = await vitals.addPeriod(user.id, self.id, { startDate: dayAgo(3) });
+            await Promise.all([
+                vitals.editPeriod(user.id, log.id, { symptoms: ['CRAMPS'] }),
+                vitals.editPeriod(user.id, log.id, { endDate: dayAgo(1) }),
+                vitals.editPeriod(user.id, log.id, { flow: 'LIGHT' }),
+            ]);
+            const row = await testDb.periodLog.findUniqueOrThrow({ where: { id: log.id } });
+            expect({ symptoms: row.symptoms, flow: row.flow, ended: !!row.endDate }).toEqual({ symptoms: ['CRAMPS'], flow: 'LIGHT', ended: true });
+            const results = await Promise.allSettled([vitals.removePeriod(user.id, log.id), vitals.editPeriod(user.id, log.id, { flow: 'HEAVY' })]);
+            for (const r of results) if (r.status === 'rejected') expect((r.reason as { status?: number }).status).toBe(404);
+        });
+
         it('only the owner edits or deletes a log', async () => {
             const owner = await makeUser();
             const self = await makePatient(owner.id);
@@ -222,6 +242,46 @@ describeDb('vitals tracker (real Postgres)', () => {
             expect(out.vitals.periods.map((p) => p.startDate)).toEqual([dayAgo(4), dayAgo(32), dayAgo(60)]);
             expect(out.vitals.periodEstimate).toMatchObject({ averageCycleDays: 28, cyclesUsed: 2 });
             expect((await testDb.healthRecordAccess.findMany({ where: { consultationId: b.id } })).map((r) => r.action)).toEqual(['RECORD']);
+        });
+
+        it('a consent on the v1 wording (no vitals named), or one sent without a version, does not show vitals; the rest of the record still shows', async () => {
+            const { user, self } = await withVitals();
+            for (const version of ['record-share-v1', undefined]) {
+                const b = await paidBooking({ shareRecord: true, user, patient: self, version: version as string });
+                if (version === undefined) await testDb.recordShareConsent.updateMany({ where: { consultationId: b.id }, data: { version: 'record-share-v1' } });
+                const out = await records.getSharedRecord(b.doctor.profile.id, b.id);
+                expect(out).toMatchObject({ shared: true, vitals: null });
+            }
+            // Sent without a version: stored as v1, never assumed to cover vitals.
+            const raw = await booking.createBooking(
+                { userId: user.id, patientId: self.id, slotId: (await makeSlot((await makeDoctor()).profile.id, 30 * 60)).id, idempotencyKey: `key-vit-nov-${++n}-1234`, shareRecord: true, shareMeta: { channel: 'app' } },
+                { razorpay },
+            );
+            expect((await testDb.recordShareConsent.findFirstOrThrow({ where: { consultationId: raw.consultationId } })).version).toBe('record-share-v1');
+            // The same through the route: a switch-on without a version is stored as v1.
+            const viaRoute = await paidBooking({ shareRecord: false, user, patient: self });
+            expect((await call('PUT', `/bookings/${viaRoute.id}/record-sharing`, user, { share: true })).status).toBe(200);
+            expect((await testDb.recordShareConsent.findFirstOrThrow({ where: { consultationId: viaRoute.id } })).version).toBe('record-share-v1');
+            expect(await records.getSharedRecord(viaRoute.doctor.profile.id, viaRoute.id)).toMatchObject({ shared: true, vitals: null });
+            // Switching on again from the booking page with the v2 wording opens vitals.
+            const b = await paidBooking({ shareRecord: true, user, patient: self, version: 'record-share-v1' });
+            await records.setRecordSharing(user.id, b.id, false, { version: 'record-share-v2' });
+            await records.setRecordSharing(user.id, b.id, true, { version: 'record-share-v2' });
+            const out = await records.getSharedRecord(b.doctor.profile.id, b.id);
+            if (!out.shared) throw new Error('expected shared');
+            expect(out.vitals?.bp).toHaveLength(1);
+        });
+
+        it('the record says how many readings there are in all when the list is cut', async () => {
+            const { user, self } = await withVitals();
+            const b = await paidBooking({ shareRecord: true, user, patient: self });
+            const out = await vitals.vitalsForRecord(testDb, self.id, new Date(), { readings: 1 });
+            expect(out.bp).toHaveLength(1);
+            expect(out.totals).toEqual({ bp: 1, sugar: 1, periods: 3 });
+            const wide = await vitals.vitalsForRecord(testDb, self.id, new Date(), { days: 365, readings: 1 });
+            expect(wide.totals.bp).toBe(2);
+            expect(wide.since).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+            expect(b.id).toBeTruthy();
         });
 
         it('without the tick, or after the 7-day window, the doctor gets no vitals', async () => {

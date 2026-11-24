@@ -86,6 +86,16 @@ describe('VitalsTab', () => {
         expect(byText(/^Periods$/)).toBeUndefined();
     });
 
+    it('periods: no "ended today" for an open log too old to end today (over 15 days); it is closed through Edit', async () => {
+        routes({ periods: { logs: [{ id: 'old', startDate: '2026-01-01', endDate: null, flow: null, symptoms: [] }], estimate: null } });
+        await mount();
+        await act(async () => byText(/^Periods$/).click());
+        await flush();
+        expect(text()).toContain('still going');
+        expect(byText(/Period ended today/)).toBeUndefined();
+        expect(byText(/^Edit$/)).toBeTruthy();
+    });
+
     it('periods: the estimate is labelled as an estimate, with a calendar and "ended today"', async () => {
         routes({
             periods: {

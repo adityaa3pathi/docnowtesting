@@ -63,7 +63,7 @@ describeDb('shared health record (real Postgres)', () => {
         const patient = opts.patient ?? (await makePatient(user.id));
         const slot = await makeSlot(doctor.profile.id, opts.minutesAhead ?? 30 * 60);
         const res = await booking.createBooking(
-            { userId: user.id, patientId: patient.id, slotId: slot.id, idempotencyKey: `key-rec-${++n}-12345`, shareRecord: opts.shareRecord, shareMeta: { channel: 'web', ipAddress: '10.0.0.1', userAgent: 'vitest' } },
+            { userId: user.id, patientId: patient.id, slotId: slot.id, idempotencyKey: `key-rec-${++n}-12345`, shareRecord: opts.shareRecord, shareMeta: { channel: 'web', ipAddress: '10.0.0.1', userAgent: 'vitest', version: 'record-share-v2' } },
             { razorpay },
         );
         return { doctor, user, patient, slot, id: res.consultationId, orderId: res.razorpayOrderId!, fee: res.amountPaise };

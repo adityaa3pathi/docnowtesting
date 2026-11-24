@@ -9,8 +9,8 @@ import { RECORD_ACCESS_DAYS } from '@/lib/consult/consent';
 import { healthApi, isSelfPerson, type HealthPerson } from '@/lib/health';
 import { cn } from '@/lib/utils';
 import {
-    FLOW_LABEL, LIMITS, RANGE_DAYS, SUGAR_TIMING_LABEL, SYMPTOM_LABEL,
-    bpBody, calendarMarks, formatDay, formatReadingTime, istNowInput, istToday, monthGrid, periodDays, periodError,
+    FLOW_LABEL, LIMITS, MAX_PERIOD_DAYS, RANGE_DAYS, SUGAR_TIMING_LABEL, SYMPTOM_LABEL,
+    bpBody, calendarMarks, daysBetween, formatDay, formatReadingTime, istNowInput, istToday, monthGrid, periodDays, periodError,
     readingDetail, readingValue, shiftMonth, sugarBody, tracksPeriods, vitalsApi,
     type PeriodEstimate, type PeriodFlow, type PeriodLog, type PeriodSymptom, type RangeDays, type SugarTiming, type VitalKind, type VitalReading,
 } from '@/lib/vitals';
@@ -316,7 +316,8 @@ function PeriodsPanel({ person }: { person: HealthPerson }) {
     }, [person.id]);
 
     const reload = () => load().catch((e) => setError(errorMessage(e)));
-    const ongoing = logs?.find((l) => !l.endDate);
+    // "Ended today" only fits a period that can still end today (a log covers at most 15 days); older open logs are closed through Edit.
+    const ongoing = logs?.find((l) => !l.endDate && daysBetween(l.startDate, today) < MAX_PERIOD_DAYS);
 
     return (
         <div className="space-y-3">

@@ -70,7 +70,10 @@ export interface PeriodEstimate {
 
 /** The vitals part of a doctor's shared record or the super-admin record (older servers leave it out). */
 export interface RecordVitals {
+    /** IST day (YYYY-MM-DD) from which readings are included. */
     since: string;
+    /** How many there are in all; the lists hold the latest ones only. */
+    totals?: { bp: number; sugar: number; periods: number };
     bp: VitalReading[];
     sugar: VitalReading[];
     periods: PeriodLog[];

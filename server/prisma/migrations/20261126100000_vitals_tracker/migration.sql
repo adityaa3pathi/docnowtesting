@@ -58,11 +58,11 @@ ALTER TABLE "PeriodLog" ADD CONSTRAINT "PeriodLog_patientId_fkey" FOREIGN KEY ("
 
 
 -- Backstop for the app's checks: a reading has the values of its kind, inside what is physically
--- possible (not a "normal" range). Prisma does not model CHECK constraints; keep these in raw SQL.
+-- possible (not a "normal" range). Every value is tested IS NOT NULL: a CHECK that is NULL passes. Prisma does not model CHECK constraints; keep these in raw SQL.
 ALTER TABLE "VitalReading" ADD CONSTRAINT "VitalReading_values_check" CHECK (
-    ("kind" = 'BP' AND "systolic" BETWEEN 50 AND 300 AND "diastolic" BETWEEN 30 AND 200 AND "systolic" > "diastolic"
+    ("kind" = 'BP' AND "systolic" IS NOT NULL AND "diastolic" IS NOT NULL AND "systolic" BETWEEN 50 AND 300 AND "diastolic" BETWEEN 30 AND 200 AND "systolic" > "diastolic"
         AND ("pulse" IS NULL OR "pulse" BETWEEN 25 AND 250) AND "glucoseMgDl" IS NULL AND "sugarTiming" IS NULL)
-    OR ("kind" = 'SUGAR' AND "glucoseMgDl" BETWEEN 20 AND 1000 AND "sugarTiming" IN ('FASTING', 'BEFORE_MEAL', 'AFTER_MEAL', 'RANDOM')
+    OR ("kind" = 'SUGAR' AND "glucoseMgDl" IS NOT NULL AND "sugarTiming" IS NOT NULL AND "glucoseMgDl" BETWEEN 20 AND 1000 AND "sugarTiming" IN ('FASTING', 'BEFORE_MEAL', 'AFTER_MEAL', 'RANDOM')
         AND "systolic" IS NULL AND "diastolic" IS NULL AND "pulse" IS NULL)
 );
 ALTER TABLE "PeriodLog" ADD CONSTRAINT "PeriodLog_dates_check" CHECK ("endDate" IS NULL OR "endDate" >= "startDate");

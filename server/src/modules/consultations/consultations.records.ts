@@ -24,7 +24,13 @@ import type { ConsultationStatus } from './consultations.types';
 import { vitalsForRecord } from './consultations.vitals';
 
 /** Which consent wording the patient was shown. Bump it whenever the text changes. */
-export const RECORD_SHARE_VERSION = 'record-share-v1';
+export const RECORD_SHARE_VERSION = 'record-share-v2';
+/**
+ * v1 named lab reports, consultations, prescriptions and files. v2 adds vitals (BP, sugar, periods,
+ * P8). A consent sent without a version is stored as v1: it cannot be assumed to cover vitals.
+ */
+export const LEGACY_RECORD_SHARE_VERSION = 'record-share-v1';
+export const VITALS_SHARE_VERSIONS: readonly string[] = ['record-share-v2'];
 export const RECORD_ACCESS_DAYS = 7;
 export const RECORD_ACCESS_MS = RECORD_ACCESS_DAYS * 24 * 3_600_000;
 export const MAX_DOCUMENTS_PER_PERSON = 50;
@@ -152,7 +158,7 @@ export async function writeRecordSharing(tx: ShareTx, consultationId: string, us
             consultationId,
             userId,
             granted: share,
-            version: meta.version ?? RECORD_SHARE_VERSION,
+            version: meta.version ?? LEGACY_RECORD_SHARE_VERSION,
             channel: meta.channel ?? 'web',
             ipAddress: meta.ipAddress ?? null,
             userAgent: meta.userAgent?.slice(0, 300) ?? null,
@@ -267,8 +273,10 @@ export async function getSharedRecord(doctorId: string, consultationId: string, 
             orderBy: { createdAt: 'desc' },
             select: { id: true, name: true, mimeType: true, sizeBytes: true, createdAt: true },
         }),
-        // P8: BP, sugar and periods; covered by the same RECORD log row as the rest.
-        vitalsForRecord(db, c.patientId, now),
+        // P8: BP, sugar and periods, only when the consent the patient gave names them (v2 wording).
+        // Covered by the same RECORD log row as the rest.
+        db.recordShareConsent.findFirst({ where: { consultationId: c.id, granted: true }, orderBy: { createdAt: 'desc' }, select: { version: true } })
+            .then((consent) => (consent && VITALS_SHARE_VERSIONS.includes(consent.version) ? vitalsForRecord(db, c.patientId, now) : null)),
     ]);
     await logAccess(db, { consultationId: c.id, doctorId, patientId: c.patientId, action: 'RECORD', ipAddress: meta.ipAddress });
 

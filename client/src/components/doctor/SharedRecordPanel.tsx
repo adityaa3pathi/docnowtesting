@@ -187,6 +187,7 @@ export function SharedRecordPanel({ consultationId }: { consultationId: string }
                     </button>
                 ))}
             </div>
+            {record.vitals === null && <p className="text-xs text-muted-foreground">Vitals are not included: the patient agreed to sharing before vitals were part of it.</p>}
             {openError && <p role="alert" className="text-sm font-semibold text-destructive">{openError}</p>}
             <div role="tabpanel" className="space-y-2">
                 {tab === 'reports' && (record.reports.length === 0 ? <p className="text-sm text-muted-foreground">No DocNow lab reports yet.</p> : record.reports.map((r) => (

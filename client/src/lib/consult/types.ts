@@ -194,8 +194,8 @@ export type SharedRecord =
         reports: { id: string; label: string; isFullReport: boolean; date: string }[];
         consultations: SharedPastConsultation[];
         documents: SharedFile[];
-        /** P8 vitals (older servers leave it out). */
-        vitals?: RecordVitals;
+        /** P8 vitals. null: the patient's consent predates vitals (v1 wording). Older servers leave it out. */
+        vitals?: RecordVitals | null;
     }
     | { shared: false; reason: 'NOT_SHARED' | 'NOT_ACTIVE' | 'ENDED'; until: string };
 

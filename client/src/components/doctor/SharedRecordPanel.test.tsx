@@ -166,6 +166,24 @@ describe('SharedRecordPanel vitals (P8)', () => {
         expect(text).not.toMatch(/\b(high|low|normal|abnormal|elevated|diabetic|diabetes|hypertension)\b/i);
     });
 
+    it('says when the list is cut ("latest N of M"), and that readings start on an IST day', async () => {
+        const v = (withVitals as { vitals: NonNullable<Extract<SharedRecord, { shared: true }>['vitals']> }).vitals;
+        m.get.mockResolvedValue({ data: { ...withVitals, vitals: { ...v, since: '2026-05-28', totals: { bp: 75, sugar: 1, periods: 1 } } }, headers: {} });
+        await openPanel();
+        await act(async () => byText(/Vitals/).click());
+        const text = document.body.textContent ?? '';
+        expect(text).toContain('Showing the latest 2 of 75 readings in this period');
+        expect(text).toContain('Readings since 28 May 2026');
+        expect(text.match(/Showing the latest/g)).toHaveLength(1);
+    });
+
+    it('a consent from before vitals: no Vitals tab, and a line saying why', async () => {
+        m.get.mockResolvedValue({ data: { ...withVitals, vitals: null }, headers: {} });
+        await openPanel();
+        expect(buttons().some((b) => /Vitals/.test(b.textContent ?? ''))).toBe(false);
+        expect(document.body.textContent).toContain('Vitals are not included: the patient agreed to sharing before vitals were part of it.');
+    });
+
     it('has no Vitals tab when an older server leaves vitals out', async () => {
         m.get.mockResolvedValue({ data: shared, headers: {} });
         await openPanel();
@@ -183,7 +201,7 @@ describe('RecordSharingCard', () => {
         expect(document.body.textContent).toContain('Last opened by the doctor');
         await act(async () => byText(/Stop sharing/).click());
         await flush();
-        expect(m.put).toHaveBeenCalledWith('/consult/bookings/c1/record-sharing', { share: false, consentVersion: 'record-share-v1', channel: 'web' });
+        expect(m.put).toHaveBeenCalledWith('/consult/bookings/c1/record-sharing', { share: false, consentVersion: 'record-share-v2', channel: 'web' });
         expect(document.body.textContent).toContain('Dr Meera sees only the details on this booking');
     });
 
@@ -193,7 +211,7 @@ describe('RecordSharingCard', () => {
         expect(document.body.textContent).toContain("Let Dr Meera see Sunita's DocNow health record");
         await act(async () => byText(/I agree, share it/).click());
         await flush();
-        expect(m.put).toHaveBeenCalledWith('/consult/bookings/c1/record-sharing', { share: true, consentVersion: 'record-share-v1', channel: 'web' });
+        expect(m.put).toHaveBeenCalledWith('/consult/bookings/c1/record-sharing', { share: true, consentVersion: 'record-share-v2', channel: 'web' });
     });
 
     it('is hidden when the booking can no longer be shared and is not shared', async () => {

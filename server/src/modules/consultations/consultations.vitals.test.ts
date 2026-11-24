@@ -104,11 +104,20 @@ describe('next-period estimate', () => {
         expect(e.averageCycleDays).toBe(25);
     });
 
-    it('skips gaps that look like a missed log (over 60 days) or a double log (under 15)', () => {
+    it('skips gaps that look like a missed log (over 45 days) or a double log (under 15)', () => {
         const e = estimateNextPeriod(['2026-03-01', '2026-03-29', '2026-07-01', '2026-07-05', '2026-07-29'], '2026-08-01')!;
         // gaps: 28 (kept), 94 (skip), 4 (skip), 24 (kept)
         expect(e).toMatchObject({ averageCycleDays: 26, cyclesUsed: 2, nextStart: '2026-08-24' });
         expect(estimateNextPeriod(['2026-01-01', '2026-05-01', '2026-09-01'], '2026-11-24')).toBeNull();
+    });
+
+    it('one unlogged period (a doubled ~56-day gap) is skipped, not averaged in', () => {
+        // 1 Jan, 29 Jan, (26 Feb not logged), 26 Mar, 23 Apr
+        const e = estimateNextPeriod(['2026-01-01', '2026-01-29', '2026-03-26', '2026-04-23'], '2026-04-25')!;
+        expect(e).toMatchObject({ averageCycleDays: 28, cyclesUsed: 2, nextStart: '2026-05-21' });
+        // A 45-day cycle still counts; 46 does not.
+        expect(estimateNextPeriod(['2026-01-01', '2026-02-15', '2026-04-01'], '2026-04-02')).toMatchObject({ averageCycleDays: 45 });
+        expect(estimateNextPeriod(['2026-01-01', '2026-02-16', '2026-04-03'], '2026-04-04')).toBeNull();
     });
 
     it('says when the estimated day has passed', () => {

@@ -21,7 +21,7 @@ import { reassignBooking, reassignOption, rescheduleBooking, rescheduleSlots, se
 import { kickConsultPushes } from './consultations.push';
 import { addRecommendedTestsToCart, getPatientPrescription, prescriptionFromLink, prescriptionLinkToken } from './consultations.prescription';
 import { renderPrescriptionPdf } from './consultations.prescriptionPdf';
-import { RECORD_SHARE_VERSION, listDocuments, removeDocument, setRecordSharing, uploadDocument, type ShareMeta } from './consultations.records';
+import { listDocuments, removeDocument, setRecordSharing, uploadDocument, type ShareMeta } from './consultations.records';
 import { RANGE_DAYS, VITAL_KINDS, addPeriod, addReading, editPeriod, listPeriods, listReadings, periodEditSchema, periodSchema, readingSchema, removePeriod, removeReading } from './consultations.vitals';
 import { DoctorError } from './doctors.status';
 
@@ -48,8 +48,9 @@ const sharingSchema = z.object({
     consentVersion: z.string().trim().min(1).max(40).optional(),
     channel: z.enum(['app', 'web']).optional(),
 });
+// No version sent: left out, so it is stored as the v1 wording (never assumed to cover vitals).
 const shareMetaOf = (req: { ip?: string; get(name: string): string | undefined }, version: string | undefined, channel: 'app' | 'web' | undefined): ShareMeta => ({
-    version: version ?? RECORD_SHARE_VERSION,
+    version,
     channel: channel ?? 'web',
     ipAddress: req.ip ?? null,
     userAgent: req.get('user-agent') ?? null,
