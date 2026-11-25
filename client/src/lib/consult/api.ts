@@ -14,6 +14,7 @@ import type {
     PatientDocument, RecordSharing, SharedItemKind, SharedItemLink, SharedRecord,
     AdminAccountPerson, AdminPatientRecord, DoctorPatientDetail, DoctorPatientSummary,
     DoctorInstantState, InstantAvailability, InstantView,
+    AdminInstantLive, AdminInstantOutcomes, AdminInstantRequestDetail, AdminPresenceHours, InstantOutcomeWindow,
     AdminReview, DoctorReviewPage, OwnReview, ReviewKind, ReviewModeration, ReviewPage, ReviewStatus,
 } from './types';
 
@@ -264,4 +265,13 @@ export const admin = {
     /** hide/unhide/delete need `reason`; redact needs `text` (may be empty) and `reason`; reply needs `text` (empty removes it). */
     moderateReview: (kind: ReviewKind, id: string, action: ReviewModeration, body: { reason?: string; text?: string | null }) =>
         api.post<AdminReview>(`/admin/consult/reviews/${kind}/${id}/${action}`, body).then(data),
+    /** Online GPs with their state, and live instant requests (no patient details). */
+    instantLive: () => api.get<AdminInstantLive>('/admin/consult/instant/live').then(data),
+    /** One instant request with the patient and reason. Every call writes an audit row. */
+    instantRequest: (id: string) => api.get<AdminInstantRequestDetail>(`/admin/consult/instant/requests/${id}`).then(data),
+    instantOutcomes: (window: InstantOutcomeWindow) =>
+        api.get<AdminInstantOutcomes>('/admin/consult/instant/outcomes', { params: { window } }).then(data),
+    /** Online hours per doctor per IST day; from/to are YYYY-MM-DD, inclusive. */
+    presenceHours: (q: { from: string; to: string; doctorId?: string }) =>
+        api.get<AdminPresenceHours>('/admin/consult/instant/presence', { params: { from: q.from, to: q.to, doctorId: q.doctorId || undefined } }).then(data),
 };
