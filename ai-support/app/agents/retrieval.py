@@ -66,12 +66,16 @@ def _gated(top_score: float | None, settings: Any) -> bool:
     return top_score is not None and settings.rerank_min_score > 0 and top_score < settings.rerank_min_score
 
 
-# One per process (uvicorn runs one worker): results only, dropped when the knowledge base changes.
+# One per process (uvicorn runs one worker): results only, cleared by the kb_changed listener in
+# app/database.py (or by a changed version while that listener is down).
 RETRIEVAL_CACHE = RetrievalCache()
 
 
 async def _kb_version(db: Any) -> Any | None:
-    """The knowledge-base version, or None when this backend has none (test doubles) or the check failed."""
+    """The knowledge-base version, or None when this backend has none (test doubles) or the check failed.
+
+    Database.kb_version() makes no query while its kb_changed listener is connected.
+    """
     if not inspect.iscoroutinefunction(getattr(type(db), "kb_version", None)):
         return None
     try:

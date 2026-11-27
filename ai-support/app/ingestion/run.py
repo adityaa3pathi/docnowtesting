@@ -26,59 +26,66 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def ingest_static_docs(db: Database, settings: Settings) -> dict[str, int]:
-    """Embed and insert all static FAQ/policy documents."""
+async def ingest_static_docs(db: Database, settings: Settings, *, notify: bool = True) -> dict[str, int]:
+    """Embed and insert all static FAQ/policy documents.
+
+    Ends with one kb_changed notify if any chunk was written (see sync_catalog); a failed notify is an error.
+    """
     stats = {"created": 0, "updated": 0, "skipped": 0, "errors": 0}
-    fingerprint = settings.embedding_fingerprint()
+    try:
+        fingerprint = settings.embedding_fingerprint()
 
-    logger.info("Ingesting %d static documents...", len(STATIC_DOCUMENTS))
+        logger.info("Ingesting %d static documents...", len(STATIC_DOCUMENTS))
 
-    for doc in STATIC_DOCUMENTS:
-        existing = None
-        try:
-            # Deterministic ID based on source + title
-            chunk_id = str(
-                uuid.uuid5(uuid.NAMESPACE_DNS, f"docnow:{doc['source']}:{doc['title']}")
-            )
+        for doc in STATIC_DOCUMENTS:
+            existing = None
+            try:
+                # Deterministic ID based on source + title
+                chunk_id = str(
+                    uuid.uuid5(uuid.NAMESPACE_DNS, f"docnow:{doc['source']}:{doc['title']}")
+                )
 
-            # Check if already exists with same content and the same embedding setup
-            if db.pool:
-                async with db.pool.acquire() as conn:
-                    existing = await conn.fetchrow(
-                        'SELECT id, content, metadata FROM "KnowledgeChunk" WHERE id = $1',
-                        chunk_id,
-                    )
+                # Check if already exists with same content and the same embedding setup
+                if db.pool:
+                    async with db.pool.acquire() as conn:
+                        existing = await conn.fetchrow(
+                            'SELECT id, content, metadata FROM "KnowledgeChunk" WHERE id = $1',
+                            chunk_id,
+                        )
 
-                if chunk_is_current(dict(existing) if existing else None, doc["content"], fingerprint):
-                    stats["skipped"] += 1
-                    logger.debug("Skipped (unchanged): %s", doc["title"])
-                    continue
+                    if chunk_is_current(dict(existing) if existing else None, doc["content"], fingerprint):
+                        stats["skipped"] += 1
+                        logger.debug("Skipped (unchanged): %s", doc["title"])
+                        continue
 
-            # Generate embedding
-            embedding = await generate_embedding(doc["content"], settings, DOCUMENT)
+                # Generate embedding
+                embedding = await generate_embedding(doc["content"], settings, DOCUMENT)
 
-            await db.insert_chunk(
-                chunk_id=chunk_id,
-                source=doc["source"],
-                source_id=None,
-                title=doc["title"],
-                content=doc["content"],
-                embedding=embedding,
-                metadata=json.dumps({"source": doc["source"], "embedding": fingerprint}),
-                version=2 if existing else 1,
-            )
+                await db.insert_chunk(
+                    chunk_id=chunk_id,
+                    source=doc["source"],
+                    source_id=None,
+                    title=doc["title"],
+                    content=doc["content"],
+                    embedding=embedding,
+                    metadata=json.dumps({"source": doc["source"], "embedding": fingerprint}),
+                    version=2 if existing else 1,
+                )
 
-            if existing:
-                stats["updated"] += 1
-            else:
-                stats["created"] += 1
+                if existing:
+                    stats["updated"] += 1
+                else:
+                    stats["created"] += 1
 
-            logger.info("✓ %s: %s", doc["source"], doc["title"])
+                logger.info("✓ %s: %s", doc["source"], doc["title"])
 
-        except Exception:
+            except Exception:
+                stats["errors"] += 1
+                logger.exception("✗ Failed: %s", doc["title"])
+
+    finally:
+        if notify and not await db.notify_kb_changed():
             stats["errors"] += 1
-            logger.exception("✗ Failed: %s", doc["title"])
-
     return stats
 
 
@@ -102,15 +109,16 @@ async def main() -> int:
         print("DocNow Knowledge Base Ingestion")
         print("=" * 60)
 
+        # One notify for the whole run, after its last write (sent in the finally below).
         if do_static:
             print("\n📄 Ingesting static documents (FAQs, policies)...")
-            static_stats = await ingest_static_docs(db, settings)
+            static_stats = await ingest_static_docs(db, settings, notify=False)
             _print_stats("static", static_stats)
             errors += static_stats["errors"]
 
         if do_catalog:
             print("\n🧪 Syncing catalog items...")
-            catalog_stats = await sync_catalog(db, settings)
+            catalog_stats = await sync_catalog(db, settings, notify=False)
             _print_stats("catalog", catalog_stats)
             errors += catalog_stats["errors"]
 
@@ -124,16 +132,20 @@ async def main() -> int:
             print(f"\n📊 Total chunks in knowledge base: {count}")
             print(f"   With embeddings: {with_emb}")
 
-        # A zero exit with failed items let a broken cron or deploy step look successful.
-        if errors:
-            print(f"\n❌ Ingestion finished with {errors} failed item(s); see the log above.")
-            return 1
-
-        print("\n✅ Ingestion complete!")
-        return 0
-
     finally:
+        # Also after a failure part-way: chunks already written must reach the running services.
+        notified = await db.notify_kb_changed()
         await db.disconnect()
+
+    if not notified:
+        errors += 1
+    # A zero exit with failed items let a broken cron or deploy step look successful.
+    if errors:
+        print(f"\n❌ Ingestion finished with {errors} failed item(s); see the log above.")
+        return 1
+
+    print("\n✅ Ingestion complete!")
+    return 0
 
 
 if __name__ == "__main__":

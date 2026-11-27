@@ -37,6 +37,8 @@ async def lifespan(app: FastAPI):
     if not settings.proxy_secret:
         logger.warning("SUPPORT_PROXY_SECRET is not set: /api/support is reachable without the Express proxy")
     await db.connect()
+    # Push invalidation of the retrieval cache and BM25 index; until it connects, the TTL check stands in.
+    db.start_kb_listener()
     init_langfuse(settings)
 
     sync_task: asyncio.Task | None = None
@@ -53,6 +55,7 @@ async def lifespan(app: FastAPI):
         with suppress(asyncio.CancelledError):
             await sync_task
     shutdown_langfuse()
+    await db.stop_kb_listener()
     await db.disconnect()
     logger.info("AI Support service stopped")
 

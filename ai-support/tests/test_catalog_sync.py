@@ -49,6 +49,7 @@ def fake_db(conn: FakeConn) -> MagicMock:
 
     db.pool.acquire = acquire
     db.insert_chunk = AsyncMock()
+    db.notify_kb_changed = AsyncMock(return_value=True)
     return db
 
 
