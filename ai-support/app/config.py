@@ -58,8 +58,16 @@ class Settings(BaseSettings):
     parallel_intent_retrieval: bool = True
     # Retrieval results cached per search query until the knowledge base changes; 0 = off.
     retrieval_cache_size: int = 512
-    # How long a knowledge-base version check is reused (BM25 rebuild and retrieval cache invalidation).
+    # Knowledge-base changes reach the retrieval cache and BM25 index by Postgres LISTEN/NOTIFY on
+    # 'kb_changed' (app/database.py); while that listener is connected, no version query runs per turn.
+    # Fallback only while the listener is down (starting up or reconnecting): the count/max("updatedAt")
+    # version check, reused for this many seconds. It is not a periodic poll beside the listener.
     kb_version_ttl_seconds: float = 10.0
+    # Off restores the old behaviour exactly (the TTL check on every turn).
+    kb_listen_enabled: bool = True
+    # Liveness ping (SELECT 1) on the listener's own connection, to notice a silently dropped socket.
+    # It never reads KnowledgeChunk or invalidates anything; 0 relies on asyncpg's termination callback only.
+    kb_listen_health_seconds: float = 60.0
     # Follow-up rewrite (turns with history only): "off" searches the message as typed, "replace" searches
     # only the rewritten query, "both" searches both and fuses them (app/agents/rewrite.py).
     query_rewrite: str = "replace"

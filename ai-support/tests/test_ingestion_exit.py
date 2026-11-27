@@ -14,6 +14,7 @@ def _db() -> MagicMock:
     db.pool = None
     db.connect = AsyncMock()
     db.disconnect = AsyncMock()
+    db.notify_kb_changed = AsyncMock(return_value=True)
     return db
 
 
@@ -41,6 +42,7 @@ async def test_static_docs_record_the_embedding_fingerprint(settings):
     db = MagicMock()
     db.pool = None
     db.insert_chunk = AsyncMock()
+    db.notify_kb_changed = AsyncMock(return_value=True)
 
     with patch.object(ingest_run, "generate_embedding", AsyncMock(return_value=[0.1] * 8)):
         stats = await ingest_run.ingest_static_docs(db, settings)

@@ -187,6 +187,7 @@ async def prune_stale_catalog_chunks(
             source,
         )
     if deleted:
+        db.note_kb_writes(len(deleted))
         logger.info("Removed %d %s chunks whose item is gone or disabled", len(deleted), source)
     return len(deleted)
 
@@ -232,89 +233,96 @@ async def _upsert_chunk(
     stats["updated" if existing else "created"] += 1
 
 
-async def sync_catalog(db: Database, settings: Settings) -> dict[str, int]:
+async def sync_catalog(db: Database, settings: Settings, *, notify: bool = True) -> dict[str, int]:
     """Sync all enabled CatalogItems, plus the shared-test index, into KnowledgeChunk embeddings.
 
-    Returns stats: {created, updated, skipped, deleted, errors}.
+    Ends with one kb_changed notify if any chunk was written or pruned (notify=False leaves it to a caller
+    that runs more ingestion afterwards). It is sent after the last write, also when the run fails
+    part-way, so running services never refill their caches from a half-synced knowledge base.
+    A failed notify counts as an error. Returns stats: {created, updated, skipped, deleted, errors}.
     """
     if not db.pool:
         raise RuntimeError("Database pool not initialized")
 
     stats = {"created": 0, "updated": 0, "skipped": 0, "deleted": 0, "errors": 0}
+    try:
 
-    # Fetch all enabled catalog items
-    async with db.pool.acquire() as conn:
-        rows = await conn.fetch(
-            """
-            SELECT id, name, type, "displayPrice", "discountedPrice",
-                   description, parameters, "sampleType", "reportTime",
-                   "partnerCode", "detailsData",
-                   -- Read through to_jsonb so the sync keeps working before the server migration adds these columns.
-                   to_jsonb(c) ->> 'fastingOverride' AS "fastingOverride",
-                   to_jsonb(c) ->> 'fastingTimeOverride' AS "fastingTimeOverride"
-            FROM "CatalogItem" c
-            WHERE "isEnabled" = true
-            """
-        )
+        # Fetch all enabled catalog items
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT id, name, type, "displayPrice", "discountedPrice",
+                       description, parameters, "sampleType", "reportTime",
+                       "partnerCode", "detailsData",
+                       -- Read through to_jsonb so the sync keeps working before the server migration adds these columns.
+                       to_jsonb(c) ->> 'fastingOverride' AS "fastingOverride",
+                       to_jsonb(c) ->> 'fastingTimeOverride' AS "fastingTimeOverride"
+                FROM "CatalogItem" c
+                WHERE "isEnabled" = true
+                """
+            )
 
-    logger.info("Found %d enabled catalog items to sync", len(rows))
+        logger.info("Found %d enabled catalog items to sync", len(rows))
 
-    items = []
-    for row in rows:
-        item_dict = dict(row)
-        # Parse detailsData JSON if it's a string
-        if isinstance(item_dict.get("detailsData"), str):
+        items = []
+        for row in rows:
+            item_dict = dict(row)
+            # Parse detailsData JSON if it's a string
+            if isinstance(item_dict.get("detailsData"), str):
+                try:
+                    item_dict["detailsData"] = json.loads(item_dict["detailsData"])
+                except (json.JSONDecodeError, TypeError):
+                    item_dict["detailsData"] = None
+            items.append(item_dict)
+
+        for item_dict in items:
             try:
-                item_dict["detailsData"] = json.loads(item_dict["detailsData"])
-            except (json.JSONDecodeError, TypeError):
-                item_dict["detailsData"] = None
-        items.append(item_dict)
+                await _upsert_chunk(
+                    db,
+                    settings,
+                    source="catalog",
+                    source_id=item_dict["id"],
+                    title=item_dict["name"],
+                    text=format_catalog_text(item_dict),
+                    metadata={
+                        "name": item_dict["name"],
+                        "type": item_dict["type"],
+                        "partnerCode": item_dict.get("partnerCode"),
+                        "displayPrice": float(item_dict["displayPrice"]) if item_dict.get("displayPrice") else None,
+                        "discountedPrice": float(item_dict["discountedPrice"]) if item_dict.get("discountedPrice") else None,
+                    },
+                    stats=stats,
+                )
+            except Exception:
+                stats["errors"] += 1
+                logger.exception("Failed to sync catalog item: %s", item_dict.get("name"))
 
-    for item_dict in items:
-        try:
-            await _upsert_chunk(
-                db,
-                settings,
-                source="catalog",
-                source_id=item_dict["id"],
-                title=item_dict["name"],
-                text=format_catalog_text(item_dict),
-                metadata={
-                    "name": item_dict["name"],
-                    "type": item_dict["type"],
-                    "partnerCode": item_dict.get("partnerCode"),
-                    "displayPrice": float(item_dict["displayPrice"]) if item_dict.get("displayPrice") else None,
-                    "discountedPrice": float(item_dict["discountedPrice"]) if item_dict.get("discountedPrice") else None,
-                },
-                stats=stats,
+        index_docs = constituent_index_docs(items)
+        for doc in index_docs:
+            try:
+                await _upsert_chunk(
+                    db,
+                    settings,
+                    source=INDEX_SOURCE,
+                    source_id=doc["source_id"],
+                    title=doc["title"],
+                    text=doc["content"],
+                    metadata={"test": doc["source_id"]},
+                    stats=stats,
+                )
+            except Exception:
+                stats["errors"] += 1
+                logger.exception("Failed to sync index chunk: %s", doc["source_id"])
+
+        stats["deleted"] = await prune_stale_catalog_chunks(db, [i["id"] for i in items])
+        if items:
+            # Unlike an empty catalog, a catalog with no shared tests is real, so an empty index list still prunes.
+            stats["deleted"] += await prune_stale_catalog_chunks(
+                db, [d["source_id"] for d in index_docs], source=INDEX_SOURCE, allow_empty=True
             )
-        except Exception:
+    finally:
+        if notify and not await db.notify_kb_changed():
             stats["errors"] += 1
-            logger.exception("Failed to sync catalog item: %s", item_dict.get("name"))
-
-    index_docs = constituent_index_docs(items)
-    for doc in index_docs:
-        try:
-            await _upsert_chunk(
-                db,
-                settings,
-                source=INDEX_SOURCE,
-                source_id=doc["source_id"],
-                title=doc["title"],
-                text=doc["content"],
-                metadata={"test": doc["source_id"]},
-                stats=stats,
-            )
-        except Exception:
-            stats["errors"] += 1
-            logger.exception("Failed to sync index chunk: %s", doc["source_id"])
-
-    stats["deleted"] = await prune_stale_catalog_chunks(db, [i["id"] for i in items])
-    if items:
-        # Unlike an empty catalog, a catalog with no shared tests is real, so an empty index list still prunes.
-        stats["deleted"] += await prune_stale_catalog_chunks(
-            db, [d["source_id"] for d in index_docs], source=INDEX_SOURCE, allow_empty=True
-        )
     return stats
 
 

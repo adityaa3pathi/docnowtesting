@@ -160,7 +160,8 @@ async def test_database_version_check_is_shared_for_its_ttl(settings):
     db.pool = MagicMock(acquire=acquire)
     settings.kb_version_ttl_seconds = 10.0
     with patch("app.database.time.monotonic", side_effect=[100.0, 105.0, 111.0, 111.0]):
-        assert await db.kb_version() == (529, "t1")
-        assert await db.kb_version() == (529, "t1")  # 5 s later: reused, no query
-        assert await db.kb_version() == (530, "t2")  # 11 s later: asked again, sees the sync
+        # The listener is not connected, so this is the TTL'd fallback; 0 = no notify received yet.
+        assert await db.kb_version() == ((529, "t1"), 0)
+        assert await db.kb_version() == ((529, "t1"), 0)  # 5 s later: reused, no query
+        assert await db.kb_version() == ((530, "t2"), 0)  # 11 s later: asked again, sees the sync
     assert conn.fetchrow.await_count == 2

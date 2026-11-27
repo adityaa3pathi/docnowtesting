@@ -3,10 +3,12 @@
 This caches retrieval results, never answers (see AI_ROADMAP.md "Standing decisions"): the draft and
 the verifier still run on every turn, and live prices still come from the catalog cards.
 
-Invalidation: every lookup reads the knowledge-base version (row count and newest "updatedAt" of
-KnowledgeChunk, the same check the BM25 index uses). A catalog sync from any process upserts chunks and
-bumps "updatedAt", so the next lookup sees a new version and drops every cached entry. One small
-query per turn replaces an embedding call, two vector searches and BM25 on a hit.
+Invalidation is push-based (app/database.py): an ingestion run that wrote chunks, from any process,
+ends with one pg_notify('kb_changed'). The service's listener connection receives it, clears this cache
+and bumps the knowledge-base version that every lookup passes in, so an entry filled from the old
+knowledge base by a search still in flight is never served under the new version. While the listener
+is connected, a lookup costs no database query. While it is down, the version falls back to the
+TTL'd row count and newest "updatedAt" of KnowledgeChunk (the same token the BM25 index uses).
 """
 from __future__ import annotations
 
@@ -44,6 +46,12 @@ class RetrievalCache:
     hits: int = 0
     misses: int = 0
     invalidations: int = 0
+
+    def clear(self) -> None:
+        """Drop every entry now (a kb_changed notify); counted like a version change."""
+        if self.entries:
+            self.invalidations += 1
+        self.entries.clear()
 
     def _sync(self, version: Hashable) -> None:
         if version != self.version:
