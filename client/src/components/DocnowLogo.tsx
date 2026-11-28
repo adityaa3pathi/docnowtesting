@@ -79,7 +79,7 @@ export function DocnowLogo({
     }
 
     return (
-        <Link href={href} className="inline-flex items-center" aria-label="DOCNOW home">
+        <Link href={href} className="inline-flex items-center flex-shrink-0" aria-label="DOCNOW home">
             {content}
         </Link>
     );

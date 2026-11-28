@@ -223,18 +223,18 @@ export function Header() {
 
                     {/* Desktop Global Search — hidden on pages with their own search */}
                     {!hideSearch && (
-                        <div className="hidden xl:flex flex-1 min-w-[300px] max-w-2xl mx-6 relative">
+                        <div className="hidden xl:flex flex-1 min-w-[160px] max-w-2xl mx-3 2xl:mx-6 relative">
                             <GlobalSearch />
                         </div>
                     )}
 
                     {/* Desktop Nav Links */}
-                    <div className="hidden xl:flex items-center gap-6 lg:gap-8">
+                    <div className="hidden xl:flex items-center gap-5 2xl:gap-8">
                         {desktopNavLinks.map((link) => (
                             <Link
                                 key={link.href}
                                 href={link.href}
-                                className={`text-gray-700 font-semibold text-base leading-none transition-colors hover:text-primary ${pathname === link.href ? 'text-primary underline underline-offset-4' : ''
+                                className={`text-gray-700 font-semibold text-base leading-none whitespace-nowrap transition-colors hover:text-primary ${pathname === link.href ? 'text-primary underline underline-offset-4' : ''
                                     }`}
                             >
                                 {link.label}
@@ -391,7 +391,7 @@ export function Header() {
                         ) : (
                             <button
                                 onClick={() => openAuthDialog()}
-                                className="border border-primary text-primary font-semibold text-sm px-5 py-2 rounded-[7px] hover:bg-primary/5 transition-all flex items-center gap-2"
+                                className="border border-primary text-primary font-semibold text-base px-5 py-2 rounded-[7px] hover:bg-primary/5 transition-all flex items-center gap-2 whitespace-nowrap flex-shrink-0"
                             >
                                 <User className="h-4 w-4" />
                                 Sign In
